@@ -79,7 +79,7 @@
 	autocrlf = input
 
 	# Use Emacs as the default editor
-	editor = emacs -nw
+	editor = vim
 
 [color]
 

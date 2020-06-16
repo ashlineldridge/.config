@@ -31,3 +31,7 @@ export PATH="/usr/local/bin:$(brew --prefix coreutils)/libexec/gnubin:$(brew --p
 
 # Kubernetes
 export KUBECONFIG=~/.kube/config
+
+# Required for GPG signing of Git commits
+export GPG_TTY=$(tty)
+
