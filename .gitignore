@@ -1,0 +1,7 @@
+zsh/secret
+target/
+.idea/
+*.swp
+*.orig
+*.log
+.DS_Store

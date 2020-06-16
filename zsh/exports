@@ -1,0 +1,33 @@
+# Make Vim the default editor
+export EDITOR="vim";
+
+# Larger bash history (allow 32³ entries; default is 500)
+export HISTSIZE=32768;
+export HISTFILESIZE=$HISTSIZE;
+export HISTCONTROL=ignoredups;
+
+# Make some commands not show up in history
+export HISTIGNORE="ls:cd:cd -:pwd:exit:date:* --help";
+
+# Prefer AU English and use UTF-8
+export LANG="en_AU.UTF-8";
+export LC_ALL="en_AU.UTF-8";
+
+# Highlight section titles in manual pages
+export LESS_TERMCAP_md="${yellow}";
+
+# Always enable colored `grep` output
+export GREP_OPTIONS="--color=auto";
+
+# Home directories
+export DEVELOPMENT_HOME="${HOME}/Development"
+
+# Golang variables
+export GOPATH="${DEVELOPMENT_HOME}/go"
+export GOROOT="$(brew --prefix go)/libexec"
+
+# Path
+export PATH="/usr/local/bin:$(brew --prefix coreutils)/libexec/gnubin:$(brew --prefix findutils)/libexec/gnubin:${GOROOT}/bin:$(brew --prefix gettext)/bin:${GOPATH}/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:${HOME}/bin"
+
+# Kubernetes
+export KUBECONFIG=~/.kube/config
