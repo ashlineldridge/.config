@@ -1,10 +1,12 @@
-# DOT_START
+# ZSH configuration
 
-# Enable extended globbing
+# Shell options
 setopt extended_glob
+setopt hist_find_no_dups
+setopt append_history
 
 # Load the zsh configuration files. The 'secret' file provides a mechanism
-# for configuration that doesn't get published to GitHub.
+# for configuration that shouldn't be published to GitHub.
 for f in "${XDG_CONFIG_HOME}"/zsh/{exports,aliases,functions,colors,secret}; do
   if [[ -f "${f}" ]]; then
     source "${f}"
@@ -18,18 +20,16 @@ prompt pure
 
 # Shortcuts
 bindkey '^R' history-incremental-search-backward
+bindkey '^A' beginning-of-line
+bindkey '^E' end-of-line
 bindkey "^[^[[D" backward-word
 bindkey "^[^[[C" forward-word
-bindkey \^U backward-kill-line
+bindkey '^U' backward-kill-line
 bindkey '\e_' insert-last-word
 
-# Enable completion for various commands
-autoload -U +X compinit && compinit
-autoload -U +X bashcompinit && bashcompinit
+# Enables completion system for sourced scripts below
+autoload -U +X compinit; compinit
 
-# Prevent kubectl trying to complete file arguments
-source <(kubectl completion zsh | sed '/"-f"/d')
+# Workaround for https://github.com/kubernetes/kubectl/issues/125
+source <(kubectl completion zsh | sed '/_bash_comp/ s/^#*/#/') || true
 
-# History settings
-unsetopt inc_append_history
-unsetopt share_history
