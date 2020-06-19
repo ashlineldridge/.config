@@ -29,3 +29,6 @@ export KUBECONFIG="${HOME}/.kube/config"
 
 # Required for GPG signing of Git commits
 export GPG_TTY="$(tty)"
+
+# Force GnuPG to use XDG
+export GNUPGHOME="${XDG_DATA_HOME}/gnupg"
