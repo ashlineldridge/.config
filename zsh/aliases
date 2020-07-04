@@ -57,11 +57,12 @@ alias guid="uuidgen | tr '[:upper:]' '[:lower:]' | pbcopy && pbpaste"
 # Hub (Github helper) aliased over standard git command
 eval "$(hub alias -s)"
 
-# Kubernetes
+# Kubernetes tools
 alias k=kubectl
 alias kp='https_proxy=http://localhost:8888 kubectl'
 alias h=helm
 alias hp='https_proxy=http://localhost:8888 helm'
+alias kpt='kpt --k8s-schema-source builtin'
 
 # Trying out Neovim
 alias vim=nvim

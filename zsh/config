@@ -4,6 +4,7 @@
 setopt extended_glob
 setopt hist_find_no_dups
 setopt append_history
+setopt emacs # Otherwise zsh respects EDITOR
 
 # Load the zsh configuration files. The 'secret' file provides a mechanism
 # for configuration that shouldn't be published to GitHub.
