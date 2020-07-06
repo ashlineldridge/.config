@@ -3,7 +3,8 @@
 # Shell options
 setopt extended_glob
 setopt hist_find_no_dups
-setopt append_history
+setopt inc_append_history
+setopt share_history
 setopt emacs # Otherwise zsh respects EDITOR
 
 # Load the zsh configuration files. The 'secret' file provides a mechanism
