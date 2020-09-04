@@ -60,6 +60,8 @@ alias guid="uuidgen | tr '[:upper:]' '[:lower:]' | pbcopy && pbpaste"
 # Kubernetes tools
 alias k=kubectl
 alias kp='https_proxy=http://localhost:8888 kubectl'
+alias kctx=kubectx
+alias kns=kubens
 alias h=helm
 alias hp='https_proxy=http://localhost:8888 helm'
 alias kpt='kpt --k8s-schema-source=builtin'

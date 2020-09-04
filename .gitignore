@@ -10,3 +10,4 @@ target/
 nvim/bundle/*/doc/tags
 zsh/.zcompdump
 gcloud/logs/
+gantry/

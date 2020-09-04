@@ -1,9 +1,8 @@
+# Initial bootstrap variables required to get zsh
+# to respect XDG base directories. This file must
+# be symlinked to ~/.zshenv.
+
 export XDG_CONFIG_HOME="${HOME}/.config"
 export XDG_CACHE_HOME="${HOME}/.cache"
 export XDG_DATA_HOME="${HOME}/.local/share"
 export ZDOTDIR="${XDG_CONFIG_HOME}/zsh"
-
-# Intellij doesn't obey ZDOTDIR exported here so manually source zsh config
-if [[ "${TERMINAL_EMULATOR}" == 'JetBrains-JediTerm' ]]; then
-    source "${ZDOTDIR}"/config
-fi

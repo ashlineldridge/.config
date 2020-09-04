@@ -32,3 +32,6 @@ export GPG_TTY="$(tty)"
 
 # Force GnuPG to use XDG
 export GNUPGHOME="${XDG_DATA_HOME}/gnupg"
+
+# Force Terraform to use XDG
+export TF_CLI_CONFIG_FILE="${XDG_DATA_HOME}/terraform/config"
