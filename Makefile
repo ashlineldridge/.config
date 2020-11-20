@@ -23,7 +23,6 @@ brew-dump:
 update-submodules:
 	git submodule update --init --recursive
 	git submodule update --remote
-	@cd nvim/bundle/coc.nvim && git checkout release && git reset --hard origin/release
 	git submodule foreach 'git pull --recurse-submodules origin `git rev-parse --abbrev-ref HEAD`'
 
 ## Removes a git submodule (e.g., MODULE=nvim/bundle/nginx.vim).
