@@ -1,2 +1,0 @@
-/Users/aeldridge/.config/AWSVPNClient/OpenVpnConfigs/ap-southeast-2-sandbox-a
-1605740671
