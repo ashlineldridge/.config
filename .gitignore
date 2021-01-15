@@ -1,6 +1,5 @@
-.git/
-.git
 zsh/secret
+emacs/elpa
 target/
 .idea/
 *.swp
@@ -10,6 +9,5 @@ target/
 nvim/bundle/*/doc/tags
 zsh/.zcompdump
 gcloud/logs/
-gantry/
 gh/
 AWSVPNClient/
