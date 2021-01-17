@@ -1,21 +1,36 @@
 ;; Do not show the startup screen.
 (setq inhibit-startup-message t)
 
-;; Disable tool bar, menu bar, scroll bar.
-(tool-bar-mode -1)
-(menu-bar-mode -1)
-(scroll-bar-mode -1)
+(tool-bar-mode -1)   ; Disable the tool bar
+(tooltip-mode -1)    ; Disable tool tips
+(menu-bar-mode -1)   ; Disable the menu bar
+(scroll-bar-mode -1) ; Disable visible scrollbar
+(set-fringe-mode 10) ; Increase left/right margins slightly
 
-;; Highlight current line.
-(global-hl-line-mode t)
+;; Flash the mode line rather than use an audible bell.
+(setq visible-bell nil)
+(setq ring-bell-function (lambda ()
+  (invert-face 'mode-line)
+  (run-with-timer 0.1 nil 'invert-face 'mode-line)))
+
+;; Default font.
+(set-face-attribute 'default nil :font "JetBrains Mono" :height 130)
+
+;; Temporary theme
+(load-theme 'wombat)
 
 ;; Show echoed keystrokes quicker.
 (setq echo-keystrokes 0.01)
+
+;; Make ESC quit prompts
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
 ;; Emacs XDG base directories.
 (setq emacs-config-home "~/.config/emacs")
 (setq emacs-cache-home "~/.cache/emacs")
 (setq emacs-data-home "~/.local/share/emacs")
+
+;; TODO: Use variables above and create subdirectories below if they don't exist.
 
 ;; Store all backup files in XDG_CACHE_HOME.
 ;(setq backup-directory-alist '(("" . (concat emacs-data-home "/backup"))))
@@ -26,9 +41,6 @@
 ;(setq auto-save-list-file-prefix (concat emacs-data-home "/auto-save-list"))
 (setq auto-save-list-file-prefix "~/.cache/emacs/auto-save-list/")
 
-;; Use `command` as `meta` in macOS.
-;; (setq mac-command-modifier 'meta)
-
 ;; Do not use `init.el` for `custom-*` code - use `custom.el`.
 (setq custom-file (concat emacs-config-home "/custom.el"))
 
@@ -37,97 +49,56 @@
 ;; proactively.
 (load-file custom-file)
 
-;; Require and initialize `package`.
+;; Require and configure `package`.
 (require 'package)
 (setq package-user-dir "~/.cache/emacs/packages/")
+(setq package-archives '(("elpa" . "https://elpa.gnu.org/packages/")
+			 ("melpa" . "https://melpa.org/packages/")
+			 ("orga" . "https://orgmode.org/elpa")))
 (package-initialize)
-
-;; Add `melpa` to `package-archives`.
-(add-to-list 'package-archives
-             '("melpa" . "http://melpa.org/packages/") t)
+(unless package-archive-contents
+  (package-refresh-contents))
 
 ;; Bootstrap use-package.
-(when (not (package-installed-p 'use-package))
-  (package-refresh-contents)
+(unless (package-installed-p 'use-package)
   (package-install 'use-package))
 
-;; Additional packages and their configurations
+(require 'use-package)
+(setq use-package-always-ensure t)
 
-(use-package spacemacs-common
-  :ensure spacemacs-theme
+(use-package ivy
+  :diminish
+  :init (ivy-mode 1) ; globally at startup
   :config
-  ;; Comments should appear in italics.
-  (setq spacemacs-theme-comment-italic t)
+  (setq ivy-use-virtual-buffers t)
+  (setq ivy-height 20)
+  (setq ivy-count-format "%d/%d "))
 
-  ;; Use the `spacemacs-dark` theme.
-  (load-theme 'spacemacs-dark t))
-
-(use-package company
-  ;; Navigate in completion minibuffer with `C-n` and `C-p`.
-  :bind (:map company-active-map
-         ("C-n" . company-select-next)
-         ("C-p" . company-select-previous))
+(use-package counsel
+  :bind* ; load when pressed
+  (("M-x"     . counsel-M-x)
+   ("C-s"     . swiper)
+   ("C-x C-f" . counsel-find-file)
+   ("C-x C-r" . counsel-recentf)  ; search for recently edited
+   ("C-c g"   . counsel-git)      ; search for files in git repo
+   ("C-c j"   . counsel-git-grep) ; search for regexp in git repo
+   ("C-c /"   . counsel-ag)       ; Use ag for regexp
+   ("C-x l"   . counsel-locate)
+   ("C-x C-f" . counsel-find-file)
+   ("<f1> f"  . counsel-describe-function)
+   ("<f1> v"  . counsel-describe-variable)
+   ("<f1> l"  . counsel-find-library)
+   ("<f2> i"  . counsel-info-lookup-symbol)
+   ("<f2> u"  . counsel-unicode-char)
+   ("C-c C-r" . ivy-resume)) ; Resume last Ivy-based completion
   :config
-  ;; Provide instant autocompletion.
-  (setq company-idle-delay 0.3)
+  (setcdr (assoc 'counsel-M-x ivy-initial-inputs-alist) ""))
 
-  ;; Use company mode everywhere.
-  (global-company-mode t))
+;; Default to "" for initial M-x rather than "^".
+;;(setcdr (assoc 'counsel-M-x ivy-initial-inputs-alist) "")
 
-;; Recent buffers in a new Emacs session
-;(use-package recentf
-  ;:config
-  ;(setq recentf-auto-cleanup 'never
-        ;recentf-max-saved-items 1000
-        ;recentf-save-file (concat user-emacs-directory ".recentf"))
-  ;(recentf-mode t)
-  ;:diminish nil)
-
-;;; Display possible completions at all places
-;(use-package ido-completing-read+
-  ;:ensure t
-  ;:config
-  ;;; This enables ido in all contexts where it could be useful, not just
-  ;;; for selecting buffer and file names
-  ;(ido-mode t)
-  ;(ido-everywhere t)
-  ;;; This allows partial matches, e.g. "uzh" will match "Ustad Zakir Hussain"
-  ;(setq ido-enable-flex-matching t)
-  ;(setq ido-use-filename-at-point nil)
-  ;;; Includes buffer names of recently opened files, even if they're not open now.
-  ;(setq ido-use-virtual-buffers t)
-  ;:diminish nil)
-
-;;; Enhance M-x to allow easier execution of commands
-;(use-package smex
-  ;:ensure t
-  ;;; Using counsel-M-x for now. Remove this permanently if counsel-M-x works better.
-  ;:disabled t
-  ;:config
-  ;(setq smex-save-file (concat user-emacs-directory ".smex-items"))
-  ;(smex-initialize)
-  ;:bind ("M-x" . smex))
-
-;;; Git integration for Emacs
-;(use-package magit
-  ;:ensure t
-  ;:bind ("C-x g" . magit-status))
-
-;;; Better handling of paranthesis when writing Lisps.
-;(use-package paredit
-  ;:ensure t
-  ;:init
-  ;(add-hook 'clojure-mode-hook #'enable-paredit-mode)
-  ;(add-hook 'cider-repl-mode-hook #'enable-paredit-mode)
-  ;(add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
-  ;(add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
-  ;(add-hook 'ielm-mode-hook #'enable-paredit-mode)
-  ;(add-hook 'lisp-mode-hook #'enable-paredit-mode)
-  ;(add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
-  ;(add-hook 'scheme-mode-hook #'enable-paredit-mode)
-  ;:config
-  ;(show-paren-mode t)
-  ;:bind (("M-[" . paredit-wrap-square)
-         ;("M-{" . paredit-wrap-curly))
-  ;:diminish nil)
-
+;; Disable arrow keys to "encourage" standard navigation.
+(global-unset-key (kbd "<left>"))
+(global-unset-key (kbd "<right>"))
+(global-unset-key (kbd "<up>"))
+(global-unset-key (kbd "<down>"))
