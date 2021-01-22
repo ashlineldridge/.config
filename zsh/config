@@ -9,7 +9,7 @@ setopt emacs # Otherwise zsh respects EDITOR
 
 # Load the zsh configuration files. The 'secret' file provides a mechanism
 # for configuration that shouldn't be published to GitHub.
-for f in "${XDG_CONFIG_HOME}"/zsh/{exports,aliases,functions,colors,secret}; do
+for f in "${XDG_CONFIG_HOME}"/zsh/{aliases,functions,colors,secret}; do
   if [[ -f "${f}" ]]; then
     source "${f}"
   fi

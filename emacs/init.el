@@ -7,6 +7,10 @@
 (scroll-bar-mode -1) ; Disable visible scrollbar
 (set-fringe-mode 10) ; Increase left/right margins slightly
 
+;; Enlargen frame size if we're running within a window system.
+(when window-system
+  (set-frame-size (selected-frame) 110 50))
+
 ;; Flash the mode line rather than use an audible bell.
 (setq visible-bell nil)
 (setq ring-bell-function (lambda ()
@@ -25,7 +29,33 @@
 ;; Make ESC quit prompts
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
-;; Emacs XDG base directories.
+;; Show column numbers in the mode line.
+(column-number-mode t)
+
+;; Show line numbers on the left hand side.
+(global-display-line-numbers-mode t)
+
+;; Disable line numbers for some modes.
+(dolist (mode '(org-mode-hook
+		term-mode-hook
+		eshell-mode-hook
+		shell-mode-hook
+		help-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+;; Disable arrow keys to "encourage" standard navigation.
+(global-unset-key (kbd "<left>"))
+(global-unset-key (kbd "<right>"))
+(global-unset-key (kbd "<up>"))
+(global-unset-key (kbd "<down>"))
+
+;; Use CMD key for META.
+(setq mac-option-key-is-meta nil
+      mac-command-key-is-meta t
+      mac-command-modifier 'meta
+      mac-option-modifier nil)
+
+;; TODO: This could be better. Emacs XDG base directories.
 (setq emacs-config-home "~/.config/emacs")
 (setq emacs-cache-home "~/.cache/emacs")
 (setq emacs-data-home "~/.local/share/emacs")
@@ -66,8 +96,12 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
+;; Use the delight package for hiding major and minor modes.
+(use-package delight)
+(require 'delight)
+
 (use-package ivy
-  :diminish
+  :delight
   :init (ivy-mode 1) ; globally at startup
   :config
   (setq ivy-use-virtual-buffers t)
@@ -75,6 +109,7 @@
   (setq ivy-count-format "%d/%d "))
 
 (use-package counsel
+  :delight
   :bind* ; load when pressed
   (("M-x"     . counsel-M-x)
    ("C-s"     . swiper)
@@ -92,13 +127,20 @@
    ("<f2> u"  . counsel-unicode-char)
    ("C-c C-r" . ivy-resume)) ; Resume last Ivy-based completion
   :config
+  ;; Default to "" for initial M-x rather than "^".
   (setcdr (assoc 'counsel-M-x ivy-initial-inputs-alist) ""))
 
-;; Default to "" for initial M-x rather than "^".
-;;(setcdr (assoc 'counsel-M-x ivy-initial-inputs-alist) "")
+(use-package markdown-mode
+  :ensure t
+  :commands (markdown-mode gfm-mode)
+  :mode (("README\\.md\\'" . gfm-mode)
+         ("\\.md\\'" . gfm-mode)
+         ("\\.markdown\\'" . markdown-mode))
+  :init (setq markdown-command "multimarkdown"))
 
-;; Disable arrow keys to "encourage" standard navigation.
-(global-unset-key (kbd "<left>"))
-(global-unset-key (kbd "<right>"))
-(global-unset-key (kbd "<up>"))
-(global-unset-key (kbd "<down>"))
+(use-package exec-path-from-shell
+  :init (when (memq window-system '(mac ns x))
+	  (setq exec-path-from-shell-variables
+		'("PATH" "MANPATH" "XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME"))
+	  (setq exec-path-from-shell-arguments nil)
+	  (exec-path-from-shell-initialize)))

@@ -1,5 +1,7 @@
 zsh/secret
 emacs/elpa
+emacs/eshell/history
+emacs/recentf
 target/
 .idea/
 *.swp
