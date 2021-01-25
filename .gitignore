@@ -1,6 +1,9 @@
 zsh/secret
+zsh/.zsh_history
+zsh/.zcompdump
 emacs/elpa
 emacs/eshell/history
+emacs/eshell/lastdir
 emacs/recentf
 target/
 .idea/
@@ -9,7 +12,6 @@ target/
 *.log
 .DS_Store
 nvim/bundle/*/doc/tags
-zsh/.zcompdump
 gcloud/logs/
 gh/
 AWSVPNClient/

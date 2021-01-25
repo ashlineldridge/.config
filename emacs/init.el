@@ -21,7 +21,7 @@
 (set-face-attribute 'default nil :font "JetBrains Mono" :height 130)
 
 ;; Temporary theme
-(load-theme 'wombat)
+;(load-theme 'wombat)
 
 ;; Show echoed keystrokes quicker.
 (setq echo-keystrokes 0.01)
@@ -84,7 +84,7 @@
 (setq package-user-dir "~/.cache/emacs/packages/")
 (setq package-archives '(("elpa" . "https://elpa.gnu.org/packages/")
 			 ("melpa" . "https://melpa.org/packages/")
-			 ("orga" . "https://orgmode.org/elpa")))
+			 ("org" . "https://orgmode.org/elpa/")))
 (package-initialize)
 (unless package-archive-contents
   (package-refresh-contents))
@@ -108,30 +108,19 @@
   (setq ivy-height 20)
   (setq ivy-count-format "%d/%d "))
 
+(use-package ivy-rich :delight :init (ivy-rich-mode 1))
+
 (use-package counsel
   :delight
-  :bind* ; load when pressed
+  :bind
   (("M-x"     . counsel-M-x)
    ("C-s"     . swiper)
    ("C-x C-f" . counsel-find-file)
-   ("C-x C-r" . counsel-recentf)  ; search for recently edited
-   ("C-c g"   . counsel-git)      ; search for files in git repo
-   ("C-c j"   . counsel-git-grep) ; search for regexp in git repo
-   ("C-c /"   . counsel-ag)       ; Use ag for regexp
-   ("C-x l"   . counsel-locate)
-   ("C-x C-f" . counsel-find-file)
-   ("<f1> f"  . counsel-describe-function)
-   ("<f1> v"  . counsel-describe-variable)
-   ("<f1> l"  . counsel-find-library)
-   ("<f2> i"  . counsel-info-lookup-symbol)
-   ("<f2> u"  . counsel-unicode-char)
-   ("C-c C-r" . ivy-resume)) ; Resume last Ivy-based completion
+   :map minibuffer-local-map ("C-r" . 'counsel-minibuffer-history))
   :config
-  ;; Default to "" for initial M-x rather than "^".
-  (setcdr (assoc 'counsel-M-x ivy-initial-inputs-alist) ""))
+  (setq ivy-initial-inputs-alist nil)) ; Don't start searches with ^
 
 (use-package markdown-mode
-  :ensure t
   :commands (markdown-mode gfm-mode)
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . gfm-mode)
@@ -144,3 +133,45 @@
 		'("PATH" "MANPATH" "XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME"))
 	  (setq exec-path-from-shell-arguments nil)
 	  (exec-path-from-shell-initialize)))
+
+(use-package rainbow-delimiters
+  :init (add-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode))
+
+(use-package which-key
+  :delight
+  :init (progn
+	  (setq which-key-show-early-on-C-h t)
+          (setq which-key-idle-delay 2)
+          (setq which-key-idle-secondary-delay 0.05)
+	  (which-key-mode)))
+
+(use-package yaml-mode
+  :mode (("\\.yml\\'" . yaml-mode)
+	 ("\\.yaml\\'" . yaml-mode))
+  :config (add-hook 'yaml-mode-hook
+		    '(lambda () (define-key yaml-mode-map "\C-m" 'newline-and-indent))))
+
+(use-package helpful
+  :custom
+  (counsel-describe-function-function #'helpful-callable)
+  (counsel-describe-variable-function #'helpful-variable)
+  :bind
+  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-command] . helpful-command)
+  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-key] . helpful-key))
+
+(use-package doom-themes
+  :init (load-theme 'doom-tomorrow-night t))
+
+;; The package all-the-icons is required by doom-modeline.
+(use-package all-the-icons
+  :config
+  ; Only install the fonts if they are not already installed. See:
+  ; https://github.com/domtronn/all-the-icons.el/issues/120#issuecomment-480342779
+  (unless (member "all-the-icons" (font-family-list))
+    (all-the-icons-install-fonts t)))
+
+(use-package doom-modeline
+  :init (doom-modeline-mode 1)
+  :custom ((doom-modeline-height 15)))
