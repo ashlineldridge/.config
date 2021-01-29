@@ -20,9 +20,6 @@
 ;; Default font.
 (set-face-attribute 'default nil :font "JetBrains Mono" :height 130)
 
-;; Temporary theme
-;(load-theme 'wombat)
-
 ;; Show echoed keystrokes quicker.
 (setq echo-keystrokes 0.01)
 
@@ -116,6 +113,7 @@
   (("M-x"     . counsel-M-x)
    ("C-s"     . swiper)
    ("C-x C-f" . counsel-find-file)
+   ("C-x b"   . counsel-switch-buffer)
    :map minibuffer-local-map ("C-r" . 'counsel-minibuffer-history))
   :config
   (setq ivy-initial-inputs-alist nil)) ; Don't start searches with ^
@@ -173,5 +171,23 @@
     (all-the-icons-install-fonts t)))
 
 (use-package doom-modeline
-  :init (doom-modeline-mode 1)
-  :custom ((doom-modeline-height 15)))
+  :hook (after-init . doom-modeline-mode)
+  :custom
+  (doom-modeline-height 25)
+  (doom-modeline-bar-width 0)
+  (doom-modeline-icon t)
+  (doom-modeline-major-mode-icon t)
+  (doom-modeline-major-mode-color-icon t)
+  (doom-modeline-buffer-file-name-style 'truncate-upto-project)
+  (doom-modeline-buffer-state-icon t)
+  (doom-modeline-buffer-modification-icon t)
+  (doom-modeline-minor-modes nil)
+  (doom-modeline-enable-word-count nil)
+  (doom-modeline-buffer-encoding t)
+  (doom-modeline-indent-info nil)
+  (doom-modeline-checker-simple-format t)
+  (doom-modeline-vcs-max-length 12)
+  (doom-modeline-env-version t)
+  (doom-modeline-irc-stylize 'identity)
+  (doom-modeline-github-timer nil)
+  (doom-modeline-gnus-timer nil))
