@@ -11,6 +11,11 @@
 (when window-system
   (set-frame-size (selected-frame) 110 50))
 
+;; Prefer running Emacs in server mode and have Git and $EDITOR use emacsclient
+;; to open files in a single Emacs instance.
+(when window-system
+  (server-mode))
+
 ;; Flash the mode line rather than use an audible bell.
 (setq visible-bell nil)
 (setq ring-bell-function (lambda ()
@@ -167,8 +172,9 @@
   :config
   ; Only install the fonts if they are not already installed. See:
   ; https://github.com/domtronn/all-the-icons.el/issues/120#issuecomment-480342779
-  (unless (member "all-the-icons" (font-family-list))
-    (all-the-icons-install-fonts t)))
+  (when window-system
+    (unless (member "all-the-icons" (font-family-list))
+      (all-the-icons-install-fonts t))))
 
 (use-package doom-modeline
   :hook (after-init . doom-modeline-mode)

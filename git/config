@@ -79,8 +79,8 @@
 	autocrlf = input
 
 	# Use Emacs as the default editor
-	editor = emacs --no-window-system --quick --basic-display
-
+	#editor = emacs --no-window-system --quick --basic-display
+	editor = emacsclient
 [color]
 
 	# Use colors in Git commands that are capable of colored output when
