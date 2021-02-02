@@ -228,7 +228,6 @@
 
 ; TODO: https://github.com/abo-abo/ace-window?
 
-
 ; Following along with https://emacs-lsp.github.io/lsp-mode/tutorials/CPP-guide/
 ; Watch all the System Crafters videos first
 ;(use-package lsp-mode)
