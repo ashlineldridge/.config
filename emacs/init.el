@@ -224,6 +224,8 @@
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
 
+(use-package terraform-mode)
+
 ; TODO: https://github.com/abo-abo/ace-window?
 
 
