@@ -134,7 +134,7 @@
 (use-package exec-path-from-shell
   :init (when (memq window-system '(mac ns x))
 	  (setq exec-path-from-shell-variables
-		'("PATH" "MANPATH" "XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME"))
+		'("PATH" "MANPATH" "XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME" "GNUPGHOME")) ;"GPG_TTY"))
 	  (setq exec-path-from-shell-arguments nil)
 	  (exec-path-from-shell-initialize)))
 
