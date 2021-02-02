@@ -1,1 +1,15 @@
-alias foo echo $1
+alias dev cd ~/Development
+alias devh cd ~/Development/home
+alias devw cd ~/Development/work
+alias devg cd $GOPATH
+alias g git $*
+alias l ls $*
+alias ll ls -lF $*
+alias l. ll -dF .*
+alias la ls -laF
+alias tf terraform $*
+alias k kubectl $*
+alias kctx kubectx $*
+alias kns kubens $*
+alias h helm $*
+alias bz bazel $*

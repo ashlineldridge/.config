@@ -5,6 +5,8 @@ emacs/elpa
 emacs/eshell/history
 emacs/eshell/lastdir
 emacs/recentf
+emacs/transient/
+emacs/projectile-bookmarks.eld
 target/
 .idea/
 *.swp

@@ -75,6 +75,7 @@ alias vim=nvim
 alias e=emacs
 alias et='emacs -nw'
 alias enw='emacs -nw'
+alias ec='emacsclient'
 
 # Others
 alias watch='watch -n 1 '

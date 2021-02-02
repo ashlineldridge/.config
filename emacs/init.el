@@ -28,8 +28,9 @@
 ;; Show echoed keystrokes quicker.
 (setq echo-keystrokes 0.01)
 
-;; Make ESC quit prompts
+;; Global key bindings.
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+(global-set-key (kbd "C-c e") 'eshell)
 
 ;; Show column numbers in the mode line.
 (column-number-mode t)
@@ -197,3 +198,45 @@
   (doom-modeline-irc-stylize 'identity)
   (doom-modeline-github-timer nil)
   (doom-modeline-gnus-timer nil))
+
+(use-package projectile
+  :delight
+  :init
+  (projectile-add-known-project "~/.config")
+  (setq projectile-project-search-path
+	; Search path is displayed from right to left.
+	'("~/Development/home" "~/Development/work"))
+  (setq projectile-switch-project-action #'projectile-dired)
+  :config (projectile-mode)
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :custom ((projectile-completion-system 'ivy)))
+
+(use-package counsel-projectile
+  :config (counsel-projectile-mode))
+
+(use-package magit)
+;  :custom
+;  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+(use-package ace-window
+  :bind (("M-o" . ace-window))
+  :config
+  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
+
+; TODO: https://github.com/abo-abo/ace-window?
+
+
+; Following along with https://emacs-lsp.github.io/lsp-mode/tutorials/CPP-guide/
+; Watch all the System Crafters videos first
+;(use-package lsp-mode)
+;(use-package company)
+;(use-package projectile)
+;(use-package flycheck)
+;(use-package hydra)
+;(use-package yasnippet)
+;(use-package lsp-treemacs)
+;(use-package helm-lsp)
+;(use-package avy)
+;(use-package helm-xref)
+;(use-package dap-mode)
