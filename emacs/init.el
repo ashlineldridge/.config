@@ -120,6 +120,7 @@
    ("C-s"     . swiper)
    ("C-x C-f" . counsel-find-file)
    ("C-x b"   . counsel-switch-buffer)
+   ("M-y"     . counsel-yank-pop)
    :map minibuffer-local-map ("C-r" . 'counsel-minibuffer-history))
   :config
   (setq ivy-initial-inputs-alist nil)) ; Don't start searches with ^
