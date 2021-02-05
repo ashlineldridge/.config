@@ -168,3 +168,5 @@
 	program = gpg
 [init]
 	defaultBranch = main
+[github]
+	user = ashlineldridge
