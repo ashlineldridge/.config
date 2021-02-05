@@ -7,6 +7,7 @@ emacs/eshell/lastdir
 emacs/recentf
 emacs/transient/
 emacs/projectile-bookmarks.eld
+emacs/forge-database.sqlite
 target/
 .idea/
 *.swp
