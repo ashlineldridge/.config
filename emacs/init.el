@@ -227,20 +227,38 @@
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
 
+;; Turn on indentation and auto-fill mode for Org files
+(defun ae/org-mode-setup ()
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (auto-fill-mode 0)
+  (visual-line-mode 1)
+  (diminish org-indent-mode))
+
+(use-package org
+;  :hook (org-mode . ae/org-mode-setup)
+  :config
+  (setq org-ellipsis " 》"
+	org-agenda-start-with-log-mode t
+	org-log-done 'time
+	org-log-into-drawer t
+	org-agenda-files '("~/Development/home/hello-org/hello.org"))
+        ;; org-src-fontify-natively t
+        ;; org-src-tab-acts-natively t
+        ;; org-edit-src-content-indentation 2
+        ;; org-hide-block-startup nil
+        ;; org-src-preserve-indentation nil
+        ;; org-startup-folded 'content
+        ;; org-cycle-separator-lines 2)
+
 (use-package terraform-mode)
 
-; TODO: https://github.com/abo-abo/ace-window?
-
-; Following along with https://emacs-lsp.github.io/lsp-mode/tutorials/CPP-guide/
-; Watch all the System Crafters videos first
-;(use-package lsp-mode)
-;(use-package company)
-;(use-package projectile)
-;(use-package flycheck)
-;(use-package hydra)
-;(use-package yasnippet)
-;(use-package lsp-treemacs)
-;(use-package helm-lsp)
-;(use-package avy)
-;(use-package helm-xref)
-;(use-package dap-mode)
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :hook
+  (c-mode . lsp-deferred)
+  (c++-mode . lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l") ;; C-l?
+  :config
+  (lsp-enable-which-key-integration t))

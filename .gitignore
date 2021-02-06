@@ -8,6 +8,7 @@ emacs/recentf
 emacs/transient/
 emacs/projectile-bookmarks.eld
 emacs/forge-database.sqlite
+emacs/.lsp-session-v1
 target/
 .idea/
 *.swp

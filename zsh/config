@@ -5,11 +5,12 @@ setopt extended_glob
 setopt hist_find_no_dups
 setopt inc_append_history
 setopt share_history
-setopt emacs # Otherwise zsh respects EDITOR
 
 # Load the zsh configuration files. The 'secret' file provides a mechanism
-# for configuration that shouldn't be published to GitHub.
-for f in "${XDG_CONFIG_HOME}"/zsh/{aliases,functions,colors,secret}; do
+# for configuration that shouldn't be published to GitHub. Note that zshenv
+# is source here even though it will have already been sourced during zsh's
+# init routine due to https://www.zsh.org/mla/users/2003/msg00600.html.
+for f in "${XDG_CONFIG_HOME}"/zsh/{zshenv,aliases,functions,colors,secret}; do
   if [[ -f "${f}" ]]; then
     source "${f}"
   fi
