@@ -7,7 +7,7 @@
    '("bffa9739ce0752a37d9b1eee78fc00ba159748f50dc328af4be661484848e476" default))
  '(global-command-log-mode t)
  '(package-selected-packages
-   '(lsp-mode org-superstar org-mode forge terraform-mode all-the-icons ace-window counsel-projectile projectile minions doom-themes helpful ivy-rich yaml-mode which-key rainbow-delimiters exec-path-from-shell delight markdown-mode counsel doom-modeline ivy command-log-mode paredit magit ido-completing-read+ use-package company spacemacs-theme)))
+   '(neotree ccls lsp-treemacs flycheck treemacs-projectile treemacs-all-the-icons lsp-ivy company-box typescript-mode sh sh-mode go-mode lsp-mode org-superstar org-mode forge terraform-mode all-the-icons ace-window counsel-projectile projectile minions doom-themes helpful ivy-rich yaml-mode which-key rainbow-delimiters exec-path-from-shell delight markdown-mode counsel doom-modeline ivy command-log-mode paredit magit ido-completing-read+ use-package company spacemacs-theme)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

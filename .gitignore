@@ -9,6 +9,8 @@ emacs/transient/
 emacs/projectile-bookmarks.eld
 emacs/forge-database.sqlite
 emacs/.lsp-session-v1
+emacs/.cache/
+emacs/.org-id-locations
 target/
 .idea/
 *.swp

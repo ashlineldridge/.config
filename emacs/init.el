@@ -1,3 +1,9 @@
+;; TODO:
+;; 1. Convert this into an org file
+;; 2. Switch over to straight.el
+;; 3. Use :ensure t?
+;; 4. Remove window-system checks - no longer needed
+
 ;; Do not show the startup screen.
 (setq inhibit-startup-message t)
 
@@ -6,6 +12,11 @@
 (menu-bar-mode -1)   ; Disable the menu bar
 (scroll-bar-mode -1) ; Disable visible scrollbar
 (set-fringe-mode 10) ; Increase left/right margins slightly
+
+;; If I need to run Emacs in the terminal I'll use `-nw -q`.
+;; Better than littering this file with window system checks.
+(unless window-system
+  (error "This Emacs init file is for window systems only."))
 
 ;; Enlargen frame size if we're running within a window system.
 (when window-system
@@ -23,14 +34,20 @@
   (run-with-timer 0.1 nil 'invert-face 'mode-line)))
 
 ;; Default font.
-(set-face-attribute 'default nil :font "JetBrains Mono" :height 130)
+(set-face-attribute 'default nil :font "Jetbrains Mono" :height 130)
 
 ;; Show echoed keystrokes quicker.
 (setq echo-keystrokes 0.01)
 
 ;; Global key bindings.
+;; Disable arrow keys to "encourage" standard navigation.
+(global-unset-key (kbd "<left>"))
+(global-unset-key (kbd "<right>"))
+(global-unset-key (kbd "<up>"))
+(global-unset-key (kbd "<down>"))
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-c e") 'eshell)
+(global-set-key (kbd "C-;") 'comment-line)
 
 ;; Show column numbers in the mode line.
 (column-number-mode t)
@@ -43,14 +60,9 @@
 		term-mode-hook
 		eshell-mode-hook
 		shell-mode-hook
-		help-mode-hook))
+		help-mode-hook
+		treemacs-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
-
-;; Disable arrow keys to "encourage" standard navigation.
-(global-unset-key (kbd "<left>"))
-(global-unset-key (kbd "<right>"))
-(global-unset-key (kbd "<up>"))
-(global-unset-key (kbd "<down>"))
 
 ;; Use CMD key for META.
 (setq mac-option-key-is-meta nil
@@ -200,6 +212,11 @@
   (doom-modeline-github-timer nil)
   (doom-modeline-gnus-timer nil))
 
+(use-package minions
+  :hook (doom-modeline-mode . minions-mode))
+  ;; :custom
+  ;; (minions-mode-line-lighter ""))
+
 (use-package projectile
   :delight
   :init
@@ -242,23 +259,134 @@
 	org-agenda-start-with-log-mode t
 	org-log-done 'time
 	org-log-into-drawer t
-	org-agenda-files '("~/Development/home/hello-org/hello.org"))
-        ;; org-src-fontify-natively t
-        ;; org-src-tab-acts-natively t
+	org-agenda-files '("~/Development/home/hello-org/hello.org")
+        org-src-fontify-natively t
+        org-src-tab-acts-natively t))
+        ;; org-src-preserve-indentation nil
         ;; org-edit-src-content-indentation 2
         ;; org-hide-block-startup nil
-        ;; org-src-preserve-indentation nil
         ;; org-startup-folded 'content
         ;; org-cycle-separator-lines 2)
 
-(use-package terraform-mode)
+;; (use-package org-superstar
+;;   :after org
+;;   :hook (org-mode . org-superstar-mode)
+;;   :custom
+;;   (org-superstar-remove-leading-stars t)
+;;   (org-superstar-headline-bullets-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+;;
+;; Languages
+;;
+
+(defun ae/lsp-mode-setup ()
+  (setq lsp-headerline-breadcrumb-segements '(path-up-to-project file symbols))
+  (lsp-headerline-breadcrumb-mode))
+
 
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :hook
+  (lsp-mode . ae/lsp-mode-setup)
   (c-mode . lsp-deferred)
   (c++-mode . lsp-deferred)
+  (go-mode . lsp-deferred)
+  (typescript-mode . lsp-deferred)
   :init
   (setq lsp-keymap-prefix "C-c l") ;; C-l?
+  (setq lsp-print-io t)
   :config
-  (lsp-enable-which-key-integration t))
+  (lsp-enable-which-key-integration t)
+  :bind (:map lsp-mode-map
+	      ("<tab>" . completion-at-point)))
+
+;; TODO: Bind this to a key so you can optionally brig up the popup.
+;; (use-package lsp-ui
+;;   :hook (lsp-mode . lsp-ui-mode)
+;;   :config
+;;   (setq lsp-ui-sideline-enable t)
+;;   (setq lsp-ui-sideline-show-hover nil)
+;;   (setq lsp-ui-doc-position 'bottom)
+;;   (lsp-ui-doc-show))
+
+(use-package flycheck
+  :defer t
+  :hook (lsp-mode . flycheck-mode))
+
+(use-package treemacs
+  ; Disable treemacs in terminal for now as it's resulting in color errors.
+  :if window-system
+  :bind
+  (:map global-map
+	("C-c t 0"   . treemacs-select-window)
+        ("C-c t 1"   . treemacs-delete-other-windows)
+        ("C-c t t"   . treemacs)
+        ("C-c t B"   . treemacs-bookmark)
+        ("C-c t C-t" . treemacs-find-file)
+        ("C-c t M-t" . treemacs-find-tag)))
+  
+(use-package lsp-treemacs
+  :if window-system
+  :after lsp-mode)
+
+(use-package treemacs-all-the-icons
+  :if window-system
+  :config (treemacs-load-theme "all-the-icons"))
+
+(use-package neotree
+  :config
+  (setq neo-theme (if window-system 'icons 'arrow)
+	neo-smart-open t
+	projectile-switch-project-action 'neotree-projectile-action)
+	
+  
+  :bind
+  (:map global-map
+	("C-c n" . neotree-project-dir)))
+
+  (defun neotree-project-dir ()
+    "Open NeoTree using the git root. \
+     Copied from https://www.emacswiki.org/emacs/NeoTree"
+    (interactive)
+    (let ((project-dir (projectile-project-root))
+          (file-name (buffer-file-name)))
+      (neotree-toggle)
+      (if project-dir
+          (if (neo-global--window-exists-p)
+              (progn
+                (neotree-dir project-dir)
+                (neotree-find file-name)))
+        (message "Could not find git project root."))))
+
+;; Similar to find symbol in project in Intellij
+(use-package lsp-ivy)
+
+(use-package company
+  :after lsp-mode
+  :hook (lsp-mode . company-mode)
+  :bind
+  (:map company-active-map ("<tab>" . company-complete-selection))
+  (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode))
+
+(use-package go-mode)
+
+(use-package typescript-mode
+  :mode "\\.ts\\'"
+  :config
+  (setq typescript-indent-level 2))
+
+(use-package terraform-mode)
+
+;; Shell scripting indentation
+(setq sh-basic-offset 2
+      sh-indentation 2)
+
+(use-package ccls
+  :hook ((c-mode c++-mode objc-mode cuda-mode) .
+         (lambda () (require 'ccls) (lsp))))
