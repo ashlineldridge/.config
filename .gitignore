@@ -1,4 +1,4 @@
-zsh/secret
+#zsh/**/*secret*
 zsh/.zsh_history
 zsh/.zcompdump
 emacs/elpa
@@ -17,6 +17,14 @@ target/
 *.orig
 *.log
 .DS_Store
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
 nvim/bundle/*/doc/tags
 gcloud/logs/
 gh/
