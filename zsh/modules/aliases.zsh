@@ -73,9 +73,8 @@ alias vim=nvim
 
 # Emacs
 alias e=emacs
-alias et='emacs -nw'
-alias enw='emacs -nw'
-alias ec='emacsclient'
+alias et='emacs --no-window-system --quick'
+alias ec='emacsclient --no-wait'
 
 # Others
 alias watch='watch -n 1 '

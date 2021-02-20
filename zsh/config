@@ -6,11 +6,12 @@ setopt hist_find_no_dups
 setopt inc_append_history
 setopt share_history
 
-# Load the zsh configuration files. The 'secret' file provides a mechanism
-# for configuration that shouldn't be published to GitHub. Note that zshenv
-# is source here even though it will have already been sourced during zsh's
-# init routine due to https://www.zsh.org/mla/users/2003/msg00600.html.
-for f in "${XDG_CONFIG_HOME}"/zsh/{zshenv,aliases,functions,colors,secret}; do
+# We source zshenv here even though it will have already been sourced during
+# zsh's init routine due to https://www.zsh.org/mla/users/2003/msg00600.html.
+source "${XDG_CONFIG_HOME}"/zsh/zshenv
+
+# Load zsh configuration files
+for f in "${XDG_CONFIG_HOME}"/zsh/modules/*.zsh; do
   if [[ -f "${f}" ]]; then
     source "${f}"
   fi
@@ -35,4 +36,3 @@ autoload -U +X compinit; compinit
 
 # Workaround for https://github.com/kubernetes/kubectl/issues/125
 source <(kubectl completion zsh | sed '/_bash_comp/ s/^#*/#/') || true
-
