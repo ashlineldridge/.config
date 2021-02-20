@@ -23,13 +23,8 @@ autoload -U promptinit; promptinit
 prompt pure
 
 # Shortcuts
-bindkey '^R' history-incremental-search-backward
-bindkey '^A' beginning-of-line
-bindkey '^E' end-of-line
-bindkey "^[^[[D" backward-word
-bindkey "^[^[[C" forward-word
-bindkey '^U' backward-kill-line
-bindkey '\e_' insert-last-word
+bindkey "<ESC>b" backward-word
+bindkey "<ESC>f" forward-word
 
 # Enables completion system for sourced scripts below
 autoload -U +X compinit; compinit
