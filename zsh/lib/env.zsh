@@ -8,6 +8,16 @@ export XDG_DATA_HOME="${HOME}/.local/share"
 # XDG-based zsh home.
 export ZDOTDIR="${XDG_CONFIG_HOME}/zsh"
 
+# Force GnuPG to use XDG data home. Don't use config home as GnuPG
+# intermingles config with secrets.
+export GNUPGHOME="${XDG_DATA_HOME}/gnupg"
+
+# Force Terraform to use XDG
+export TF_CLI_CONFIG_FILE="${XDG_CONFIG_HOME}/terraform/config"
+
+# Force Starship to use XDG
+export STARSHIP_CONFIG="${XDG_CONFIG_HOME}"/starship/config.toml
+
 # Make Emacs the default editor
 export EDITOR=emacsclient
 
@@ -39,9 +49,3 @@ export KUBECONFIG="${HOME}/.kube/config"
 
 # Required for GPG signing of Git commits
 export GPG_TTY="$(tty)"
-
-# Force GnuPG to use XDG
-export GNUPGHOME="${XDG_DATA_HOME}/gnupg"
-
-# Force Terraform to use XDG
-export TF_CLI_CONFIG_FILE="${XDG_DATA_HOME}/terraform/config"

@@ -1,8 +1,25 @@
+
 ;; TODO:
 ;; 1. Convert this into an org file
 ;; 2. Switch over to straight.el
 ;; 3. Use :ensure t?
 ;; 4. Remove window-system checks - no longer needed
+;; 5. Use :defer X where X is the number of secs to improve start up time
+;;    See: https://blog.d46.us/advanced-emacs-startup/
+
+;; Emacs performance settings. I'm following the general performance recommendations of lsp-mode
+;; here https://emacs-lsp.github.io/lsp-mode/page/performance. Some people recommend against
+;; modifying gc-cons-threshold but it does seem to speed things up for me.
+(setq gc-cons-threshold (* 100 1024 1024))   ;; 100 MB
+(setq read-process-output-max (* 1 1024 1024)) ;; 1 MB
+
+
+;; Keep track of start up time.
+(add-hook 'emacs-startup-hook
+	  (lambda ()
+            (message "Emacs ready in %s with %d garbage collections."
+		     (format "%.2f seconds" (float-time (time-subtract after-init-time before-init-time)))
+                     gcs-done)))
 
 ;; Do not show the startup screen.
 (setq inhibit-startup-message t)
@@ -12,6 +29,9 @@
 (menu-bar-mode -1)   ; Disable the menu bar
 (scroll-bar-mode -1) ; Disable visible scrollbar
 (set-fringe-mode 10) ; Increase left/right margins slightly
+
+;; Make input characters overwrite the current region.
+(delete-selection-mode t)
 
 ;; If I need to run Emacs in the terminal I'll use `-nw -q`.
 ;; Better than littering this file with window system checks.
@@ -61,7 +81,7 @@
 		eshell-mode-hook
 		shell-mode-hook
 		help-mode-hook
-		treemacs-mode-hook))
+		neotree-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
 ;; Use CMD key for META.
@@ -193,29 +213,19 @@
 (use-package doom-modeline
   :hook (after-init . doom-modeline-mode)
   :custom
-  (doom-modeline-height 25)
-  (doom-modeline-bar-width 0)
-  (doom-modeline-icon t)
-  (doom-modeline-major-mode-icon t)
-  (doom-modeline-major-mode-color-icon t)
-  (doom-modeline-buffer-file-name-style 'truncate-upto-project)
-  (doom-modeline-buffer-state-icon t)
-  (doom-modeline-buffer-modification-icon t)
-  (doom-modeline-minor-modes nil)
-  (doom-modeline-enable-word-count nil)
-  (doom-modeline-buffer-encoding t)
-  (doom-modeline-indent-info nil)
-  (doom-modeline-checker-simple-format t)
-  (doom-modeline-vcs-max-length 12)
-  (doom-modeline-env-version t)
-  (doom-modeline-irc-stylize 'identity)
-  (doom-modeline-github-timer nil)
-  (doom-modeline-gnus-timer nil))
+  (doom-modeline-height 15)
+  (doom-modeline-bar-width 4)
+  (doom-modeline-lsp t)
+  (doom-modeline-github nil)
+  (doom-modeline-mu4e nil)
+  (doom-modeline-irc nil)
+  (doom-modeline-minor-modes t)
+  (doom-modeline-persp-name nil)
+  (doom-modeline-buffer-file-name-style 'truncate-except-project)
+  (doom-modeline-major-mode-icon nil))
 
 (use-package minions
   :hook (doom-modeline-mode . minions-mode))
-  ;; :custom
-  ;; (minions-mode-line-lighter ""))
 
 (use-package projectile
   :delight
@@ -234,8 +244,6 @@
   :config (counsel-projectile-mode))
 
 (use-package magit)
-;  :custom
-;  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
 (use-package forge :after magit)
 
@@ -243,6 +251,25 @@
   :bind (("M-o" . ace-window))
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
+
+(use-package yasnippet
+  :hook (prog-mode . yas-minor-mode)
+  ; Remove default key bindings which are crap.
+  :init (setq yas-minor-mode-map (make-sparse-keymap))
+  :bind (:map yas-minor-mode-map
+	      ("C-c y s" . yas-insert-snippet)
+	      ("C-c y v" . yas-visit-snippet-file)
+  	      ("C-c y n" . yas-new-snippet))
+  :config
+  (setq
+   yas-verbosity 1
+   yas-wrap-around-region t)
+  (yas-reload-all))
+
+(use-package yasnippet-snippets
+  :after yasnippet)
+
+
 
 ;; Turn on indentation and auto-fill mode for Org files
 (defun ae/org-mode-setup ()
@@ -283,7 +310,6 @@
   (setq lsp-headerline-breadcrumb-segements '(path-up-to-project file symbols))
   (lsp-headerline-breadcrumb-mode))
 
-
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :hook
@@ -293,10 +319,18 @@
   (go-mode . lsp-deferred)
   (typescript-mode . lsp-deferred)
   :init
-  (setq lsp-keymap-prefix "C-c l") ;; C-l?
-  (setq lsp-print-io t)
+  ;; (setq lsp-keymap-prefix "C-c l")
+  ;; (setq lsp-print-io nil) ;; Enable this to view LSP IO logs in a buffer
+  ;; (setq lsp-clients-clangd-args
+  ;; 	(list (concat "--compile-commands-dir=" (projectile-project-root) "build")
+  ;;             "--log=verbose"
+  ;;             "-j=1"
+  ;;             "--debug"
+  ;;             "--clang-tidy"
+  ;;             "--background-index")))
   :config
   (lsp-enable-which-key-integration t)
+  (setq lsp-disabled-clients '(ccls)) ; Use this to switch between clangd and ccls
   :bind (:map lsp-mode-map
 	      ("<tab>" . completion-at-point)))
 
@@ -313,18 +347,6 @@
   :defer t
   :hook (lsp-mode . flycheck-mode))
 
-(use-package treemacs
-  ; Disable treemacs in terminal for now as it's resulting in color errors.
-  :if window-system
-  :bind
-  (:map global-map
-	("C-c t 0"   . treemacs-select-window)
-        ("C-c t 1"   . treemacs-delete-other-windows)
-        ("C-c t t"   . treemacs)
-        ("C-c t B"   . treemacs-bookmark)
-        ("C-c t C-t" . treemacs-find-file)
-        ("C-c t M-t" . treemacs-find-tag)))
-  
 (use-package lsp-treemacs
   :if window-system
   :after lsp-mode)
@@ -338,8 +360,6 @@
   (setq neo-theme (if window-system 'icons 'arrow)
 	neo-smart-open t
 	projectile-switch-project-action 'neotree-projectile-action)
-	
-  
   :bind
   (:map global-map
 	("C-c n" . neotree-project-dir)))
@@ -374,14 +394,14 @@
 (use-package company-box
   :hook (company-mode . company-box-mode))
 
-(use-package go-mode)
-
 (use-package typescript-mode
   :mode "\\.ts\\'"
   :config
   (setq typescript-indent-level 2))
 
-(use-package terraform-mode)
+(use-package terraform-mode
+  ; I prefer the // syntax to the default # comments.
+  :hook (terraform-mode . (lambda () (setq comment-start "//"))))
 
 ;; Shell scripting indentation
 (setq sh-basic-offset 2
@@ -390,3 +410,16 @@
 (use-package ccls
   :hook ((c-mode c++-mode objc-mode cuda-mode) .
          (lambda () (require 'ccls) (lsp))))
+
+(use-package go-mode
+  :mode "\\.go\\'"
+  ;; :config
+  ;; TODO: setup go-mode + integrations https://github.com/dominikh/go-mode.el
+  )
+
+(use-package docker
+  :bind ("C-c d" . docker))
+
+(use-package dockerfile-mode)
+
+(use-package bazel-mode)

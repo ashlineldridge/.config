@@ -1,4 +1,9 @@
-zsh/**/*secret*
+# General ignore patterns for secrets as some apps still continue
+# to store secrets under XDG_CONFIG_HOME.
+**/*secret*
+**/*token*
+**/*auth*
+
 zsh/.zsh_history
 zsh/.zcompdump
 emacs/elpa
@@ -29,3 +34,5 @@ nvim/bundle/*/doc/tags
 gcloud/logs/
 gh/
 AWSVPNClient/
+iterm2/AppSupport
+gnupg/*.kbx

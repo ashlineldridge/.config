@@ -1,0 +1,3 @@
+# Simple prompt
+format = """
+$directory# """
