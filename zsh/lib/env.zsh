@@ -49,3 +49,7 @@ export KUBECONFIG="${HOME}/.kube/config"
 
 # Required for GPG signing of Git commits
 export GPG_TTY="$(tty)"
+
+# Variables used by Bazel's wrapped_clang executable that is embedded in generated compile_commands.json files
+export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
+export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"

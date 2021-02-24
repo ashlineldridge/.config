@@ -9,6 +9,13 @@ banner = \
 check_defined = \
 	$(if $(value $1),,$(error Error: Variable $1 is required but undefined))
 
+.PHONY: bootstrap
+bootstrap:
+	@$(call banner,Bootstrapping config)
+	@ln -sf ~/.config/zsh/lib/env.zsh ~/.zshenv
+	@ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
+	@echo Done.
+
 .PHONY: brew-install
 brew-install:
 	@$(call banner,Installing Brew packages)
@@ -18,8 +25,3 @@ brew-install:
 brew-dump:
 	@$(call banner,Dumping Brew packages)
 	@cd homebrew; brew bundle dump -f
-
-.PHONY: zsh-init
-zsh-init:
-	@$(call banner,Initializing Zsh config)
-	@ln -sf .config/zsh/lib/env.zsh ~/.zshenv
