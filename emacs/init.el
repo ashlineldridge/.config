@@ -338,7 +338,7 @@
 				  ;; "--debug"
 				  ;; "--clang-tidy"
 				  ;; "--background-index"
-				  ;; ))
+				  ))
   (setq lsp-keymap-prefix "C-c l")
   :bind (:map lsp-mode-map
 	      ("<tab>" . completion-at-point)))
