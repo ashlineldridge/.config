@@ -1,7 +1,6 @@
-
 ;; TODO:
 ;; 1. Convert this into an org file
-;; 2. Switch over to straight.el
+;; 2. Switch over to straight.el?
 ;; 3. Use :ensure t?
 ;; 4. Remove window-system checks - no longer needed
 ;; 5. Use :defer X where X is the number of secs to improve start up time
@@ -33,10 +32,10 @@
 ;; Make input characters overwrite the current region.
 (delete-selection-mode t)
 
-;; If I need to run Emacs in the terminal I'll use `-nw -q`.
-;; Better than littering this file with window system checks.
+;; If I need to run Emacs in the terminal I'll use `-nw -q`. Better than
+;; littering this file with unnecessary window system checks.
 (unless window-system
-  (error "This Emacs init file is for window systems only."))
+  (error "This Emacs init file is for window systems only"))
 
 ;; Enlargen frame size if we're running within a window system.
 (when window-system
@@ -90,15 +89,26 @@
       mac-command-modifier 'meta
       mac-option-modifier nil)
 
-;; TODO: This could be better. Emacs XDG base directories.
-(setq emacs-config-home "~/.config/emacs")
-(setq emacs-cache-home "~/.cache/emacs")
-(setq emacs-data-home "~/.local/share/emacs")
+; TODO: Use following functions below
+(defun my/xdg-dir (base &optional subdir)
+  "Returns the path to the specified XDG subdirectory"
+   (concat base (or subdir "")))
+
+(defun my/xdg-config-dir (&optional subdir)
+  "Returns the path to the specified subdirectory within XDG_CONFIG_HOME"
+  (my/xdg-dir "~/.config/" subdir))
+
+(defun my/xdg-cache-dir (&optional subdir)
+  "Returns the path to the specified subdirectory within XDG_CACHE_HOME"
+  (my/xdg-dir "~/.cache/" subdir))
+
+(defun my/xdg-data-dir (&optional subdir)
+  "Returns the path to the specified subdirectory within XDG_DATA_HOME"
+   (my/xdg-dir "~/.local/share/" subdir))
 
 ;; TODO: Use variables above and create subdirectories below if they don't exist.
 
 ;; Store all backup files in XDG_CACHE_HOME.
-;(setq backup-directory-alist '(("" . (concat emacs-data-home "/backup"))))
 (setq backup-directory-alist '(("" . "~/.cache/emacs/backup/")))
 (setq auto-save-file-name-transforms '((".*" "~/.cache/emacs/saves/" t)))
 
@@ -107,7 +117,7 @@
 (setq auto-save-list-file-prefix "~/.cache/emacs/auto-save-list/")
 
 ;; Do not use `init.el` for `custom-*` code - use `custom.el`.
-(setq custom-file (concat emacs-config-home "/custom.el"))
+(setq custom-file "~/.config/emacs/custom.el")
 
 ;; Assuming that the code in custom.el is executed before the code
 ;; ahead of this line is not a safe assumption. So load this file
@@ -131,7 +141,19 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
+;; First, import environment variables from the shell (defined in "${XDG_BASE_CONFIG}/zsh/lib/env.zsh")
+;; so that they are available to subsequent expressions.
+(use-package exec-path-from-shell
+  :init (when (memq window-system '(mac ns x))
+	  (setq exec-path-from-shell-variables
+		'("PATH" "MANPATH" "XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME"
+		  "GNUPGHOME" "DEVELOPER_DIR" "SDKROOT"))
+	  (setq exec-path-from-shell-arguments nil)
+	  (exec-path-from-shell-initialize)))
+
+
 ;; Use the delight package for hiding major and minor modes.
+;; Is this even necessary since we've got minions?
 (use-package delight)
 (require 'delight)
 
@@ -157,6 +179,18 @@
   :config
   (setq ivy-initial-inputs-alist nil)) ; Don't start searches with ^
 
+(use-package prescient)
+
+(use-package ivy-prescient
+  ;; We can't hook off ivy-mode as it was already enabled above.
+  :init (ivy-prescient-mode t))
+
+(use-package company-prescient
+  :hook (company-mode . company-prescient-mode))
+
+;; (straight-use-package 'selectrum-prescient)
+;; TODO: Investiage selectrum as a replacement for ivy?
+
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
   :mode (("README\\.md\\'" . gfm-mode)
@@ -164,15 +198,11 @@
          ("\\.markdown\\'" . markdown-mode))
   :init (setq markdown-command "multimarkdown"))
 
-(use-package exec-path-from-shell
-  :init (when (memq window-system '(mac ns x))
-	  (setq exec-path-from-shell-variables
-		'("PATH" "MANPATH" "XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME" "GNUPGHOME" "DEVELOPER_DIR" "SDKROOT"))
-	  (setq exec-path-from-shell-arguments nil)
-	  (exec-path-from-shell-initialize)))
-
 (use-package rainbow-delimiters
   :init (add-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode))
+
+;; Learn how to use first
+;; (use-package paredit :hook (emacs-lisp-mode . paredit-mode))
 
 (use-package which-key
   :delight
@@ -224,6 +254,7 @@
   (doom-modeline-buffer-file-name-style 'truncate-except-project)
   (doom-modeline-major-mode-icon nil))
 
+;; TODO: Why aren't all minor modes shown by minions? E.g., ivy-prescient-mode?
 (use-package minions
   :hook (doom-modeline-mode . minions-mode))
 
@@ -268,8 +299,6 @@
 
 (use-package yasnippet-snippets
   :after yasnippet)
-
-
 
 ;; Turn on indentation and auto-fill mode for Org files
 (defun ae/org-mode-setup ()
@@ -318,6 +347,7 @@
   (c++-mode . lsp-deferred)
   (go-mode . lsp-deferred)
   (typescript-mode . lsp-deferred)
+  (rustic-mode . lsp-deferred)
   :init
   (setq lsp-keymap-prefix "C-c l")
   (setq lsp-print-io nil) ;; Enable this to view LSP IO logs in a buffer
@@ -354,7 +384,7 @@
 
 (use-package flycheck
   :defer t
-  :hook (lsp-mode . flycheck-mode))
+  :hook (prog-mode . flycheck-mode))
 
 (use-package lsp-treemacs
   :if window-system
@@ -364,6 +394,7 @@
   :if window-system
   :config (treemacs-load-theme "all-the-icons"))
 
+; TODO: configure what's shown/hidden by default
 (use-package neotree
   :config
   (setq neo-theme (if window-system 'icons 'arrow)
@@ -392,9 +423,12 @@
 
 (use-package company
   :after lsp-mode
-  :hook (lsp-mode . company-mode)
+  :hook (prog-mode . company-mode)
   :bind
-  (:map company-active-map ("<tab>" . company-complete-selection))
+  (:map company-active-map
+	("<tab>" . company-complete-selection)
+	("C-n" . company-select-next-or-abort)
+	("C-p" . company-select-previous-or-abort))
   (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common))
   :custom
   (company-minimum-prefix-length 1)
