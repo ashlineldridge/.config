@@ -416,15 +416,22 @@
 (setq sh-basic-offset 2
       sh-indentation 2)
 
-(use-package ccls
-  :hook ((c-mode c++-mode objc-mode cuda-mode) .
-         (lambda () (require 'ccls) (lsp))))
+;; Stick with clangd for now
+;; (use-package ccls
+;;   :hook ((c-mode c++-mode objc-mode cuda-mode) .
+;;          (lambda () (require 'ccls) (lsp))))
 
 (use-package go-mode
   :mode "\\.go\\'"
+  ;; Is this the best way to do this? Doesn't this meaen that the gofmt function
+  ;; will get called on non-go files?
+  :hook (before-save . gofmt-before-save)
   ;; :config
   ;; TODO: setup go-mode + integrations https://github.com/dominikh/go-mode.el
   )
+
+;; TODO: Follow https://robert.kra.hn/posts/2021-02-07_rust-with-emacs/
+(use-package rustic)
 
 (use-package docker
   :bind ("C-c d" . docker))
@@ -432,3 +439,27 @@
 (use-package dockerfile-mode)
 
 (use-package bazel-mode)
+
+(defun my/compile ()
+  "Grabbed from https://github.com/rigtorp/dotemacs/blob/master/init.el."
+  (interactive)
+  (setq-local compilation-read-command nil)
+  (call-interactively 'compile))
+
+(use-package cc-mode
+  :bind (:map c++-mode-map
+	      ("C-c f b" . clang-format-buffer)
+	      ("C-c f r" . clang-format-region)
+	      ;; ("M-p" . company-complete-common)
+	      ("C-c c" . my/compile)))
+
+;; TODO: consider switching to https://github.com/SavchenkoValeriy/emacs-clang-format-plus.
+(use-package clang-format
+  :commands clang-format clang-format-buffer clang-format-region
+  :config
+  (setq clang-format-fallback-style "llvm")) ;; Where is this defined?
+
+(use-package flycheck-clang-tidy
+  :after flycheck
+  :hook
+  (flycheck-mode . flycheck-clang-tidy-setup))

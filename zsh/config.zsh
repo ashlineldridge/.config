@@ -33,6 +33,8 @@ eval "$(starship init zsh)"
 # Shortcuts
 bindkey "<ESC>b" backward-word
 bindkey "<ESC>f" forward-word
+bindkey "^[b" backward-word
+bindkey "^[f" forward-word
 
 # Enables completion system for sourced scripts below
 autoload -U +X compinit; compinit
