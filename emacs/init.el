@@ -157,9 +157,19 @@
 (use-package delight)
 (require 'delight)
 
+;; Show column rule indicator. This package provides a nicer looking
+;; vertical bar than the in-built display-fill-column-indicator mode.
+;; TODO: Put all column UX stuff together.
+(use-package fill-column-indicator
+  :hook
+  ((prog-mode text-mode) . fci-mode)
+  ;; :init (fci-mode t)
+  :config
+  (setq fci-rule-column 100))
+
 (use-package ivy
   :delight
-  :init (ivy-mode 1) ; globally at startup
+  :init (ivy-mode t) ; globally at startup
   :config
   (setq ivy-use-virtual-buffers t)
   (setq ivy-height 20)
@@ -275,6 +285,7 @@
   :config (counsel-projectile-mode))
 
 (use-package magit)
+  ;; :bind (("C-c g" . magit-status))) ;; But how to remove C-x g?
 
 (use-package forge :after magit)
 
