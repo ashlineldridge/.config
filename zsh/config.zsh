@@ -11,6 +11,7 @@ libs=(
   aliases.zsh
   colors.zsh
   functions.zsh
+  prompt.zsh
   fzf.zsh
   secrets.zsh
 )
@@ -27,14 +28,10 @@ for f in "${libs[@]}"; do
   source "${lib}"
 done
 
-# Initialize Starship prompt
-eval "$(starship init zsh)"
-
 # Shortcuts
-bindkey "<ESC>b" backward-word
-bindkey "<ESC>f" forward-word
-bindkey "^[b" backward-word
-bindkey "^[f" forward-word
+bindkey "^[b" backward-word      # CMD+b
+bindkey "^[f" forward-word       # CMD+f
+bindkey "^u" backward-kill-line  # CTL+u
 
 # Enables completion system for sourced scripts below
 autoload -U +X compinit; compinit
@@ -43,8 +40,4 @@ autoload -U +X compinit; compinit
 compinit -d "${XDG_CACHE_HOME}/zsh/zcompdump-${ZSH_VERSION}"
 
 # Enable broot shell integration
-source /Users/aeldridge/.config/broot/launcher/bash/br
-
-# Workaround for https://github.com/kubernetes/kubectl/issues/125
-# source <(kubectl completion zsh | sed '/_bash_comp/ s/^#*/#/') || true
-
+source /Users/aeldridge/.config/broot/launcher/bash/

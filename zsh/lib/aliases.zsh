@@ -60,18 +60,21 @@ alias kctx=kubectx
 alias kns=kubens
 alias h=helm
 alias kb=kubebuilder
-#alias kpt='kpt --k8s-schema-source=builtin'
 alias prom='prometheus --config.file=/usr/local/etc/prometheus.yml'
 alias am='alertmanager --config.file=/usr/local/etc/alertmanager.yml'
 alias grafana='grafana-server --config=/usr/local/etc/grafana/grafana.ini --homepath /usr/local/share/grafana --packaging=brew cfg:default.paths.logs=/usr/local/var/log/grafana cfg:default.paths.data=/usr/local/var/lib/grafana cfg:default.paths.plugins=/usr/local/var/lib/grafana/plugins'
 
 # Because I still accidentally launch Vim and start type Emacs commands.
-alias vim='echo No. Use Emacs.; false'
+alias vim="echo Use \\'emacs\\' or \\'command vim\\'.; false"
+alias vi="echo Use \\'emacs\\' or \\'command vi\\'.; false"
 
 # Emacs
 alias e=emacs
 alias et='emacs --no-window-system --quick'
 alias ec='emacsclient --no-wait'
+# Following deletes LSP/DAP session files and prevents zsh complaining if none exist.
+alias lsp-clean="zsh -c 'setopt +o nomatch; rm -f ~/.config/emacs/.lsp-session-*'"
+alias dap-clean="zsh -c 'setopt +o nomatch; rm -f ~/.config/emacs/.dap-*'"
 
 # Others
 alias watch='watch -n 1 '

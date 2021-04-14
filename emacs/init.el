@@ -5,6 +5,9 @@
 ;; 4. Remove window-system checks - no longer needed
 ;; 5. Use :defer X where X is the number of secs to improve start up time
 ;;    See: https://blog.d46.us/advanced-emacs-startup/
+;; 6. Use no-littering https://github.com/emacscollective/no-littering
+;; 7. Get use-package / auto-package-update to install org from the org archive rather than
+;;    the built-in one - see https://www.reddit.com/r/emacs/comments/5sx7j0/how_do_i_get_usepackage_to_ignore_the_bundled
 
 ;; Emacs performance settings. I'm following the general performance recommendations of lsp-mode
 ;; here https://emacs-lsp.github.io/lsp-mode/page/performance. Some people recommend against
@@ -19,6 +22,9 @@
             (message "Emacs ready in %s with %d garbage collections."
 		     (format "%.2f seconds" (float-time (time-subtract after-init-time before-init-time)))
                      gcs-done)))
+
+;; Disable electric-indent-mode?
+;; (add-hook 'after-change-major-mode-hook (lambda() (electric-indent-mode -1)))
 
 ;; Do not show the startup screen.
 (setq inhibit-startup-message t)
@@ -67,6 +73,10 @@
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-c e") 'eshell)
 (global-set-key (kbd "C-;") 'comment-line)
+;; Find better bindings for these
+(global-set-key (kbd "C-c l") 'org-store-link)
+(global-set-key (kbd "C-c a") 'org-agenda)
+(global-set-key (kbd "C-c c") 'org-capture)
 
 ;; Show column numbers in the mode line.
 (column-number-mode t)
@@ -141,7 +151,19 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
-;; First, import environment variables from the shell (defined in "${XDG_BASE_CONFIG}/zsh/lib/env.zsh")
+;; Install auto-package-update as the first package. When it is configured, it'll prompt
+;; to run an update cycle (if the specified number of days have elapsed) early before the
+;; other packages have loaded so that we can update them before they're loaded.
+(use-package auto-package-update
+  :custom
+  (auto-package-update-interval 7)
+  (auto-package-update-prompt-before-update t)
+  (auto-package-update-hide-results nil)
+  :config
+  (auto-package-update-maybe)
+  (auto-package-update-at-time "09:00"))
+
+;; Next, import environment variables from the shell (defined in "${XDG_BASE_CONFIG}/zsh/lib/env.zsh")
 ;; so that they are available to subsequent expressions.
 (use-package exec-path-from-shell
   :init (when (memq window-system '(mac ns x))
@@ -182,6 +204,7 @@
   :bind
   (("M-x"     . counsel-M-x)
    ("C-s"     . swiper)
+   ("C-S-s"   . swiper-thing-at-point)
    ("C-x C-f" . counsel-find-file)
    ("C-x b"   . counsel-switch-buffer)
    ("M-y"     . counsel-yank-pop)
@@ -189,14 +212,15 @@
   :config
   (setq ivy-initial-inputs-alist nil)) ; Don't start searches with ^
 
-(use-package prescient)
+;; Am finding prescient a bit confusing
+;; (use-package prescient)
 
-(use-package ivy-prescient
-  ;; We can't hook off ivy-mode as it was already enabled above.
-  :init (ivy-prescient-mode t))
+;; (use-package ivy-prescient
+;;   ;; We can't hook off ivy-mode as it was already enabled above.
+;;   :init (ivy-prescient-mode t))
 
-(use-package company-prescient
-  :hook (company-mode . company-prescient-mode))
+;; (use-package company-prescient
+;;   :hook (company-mode . company-prescient-mode))
 
 ;; (straight-use-package 'selectrum-prescient)
 ;; TODO: Investiage selectrum as a replacement for ivy?
@@ -320,6 +344,7 @@
   (diminish org-indent-mode))
 
 (use-package org
+  :pin org
 ;  :hook (org-mode . ae/org-mode-setup)
   :config
   (setq org-ellipsis " 》"
@@ -346,22 +371,24 @@
 ;; Languages
 ;;
 
-(defun ae/lsp-mode-setup ()
-  (setq lsp-headerline-breadcrumb-segements '(path-up-to-project file symbols))
-  (lsp-headerline-breadcrumb-mode))
+(defun my/compile ()
+  "Grabbed from https://github.com/rigtorp/dotemacs/blob/master/init.el."
+  (interactive)
+  (setq-local compilation-read-command nil)
+  (call-interactively 'compile))
 
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :hook
-  (lsp-mode . ae/lsp-mode-setup)
-  (c-mode . lsp-deferred)
-  (c++-mode . lsp-deferred)
-  (go-mode . lsp-deferred)
-  (typescript-mode . lsp-deferred)
-  (rustic-mode . lsp-deferred)
+  (c-mode . lsp)
+  (c++-mode . lsp)
+  (go-mode . lsp)
+  (typescript-mode . lsp)
+  (rustic-mode . lsp)
   :init
-  (setq lsp-keymap-prefix "C-c l")
   (setq lsp-print-io nil) ;; Enable this to view LSP IO logs in a buffer
+  (setq lsp-keymap-prefix "C-c l")
+;;  (setq lsp-auto-guess-root t)
   :config
   (lsp-enable-which-key-integration t)
   (setq lsp-disabled-clients '(ccls))
@@ -373,14 +400,11 @@
   ; The log level can be changed to "debug" for additional information.
   (setq lsp-clients-clangd-args '(
 				  "--query-driver=**/wrapped_clang"
+				  "--background-index"
 				  "--log=info"
-				  ;; TODO: Figure out what args are best
-				  ;; "-j=1"
-				  ;; "--debug"
 				  ;; "--clang-tidy"
-				  ;; "--background-index"
+				  ;; "-j=1"
 				  ))
-  (setq lsp-keymap-prefix "C-c l")
   :bind (:map lsp-mode-map
 	      ("<tab>" . completion-at-point)))
 
@@ -392,6 +416,39 @@
 ;;   (setq lsp-ui-sideline-show-hover nil)
 ;;   (setq lsp-ui-doc-position 'bottom)
 ;;   (lsp-ui-doc-show))
+
+(use-package dap-mode
+  ;; :custom
+  ;; (lsp-enable-dap-auto-configure nil)
+  :hook
+  (dap-stopped . (lambda (arg) (call-interactively #'dap-hydra)))
+  :custom
+  (dap-print-io t)
+  ;; (dap-lldb-debug-program '("/Users/aeldridge/Development/home/llvm-project/build/bin/lldb-vscode"))
+  :config
+  (dap-ui-mode 1)
+  (dap-tooltip-mode 1)
+  ;; (require 'dap-node)
+  ;; (dap-node-setup)
+  (require 'dap-lldb)
+  ;; (require 'dap-gdb-lldb)
+  ;; (dap-gdb-lldb-setup)
+  ;; (require 'dap-cpptools)
+  ;; (dap-cpptools-setup))
+  ;; Do I need to call this?
+  ;; (dap-auto-configure-mode)
+)
+
+;; daviwil's setup
+;; (use-package dap-mode
+;;   :straight t
+;;   :custom
+;;   (lsp-enable-dap-auto-configure nil)
+;;   :config
+;;   (dap-ui-mode 1)
+;;   (dap-tooltip-mode 1)
+;;   (require 'dap-node)
+;;   (dap-node-setup))
 
 (use-package flycheck
   :defer t
@@ -430,7 +487,8 @@
         (message "Could not find git project root."))))
 
 ;; Similar to find symbol in project in Intellij
-(use-package lsp-ivy)
+(use-package lsp-ivy
+  :after lsp-mode)
 
 (use-package company
   :after lsp-mode
@@ -451,7 +509,9 @@
 (use-package typescript-mode
   :mode "\\.ts\\'"
   :config
-  (setq typescript-indent-level 2))
+  (setq typescript-indent-level 2)
+  (require 'dap-node)
+  (dap-node-setup))
 
 (use-package terraform-mode
   ; I prefer the // syntax to the default # comments.
@@ -483,7 +543,8 @@
 
 (use-package dockerfile-mode)
 
-(use-package bazel-mode)
+(use-package bazel-mode
+  :mode "\\.BUILD\\'")
 
 (defun my/compile ()
   "Grabbed from https://github.com/rigtorp/dotemacs/blob/master/init.el."
@@ -492,6 +553,11 @@
   (call-interactively 'compile))
 
 (use-package cc-mode
+  ;; :config
+  ;; (require 'dap-lldb)
+  ;; (require 'dap-cpptools)
+  ;; (dap-cpptools-setup)
+  ;; ()
   :bind (:map c++-mode-map
 	      ("C-c f b" . clang-format-buffer)
 	      ("C-c f r" . clang-format-region)
@@ -508,3 +574,10 @@
   :after flycheck
   :hook
   (flycheck-mode . flycheck-clang-tidy-setup))
+
+(add-hook 'before-save-hook 'my/delete-trailing-whitespace)
+
+(defun my/delete-trailing-whitespace ()
+  "Run 'delete-trailing-whitespace' if the current mode derives from 'prog-mode'."
+  (when (derived-mode-p 'prog-mode)
+    (delete-trailing-whitespace)))
