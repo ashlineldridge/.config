@@ -1,20 +1,72 @@
-;; TODO:
-;; 1. Convert this into an org file
-;; 2. Switch over to straight.el?
-;; 3. Use :ensure t?
-;; 4. Remove window-system checks - no longer needed
-;; 5. Use :defer X where X is the number of secs to improve start up time
-;;    See: https://blog.d46.us/advanced-emacs-startup/
-;; 6. Use no-littering https://github.com/emacscollective/no-littering
-;; 7. Get use-package / auto-package-update to install org from the org archive rather than
-;;    the built-in one - see https://www.reddit.com/r/emacs/comments/5sx7j0/how_do_i_get_usepackage_to_ignore_the_bundled
+;;; init.el --- Emacs init file.
+
+;; Author: Ashlin Eldridge
+;; Version: 0.0.1
+;; Keywords: emacs, init, lisp
+
+;;; Commentary:
+;;
+;; My slowly growing Emacs init file.
+
+;;; TO DO:
+;; - Convert this into an org file
+;; - Switch over to straight.el?
+;; - Use :ensure t?
+;; - Remove window-system checks - no longer needed
+;; - Use :defer X where X is the number of secs to improve start up time
+;;   See: https://blog.d46.us/advanced-emacs-startup/
+;; - Use no-littering https://github.com/emacscollective/no-littering
+;; - Get use-package / auto-package-update to install org from the org archive rather than built-in
+;;   See: https://www.reddit.com/r/emacs/comments/5sx7j0/how_do_i_get_usepackage_to_ignore_the_bundled
+;; - Get org mode completion working with company? counsel? Might need to use Karabiner Elements
+;;   to allow Emacs to get CMD+Tab since org-mode needs tab.
+;;   See: https://superuser.com/questions/548146/change-command-tab-to-option-tab-on-mac
+;; - Make org-mode faces nicer (bold should be bolder now that org-hide-emphasis-markers is set to t.
+;; - Get inspo from https://lepisma.xyz/2017/10/28/ricing-org-mode/
+;; - Why do things go weird when I scroll past a .org file that hasn't been opened (i.e., is in light
+;;   grey) when doing C-x b?
+
+;;; Code:
+
+;; Theme-related variable definitions.
+(defvar my/dark-theme 'doom-tomorrow-night)
+(defvar my/light-theme 'spacemacs-light)
+(defvar my/current-theme my/dark-theme "Currently active theme.")
+
+;; Font-related variable definitions.
+(defvar my/default-fixed-font "Jetbrains Mono")
+(defvar my/default-variable-font "Cantarell")
+(defvar my/default-fixed-font-size 130)
+(defvar my/default-variable-font-size 130)
+
+;; Performance-related variable definitions.
+;;
+
+;; Emacs config directory-related variable definitions.
+;;
+
+;; Is this the cleanest way of appending subdirs?
+(defun my/xdg-dir (base &optional subdir)
+  "Returns the path to the specified XDG subdirectory"
+   (concat base (or subdir "")))
+
+(defun my/xdg-config-dir (&optional subdir)
+  "Returns the path to the specified subdirectory within XDG_CONFIG_HOME"
+  (my/xdg-dir "~/.config/" subdir))
+
+(defun my/xdg-cache-dir (&optional subdir)
+  "Returns the path to the specified subdirectory within XDG_CACHE_HOME"
+  (my/xdg-dir "~/.cache/" subdir))
+
+(defun my/xdg-data-dir (&optional subdir)
+  "Returns the path to the specified subdirectory within XDG_DATA_HOME"
+   (my/xdg-dir "~/.local/share/" subdir))
 
 ;; Emacs performance settings. I'm following the general performance recommendations of lsp-mode
 ;; here https://emacs-lsp.github.io/lsp-mode/page/performance. Some people recommend against
 ;; modifying gc-cons-threshold but it does seem to speed things up for me.
-(setq gc-cons-threshold (* 100 1024 1024))   ;; 100 MB
-(setq read-process-output-max (* 1 1024 1024)) ;; 1 MB
-
+(setq gc-cons-threshold (* 100 1024 1024))
+(setq read-process-output-max (* 1 1024 1024))
 
 ;; Keep track of start up time.
 (add-hook 'emacs-startup-hook
@@ -58,8 +110,14 @@
   (invert-face 'mode-line)
   (run-with-timer 0.1 nil 'invert-face 'mode-line)))
 
-;; Default font.
-(set-face-attribute 'default nil :font "Jetbrains Mono" :height 130)
+;; Set the default face.
+(set-face-attribute 'default nil :font my/default-fixed-font :height my/default-fixed-font-size)
+
+;; Set the fixed pitch face.
+(set-face-attribute 'fixed-pitch nil :font my/default-fixed-font :height my/default-fixed-font-size)
+
+;; Set the variable pitch face
+(set-face-attribute 'variable-pitch nil :font my/default-variable-font :height my/default-variable-font-size :weight 'regular)
 
 ;; Show echoed keystrokes quicker.
 (setq echo-keystrokes 0.01)
@@ -73,10 +131,12 @@
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-c e") 'eshell)
 (global-set-key (kbd "C-;") 'comment-line)
-;; Find better bindings for these
+;; Find better bindings for these.
 (global-set-key (kbd "C-c l") 'org-store-link)
 (global-set-key (kbd "C-c a") 'org-agenda)
 (global-set-key (kbd "C-c c") 'org-capture)
+;; Theme cycling.
+(global-set-key (kbd "C-c t") 'my/cycle-theme)
 
 ;; Show column numbers in the mode line.
 (column-number-mode t)
@@ -98,25 +158,6 @@
       mac-command-key-is-meta t
       mac-command-modifier 'meta
       mac-option-modifier nil)
-
-; TODO: Use following functions below
-(defun my/xdg-dir (base &optional subdir)
-  "Returns the path to the specified XDG subdirectory"
-   (concat base (or subdir "")))
-
-(defun my/xdg-config-dir (&optional subdir)
-  "Returns the path to the specified subdirectory within XDG_CONFIG_HOME"
-  (my/xdg-dir "~/.config/" subdir))
-
-(defun my/xdg-cache-dir (&optional subdir)
-  "Returns the path to the specified subdirectory within XDG_CACHE_HOME"
-  (my/xdg-dir "~/.cache/" subdir))
-
-(defun my/xdg-data-dir (&optional subdir)
-  "Returns the path to the specified subdirectory within XDG_DATA_HOME"
-   (my/xdg-dir "~/.local/share/" subdir))
-
-;; TODO: Use variables above and create subdirectories below if they don't exist.
 
 ;; Store all backup files in XDG_CACHE_HOME.
 (setq backup-directory-alist '(("" . "~/.cache/emacs/backup/")))
@@ -183,6 +224,7 @@
 ;; vertical bar than the in-built display-fill-column-indicator mode.
 ;; TODO: Put all column UX stuff together.
 (use-package fill-column-indicator
+  :disabled
   :hook
   ((prog-mode text-mode) . fci-mode)
   ;; :init (fci-mode t)
@@ -262,8 +304,48 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
-(use-package doom-themes
-  :init (load-theme 'doom-tomorrow-night t))
+(use-package doom-themes)
+
+(use-package spacemacs-theme :defer t)
+
+(defun my/reset-org-buffers ()
+  "Reset org-mode in all org buffers."
+  (mapc (lambda (buff)
+          (with-current-buffer buff
+            (if (string-equal "org-mode" major-mode)
+                (org-mode))))
+        (buffer-list)))
+
+(defun my/load-theme (theme)
+  "Load the specified theme."
+  (interactive)
+  (load-theme theme t)
+  (my/reset-org-buffers))
+
+(defun my/light-theme ()
+  "Switch to light theme."
+  (interactive)
+  (disable-theme my/dark-theme)
+  (my/load-theme my/light-theme))
+
+(defun my/dark-theme ()
+  "Switch to dark theme."
+  (interactive)
+  (disable-theme my/light-theme)
+  (my/load-theme my/dark-theme))
+
+(defun my/cycle-theme ()
+  "Cycle between dark and light themes."
+  (interactive)
+  (if (eq my/current-theme my/dark-theme)
+      (progn
+        (my/light-theme)
+        (setq my/current-theme my/light-theme))
+    (progn
+      (my/dark-theme)
+      (setq my/current-theme my/dark-theme))))
+
+(my/load-theme my/current-theme)
 
 ;; The package all-the-icons is required by doom-modeline.
 (use-package all-the-icons
@@ -335,26 +417,68 @@
 (use-package yasnippet-snippets
   :after yasnippet)
 
-;; Turn on indentation and auto-fill mode for Org files
-(defun ae/org-mode-setup ()
+(defun my/org-mode-init ()
   (org-indent-mode)
-  (variable-pitch-mode 1)
-  (auto-fill-mode 0)
-  (visual-line-mode 1)
-  (diminish org-indent-mode))
+  (visual-line-mode)
+  (setq left-margin-width 2)
+  (setq right-margin-width 2)
+  (set-window-buffer nil (current-buffer)))
+  ;; (variable-pitch-mode 1)
+  ;; (auto-fill-mode 0)
+
+
+(defun my/org-font-setup ()
+  ;; Replace list hyphen with dot.
+  (font-lock-add-keywords 'org-mode
+                          '(("^ *\\([-]\\) "
+                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+  (dolist (face '((org-level-1 . 1.6)
+                  (org-level-2 . 1.5)
+                  (org-level-3 . 1.4)
+                  (org-level-4 . 1.3)
+                  (org-level-5 . 1.2)
+                  (org-level-6 . 1.2)
+                  (org-level-7 . 1.2)
+                  (org-level-8 . 1.2)))
+    (set-face-attribute (car face) nil
+			:font my/default-variable-font
+			:weight 'regular
+			:height (cdr face)))
+
+    ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+    (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-table nil    :inherit 'fixed-pitch)
+    (set-face-attribute 'org-formula nil  :inherit 'fixed-pitch)
+    (set-face-attribute 'org-code nil     :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-table nil    :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch)
+    (set-face-attribute 'line-number nil :inherit 'fixed-pitch)
+    (set-face-attribute 'line-number-current-line nil :inherit 'fixed-pitch))
 
 (use-package org
-  :pin org
-;  :hook (org-mode . ae/org-mode-setup)
+  ;; :pin org ;; Why isn't this forcing pull latest?
+  :hook (org-mode . my/org-mode-init)
   :config
   (setq org-ellipsis " 》"
-	org-agenda-start-with-log-mode t
-	org-log-done 'time
-	org-log-into-drawer t
-	org-agenda-files '("~/Development/home/hello-org/hello.org")
-        org-src-fontify-natively t
-        org-src-tab-acts-natively t))
-        ;; org-src-preserve-indentation nil
+	org-hide-emphasis-markers t)
+
+    (my/org-font-setup))
+
+(use-package org-bullets
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+;; 	org-agenda-start-with-log-mode t
+;; 	org-log-done 'time
+;; 	org-log-into-drawer t
+;; 	org-agenda-files '("~/Development/home/hello-org/hello.org")
+;;         org-src-fontify-natively t
+;;         org-src-tab-acts-natively t))
+;;         ;; org-src-preserve-indentation nil
         ;; org-edit-src-content-indentation 2
         ;; org-hide-block-startup nil
         ;; org-startup-folded 'content
@@ -492,13 +616,16 @@
 
 (use-package company
   :after lsp-mode
-  :hook (prog-mode . company-mode)
+  :hook
+  (prog-mode . company-mode)
+  (org-mode . company-mode)
   :bind
   (:map company-active-map
 	("<tab>" . company-complete-selection)
 	("C-n" . company-select-next-or-abort)
 	("C-p" . company-select-previous-or-abort))
   (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common))
+  ;; (:map org-mode-map ("<tab>" . company-indent-or-complete-common))
   :custom
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
