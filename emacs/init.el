@@ -26,6 +26,8 @@
 ;; - Why do things go weird when I scroll past a .org file that hasn't been opened (i.e., is in light
 ;;   grey) when doing C-x b?
 ;; - Make my/org-reset-blah function restore the current state of org in terms of current visibility.
+;; - How do I get rid of the shadow when an org section contains a code block and the buffer is in the
+;;   `overview` state? (Following the ellipsis is a weird shadow block.) Workaround: tinyurl.com/r54xfc8n
 
 ;;; Code:
 
@@ -467,6 +469,7 @@ color theme."
   (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
   (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
   (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch))
   (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
