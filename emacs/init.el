@@ -25,19 +25,21 @@
 ;; - Get inspo from https://lepisma.xyz/2017/10/28/ricing-org-mode/
 ;; - Why do things go weird when I scroll past a .org file that hasn't been opened (i.e., is in light
 ;;   grey) when doing C-x b?
+;; - Make my/org-reset-blah function restore the current state of org in terms of current visibility.
 
 ;;; Code:
 
 ;; Theme-related variable definitions.
 (defvar my/dark-theme 'doom-tomorrow-night)
 (defvar my/light-theme 'spacemacs-light)
-(defvar my/current-theme my/dark-theme "Currently active theme.")
+(defvar my/current-theme my/light-theme "Currently active theme.")
 
 ;; Font-related variable definitions.
 (defvar my/default-fixed-font "Jetbrains Mono")
-(defvar my/default-variable-font "Cantarell")
+;; (defvar my/default-variable-font "Cantarell")
+(defvar my/default-variable-font "ETBembo")
 (defvar my/default-fixed-font-size 130)
-(defvar my/default-variable-font-size 130)
+(defvar my/default-variable-font-size 160)
 
 ;; Performance-related variable definitions.
 ;;
@@ -306,21 +308,23 @@
 
 (use-package doom-themes)
 
+;; Need :defer t to prevent requiring spacemacs-theme, which doesn't exist.
+;; See https://github.com/nashamri/spacemacs-theme/issues/42.
 (use-package spacemacs-theme :defer t)
 
-(defun my/reset-org-buffers ()
-  "Reset org-mode in all org buffers."
-  (mapc (lambda (buff)
-          (with-current-buffer buff
-            (if (string-equal "org-mode" major-mode)
-                (org-mode))))
+(defun my/org-reset-buffers ()
+  "Reset `org-mode` in all org buffers."
+  (mapc (lambda (buf)
+          (with-current-buffer buf
+            (if (string-equal "org-mode" major-mode) (org-mode))))
         (buffer-list)))
 
 (defun my/load-theme (theme)
   "Load the specified theme."
   (interactive)
   (load-theme theme t)
-  (my/reset-org-buffers))
+  (my/org-reset-buffers)
+  )
 
 (defun my/light-theme ()
   "Switch to light theme."
@@ -418,20 +422,32 @@
   :after yasnippet)
 
 (defun my/org-mode-init ()
+  "Personal `org-mode` configuration.
+
+This function is intended to be attached to `org-mode-hook`.  While some of
+these settings typically only need to be configured once when Emacs starts
+\(e.g., font settings\), they are configured each time `org-mode` starts so
+that they can be easily refreshed after global changes, such as switching the
+color theme."
+
+  (interactive)
+
+  ;;; Indentation and page structure configuration.
+
   (org-indent-mode)
   (visual-line-mode)
   (setq left-margin-width 2)
   (setq right-margin-width 2)
-  (set-window-buffer nil (current-buffer)))
-  ;; (variable-pitch-mode 1)
-  ;; (auto-fill-mode 0)
+  (variable-pitch-mode 1)
 
+  ;;; Font configuration.
 
-(defun my/org-font-setup ()
   ;; Replace list hyphen with dot.
   (font-lock-add-keywords 'org-mode
                           '(("^ *\\([-]\\) "
                              (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+
+  ;; Vary heading sizes.
   (dolist (face '((org-level-1 . 1.6)
                   (org-level-2 . 1.5)
                   (org-level-3 . 1.4)
@@ -445,27 +461,26 @@
 			:weight 'regular
 			:height (cdr face)))
 
-    ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-    (set-face-attribute 'org-block nil    :foreground nil :inherit 'fixed-pitch)
-    (set-face-attribute 'org-table nil    :inherit 'fixed-pitch)
-    (set-face-attribute 'org-formula nil  :inherit 'fixed-pitch)
-    (set-face-attribute 'org-code nil     :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-table nil    :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-checkbox nil  :inherit 'fixed-pitch)
-    (set-face-attribute 'line-number nil :inherit 'fixed-pitch)
-    (set-face-attribute 'line-number-current-line nil :inherit 'fixed-pitch))
+  ;; Since variable pitch width is set as the default above, override the face attributes
+  ;; that we want to appear in fixed pitch width.
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
+  (set-face-attribute 'line-number nil :inherit 'fixed-pitch)
+  (set-face-attribute 'line-number-current-line nil :inherit 'fixed-pitch))
 
 (use-package org
   ;; :pin org ;; Why isn't this forcing pull latest?
   :hook (org-mode . my/org-mode-init)
   :config
   (setq org-ellipsis " 》"
-	org-hide-emphasis-markers t)
-
-    (my/org-font-setup))
+	org-hide-emphasis-markers t))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
