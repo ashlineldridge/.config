@@ -28,20 +28,32 @@
 ;; - Make my/org-reset-blah function restore the current state of org in terms of current visibility.
 ;; - How do I get rid of the shadow when an org section contains a code block and the buffer is in the
 ;;   `overview` state? (Following the ellipsis is a weird shadow block.) Workaround: tinyurl.com/r54xfc8n
+;; - Switch as much stuff from `setq` inside `:config` to `:custom`.
+;; - Use https://orgmode.org/worg/org-contrib/org-protocol.html to capture tasks from outside emacs -
+;;   e.g., from pages open in browser (you can create a custom Firefox "button").
+
+;;; Links:
+;; - https://sachachua.com/blog/wp-content/uploads/2014/01/2014-01-07-Map-for-learning-Org-Mode-for-Emacs.png
+;; - https://emacs.cafe/emacs/orgmode/gtd/2017/06/30/orgmode-gtd.html
+;; - https://orgmode.org/manual/Capture-templates.html#Capture-templates
+;; - https://orgmode.org/manual/Refile-and-Copy.html#Refile-and-copy
+;; - https://orgmode.org/manual/Refile-and-Copy.html#Refile-and-copy
 
 ;;; Code:
 
 ;; Theme-related variable definitions.
 (defvar my/dark-theme 'doom-tomorrow-night)
 (defvar my/light-theme 'spacemacs-light)
-(defvar my/current-theme my/light-theme "Currently active theme.")
+(defvar my/current-theme my/light-theme)
 
 ;; Font-related variable definitions.
-(defvar my/default-fixed-font "Jetbrains Mono")
-;; (defvar my/default-variable-font "Cantarell")
+(defvar my/default-fixed-font "Jetbrains Mono") ;; Cantarell is another good one.
 (defvar my/default-variable-font "ETBembo")
 (defvar my/default-fixed-font-size 130)
 (defvar my/default-variable-font-size 160)
+
+;; Org-related variable definitions.
+(defvar my/org-dir "~/Development/home/org")
 
 ;; Performance-related variable definitions.
 ;;
@@ -135,10 +147,9 @@
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-c e") 'eshell)
 (global-set-key (kbd "C-;") 'comment-line)
-;; Find better bindings for these.
-(global-set-key (kbd "C-c l") 'org-store-link)
-(global-set-key (kbd "C-c a") 'org-agenda)
-(global-set-key (kbd "C-c c") 'org-capture)
+(global-set-key (kbd "C-c o l") 'org-store-link)
+(global-set-key (kbd "C-c o a") 'org-agenda)
+(global-set-key (kbd "C-c o c") 'org-capture)
 ;; Theme cycling.
 (global-set-key (kbd "C-c t") 'my/cycle-theme)
 
@@ -450,14 +461,14 @@ color theme."
                              (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
   ;; Vary heading sizes.
-  (dolist (face '((org-level-1 . 1.6)
-                  (org-level-2 . 1.5)
-                  (org-level-3 . 1.4)
-                  (org-level-4 . 1.3)
-                  (org-level-5 . 1.2)
-                  (org-level-6 . 1.2)
-                  (org-level-7 . 1.2)
-                  (org-level-8 . 1.2)))
+  (dolist (face '((org-level-1 . 1.3)
+                  (org-level-2 . 1.25)
+                  (org-level-3 . 1.2)
+                  (org-level-4 . 1.15)
+                  (org-level-5 . 1.1)
+                  (org-level-6 . 1.1)
+                  (org-level-7 . 1.1)
+                  (org-level-8 . 1.1)))
     (set-face-attribute (car face) nil
 			:font my/default-variable-font
 			:weight 'regular
@@ -481,33 +492,29 @@ color theme."
 (use-package org
   ;; :pin org ;; Why isn't this forcing pull latest?
   :hook (org-mode . my/org-mode-init)
-  :config
-  (setq org-ellipsis " 》"
-	org-hide-emphasis-markers t))
+  :custom
+  (org-ellipsis " 》")
+  (org-hide-emphasis-markers t)
+  (org-agenda-start-with-log-mode t)
+  (org-log-done 'time)
+  (org-log-into-drawer t)
+  (org-default-notes-file (concat my/org-dir "/inbox.org"))
+  (org-directory my/org-dir)
+  (org-agenda-files
+   '((concat my/org-dir "/inbox.org")
+     (concat my/org-dir "/tasks.org")
+     (concat my/org-dir "/tickler.org")))
+  (org-capture-templates '(("i" "Todo (Inbox)" entry
+                            (file+headline (concat my/org-dir "/inbox.org") "Inbox")
+                            "* TODO %i%?")
+                           ("t" "Tickler" entry
+                            (file+headline (concat my/org-dir "/tickler.org") "Tickler")
+                            "* %i%? \n %U"))))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
-
-;; 	org-agenda-start-with-log-mode t
-;; 	org-log-done 'time
-;; 	org-log-into-drawer t
-;; 	org-agenda-files '("~/Development/home/hello-org/hello.org")
-;;         org-src-fontify-natively t
-;;         org-src-tab-acts-natively t))
-;;         ;; org-src-preserve-indentation nil
-        ;; org-edit-src-content-indentation 2
-        ;; org-hide-block-startup nil
-        ;; org-startup-folded 'content
-        ;; org-cycle-separator-lines 2)
-
-;; (use-package org-superstar
-;;   :after org
-;;   :hook (org-mode . org-superstar-mode)
-;;   :custom
-;;   (org-superstar-remove-leading-stars t)
-;;   (org-superstar-headline-bullets-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 ;;
 ;; Languages
