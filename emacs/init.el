@@ -31,6 +31,7 @@
 ;; - Switch as much stuff from `setq` inside `:config` to `:custom`.
 ;; - Use https://orgmode.org/worg/org-contrib/org-protocol.html to capture tasks from outside emacs -
 ;;   e.g., from pages open in browser (you can create a custom Firefox "button").
+;; - Use org-ql for querying org files: https://github.com/alphapapa/org-ql.
 
 ;;; Links:
 ;; - https://sachachua.com/blog/wp-content/uploads/2014/01/2014-01-07-Map-for-learning-Org-Mode-for-Emacs.png
@@ -482,6 +483,7 @@ color theme."
   (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch))
   (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-tag nil :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
@@ -498,17 +500,19 @@ color theme."
   (org-agenda-start-with-log-mode t)
   (org-log-done 'time)
   (org-log-into-drawer t)
+  (org-tags-column 0)
+  (org-todo-keywords '((sequence "TODO(t)" "SOMEDAY(w)" "|" "DONE(d)")))
   (org-default-notes-file (concat my/org-dir "/inbox.org"))
   (org-directory my/org-dir)
   (org-agenda-files
-   '((concat my/org-dir "/inbox.org")
-     (concat my/org-dir "/tasks.org")
-     (concat my/org-dir "/tickler.org")))
-  (org-capture-templates '(("i" "Todo (Inbox)" entry
-                            (file+headline (concat my/org-dir "/inbox.org") "Inbox")
+   `(,(concat my/org-dir "/gtd.org")))
+  (org-refile-targets `((,(concat my/org-dir "/gtd.org") :maxlevel . 3)
+                        (,(concat my/org-dir "/archive.org") :level . 3)))
+  (org-capture-templates `(("i" "Inbox" entry
+                            (file+headline ,(concat my/org-dir "/gtd.org") "Inbox")
                             "* TODO %i%?")
-                           ("t" "Tickler" entry
-                            (file+headline (concat my/org-dir "/tickler.org") "Tickler")
+                           ("b" "Birthday" entry
+                            (file+headline ,(concat my/org-dir "/gtd.org") "Birthdays")
                             "* %i%? \n %U"))))
 
 (use-package org-bullets
