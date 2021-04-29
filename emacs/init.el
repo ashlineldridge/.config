@@ -56,28 +56,10 @@
 ;; Org-related variable definitions.
 (defvar my/org-dir "~/Development/home/org")
 
-;; Performance-related variable definitions.
-;;
-
 ;; Emacs config directory-related variable definitions.
-;;
-
-;; Is this the cleanest way of appending subdirs?
-(defun my/xdg-dir (base &optional subdir)
-  "Returns the path to the specified XDG subdirectory"
-   (concat base (or subdir "")))
-
-(defun my/xdg-config-dir (&optional subdir)
-  "Returns the path to the specified subdirectory within XDG_CONFIG_HOME"
-  (my/xdg-dir "~/.config/" subdir))
-
-(defun my/xdg-cache-dir (&optional subdir)
-  "Returns the path to the specified subdirectory within XDG_CACHE_HOME"
-  (my/xdg-dir "~/.cache/" subdir))
-
-(defun my/xdg-data-dir (&optional subdir)
-  "Returns the path to the specified subdirectory within XDG_DATA_HOME"
-   (my/xdg-dir "~/.local/share/" subdir))
+(defvar my/xdg-config-dir "~/.config/")
+(defvar my/xdg-cache-dir "~/.cache/")
+(defvar my/xdg-data-dir "~/.local/share/")
 
 ;; Emacs performance settings. I'm following the general performance recommendations of lsp-mode
 ;; here https://emacs-lsp.github.io/lsp-mode/page/performance. Some people recommend against
@@ -151,6 +133,7 @@
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
 (global-set-key (kbd "C-c o c") 'org-capture)
+(global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i")))
 ;; Theme cycling.
 (global-set-key (kbd "C-c t") 'my/cycle-theme)
 
@@ -495,25 +478,59 @@ color theme."
   ;; :pin org ;; Why isn't this forcing pull latest?
   :hook (org-mode . my/org-mode-init)
   :custom
-  (org-ellipsis " 》")
-  (org-hide-emphasis-markers t)
-  (org-agenda-start-with-log-mode t)
-  (org-log-done 'time)
-  (org-log-into-drawer t)
-  (org-tags-column 0)
-  (org-todo-keywords '((sequence "TODO(t)" "SOMEDAY(w)" "|" "DONE(d)")))
-  (org-default-notes-file (concat my/org-dir "/inbox.org"))
-  (org-directory my/org-dir)
+  (org-agenda-custom-commands
+	`(("d" "Dashboard"
+           ((agenda "" ((org-deadline-warning-days 7)))
+            (tags-todo "+PRIORITY=\"A\""
+                       ((org-agenda-overriding-header "High Priority")))
+            (tags-todo "+followup" ((org-agenda-overriding-header "Needs Follow Up")))
+            (todo "NEXT"
+                  ((org-agenda-overriding-header "Next Actions")
+                   (org-agenda-max-todos nil)))
+            (todo "TODO"
+		  ;; TODO: How to filter just on the Inbox node?
+                  ((org-agenda-overriding-header "Inbox")
+                   (org-agenda-files '(,(concat my/org-dir "/gtd.org")))
+                   (org-agenda-text-search-extra-files nil)))))
+
+          ("n" "Next Tasks"
+           ((agenda "" ((org-deadline-warning-days 7)))
+            (todo "NEXT"
+                  ((org-agenda-overriding-header "Next Tasks")))))
+
+          ;; Low-effort next actions
+          ("e" tags-todo "+TODO=\"NEXT\"+Effort<15&+Effort>0"
+           ((org-agenda-overriding-header "Low Effort Tasks")
+            (org-agenda-max-todos 20)
+            (org-agenda-files org-agenda-files)))))
   (org-agenda-files
    `(,(concat my/org-dir "/gtd.org")))
-  (org-refile-targets `((,(concat my/org-dir "/gtd.org") :maxlevel . 3)
-                        (,(concat my/org-dir "/archive.org") :level . 3)))
+  (org-agenda-span 'day)
+  (org-agenda-start-with-log-mode t)
+  (org-agenda-window-setup 'current-window)
   (org-capture-templates `(("i" "Inbox" entry
                             (file+headline ,(concat my/org-dir "/gtd.org") "Inbox")
-                            "* TODO %i%?")
+                            "* TODO %i%?" :empty-lines-after 1)
                            ("b" "Birthday" entry
                             (file+headline ,(concat my/org-dir "/gtd.org") "Birthdays")
-                            "* %i%? \n %U"))))
+                            "* %i%?\n<%<%Y-%m-%d +1y>>" :empty-lines-after 1)))
+  (org-default-notes-file (concat my/org-dir "/inbox.org"))
+  (org-directory my/org-dir)
+  (org-ellipsis " 》")
+  (org-hide-emphasis-markers t)
+  (org-log-done 'time)
+  (org-log-into-drawer nil) ;; t to add state change info to :LOGBOOK: drawer.
+  (org-refile-targets
+   `((,(concat my/org-dir "/gtd.org") :maxlevel . 3)
+     (,(concat my/org-dir "/archive.org") :level . 3)))
+  (org-tags-column 0)
+  (org-todo-keywords
+   `((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
+     (sequence "|" "WAIT(w)" "BACK(b)")))
+  (org-todo-keyword-faces
+   `(("NEXT" . (:foreground "orange red" :weight bold))
+     ("WAIT" . (:foreground "HotPink2" :weight bold))
+     ("BACK" . (:foreground "MediumPurple3" :weight bold)))))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
