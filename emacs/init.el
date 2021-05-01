@@ -45,7 +45,7 @@
 ;; Theme-related variable definitions.
 (defvar my/dark-theme 'doom-tomorrow-night)
 (defvar my/light-theme 'spacemacs-light)
-(defvar my/current-theme my/light-theme)
+(defvar my/current-theme my/dark-theme)
 
 ;; Font-related variable definitions.
 (defvar my/default-fixed-font "Jetbrains Mono") ;; Cantarell is another good one.
@@ -460,49 +460,44 @@ color theme."
 
   ;; Since variable pitch width is set as the default above, override the face attributes
   ;; that we want to appear in fixed pitch width.
+  (set-face-attribute 'line-number nil :inherit 'fixed-pitch)
+  (set-face-attribute 'line-number-current-line nil :inherit 'fixed-pitch)
   (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
   (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-document-info-keyword nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-drawer nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
   (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-tag nil :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-  (set-face-attribute 'line-number nil :inherit 'fixed-pitch)
-  (set-face-attribute 'line-number-current-line nil :inherit 'fixed-pitch))
 
 (use-package org
   ;; :pin org ;; Why isn't this forcing pull latest?
   :hook (org-mode . my/org-mode-init)
+  :config
+  ;; Save org buffers after refiling.
+  (advice-add 'org-refile :after 'org-save-all-org-buffers)
   :custom
   (org-agenda-custom-commands
 	`(("d" "Dashboard"
            ((agenda "" ((org-deadline-warning-days 7)))
-            (tags-todo "+PRIORITY=\"A\""
-                       ((org-agenda-overriding-header "High Priority")))
-            (tags-todo "+followup" ((org-agenda-overriding-header "Needs Follow Up")))
+            ;; (tags-todo "+PRIORITY=\"A\""
+            ;;            ((org-agenda-overriding-header "High Priority")))
+            ;; (tags-todo "+followup" ((org-agenda-overriding-header "Needs Follow Up")))
             (todo "NEXT"
                   ((org-agenda-overriding-header "Next Actions")
                    (org-agenda-max-todos nil)))
-            (todo "TODO"
-		  ;; TODO: How to filter just on the Inbox node?
-                  ((org-agenda-overriding-header "Inbox")
-                   (org-agenda-files '(,(concat my/org-dir "/gtd.org")))
-                   (org-agenda-text-search-extra-files nil)))))
-
+            (tags-todo "+CATEGORY=\"Inbox\""
+                  ((org-agenda-overriding-header "Unprocessed Inbox Tasks")
+                   (org-agenda-files '(,(concat my/org-dir "/gtd.org")))))))
           ("n" "Next Tasks"
            ((agenda "" ((org-deadline-warning-days 7)))
             (todo "NEXT"
-                  ((org-agenda-overriding-header "Next Tasks")))))
-
-          ;; Low-effort next actions
-          ("e" tags-todo "+TODO=\"NEXT\"+Effort<15&+Effort>0"
-           ((org-agenda-overriding-header "Low Effort Tasks")
-            (org-agenda-max-todos 20)
-            (org-agenda-files org-agenda-files)))))
+                  ((org-agenda-overriding-header "Next Tasks")))))))
   (org-agenda-files
    `(,(concat my/org-dir "/gtd.org")))
   (org-agenda-span 'day)
@@ -510,16 +505,22 @@ color theme."
   (org-agenda-window-setup 'current-window)
   (org-capture-templates `(("i" "Inbox" entry
                             (file+headline ,(concat my/org-dir "/gtd.org") "Inbox")
-                            "* TODO %i%?" :empty-lines-after 1)
+                            "* TODO %i%?"
+			    :empty-lines-after 1)
+			   ("p" "Project" entry
+			    (file+headline ,(concat my/org-dir "/gtd.org") "Projects")
+			    "* %i%? %^g%^{CATEGORY}p\n** Tasks\n** Notes"
+			    :empty-lines-before 1 :empty-lines-after 1 :jump-to-captured t)
                            ("b" "Birthday" entry
                             (file+headline ,(concat my/org-dir "/gtd.org") "Birthdays")
-                            "* %i%?\n<%<%Y-%m-%d +1y>>" :empty-lines-after 1)))
+                            "* %i%?\n<%<%Y-%m-%d +1y>>"
+			    :empty-lines-after 1)))
   (org-default-notes-file (concat my/org-dir "/inbox.org"))
   (org-directory my/org-dir)
   (org-ellipsis " 》")
   (org-hide-emphasis-markers t)
   (org-log-done 'time)
-  (org-log-into-drawer nil) ;; t to add state change info to :LOGBOOK: drawer.
+  (org-log-into-drawer t)
   (org-refile-targets
    `((,(concat my/org-dir "/gtd.org") :maxlevel . 3)
      (,(concat my/org-dir "/archive.org") :level . 3)))
