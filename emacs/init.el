@@ -133,23 +133,23 @@
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
 (global-set-key (kbd "C-c o c") 'org-capture)
-(global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i")))
+(global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i"))) ;; Capture to inbox.
+(global-set-key (kbd "C-c m") 'mu4e)
+
 ;; Theme cycling.
 (global-set-key (kbd "C-c t") 'my/cycle-theme)
 
 ;; Show column numbers in the mode line.
 (column-number-mode t)
 
-;; Show line numbers on the left hand side.
-(global-display-line-numbers-mode t)
+;; Enable line numbers for some modes.
+(dolist (mode '(text-mode-hook
+                prog-mode-hook
+                conf-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 1))))
 
-;; Disable line numbers for some modes.
-(dolist (mode '(org-mode-hook
-		term-mode-hook
-		eshell-mode-hook
-		shell-mode-hook
-		help-mode-hook
-		neotree-mode-hook))
+;; Override some modes which derive from the above.
+(dolist (mode '(org-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
 ;; Use CMD key for META.
@@ -799,3 +799,116 @@ color theme."
   "Run 'delete-trailing-whitespace' if the current mode derives from 'prog-mode'."
   (when (derived-mode-p 'prog-mode)
     (delete-trailing-whitespace)))
+
+;; Requires initial mu init command of:
+;; mu init --maildir=~/Mail --my-address=aeldridge@fastmail.com --my-address=ashlin.eldridge@gmail.com
+(use-package mu4e
+  ;; :defer 20   ; Wait until 20 seconds after startup
+  :ensure nil ; Use the version of mu4e packaged with mu
+  :load-path "/usr/local/opt/mu/share/emacs/site-lisp/mu/mu4e/"
+  :custom
+  (mu4e-update-interval (* 10 60))
+  (mu4e-get-mail-command "mbsync -a")
+  (mu4e-maildir "~/Mail")
+  (mu4e-view-show-images t)
+  (mu4e-view-show-addresses 't)
+
+  ;; Use Ivy for mu4e completions (maildir folders, etc)
+  (mu4e-completing-read-function #'ivy-completing-read)
+
+  ;; Make sure that moving a message (like to Trash) causes the
+  ;; message to get a new file name.  This helps to avoid the
+  ;; dreaded "UID is N beyond highest assigned" error.
+  ;; See this link for more info: https://stackoverflow.com/a/43461973
+  (mu4e-change-filenames-when-moving t)
+
+  ;; Don't keep message buffers around.
+  (message-kill-buffer-on-exit t)
+
+  ;; Context policies. Contexts are defined below in :config.
+  (mu4e-context-policy 'pick-first)
+  (mu4e-compose-context-policy 'always-ask)
+
+  (mu4e-compose-dont-reply-to-self t)
+
+  ;; Use mu4e for sending e-mail.
+  (mail-user-agent 'mu4e-user-agent
+        message-send-mail-function 'smtpmail-send-it
+        smtpmail-smtp-server "smtp.fastmail.com"
+        smtpmail-smtp-service 465
+        smtpmail-stream-type  'ssl)
+
+  (mu4e-maildir-shortcuts
+   '(("/Fastmail/Inbox" . ?f)
+     ("/Gmail/Inbox"    . ?g)))
+
+  (mu4e-bookmarks
+   '((:name "Unread messages"
+	    :query "flag:unread AND NOT flag:trashed"
+	    :key ?u)
+     (:name "Today's messages"
+	    :query "date:today..now"
+	    :key ?t)
+     (:name "Last 7 days"
+	    :query "date:7d..now"
+	    :hide-unread t
+	    :key ?w)
+     (:name "Messages with images"
+	    :query "mime:image/*"
+	    :key ?p)))
+
+  ;; (add-to-list 'mu4e-bookmarks
+  ;;              (make-mu4e-bookmark
+  ;;               :name "All Inboxes"
+  ;;               :query "maildir:/Fastmail/INBOX OR maildir:/Personal/Inbox"
+  ;;               :key ?i))
+
+  ;; Override view actions to remove unused actions and add an option to
+  ;; to view the email in a browser - handy for complicated HTML emails.
+  (mu4e-view-actions
+   '(("capture message" . mu4e-action-capture-message)
+     ("show this thread" . mu4e-action-show-thread)
+     ("view in browser" . mu4e-action-view-in-browser)))
+
+  :config
+  ;; Configure email contexts. The variable mu4e-contexts is not defined as a custom variable
+  ;; so cannot be configured above in the :custom section. When it is, an ordering problem
+  ;; occurs where, when mu4e launches the context variables haven't been set and so mu4e wants
+  ;; to create the sent, drafts, etc, directories.
+  (setq mu4e-contexts
+	(list
+	 (make-mu4e-context
+	  :name "Fastmail"
+	  :match-func (lambda (msg)
+			(when msg (string-prefix-p "/Fastmail" (mu4e-message-field msg :maildir))))
+	  :vars '((user-full-name              . "Ashlin Eldridge")
+		  (user-mail-address           . "aeldridge@fastmail.com")
+		  (mu4e-sent-folder            . "/Fastmail/Sent")
+		  (mu4e-trash-folder           . "/Fastmail/Trash")
+		  (mu4e-drafts-folder          . "/Fastmail/Drafts")
+		  (mu4e-refile-folder          . "/Fastmail/Archive")
+		  (mu4e-sent-messages-behavior . sent)))
+
+	 (make-mu4e-context
+	  :name "Gmail"
+	  :match-func (lambda (msg)
+			(when msg (string-prefix-p "/Gmail" (mu4e-message-field msg :maildir))))
+	  :vars '((user-full-name     . "Ashlin Eldridge")
+		  (user-mail-address  . "ashlin.eldridge@gmail.com")
+		  (mu4e-sent-folder   . "/Gmail/[Google Mail]/Sent Mail")
+		  (mu4e-trash-folder  . "/Gmail/[Google Mail]/Bin")
+		  (mu4e-drafts-folder . "/Gmail/[Google Mail]/Drafts")
+		  (mu4e-refile-folder . "/Gmail/[Google Mail]/All Mail")
+		  ;; Trash sent messages because Gmail will already keep a copy in the sent folder.
+		  (mu4e-sent-messages-behavior . trash))))))
+
+;; TODO: Get email functional for Gmail and Fastmail with the intention of
+;; being able to use Fastmail for subscribing to kernel mailing lists, etc.
+;; Get email bookmarks working so that you can quickly hunt around for things.
+;; Get email sending working efficiently/predictably.
+
+;; ;; Load org-mode integration
+;; (require 'org-mu4e)
+
+;; ;; Start mu4e in the background so that it syncs mail periodically
+;; (mu4e t))
