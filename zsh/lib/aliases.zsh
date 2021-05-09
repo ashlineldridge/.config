@@ -76,6 +76,9 @@ alias ec='emacsclient --no-wait'
 alias lsp-clean="zsh -c 'setopt +o nomatch; rm -f ~/.config/emacs/.lsp-session-*'"
 alias dap-clean="zsh -c 'setopt +o nomatch; rm -f ~/.config/emacs/.dap-*'"
 
+# Force isync/mbsync to follow XDG conventions
+alias mbsync="mbsync -c ${XDG_CONFIG_HOME}/isync/mbsyncrc"
+
 # Others
 alias watch='watch -n 1 '
 alias bz=bazel

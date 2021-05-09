@@ -12,6 +12,12 @@ export ZDOTDIR="${XDG_CONFIG_HOME}/zsh"
 # intermingles config with secrets.
 export GNUPGHOME="${XDG_DATA_HOME}/gnupg"
 
+# Required for GPG signing of Git commits
+export GPG_TTY="$(tty)"
+
+# Force pass to use XDG
+export PASSWORD_STORE_DIR="${XDG_DATA_HOME}/pass"
+
 # Force Terraform to use XDG
 export TF_CLI_CONFIG_FILE="${XDG_CONFIG_HOME}/terraform/config"
 
@@ -46,9 +52,6 @@ export PATH="/usr/local/bin:/usr/local/opt/coreutils/libexec/gnubin:/usr/local/o
 
 # Kubernetes
 export KUBECONFIG="${HOME}/.kube/config"
-
-# Required for GPG signing of Git commits
-export GPG_TTY="$(tty)"
 
 # Variables used by Bazel's wrapped_clang executable that is embedded in generated compile_commands.json files
 export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"

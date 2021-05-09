@@ -32,6 +32,7 @@
 ;; - Use https://orgmode.org/worg/org-contrib/org-protocol.html to capture tasks from outside emacs -
 ;;   e.g., from pages open in browser (you can create a custom Firefox "button").
 ;; - Use org-ql for querying org files: https://github.com/alphapapa/org-ql.
+;; - Install https://github.com/akermu/emacs-libvterm for a good Emacs terminal
 
 ;;; Links:
 ;; - https://sachachua.com/blog/wp-content/uploads/2014/01/2014-01-07-Map-for-learning-Org-Mode-for-Emacs.png
@@ -85,6 +86,9 @@
 (menu-bar-mode -1)   ; Disable the menu bar
 (scroll-bar-mode -1) ; Disable visible scrollbar
 (set-fringe-mode 10) ; Increase left/right margins slightly
+
+;; Accept 'y' in lieu of 'yes'.
+(defalias 'yes-or-no-p 'y-or-n-p)
 
 ;; Make input characters overwrite the current region.
 (delete-selection-mode t)
@@ -209,7 +213,7 @@
   :init (when (memq window-system '(mac ns x))
 	  (setq exec-path-from-shell-variables
 		'("PATH" "MANPATH" "XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME"
-		  "GNUPGHOME" "DEVELOPER_DIR" "SDKROOT"))
+		  "GNUPGHOME" "PASSWORD_STORE_DIR" "DEVELOPER_DIR" "SDKROOT"))
 	  (setq exec-path-from-shell-arguments nil)
 	  (exec-path-from-shell-initialize)))
 
@@ -252,6 +256,14 @@
    :map minibuffer-local-map ("C-r" . 'counsel-minibuffer-history))
   :config
   (setq ivy-initial-inputs-alist nil)) ; Don't start searches with ^
+
+;; Password management
+
+(use-package pass)
+
+(use-package auth-source-pass
+  :config
+  (auth-source-pass-enable))
 
 ;; Am finding prescient a bit confusing
 ;; (use-package prescient)
@@ -831,31 +843,26 @@ color theme."
 
   (mu4e-compose-dont-reply-to-self t)
 
-  ;; Use mu4e for sending e-mail.
-  (mail-user-agent 'mu4e-user-agent
-        message-send-mail-function 'smtpmail-send-it
-        smtpmail-smtp-server "smtp.fastmail.com"
-        smtpmail-smtp-service 465
-        smtpmail-stream-type  'ssl)
-
   (mu4e-maildir-shortcuts
    '(("/Fastmail/Inbox" . ?f)
      ("/Gmail/Inbox"    . ?g)))
 
   (mu4e-bookmarks
-   '((:name "Unread messages"
-	    :query "flag:unread AND NOT flag:trashed"
+   '((:name "Unread"
+	    :query "flag:unread AND NOT \
+                    flag:trashed AND NOT \
+                    m:\"/Gmail/[Google Mail]/All Mail\" AND NOT \
+                    m:\"/Gmail/[Google Mail]/Spam\" AND NOT \
+                    m:\"/Gmail/[Google Mail]/Bin\" AND NOT \
+                    m:/Fastmail/Spam AND NOT \
+                    m:/Fastmail/Trash"
 	    :key ?u)
-     (:name "Today's messages"
+     (:name "Today"
 	    :query "date:today..now"
 	    :key ?t)
      (:name "Last 7 days"
 	    :query "date:7d..now"
-	    :hide-unread t
-	    :key ?w)
-     (:name "Messages with images"
-	    :query "mime:image/*"
-	    :key ?p)))
+	    :key ?w)))
 
   ;; (add-to-list 'mu4e-bookmarks
   ;;              (make-mu4e-bookmark
@@ -871,6 +878,10 @@ color theme."
      ("view in browser" . mu4e-action-view-in-browser)))
 
   :config
+  ;; Use mu4e for sending e-mail.
+  (setq mail-user-agent 'mu4e-user-agent)
+  (setq message-send-mail-function 'smtpmail-send-it)
+
   ;; Configure email contexts. The variable mu4e-contexts is not defined as a custom variable
   ;; so cannot be configured above in the :custom section. When it is, an ordering problem
   ;; occurs where, when mu4e launches the context variables haven't been set and so mu4e wants
@@ -881,24 +892,31 @@ color theme."
 	  :name "Fastmail"
 	  :match-func (lambda (msg)
 			(when msg (string-prefix-p "/Fastmail" (mu4e-message-field msg :maildir))))
-	  :vars '((user-full-name              . "Ashlin Eldridge")
-		  (user-mail-address           . "aeldridge@fastmail.com")
-		  (mu4e-sent-folder            . "/Fastmail/Sent")
-		  (mu4e-trash-folder           . "/Fastmail/Trash")
-		  (mu4e-drafts-folder          . "/Fastmail/Drafts")
-		  (mu4e-refile-folder          . "/Fastmail/Archive")
+	  :vars '((user-full-name        . "Ashlin Eldridge")
+		  (user-mail-address     . "aeldridge@fastmail.com")
+		  (mu4e-sent-folder      . "/Fastmail/Sent")
+		  (mu4e-trash-folder     . "/Fastmail/Trash")
+		  (mu4e-drafts-folder    . "/Fastmail/Drafts")
+		  (mu4e-refile-folder    . "/Fastmail/Archive")
+		  (smtpmail-smtp-server  . "smtp.fastmail.com")
+		  (smtpmail-smtp-service . 465)
+		  (smtpmail-stream-type  . ssl)
+		  ;; Does this work? If so, document.
 		  (mu4e-sent-messages-behavior . sent)))
 
 	 (make-mu4e-context
 	  :name "Gmail"
 	  :match-func (lambda (msg)
 			(when msg (string-prefix-p "/Gmail" (mu4e-message-field msg :maildir))))
-	  :vars '((user-full-name     . "Ashlin Eldridge")
-		  (user-mail-address  . "ashlin.eldridge@gmail.com")
-		  (mu4e-sent-folder   . "/Gmail/[Google Mail]/Sent Mail")
-		  (mu4e-trash-folder  . "/Gmail/[Google Mail]/Bin")
-		  (mu4e-drafts-folder . "/Gmail/[Google Mail]/Drafts")
-		  (mu4e-refile-folder . "/Gmail/[Google Mail]/All Mail")
+	  :vars '((user-full-name        . "Ashlin Eldridge")
+		  (user-mail-address     . "ashlin.eldridge@gmail.com")
+		  (mu4e-sent-folder      . "/Gmail/[Google Mail]/Sent Mail")
+		  (mu4e-trash-folder     . "/Gmail/[Google Mail]/Bin")
+		  (mu4e-drafts-folder    . "/Gmail/[Google Mail]/Drafts")
+		  (mu4e-refile-folder    . "/Gmail/[Google Mail]/All Mail")
+		  (smtpmail-smtp-server  . "smtp.gmail.com")
+		  (smtpmail-smtp-service . 465)
+		  (smtpmail-stream-type  . ssl)
 		  ;; Trash sent messages because Gmail will already keep a copy in the sent folder.
 		  (mu4e-sent-messages-behavior . trash))))))
 
@@ -906,9 +924,9 @@ color theme."
 ;; being able to use Fastmail for subscribing to kernel mailing lists, etc.
 ;; Get email bookmarks working so that you can quickly hunt around for things.
 ;; Get email sending working efficiently/predictably.
+;; Get pass working with other secrets (e.g., stuff in .authinfo)
+;; Why do I get this?
+;; Source file ‘/usr/local/opt/mu/share/emacs/site-lisp/mu/mu4e/mu4e-meta.el’ newer than byte-compiled file; using older file
 
 ;; ;; Load org-mode integration
 ;; (require 'org-mu4e)
-
-;; ;; Start mu4e in the background so that it syncs mail periodically
-;; (mu4e t))

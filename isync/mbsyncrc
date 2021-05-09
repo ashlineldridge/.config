@@ -1,0 +1,60 @@
+##
+## aeldridge@fastmail.com
+##
+
+IMAPAccount fastmail
+Host imap.fastmail.com
+Port 993
+User aeldridge@fastmail.com
+PassCmd "pass aeldridge@fastmail.com"
+SSLType IMAPS
+SSLVersions TLSv1.2
+CertificateFile /usr/local/etc/openssl@1.1/cert.pem
+
+IMAPStore fastmail-remote
+Account fastmail
+
+MaildirStore fastmail-local
+Path ~/Mail/Fastmail/
+Inbox ~/Mail/Fastmail/Inbox
+Trash ~/Mail/Fastmail/Trash
+SubFolders Verbatim
+
+Channel fastmail
+Far :fastmail-remote:
+Near :fastmail-local:
+Patterns * !"*/Archive"
+Expunge None
+CopyArrivalDate yes
+Sync All
+Create Near
+SyncState *
+
+##
+## ashlin.eldridge@gmail.com
+##
+
+IMAPAccount gmail
+Host imap.gmail.com
+User ashlin.eldridge@gmail.com
+PassCmd "pass ashlin.eldridge@gmail.com"
+# Required for Gmail
+AuthMechs PLAIN
+SSLType IMAPS
+SSLVersions TLSv1.2
+CertificateFile /usr/local/etc/openssl@1.1/cert.pem
+
+IMAPStore gmail-remote
+Account gmail
+
+MaildirStore gmail-local
+Path ~/Mail/Gmail/
+Inbox ~/Mail/Gmail/Inbox
+SubFolders Verbatim
+
+Channel gmail
+Far :gmail-remote:
+Near :gmail-local:
+Patterns * !"*/Spam" !"*/All Mail" !*"Important" !*"Starred"
+Create Near
+SyncState *
