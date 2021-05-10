@@ -43,6 +43,11 @@
 
 ;;; Code:
 
+;; Set this early so that newest versions of files are loaded. Apparently, this can negatively
+;; impact performance but in my tests it didn't affect start-up time and I don't restart Emacs
+;; that often anyway.
+(setq load-prefer-newer t)
+
 ;; Theme-related variable definitions.
 (defvar my/dark-theme 'doom-tomorrow-night)
 (defvar my/light-theme 'spacemacs-light)
@@ -86,6 +91,9 @@
 (menu-bar-mode -1)   ; Disable the menu bar
 (scroll-bar-mode -1) ; Disable visible scrollbar
 (set-fringe-mode 10) ; Increase left/right margins slightly
+
+;; Why would this be true? https://blog.sumtypeofway.com/posts/emacs-config.html
+(setq sentence-end-double-space nil)
 
 ;; Accept 'y' in lieu of 'yes'.
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -257,13 +265,16 @@
   :config
   (setq ivy-initial-inputs-alist nil)) ; Don't start searches with ^
 
-;; Password management
+;; Credential management
 
 (use-package pass)
 
 (use-package auth-source-pass
   :config
   (auth-source-pass-enable))
+
+;; Don't cache secrets.
+(setq auth-source-do-cache nil)
 
 ;; Am finding prescient a bit confusing
 ;; (use-package prescient)
@@ -814,6 +825,19 @@ color theme."
 
 ;; Requires initial mu init command of:
 ;; mu init --maildir=~/Mail --my-address=aeldridge@fastmail.com --my-address=ashlin.eldridge@gmail.com
+;;
+;; Credentials are stored as app passwords using password-store (i.e., `pass`). For SMTP
+;; credentials, the password should be named after the host (e.g., "smtp.gmail.com") and
+;; the contents of the secret should specify the user and port as additional fields following
+;; the password. E.g.:
+;;
+;; my-secret-password
+;; user: aeldridge@fastmail.com
+;; port: 465
+;;
+;; You can probably also include these details in the secret name itself using the pass notation,
+;; but with the extra '@' in the username it starts getting ugly.
+
 (use-package mu4e
   ;; :defer 20   ; Wait until 20 seconds after startup
   :ensure nil ; Use the version of mu4e packaged with mu
@@ -924,9 +948,6 @@ color theme."
 ;; being able to use Fastmail for subscribing to kernel mailing lists, etc.
 ;; Get email bookmarks working so that you can quickly hunt around for things.
 ;; Get email sending working efficiently/predictably.
-;; Get pass working with other secrets (e.g., stuff in .authinfo)
-;; Why do I get this?
-;; Source file ‘/usr/local/opt/mu/share/emacs/site-lisp/mu/mu4e/mu4e-meta.el’ newer than byte-compiled file; using older file
 
 ;; ;; Load org-mode integration
 ;; (require 'org-mu4e)
