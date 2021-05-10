@@ -844,7 +844,7 @@ color theme."
   :load-path "/usr/local/opt/mu/share/emacs/site-lisp/mu/mu4e/"
   :custom
   (mu4e-update-interval (* 10 60))
-  (mu4e-get-mail-command "mbsync -a")
+  (mu4e-get-mail-command (concat "mbsync -a -c " my/xdg-config-dir "/isync/mbsyncrc"))
   (mu4e-maildir "~/Mail")
   (mu4e-view-show-images t)
   (mu4e-view-show-addresses 't)
@@ -866,6 +866,7 @@ color theme."
   (mu4e-compose-context-policy 'always-ask)
 
   (mu4e-compose-dont-reply-to-self t)
+  (mu4e-compose-format-flowed t)
 
   (mu4e-maildir-shortcuts
    '(("/Fastmail/Inbox" . ?f)
