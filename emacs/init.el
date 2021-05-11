@@ -9,9 +9,8 @@
 ;; My slowly growing Emacs init file.
 
 ;;; TO DO:
-;; - Convert this into an org file
+;; - Convert this into an org file (org-babel)
 ;; - Switch over to straight.el?
-;; - Use :ensure t?
 ;; - Remove window-system checks - no longer needed
 ;; - Use :defer X where X is the number of secs to improve start up time
 ;;   See: https://blog.d46.us/advanced-emacs-startup/
@@ -33,6 +32,8 @@
 ;;   e.g., from pages open in browser (you can create a custom Firefox "button").
 ;; - Use org-ql for querying org files: https://github.com/alphapapa/org-ql.
 ;; - Install https://github.com/akermu/emacs-libvterm for a good Emacs terminal
+;; - Rather than setting global keybindings one at a time, perhaps shift to setting them in global-map
+;;   using the :bind directive of use-package (see neotree).
 
 ;;; Links:
 ;; - https://sachachua.com/blog/wp-content/uploads/2014/01/2014-01-07-Map-for-learning-Org-Mode-for-Emacs.png
@@ -506,38 +507,46 @@ color theme."
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
   :custom
   (org-agenda-custom-commands
-	`(("d" "Dashboard"
-           ((agenda "" ((org-deadline-warning-days 7)))
-            ;; (tags-todo "+PRIORITY=\"A\""
-            ;;            ((org-agenda-overriding-header "High Priority")))
-            ;; (tags-todo "+followup" ((org-agenda-overriding-header "Needs Follow Up")))
-            (todo "NEXT"
-                  ((org-agenda-overriding-header "Next Actions")
-                   (org-agenda-max-todos nil)))
-            (tags-todo "+CATEGORY=\"Inbox\""
-                  ((org-agenda-overriding-header "Unprocessed Inbox Tasks")
-                   (org-agenda-files '(,(concat my/org-dir "/gtd.org")))))))
-          ("n" "Next Tasks"
-           ((agenda "" ((org-deadline-warning-days 7)))
-            (todo "NEXT"
-                  ((org-agenda-overriding-header "Next Tasks")))))))
+	`(("p" "Projects"
+           ((todo
+	     "TODO"
+             ((org-agenda-overriding-header "Project Tasks")
+	      (org-agenda-files '(,(concat my/org-dir "/projects.org")))
+              (org-agenda-max-todos nil)))
+            (todo
+	     "TODO"
+             ((org-agenda-overriding-header "Unprocessed Inbox Tasks")
+              (org-agenda-files '(,(concat my/org-dir "/inbox.org")))))))
+	  ;; TODO: Come up with these
+          ;; ("1" "Next 7 Day Schedule"
+          ;;  ((agenda "" ((org-deadline-warning-days 7)))))
+	  ;; ("2" "Next 14 Day Schedule"
+          ;;  ((agenda "" ((org-deadline-warning-days 14)))))
+	  ;; ("3" "Next 30 Day Schedule"
+          ;;  ((agenda "" ((org-deadline-warning-days )))))
+	  ))
   (org-agenda-files
-   `(,(concat my/org-dir "/gtd.org")))
+   (list
+    (concat my/org-dir "/inbox.org")
+    (concat my/org-dir "/projects.org")
+    (concat my/org-dir "/tickler.org")))
   (org-agenda-span 'day)
   (org-agenda-start-with-log-mode t)
   (org-agenda-window-setup 'current-window)
   (org-capture-templates `(("i" "Inbox" entry
-                            (file+headline ,(concat my/org-dir "/gtd.org") "Inbox")
+                            (file ,(concat my/org-dir "/inbox.org"))
                             "* TODO %i%?"
-			    :empty-lines-after 1)
-			   ("p" "Project" entry
-			    (file+headline ,(concat my/org-dir "/gtd.org") "Projects")
-			    "* %i%? %^g%^{CATEGORY}p\n** Tasks\n** Notes"
-			    :empty-lines-before 1 :empty-lines-after 1 :jump-to-captured t)
-                           ("b" "Birthday" entry
-                            (file+headline ,(concat my/org-dir "/gtd.org") "Birthdays")
-                            "* %i%?\n<%<%Y-%m-%d +1y>>"
-			    :empty-lines-after 1)))
+			    :empty-lines-after 0)
+			   ;; TODO: Come up with these
+			   ;; ("p" "Project" entry
+			   ;;  (file+headline ,(concat my/org-dir "/projects.org") "Projects")
+			   ;;  "* %i%? %^g%^{CATEGORY}p\n** Tasks\n** Notes"
+			   ;;  :empty-lines-before 1 :empty-lines-after 1 :jump-to-captured t)
+                           ;; ("b" "Birthday" entry
+                           ;;  (file+headline ,(concat my/org-dir "/tickler.org") "Birthdays")
+                           ;;  "* %i%?\n<%<%Y-%m-%d +1y>>"
+			   ;;  :empty-lines-after 1)
+			   ))
   (org-default-notes-file (concat my/org-dir "/inbox.org"))
   (org-directory my/org-dir)
   (org-ellipsis " 》")
@@ -545,16 +554,19 @@ color theme."
   (org-log-done 'time)
   (org-log-into-drawer t)
   (org-refile-targets
-   `((,(concat my/org-dir "/gtd.org") :maxlevel . 3)
-     (,(concat my/org-dir "/archive.org") :level . 3)))
+   (list
+    '(,(concat my/org-dir "/archive.org") :maxlevel . 1)
+    '(,(concat my/org-dir "/inbox.org") :maxlevel . 1)
+    '(,(concat my/org-dir "/projects.org") :maxlevel . 3)
+    '(,(concat my/org-dir "/someday.org" :maxlevel . 2))
+    '(,(concat my/org-dir "/tickler.org" :maxlevel . 2))))
   (org-tags-column 0)
   (org-todo-keywords
-   `((sequence "TODO(t)" "NEXT(n)" "|" "DONE(d!)")
-     (sequence "|" "WAIT(w)" "BACK(b)")))
+   `((sequence "TODO(t)" "WAIT(w)" "|" "DONE(d!)")))
   (org-todo-keyword-faces
-   `(("NEXT" . (:foreground "orange red" :weight bold))
+   `(("TODO" . (:foreground "orange red" :weight bold))
      ("WAIT" . (:foreground "HotPink2" :weight bold))
-     ("BACK" . (:foreground "MediumPurple3" :weight bold)))))
+     ("DONE" . (:foreground "MediumPurple3" :weight bold)))))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
@@ -568,7 +580,7 @@ color theme."
   ;; Should I just enable org-roam-mode when editing a .org file?
   (after-init . org-roam-mode)
   :custom
-  (org-roam-directory (concat my/org-dir "/roam"))
+  (org-roam-directory (concat my/org-dir "/notes"))
   (org-roam-db-location (concat my/xdg-cache-dir "/emacs/org-roam.db"))
   (org-roam-completion-everywhere t)
   (org-roam-completion-system 'ivy)
@@ -594,22 +606,23 @@ color theme."
   ;;      :unnarrowed t
   ;;      :immediate-finish)))
   :bind (:map org-roam-mode-map
-              (("C-c r r" . org-roam)
-               ("C-c r f" . org-roam-find-file)
-	       ("C-c r g" . org-roam-graph)
+              (("C-c n r" . org-roam)
+               ("C-c n c" . org-roam-capture)
+               ("C-c n f" . org-roam-find-file)
+	       ("C-c n g" . org-roam-graph)
 	       ;; Figure out how to bind these to simpler bindings that are only
 	       ;; availble when editing an org-roam file.
-	       ("C-c r t" . org-roam-tag-add)
-	       ("C-c r a" . org-roam-alias-add))
-               ;; ("C-c r d"   . org-roam-dailies-find-date)
-               ;; ("C-c r c"   . org-roam-dailies-capture-today)
-               ;; ("C-c r C r" . org-roam-dailies-capture-tomorrow)
-               ;; ("C-c r t"   . org-roam-dailies-find-today)
-               ;; ("C-c r y"   . org-roam-dailies-find-yesterday)
-               ;; ("C-c r r"   . org-roam-dailies-find-tomorrow)
+	       ("C-c n t" . org-roam-tag-add)
+	       ("C-c n a" . org-roam-alias-add))
+               ;; ("C-c n d"   . org-roam-dailies-find-date)
+               ;; ("C-c n c"   . org-roam-dailies-capture-today)
+               ;; ("C-c n C r" . org-roam-dailies-capture-tomorrow)
+               ;; ("C-c n t"   . org-roam-dailies-find-today)
+               ;; ("C-c n y"   . org-roam-dailies-find-yesterday)
+               ;; ("C-c n r"   . org-roam-dailies-find-tomorrow)
               :map org-mode-map
-              (("C-c r i" . org-roam-insert))
-              (("C-c r I" . org-roam-insert-immediate))))
+              (("C-c n i" . org-roam-insert))
+              (("C-c n I" . org-roam-insert-immediate))))
 
 ;;
 ;; Languages
@@ -709,21 +722,21 @@ color theme."
 	projectile-switch-project-action 'neotree-projectile-action)
   :bind
   (:map global-map
-	("C-c n" . neotree-project-dir)))
+	("M-n" . my/neotree-project-dir)))
 
-  (defun neotree-project-dir ()
-    "Open NeoTree using the git root. \
-     Copied from https://www.emacswiki.org/emacs/NeoTree"
-    (interactive)
-    (let ((project-dir (projectile-project-root))
-          (file-name (buffer-file-name)))
-      (neotree-toggle)
-      (if project-dir
-          (if (neo-global--window-exists-p)
-              (progn
-                (neotree-dir project-dir)
-                (neotree-find file-name)))
-        (message "Could not find git project root."))))
+;; Copied from https://www.emacswiki.org/emacs/NeoTree
+(defun my/neotree-project-dir ()
+  "Open NeoTree using the git root."
+  (interactive)
+  (let ((project-dir (projectile-project-root))
+        (file-name (buffer-file-name)))
+    (neotree-toggle)
+    (if project-dir
+        (if (neo-global--window-exists-p)
+            (progn
+              (neotree-dir project-dir)
+              (neotree-find file-name)))
+      (message "Could not find git project root."))))
 
 ;; Similar to find symbol in project in Intellij
 (use-package lsp-ivy
@@ -947,8 +960,7 @@ color theme."
 
 ;; TODO: Get email functional for Gmail and Fastmail with the intention of
 ;; being able to use Fastmail for subscribing to kernel mailing lists, etc.
-;; Get email bookmarks working so that you can quickly hunt around for things.
-;; Get email sending working efficiently/predictably.
 
-;; ;; Load org-mode integration
+;; Load org-mode integration
+;; See: https://www.djcbsoftware.nl/code/mu/mu4e/Org_002dmode-links.html
 ;; (require 'org-mu4e)
