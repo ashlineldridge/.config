@@ -510,8 +510,13 @@ color theme."
 	`(("p" "Projects"
            ((todo
 	     "TODO"
-             ((org-agenda-overriding-header "Project Tasks")
-	      (org-agenda-files '(,(concat my/org-dir "/projects.org")))
+             ((org-agenda-overriding-header "Personal Project Tasks")
+	      (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+              (org-agenda-max-todos nil)))
+            (todo
+	     "TODO"
+             ((org-agenda-overriding-header "Work Project Tasks")
+	      (org-agenda-files '(,(concat my/org-dir "/work.org")))
               (org-agenda-max-todos nil)))
             (todo
 	     "TODO"
@@ -528,7 +533,8 @@ color theme."
   (org-agenda-files
    (list
     (concat my/org-dir "/inbox.org")
-    (concat my/org-dir "/projects.org")
+    (concat my/org-dir "/personal.org")
+    (concat my/org-dir "/work.org")
     (concat my/org-dir "/tickler.org")))
   ;; Following variable allows customization of the agenda columns.
   (org-agenda-prefix-format
@@ -567,9 +573,14 @@ color theme."
   (org-refile-targets
    `((,(concat my/org-dir "/archive.org") :level . 1)
      (,(concat my/org-dir "/inbox.org") :level . 1)
-     (,(concat my/org-dir "/projects.org") :level . 3)
+     (,(concat my/org-dir "/personal.org") :level . 3)
+     (,(concat my/org-dir "/work.org") :level . 3)
      (,(concat my/org-dir "/someday.org") :level . 1)
      (,(concat my/org-dir "/tickler.org") :level . 2)))
+  ;; The following two settings are required to make org-refile show the full heading path
+  ;; to subheading refile candidates. Took a while to get this working properly.
+  (org-refile-use-outline-path t)
+  (org-outline-path-complete-in-steps nil)
   (org-tags-column 0)
   (org-todo-keywords
    `((sequence "TODO(t)" "HOLD(h)" "|" "DONE(d)")))
