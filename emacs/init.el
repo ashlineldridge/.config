@@ -587,8 +587,8 @@ color theme."
   ;; See colours here: https://alexschroeder.ch/geocities/kensanata/colors.html
   (org-todo-keyword-faces
    `(("TODO" . (:foreground "orange red" :weight bold))
-     ("WAIT" . (:foreground "HotPink2" :weight bold))
-     ("DONE" . (:foreground "MediumPurple3" :weight bold)))))
+     ("HOLD" . (:foreground "orange1" :weight bold))
+     ("DONE" . (:foreground "DodgerBlue2" :weight bold)))))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
