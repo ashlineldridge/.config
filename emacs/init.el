@@ -61,7 +61,7 @@
 (defvar my/default-variable-font-size 160)
 
 ;; Org-related variable definitions.
-(defvar my/org-dir "~/Development/home/org")
+(defvar my/org-dir "~/Dropbox/org")
 
 ;; Emacs config directory-related variable definitions.
 (defvar my/xdg-config-dir "~/.config/")
@@ -405,7 +405,7 @@
   (projectile-add-known-project "~/.config")
   (setq projectile-project-search-path
 	; Search path is displayed from right to left.
-	'("~/Development/home" "~/Development/work"))
+	'("~/Development/home" "~/Development/work" "~/Dropbox"))
   (setq projectile-switch-project-action #'projectile-dired)
   :config (projectile-mode)
   :bind-keymap
@@ -530,12 +530,19 @@ color theme."
     (concat my/org-dir "/inbox.org")
     (concat my/org-dir "/projects.org")
     (concat my/org-dir "/tickler.org")))
+  ;; Following variable allows customization of the agenda columns.
+  (org-agenda-prefix-format
+   '((agenda . " %i %-16:c%?-12t% s")
+     (todo . " %i %-16:c")
+     (tags . " %i %-16:c")
+     (search . " %i %-16:c")))
   (org-agenda-span 'day)
   (org-agenda-start-with-log-mode t)
   (org-agenda-window-setup 'current-window)
   (org-capture-templates `(("i" "Inbox" entry
                             (file ,(concat my/org-dir "/inbox.org"))
-                            "* TODO %i%?"
+			    "* TODO %i%?"
+                            ;; "* TODO %i%?\nCREATED: %U\n"
 			    :empty-lines-after 0)
 			   ;; TODO: Come up with these
 			   ;; ("p" "Project" entry
@@ -552,17 +559,21 @@ color theme."
   (org-ellipsis " 》")
   (org-hide-emphasis-markers t)
   (org-log-done 'time)
-  (org-log-into-drawer t)
+  ;; Leaving drawer logging disabled for now as I don't like the format of the log items,
+  ;; and I want to know when a task was created which doesn't happen without what apears
+  ;; to be quite a bit of custom code.
+  (org-log-into-drawer nil)
+  (org-log-states-order-reversed nil) ; Make newest last
   (org-refile-targets
-   (list
-    '(,(concat my/org-dir "/archive.org") :maxlevel . 1)
-    '(,(concat my/org-dir "/inbox.org") :maxlevel . 1)
-    '(,(concat my/org-dir "/projects.org") :maxlevel . 3)
-    '(,(concat my/org-dir "/someday.org" :maxlevel . 2))
-    '(,(concat my/org-dir "/tickler.org" :maxlevel . 2))))
+   `((,(concat my/org-dir "/archive.org") :level . 1)
+     (,(concat my/org-dir "/inbox.org") :level . 1)
+     (,(concat my/org-dir "/projects.org") :level . 3)
+     (,(concat my/org-dir "/someday.org") :level . 1)
+     (,(concat my/org-dir "/tickler.org") :level . 2)))
   (org-tags-column 0)
   (org-todo-keywords
-   `((sequence "TODO(t)" "WAIT(w)" "|" "DONE(d!)")))
+   `((sequence "TODO(t)" "HOLD(h)" "|" "DONE(d)")))
+  ;; See colours here: https://alexschroeder.ch/geocities/kensanata/colors.html
   (org-todo-keyword-faces
    `(("TODO" . (:foreground "orange red" :weight bold))
      ("WAIT" . (:foreground "HotPink2" :weight bold))
@@ -572,6 +583,20 @@ color theme."
   :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+(defun my/org-keywords-to-lower ()
+  "Convert Org keywords to lower case.
+
+Example: \"#+TITLE\" -> \"#+title\", etc."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (let ((case-fold-search nil)
+          (count 0))
+      (while (re-search-forward "\\(?1:#\\+[A-Z_]+\\(?:_[[:alpha:]]+\\)*\\)\\(?:[ :=~’”]\\|$\\)" nil :noerror)
+        (setq count (1+ count))
+        (replace-match (downcase (match-string-no-properties 1)) :fixedcase nil nil 1))
+      (message "Lower-cased %d matches" count))))
 
 (use-package org-roam
   ;; :pin org
