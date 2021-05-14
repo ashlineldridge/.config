@@ -204,6 +204,8 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
+;; (use-package org :pin org)
+
 ;; Install auto-package-update as the first package. When it is configured, it'll prompt
 ;; to run an update cycle (if the specified number of days have elapsed) early before the
 ;; other packages have loaded so that we can update them before they're loaded.
@@ -492,6 +494,8 @@ color theme."
   (set-face-attribute 'org-document-info-keyword nil :inherit 'fixed-pitch)
   (set-face-attribute 'org-drawer nil :inherit 'fixed-pitch)
   (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
+  ;; TODO: Just want to make org-headline-done the same size as org-headline-todo
+  ;; (set-face-attribute 'org-headline-done nil :strike-through t :height 1.3)
   (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch))
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
@@ -500,6 +504,7 @@ color theme."
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch)))
 
 (use-package org
+  :ensure org-plus-contrib
   :pin org ;; Why isn't this forcing pull latest?
   :hook (org-mode . my/org-mode-init)
   :config
@@ -563,6 +568,7 @@ color theme."
   (org-default-notes-file (concat my/org-dir "/inbox.org"))
   (org-directory my/org-dir)
   (org-ellipsis " 》")
+  (org-fontify-done-headline t)
   (org-hide-emphasis-markers t)
   (org-log-done 'time)
   ;; Leaving drawer logging disabled for now as I don't like the format of the log items,
