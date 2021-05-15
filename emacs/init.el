@@ -64,9 +64,9 @@
 (defvar my/org-dir "~/Dropbox/org")
 
 ;; Emacs config directory-related variable definitions.
-(defvar my/xdg-config-dir "~/.config/")
-(defvar my/xdg-cache-dir "~/.cache/")
-(defvar my/xdg-data-dir "~/.local/share/")
+(defvar my/xdg-config-dir "~/.config")
+(defvar my/xdg-cache-dir "~/.cache")
+(defvar my/xdg-data-dir "~/.local/share")
 
 ;; Emacs performance settings. I'm following the general performance recommendations of lsp-mode
 ;; here https://emacs-lsp.github.io/lsp-mode/page/performance. Some people recommend against
@@ -80,6 +80,21 @@
             (message "Emacs ready in %s with %d garbage collections."
 		     (format "%.2f seconds" (float-time (time-subtract after-init-time before-init-time)))
                      gcs-done)))
+
+;; Bootstrap straight.el. See https://github.com/raxod502/straight.el for instructions. Straight's
+;; standard installation method has been modified to force it to store it's files under the XDG data directory.
+(defvar bootstrap-version)
+(let* ((user-emacs-directory (concat my/xdg-data-dir "/emacs"))
+       (bootstrap-file (concat user-emacs-directory "/straight/repos/straight.el/bootstrap.el"))
+       (bootstrap-version 5))
+ (unless (file-exists-p bootstrap-file)
+   (with-current-buffer
+       (url-retrieve-synchronously
+        "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+        'silent 'inhibit-cookies)
+     (goto-char (point-max))
+     (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
 
 ;; Disable electric-indent-mode?
 ;; (add-hook 'after-change-major-mode-hook (lambda() (electric-indent-mode -1)))
@@ -178,6 +193,12 @@
 ;; Save interrupted session records in XDG_DATA_HOME.
 ;(setq auto-save-list-file-prefix (concat emacs-data-home "/auto-save-list"))
 (setq auto-save-list-file-prefix "~/.cache/emacs/auto-save-list/")
+
+;; Revert Dired and other buffers
+(setq global-auto-revert-non-file-buffers t)
+
+;; Revert buffers when the underlying file has changed
+(global-auto-revert-mode 1)
 
 ;; Do not use `init.el` for `custom-*` code - use `custom.el`.
 (setq custom-file "~/.config/emacs/custom.el")
@@ -504,12 +525,14 @@ color theme."
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch)))
 
 (use-package org
-  :ensure org-plus-contrib
-  :pin org ;; Why isn't this forcing pull latest?
+  :pin org
   :hook (org-mode . my/org-mode-init)
   :config
   ;; Save org buffers after refiling.
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
+  ;; Make it easier to create org-babel code blocks.
+  (require 'org-tempo)
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   :custom
   (org-agenda-custom-commands
 	`(("p" "Projects"
@@ -565,6 +588,7 @@ color theme."
                            ;;  "* %i%?\n<%<%Y-%m-%d +1y>>"
 			   ;;  :empty-lines-after 1)
 			   ))
+  (org-confirm-babel-evaluate nil)
   (org-default-notes-file (concat my/org-dir "/inbox.org"))
   (org-directory my/org-dir)
   (org-ellipsis " 》")
@@ -788,7 +812,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   :after lsp-mode
   :hook
   (prog-mode . company-mode)
-  (org-mode . company-mode)
   :bind
   (:map company-active-map
 	("<tab>" . company-complete-selection)
