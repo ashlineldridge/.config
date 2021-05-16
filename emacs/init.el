@@ -10,7 +10,6 @@
 
 ;;; TO DO:
 ;; - Convert this into an org file (org-babel)
-;; - Switch over to straight.el?
 ;; - Remove window-system checks - no longer needed
 ;; - Use :defer X where X is the number of secs to improve start up time
 ;;   See: https://blog.d46.us/advanced-emacs-startup/
@@ -47,7 +46,8 @@
 ;; Set this early so that newest versions of files are loaded. Apparently, this can negatively
 ;; impact performance but in my tests it didn't affect start-up time and I don't restart Emacs
 ;; that often anyway.
-(setq load-prefer-newer t)
+;; Getting rid of this as I'm guessing straight.el shouldn't need it.
+;; (setq load-prefer-newer t)
 
 ;; Theme-related variable definitions.
 (defvar my/dark-theme 'doom-tomorrow-night)
@@ -81,23 +81,34 @@
 		     (format "%.2f seconds" (float-time (time-subtract after-init-time before-init-time)))
                      gcs-done)))
 
-;; Bootstrap straight.el. See https://github.com/raxod502/straight.el for instructions. Straight's
-;; standard installation method has been modified to force it to store it's files under the XDG data directory.
+(setq straight-repository-branch "develop")
+
+;; Bootstrap straight.el.
 (defvar bootstrap-version)
-(let* ((user-emacs-directory (concat my/xdg-data-dir "/emacs"))
-       (bootstrap-file (concat user-emacs-directory "/straight/repos/straight.el/bootstrap.el"))
-       (bootstrap-version 5))
- (unless (file-exists-p bootstrap-file)
-   (with-current-buffer
-       (url-retrieve-synchronously
-        "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-        'silent 'inhibit-cookies)
-     (goto-char (point-max))
-     (eval-print-last-sexp)))
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-;; Disable electric-indent-mode?
-;; (add-hook 'after-change-major-mode-hook (lambda() (electric-indent-mode -1)))
+;; Load straight helper package.
+(require 'straight-x)
+
+;; Install use-package.
+(straight-use-package 'use-package)
+
+;; Install org as early as possible after straight so that the built-in version of org doesn't get activated
+;; between here and where org is actually configured below.
+(straight-use-package 'org)
+
+;; Make use-package use straight for package installation.
+(setq straight-use-package-by-default t)
 
 ;; Do not show the startup screen.
 (setq inhibit-startup-message t)
@@ -201,43 +212,41 @@
 (global-auto-revert-mode 1)
 
 ;; Do not use `init.el` for `custom-*` code - use `custom.el`.
-(setq custom-file "~/.config/emacs/custom.el")
+;; (setq custom-file "~/.config/emacs/custom.el")
 
 ;; Assuming that the code in custom.el is executed before the code
 ;; ahead of this line is not a safe assumption. So load this file
 ;; proactively.
-(load-file custom-file)
+;; (load-file custom-file)
 
 ;; Require and configure `package`.
-(require 'package)
-(setq package-user-dir "~/.cache/emacs/packages/")
-(setq package-archives '(("elpa" . "https://elpa.gnu.org/packages/")
-			 ("melpa" . "https://melpa.org/packages/")
-			 ("org" . "https://orgmode.org/elpa/")))
-(package-initialize)
-(unless package-archive-contents
-  (package-refresh-contents))
+;; (require 'package)
+;; (setq package-user-dir "~/.cache/emacs/packages/")
+;; (setq package-archives '(("elpa" . "https://elpa.gnu.org/packages/")
+			 ;; ("melpa" . "https://melpa.org/packages/")
+			 ;; ("org" . "https://orgmode.org/elpa/")))
+;; (package-initialize)
+;; (unless package-archive-contents
+  ;; (package-refresh-contents))
 
 ;; Bootstrap use-package.
-(unless (package-installed-p 'use-package)
-  (package-install 'use-package))
+;; (unless (package-installed-p 'use-package)
+  ;; (package-install 'use-package))
 
-(require 'use-package)
-(setq use-package-always-ensure t)
-
-;; (use-package org :pin org)
+;; (require 'use-package)
+;; (setq use-package-always-ensure t)
 
 ;; Install auto-package-update as the first package. When it is configured, it'll prompt
 ;; to run an update cycle (if the specified number of days have elapsed) early before the
 ;; other packages have loaded so that we can update them before they're loaded.
-(use-package auto-package-update
-  :custom
-  (auto-package-update-interval 7)
-  (auto-package-update-prompt-before-update t)
-  (auto-package-update-hide-results nil)
-  :config
-  (auto-package-update-maybe)
-  (auto-package-update-at-time "09:00"))
+;; (use-package auto-package-update
+;;   :custom
+;;   (auto-package-update-interval 7)
+;;   (auto-package-update-prompt-before-update t)
+;;   (auto-package-update-hide-results nil)
+;;   :config
+;;   (auto-package-update-maybe)
+;;   (auto-package-update-at-time "09:00"))
 
 ;; Next, import environment variables from the shell (defined in "${XDG_BASE_CONFIG}/zsh/lib/env.zsh")
 ;; so that they are available to subsequent expressions.
@@ -249,35 +258,18 @@
 	  (setq exec-path-from-shell-arguments nil)
 	  (exec-path-from-shell-initialize)))
 
-
-;; Use the delight package for hiding major and minor modes.
-;; Is this even necessary since we've got minions?
-(use-package delight)
-(require 'delight)
-
-;; Show column rule indicator. This package provides a nicer looking
-;; vertical bar than the in-built display-fill-column-indicator mode.
-;; TODO: Put all column UX stuff together.
-(use-package fill-column-indicator
-  :disabled
-  :hook
-  ((prog-mode text-mode) . fci-mode)
-  ;; :init (fci-mode t)
-  :config
-  (setq fci-rule-column 100))
-
 (use-package ivy
-  :delight
   :init (ivy-mode t) ; globally at startup
   :config
   (setq ivy-use-virtual-buffers t)
   (setq ivy-height 20)
   (setq ivy-count-format "%d/%d "))
 
-(use-package ivy-rich :delight :init (ivy-rich-mode 1))
+(use-package ivy-rich
+  :after 'counsel
+  :init (ivy-rich-mode 1))
 
 (use-package counsel
-  :delight
   :bind
   (("M-x"     . counsel-M-x)
    ("C-s"     . swiper)
@@ -327,7 +319,6 @@
 ;; (use-package paredit :hook (emacs-lisp-mode . paredit-mode))
 
 (use-package which-key
-  :delight
   :init (progn
 	  (setq which-key-show-early-on-C-h t)
           (setq which-key-idle-delay 2)
@@ -418,7 +409,6 @@
   (doom-modeline-buffer-file-name-style 'truncate-except-project)
   (doom-modeline-major-mode-icon nil))
 
-;; TODO: Why aren't all minor modes shown by minions? E.g., ivy-prescient-mode?
 (use-package minions
   :hook (doom-modeline-mode . minions-mode))
 
@@ -438,7 +428,10 @@
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 
-(use-package magit)
+(use-package magit
+  :config
+  ;; Disable this as it takes over C-n and C-p which I'm used to using for navigation
+  (setq magit-bind-magit-project-status nil))
   ;; :bind (("C-c g" . magit-status))) ;; But how to remove C-x g?
 
 (use-package forge :after magit)
@@ -525,7 +518,8 @@ color theme."
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch)))
 
 (use-package org
-  :pin org
+  ;; :pin org
+  ;; :straight '(:host ...)
   :hook (org-mode . my/org-mode-init)
   :config
   ;; Save org buffers after refiling.
@@ -690,7 +684,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
               (("C-c n i" . org-roam-insert))
               (("C-c n I" . org-roam-insert-immediate))))
 
-;;
 ;; Languages
 ;;
 
@@ -731,11 +724,13 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 	      ("<tab>" . completion-at-point)))
 
 (use-package lsp-ui
+  :disabled ; Disabling as this has broken with straight.el - will fix later
   :custom
   (lsp-ui-sideline-enable nil)
   (lsp-ui-doc-position 'bottom))
 
 (use-package dap-mode
+  :disabled ; Disabling as this has broken with straight.el - will fix later
   ;; :custom
   ;; (lsp-enable-dap-auto-configure nil)
   :hook
@@ -756,17 +751,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   ;; Do I need to call this?
   ;; (dap-auto-configure-mode)
 )
-
-;; daviwil's setup
-;; (use-package dap-mode
-;;   :straight t
-;;   :custom
-;;   (lsp-enable-dap-auto-configure nil)
-;;   :config
-;;   (dap-ui-mode 1)
-;;   (dap-tooltip-mode 1)
-;;   (require 'dap-node)
-;;   (dap-node-setup))
 
 (use-package flycheck
   :defer t
@@ -863,6 +847,8 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 (use-package dockerfile-mode)
 
 (use-package bazel-mode
+  :straight '(bazel-mode :host github
+			 :repo "bazelbuild/emacs-bazel-mode")
   :mode "\\.BUILD\\'")
 
 (defun my/compile ()
@@ -916,9 +902,23 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 ;; You can probably also include these details in the secret name itself using the pass notation,
 ;; but with the extra '@' in the username it starts getting ugly.
 
+;; Attempt 2
+;; (use-package mu4e
+;;   :straight (mu4e
+;; 	     :host github
+;;              :repo "djcb/mu"
+;;              :branch "master"
+;;              :files ("mu4e/*.el")
+;;              :pre-build (("CPPFLAGS=-I/usr/local/opt/xapian/include LDFLAGS=-L/usr/local/opt/xapian/lib ./autogen.sh") ("make")))
+;;   :custom
+;;   (mu4e-mu-binary (expand-file-name "mu/mu" (straight--repos-dir "mu")))
+
+;; Attempt 1
+;; '(mu4e :files (:defaults "mu4e/*.el"))
+
 (use-package mu4e
-  ;; :defer 20   ; Wait until 20 seconds after startup
-  :ensure nil ; Use the version of mu4e packaged with mu
+  ;; Use the version of mu4e packaged with mu
+  :straight nil
   :load-path "/usr/local/opt/mu/share/emacs/site-lisp/mu/mu4e/"
   :custom
   (mu4e-update-interval (* 10 60))

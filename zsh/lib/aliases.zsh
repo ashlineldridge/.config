@@ -64,10 +64,6 @@ alias prom='prometheus --config.file=/usr/local/etc/prometheus.yml'
 alias am='alertmanager --config.file=/usr/local/etc/alertmanager.yml'
 alias grafana='grafana-server --config=/usr/local/etc/grafana/grafana.ini --homepath /usr/local/share/grafana --packaging=brew cfg:default.paths.logs=/usr/local/var/log/grafana cfg:default.paths.data=/usr/local/var/lib/grafana cfg:default.paths.plugins=/usr/local/var/lib/grafana/plugins'
 
-# Because I still accidentally launch Vim and start type Emacs commands.
-alias vim="echo Use \\'emacs\\' or \\'command vim\\'.; false"
-alias vi="echo Use \\'emacs\\' or \\'command vi\\'.; false"
-
 # Emacs
 alias e=emacs
 alias et='emacs --no-window-system --quick'

@@ -20,6 +20,7 @@ emacs/forge-database.sqlite
 emacs/projectile-bookmarks.eld
 emacs/projectile.cache
 emacs/recentf
+emacs/straight/
 emacs/transient/
 target/
 .idea/
