@@ -1,53 +1,14 @@
 ;;; init.el --- Emacs init file.
 
 ;; Author: Ashlin Eldridge
-;; Version: 0.0.1
+;; Version: 0.0.2
 ;; Keywords: emacs, init, lisp
 
 ;;; Commentary:
 ;;
-;; My slowly growing Emacs init file.
-
-;;; TO DO:
-;; - Convert this into an org file (org-babel)
-;; - Remove window-system checks - no longer needed
-;; - Use :defer X where X is the number of secs to improve start up time
-;;   See: https://blog.d46.us/advanced-emacs-startup/
-;; - Use no-littering https://github.com/emacscollective/no-littering
-;; - Get use-package / auto-package-update to install org from the org archive rather than built-in
-;;   See: https://www.reddit.com/r/emacs/comments/5sx7j0/how_do_i_get_usepackage_to_ignore_the_bundled
-;; - Get org mode completion working with company? counsel? Might need to use Karabiner Elements
-;;   to allow Emacs to get CMD+Tab since org-mode needs tab.
-;;   See: https://superuser.com/questions/548146/change-command-tab-to-option-tab-on-mac
-;; - Make org-mode faces nicer (bold should be bolder now that org-hide-emphasis-markers is set to t.
-;; - Get inspo from https://lepisma.xyz/2017/10/28/ricing-org-mode/
-;; - Why do things go weird when I scroll past a .org file that hasn't been opened (i.e., is in light
-;;   grey) when doing C-x b?
-;; - Make my/org-reset-blah function restore the current state of org in terms of current visibility.
-;; - How do I get rid of the shadow when an org section contains a code block and the buffer is in the
-;;   `overview` state? (Following the ellipsis is a weird shadow block.) Workaround: tinyurl.com/r54xfc8n
-;; - Switch as much stuff from `setq` inside `:config` to `:custom`.
-;; - Use https://orgmode.org/worg/org-contrib/org-protocol.html to capture tasks from outside emacs -
-;;   e.g., from pages open in browser (you can create a custom Firefox "button").
-;; - Use org-ql for querying org files: https://github.com/alphapapa/org-ql.
-;; - Install https://github.com/akermu/emacs-libvterm for a good Emacs terminal
-;; - Rather than setting global keybindings one at a time, perhaps shift to setting them in global-map
-;;   using the :bind directive of use-package (see neotree).
-
-;;; Links:
-;; - https://sachachua.com/blog/wp-content/uploads/2014/01/2014-01-07-Map-for-learning-Org-Mode-for-Emacs.png
-;; - https://emacs.cafe/emacs/orgmode/gtd/2017/06/30/orgmode-gtd.html
-;; - https://orgmode.org/manual/Capture-templates.html#Capture-templates
-;; - https://orgmode.org/manual/Refile-and-Copy.html#Refile-and-copy
-;; - https://orgmode.org/manual/Refile-and-Copy.html#Refile-and-copy
+;; My bonsai.
 
 ;;; Code:
-
-;; Set this early so that newest versions of files are loaded. Apparently, this can negatively
-;; impact performance but in my tests it didn't affect start-up time and I don't restart Emacs
-;; that often anyway.
-;; Getting rid of this as I'm guessing straight.el shouldn't need it.
-;; (setq load-prefer-newer t)
 
 ;; Theme-related variable definitions.
 (defvar my/dark-theme 'doom-tomorrow-night)
@@ -81,7 +42,7 @@
 		     (format "%.2f seconds" (float-time (time-subtract after-init-time before-init-time)))
                      gcs-done)))
 
-(setq straight-repository-branch "develop")
+(defvar straight-repository-branch "develop")
 
 ;; Bootstrap straight.el.
 (defvar bootstrap-version)
@@ -210,43 +171,6 @@
 
 ;; Revert buffers when the underlying file has changed
 (global-auto-revert-mode 1)
-
-;; Do not use `init.el` for `custom-*` code - use `custom.el`.
-;; (setq custom-file "~/.config/emacs/custom.el")
-
-;; Assuming that the code in custom.el is executed before the code
-;; ahead of this line is not a safe assumption. So load this file
-;; proactively.
-;; (load-file custom-file)
-
-;; Require and configure `package`.
-;; (require 'package)
-;; (setq package-user-dir "~/.cache/emacs/packages/")
-;; (setq package-archives '(("elpa" . "https://elpa.gnu.org/packages/")
-			 ;; ("melpa" . "https://melpa.org/packages/")
-			 ;; ("org" . "https://orgmode.org/elpa/")))
-;; (package-initialize)
-;; (unless package-archive-contents
-  ;; (package-refresh-contents))
-
-;; Bootstrap use-package.
-;; (unless (package-installed-p 'use-package)
-  ;; (package-install 'use-package))
-
-;; (require 'use-package)
-;; (setq use-package-always-ensure t)
-
-;; Install auto-package-update as the first package. When it is configured, it'll prompt
-;; to run an update cycle (if the specified number of days have elapsed) early before the
-;; other packages have loaded so that we can update them before they're loaded.
-;; (use-package auto-package-update
-;;   :custom
-;;   (auto-package-update-interval 7)
-;;   (auto-package-update-prompt-before-update t)
-;;   (auto-package-update-hide-results nil)
-;;   :config
-;;   (auto-package-update-maybe)
-;;   (auto-package-update-at-time "09:00"))
 
 ;; Next, import environment variables from the shell (defined in "${XDG_BASE_CONFIG}/zsh/lib/env.zsh")
 ;; so that they are available to subsequent expressions.
@@ -432,9 +356,11 @@
   :config
   ;; Disable this as it takes over C-n and C-p which I'm used to using for navigation
   (setq magit-bind-magit-project-status nil))
-  ;; :bind (("C-c g" . magit-status))) ;; But how to remove C-x g?
 
-(use-package forge :after magit)
+(use-package forge
+  :after magit
+  :custom
+  (forge-database-file (concat my/xdg-cache-dir "/emacs/forge-database.sqlite")))
 
 (use-package ace-window
   :bind (("M-o" . ace-window))
@@ -508,8 +434,6 @@ color theme."
   (set-face-attribute 'org-document-info-keyword nil :inherit 'fixed-pitch)
   (set-face-attribute 'org-drawer nil :inherit 'fixed-pitch)
   (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
-  ;; TODO: Just want to make org-headline-done the same size as org-headline-todo
-  ;; (set-face-attribute 'org-headline-done nil :strike-through t :height 1.3)
   (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch))
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
@@ -518,8 +442,6 @@ color theme."
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch)))
 
 (use-package org
-  ;; :pin org
-  ;; :straight '(:host ...)
   :hook (org-mode . my/org-mode-init)
   :config
   ;; Save org buffers after refiling.
@@ -529,29 +451,29 @@ color theme."
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   :custom
   (org-agenda-custom-commands
-	`(("p" "Projects"
-           ((todo
-	     "TODO"
-             ((org-agenda-overriding-header "Personal Project Tasks")
-	      (org-agenda-files '(,(concat my/org-dir "/personal.org")))
-              (org-agenda-max-todos nil)))
-            (todo
-	     "TODO"
-             ((org-agenda-overriding-header "Work Project Tasks")
-	      (org-agenda-files '(,(concat my/org-dir "/work.org")))
-              (org-agenda-max-todos nil)))
-            (todo
-	     "TODO"
-             ((org-agenda-overriding-header "Unprocessed Inbox Tasks")
-              (org-agenda-files '(,(concat my/org-dir "/inbox.org")))))))
-	  ;; TODO: Come up with these
-          ;; ("1" "Next 7 Day Schedule"
-          ;;  ((agenda "" ((org-deadline-warning-days 7)))))
-	  ;; ("2" "Next 14 Day Schedule"
-          ;;  ((agenda "" ((org-deadline-warning-days 14)))))
-	  ;; ("3" "Next 30 Day Schedule"
-          ;;  ((agenda "" ((org-deadline-warning-days )))))
-	  ))
+   `(("p" "Projects"
+      ((todo
+	"TODO"
+        ((org-agenda-overriding-header "Personal Project Tasks")
+	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+         (org-agenda-max-todos nil)))
+       (todo
+	"TODO"
+        ((org-agenda-overriding-header "Work Project Tasks")
+	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
+         (org-agenda-max-todos nil)))
+       (todo
+	"TODO"
+        ((org-agenda-overriding-header "Unprocessed Inbox Tasks")
+         (org-agenda-files '(,(concat my/org-dir "/inbox.org")))))))
+     ;; TODO: Come up with these
+     ;; ("1" "Next 7 Day Schedule"
+     ;;  ((agenda "" ((org-deadline-warning-days 7)))))
+     ;; ("2" "Next 14 Day Schedule"
+     ;;  ((agenda "" ((org-deadline-warning-days 14)))))
+     ;; ("3" "Next 30 Day Schedule"
+     ;;  ((agenda "" ((org-deadline-warning-days )))))
+     ))
   (org-agenda-files
    (list
     (concat my/org-dir "/inbox.org")
@@ -568,7 +490,7 @@ color theme."
   (org-agenda-start-with-log-mode t)
   (org-agenda-window-setup 'current-window)
   (org-capture-templates `(("i" "Inbox" entry
-                            (file ,(concat my/org-dir "/inbox.org"))
+                            (file+headline ,(concat my/org-dir "/inbox.org") "Inbox")
 			    "* TODO %i%?"
                             ;; "* TODO %i%?\nCREATED: %U\n"
 			    :empty-lines-after 0)
@@ -634,8 +556,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
       (message "Lower-cased %d matches" count))))
 
 (use-package org-roam
-  ;; :pin org
-  :ensure t
   :hook
   ;; Should I just enable org-roam-mode when editing a .org file?
   (after-init . org-roam-mode)
@@ -674,18 +594,35 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 	       ;; availble when editing an org-roam file.
 	       ("C-c n t" . org-roam-tag-add)
 	       ("C-c n a" . org-roam-alias-add))
-               ;; ("C-c n d"   . org-roam-dailies-find-date)
-               ;; ("C-c n c"   . org-roam-dailies-capture-today)
-               ;; ("C-c n C r" . org-roam-dailies-capture-tomorrow)
-               ;; ("C-c n t"   . org-roam-dailies-find-today)
-               ;; ("C-c n y"   . org-roam-dailies-find-yesterday)
-               ;; ("C-c n r"   . org-roam-dailies-find-tomorrow)
+              ;; ("C-c n d"   . org-roam-dailies-find-date)
+              ;; ("C-c n c"   . org-roam-dailies-capture-today)
+              ;; ("C-c n C r" . org-roam-dailies-capture-tomorrow)
+              ;; ("C-c n t"   . org-roam-dailies-find-today)
+              ;; ("C-c n y"   . org-roam-dailies-find-yesterday)
+              ;; ("C-c n r"   . org-roam-dailies-find-tomorrow)
               :map org-mode-map
               (("C-c n i" . org-roam-insert))
               (("C-c n I" . org-roam-insert-immediate))))
 
+;;
 ;; Languages
 ;;
+
+(use-package company
+  :hook
+  (prog-mode . company-mode)
+  :bind
+  (:map company-active-map
+	("<tab>" . company-complete-selection)
+	("C-n" . company-select-next-or-abort)
+	("C-p" . company-select-previous-or-abort))
+  ;; (:map org-mode-map ("<tab>" . company-indent-or-complete-common))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode))
 
 (defun my/compile ()
   "Grabbed from https://github.com/rigtorp/dotemacs/blob/master/init.el."
@@ -706,10 +643,11 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (lsp-keymap-prefix "C-c l")
   (lsp-disabled-clients '(ccls))
   (lsp-eldoc-render-all nil)
-  ; The following --query-driver args allow clangd to be used with the compile_commands.json
-  ; generated by bazel-compilation-database. This is due to the fact that, by default,
-  ; clangd expects the driver to be a standard compiler executable (e.g., clang++).
-  ; The log level can be changed to "debug" for additional information.
+
+  ;; The following --query-driver args allow clangd to be used with the compile_commands.json
+  ;; generated by bazel-compilation-database. This is due to the fact that, by default,
+  ;; clangd expects the driver to be a standard compiler executable (e.g., clang++).
+  ;; The log level can be changed to "debug" for additional information.
   (lsp-clients-clangd-args '("--query-driver=**/wrapped_clang"
 			     "--background-index"
 			     "--log=info"
@@ -721,7 +659,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   :config
   (lsp-enable-which-key-integration t)
   :bind (:map lsp-mode-map
-	      ("<tab>" . completion-at-point)))
+	      ("<tab>" . company-indent-or-complete-common)))
 
 (use-package lsp-ui
   :disabled ; Disabling as this has broken with straight.el - will fix later
@@ -750,7 +688,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   ;; (dap-cpptools-setup))
   ;; Do I need to call this?
   ;; (dap-auto-configure-mode)
-)
+  )
 
 (use-package flycheck
   :defer t
@@ -792,24 +730,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 (use-package lsp-ivy
   :after lsp-mode)
 
-(use-package company
-  :after lsp-mode
-  :hook
-  (prog-mode . company-mode)
-  :bind
-  (:map company-active-map
-	("<tab>" . company-complete-selection)
-	("C-n" . company-select-next-or-abort)
-	("C-p" . company-select-previous-or-abort))
-  (:map lsp-mode-map ("<tab>" . company-indent-or-complete-common))
-  ;; (:map org-mode-map ("<tab>" . company-indent-or-complete-common))
-  :custom
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0))
-
-(use-package company-box
-  :hook (company-mode . company-box-mode))
-
 (use-package typescript-mode
   :mode "\\.ts\\'"
   :config
@@ -824,11 +744,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 ;; Shell scripting indentation
 (setq sh-basic-offset 2
       sh-indentation 2)
-
-;; Stick with clangd for now
-;; (use-package ccls
-;;   :hook ((c-mode c++-mode objc-mode cuda-mode) .
-;;          (lambda () (require 'ccls) (lsp))))
 
 (use-package go-mode
   :mode "\\.go\\'"
@@ -902,20 +817,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 ;; You can probably also include these details in the secret name itself using the pass notation,
 ;; but with the extra '@' in the username it starts getting ugly.
 
-;; Attempt 2
-;; (use-package mu4e
-;;   :straight (mu4e
-;; 	     :host github
-;;              :repo "djcb/mu"
-;;              :branch "master"
-;;              :files ("mu4e/*.el")
-;;              :pre-build (("CPPFLAGS=-I/usr/local/opt/xapian/include LDFLAGS=-L/usr/local/opt/xapian/lib ./autogen.sh") ("make")))
-;;   :custom
-;;   (mu4e-mu-binary (expand-file-name "mu/mu" (straight--repos-dir "mu")))
-
-;; Attempt 1
-;; '(mu4e :files (:defaults "mu4e/*.el"))
-
 (use-package mu4e
   ;; Use the version of mu4e packaged with mu
   :straight nil
@@ -967,12 +868,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 	    :query "date:7d..now"
 	    :key ?w)))
 
-  ;; (add-to-list 'mu4e-bookmarks
-  ;;              (make-mu4e-bookmark
-  ;;               :name "All Inboxes"
-  ;;               :query "maildir:/Fastmail/INBOX OR maildir:/Personal/Inbox"
-  ;;               :key ?i))
-
   ;; Override view actions to remove unused actions and add an option to
   ;; to view the email in a browser - handy for complicated HTML emails.
   (mu4e-view-actions
@@ -1022,10 +917,3 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 		  (smtpmail-stream-type  . ssl)
 		  ;; Trash sent messages because Gmail will already keep a copy in the sent folder.
 		  (mu4e-sent-messages-behavior . trash))))))
-
-;; TODO: Get email functional for Gmail and Fastmail with the intention of
-;; being able to use Fastmail for subscribing to kernel mailing lists, etc.
-
-;; Load org-mode integration
-;; See: https://www.djcbsoftware.nl/code/mu/mu4e/Org_002dmode-links.html
-;; (require 'org-mu4e)
