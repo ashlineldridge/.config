@@ -395,6 +395,10 @@ color theme."
 
   (interactive)
 
+  ;;; Completion
+  (company-mode)
+  (setq company-idle-delay nil)
+
   ;;; Indentation and page structure configuration.
 
   (org-indent-mode)
@@ -443,6 +447,8 @@ color theme."
 
 (use-package org
   :hook (org-mode . my/org-mode-init)
+  :bind
+  (:map org-mode-map ("<tab>" . company-indent-or-complete-common))
   :config
   ;; Save org buffers after refiling.
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
@@ -564,27 +570,23 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (org-roam-db-location (concat my/xdg-cache-dir "/emacs/org-roam.db"))
   (org-roam-completion-everywhere t)
   (org-roam-completion-system 'ivy)
-  ;; (org-roam-capture-templates
-  ;;   '(("d" "default" plain
-  ;;      #'org-roam-capture--get-point
-  ;;      "%?"
-  ;;      :file-name "%<%Y%m%d%H%M%S>-${slug}"
-  ;;      :head "#+title: ${title}\n"
-  ;;      :unnarrowed t)
-  ;;     ("ll" "link note" plain
-  ;;      #'org-roam-capture--get-point
-  ;;      "* %^{Link}"
-  ;;      :file-name "Inbox"
-  ;;      :olp ("Links")
-  ;;      :unnarrowed t
-  ;;      :immediate-finish)
-  ;;     ("lt" "link task" entry
-  ;;      #'org-roam-capture--get-point
-  ;;      "* TODO %^{Link}"
-  ;;      :file-name "Inbox"
-  ;;      :olp ("Tasks")
-  ;;      :unnarrowed t
-  ;;      :immediate-finish)))
+  (org-roam-capture-templates
+    `(("d" "default" plain
+       #'org-roam-capture--get-point
+       ,(concat
+	 "* Note\n"
+	 "Replace or delete this section\n\n"
+	 "* Links\n"
+	 "** Roam Links\n"
+	 "- Use org-roam-insert here\n\n"
+	 "** Web Links\n"
+	 "- Paste web URL here\n")
+       :file-name "%<%Y%m%d%H%M%S>-${slug}"
+       :head ,(concat
+	       "#+title: ${title}\n"
+	       "#+created: %<%Y-%m-%d>\n"
+	       "#+roam_tags: tag1 tag2%?\n\n")
+       :unnarrowed t)))
   :bind (:map org-roam-mode-map
               (("C-c n r" . org-roam)
                ("C-c n c" . org-roam-capture)
@@ -616,7 +618,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 	("<tab>" . company-complete-selection)
 	("C-n" . company-select-next-or-abort)
 	("C-p" . company-select-previous-or-abort))
-  ;; (:map org-mode-map ("<tab>" . company-indent-or-complete-common))
   :custom
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
