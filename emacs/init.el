@@ -448,7 +448,8 @@ color theme."
 (use-package org
   :hook (org-mode . my/org-mode-init)
   :bind
-  (:map org-mode-map ("<tab>" . company-indent-or-complete-common))
+  ;; Can't use plain tab as org uses that for cycling visibility
+  (:map org-mode-map ("C-c <tab>" . company-indent-or-complete-common))
   :config
   ;; Save org buffers after refiling.
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
