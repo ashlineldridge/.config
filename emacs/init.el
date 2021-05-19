@@ -234,6 +234,8 @@
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . gfm-mode)
          ("\\.markdown\\'" . markdown-mode))
+  ;; Remove M-n keybinding as I don't use it and it overrides nerdtree.
+  :bind (:map markdown-mode-map ("M-n" . nil))
   :init (setq markdown-command "multimarkdown"))
 
 (use-package rainbow-delimiters
@@ -395,10 +397,6 @@ color theme."
 
   (interactive)
 
-  ;;; Completion
-  (company-mode)
-  (setq company-idle-delay nil)
-
   ;;; Indentation and page structure configuration.
 
   (org-indent-mode)
@@ -447,9 +445,6 @@ color theme."
 
 (use-package org
   :hook (org-mode . my/org-mode-init)
-  :bind
-  ;; Can't use plain tab as org uses that for cycling visibility
-  (:map org-mode-map ("C-c <tab>" . company-indent-or-complete-common))
   :config
   ;; Save org buffers after refiling.
   (advice-add 'org-refile :after 'org-save-all-org-buffers)
@@ -611,14 +606,31 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 ;; Languages
 ;;
 
+  ;; Completion
+  ;; (company-mode)
+  ;; (setq company-idle-delay nil)
+
+(defun my/company-mode ()
+  "Run company-mode and configure autocompletion based on the major mode."
+  (interactive)
+  ;; Disable autocompletion for org files (it's annoying) but enable it for programming
+  ;; modes. The variable company-idle-delay is global so we make a buffer local variable
+  ;; out of it so that setting it in one buffer doesn't affect others.
+  (set (make-local-variable 'company-idle-delay)
+       (if (eq major-mode 'org-mode) nil 0.0))
+  (company-mode))
+
 (use-package company
   :hook
-  (prog-mode . company-mode)
+  (prog-mode . my/company-mode)
+  (org-mode . my/company-mode)
   :bind
   (:map company-active-map
 	("<tab>" . company-complete-selection)
 	("C-n" . company-select-next-or-abort)
 	("C-p" . company-select-previous-or-abort))
+  ;; Can't use plain tab as org uses that for cycling visibility
+  (:map org-mode-map ("C-c <tab>" . company-indent-or-complete-common))
   :custom
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
@@ -664,13 +676,11 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 	      ("<tab>" . company-indent-or-complete-common)))
 
 (use-package lsp-ui
-  :disabled ; Disabling as this has broken with straight.el - will fix later
   :custom
   (lsp-ui-sideline-enable nil)
   (lsp-ui-doc-position 'bottom))
 
 (use-package dap-mode
-  :disabled ; Disabling as this has broken with straight.el - will fix later
   ;; :custom
   ;; (lsp-enable-dap-auto-configure nil)
   :hook
