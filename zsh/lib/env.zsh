@@ -53,6 +53,9 @@ export PATH="/usr/local/bin:/usr/local/opt/coreutils/libexec/gnubin:/usr/local/o
 # Kubernetes
 export KUBECONFIG="${HOME}/.kube/config"
 
+# Docker
+export DOCKER_SCAN_SUGGEST="false"
+
 # Variables used by Bazel's wrapped_clang executable that is embedded in generated compile_commands.json files
 export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
 export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"

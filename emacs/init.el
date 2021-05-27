@@ -576,7 +576,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 	 "** Roam Links\n"
 	 "- Use org-roam-insert here\n\n"
 	 "** Web Links\n"
-	 "- Paste web URL here\n")
+	 "- Use org-insert-link or paste URL here\n")
        :file-name "%<%Y%m%d%H%M%S>-${slug}"
        :head ,(concat
 	       "#+title: ${title}\n"
