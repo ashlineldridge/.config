@@ -128,7 +128,6 @@
 (global-unset-key (kbd "<up>"))
 (global-unset-key (kbd "<down>"))
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-(global-set-key (kbd "C-c e") 'eshell)
 (global-set-key (kbd "C-;") 'comment-line)
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
@@ -178,7 +177,7 @@
   :init (when (memq window-system '(mac ns x))
 	  (setq exec-path-from-shell-variables
 		'("PATH" "MANPATH" "XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME"
-		  "GNUPGHOME" "PASSWORD_STORE_DIR" "DEVELOPER_DIR" "SDKROOT"))
+		  "SHELL" "GNUPGHOME" "PASSWORD_STORE_DIR" "DEVELOPER_DIR" "SDKROOT"))
 	  (setq exec-path-from-shell-arguments nil)
 	  (exec-path-from-shell-initialize)))
 
@@ -386,6 +385,14 @@
 (use-package yasnippet-snippets
   :after yasnippet)
 
+(use-package vterm
+  :bind
+  (:map global-map("C-c v" . vterm))
+  :custom
+  ;; Don't prompt for permission to compile on first install.
+  (vterm-always-compile-module t)
+  (vterm-max-scrollback 10000))
+
 (defun my/org-mode-init ()
   "Personal `org-mode` configuration.
 
@@ -521,8 +528,8 @@ color theme."
   (org-refile-targets
    `((,(concat my/org-dir "/archive.org") :level . 1)
      (,(concat my/org-dir "/inbox.org") :level . 1)
-     (,(concat my/org-dir "/personal.org") :level . 3)
-     (,(concat my/org-dir "/work.org") :level . 3)
+     (,(concat my/org-dir "/personal.org") :regexp . "Tasks") ;; This seems to work nicer.
+     (,(concat my/org-dir "/work.org") :regexp . "Tasks")
      (,(concat my/org-dir "/someday.org") :level . 1)
      (,(concat my/org-dir "/tickler.org") :level . 2)))
   ;; The following two settings are required to make org-refile show the full heading path
