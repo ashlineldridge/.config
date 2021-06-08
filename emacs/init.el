@@ -460,29 +460,37 @@ color theme."
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   :custom
   (org-agenda-custom-commands
-   `(("p" "Projects"
+   `(("a" "All Tasks"
+      ((alltodo
+	""
+	((org-agenda-overriding-header "Personal")
+	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))))
+       (alltodo
+	""
+	((org-agenda-overriding-header "Work")
+	 (org-agenda-files '(,(concat my/org-dir "/work.org")))))
+       (alltodo
+	""
+	((org-agenda-overriding-header "Inbox")
+	 (org-agenda-files '(,(concat my/org-dir "/inbox.org")))))))
+     ("p" "Personal Tasks"
       ((todo
-	"TODO"
-        ((org-agenda-overriding-header "Personal Project Tasks")
-	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
-         (org-agenda-max-todos nil)))
+	"NEXT"
+        ((org-agenda-overriding-header "Next")
+	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))))
        (todo
 	"TODO"
-        ((org-agenda-overriding-header "Work Project Tasks")
-	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
-         (org-agenda-max-todos nil)))
+        ((org-agenda-overriding-header "Upcoming")
+	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))))))
+     ("w" "Work Tasks"
+      ((todo
+	"NEXT"
+        ((org-agenda-overriding-header "Next")
+	 (org-agenda-files '(,(concat my/org-dir "/work.org")))))
        (todo
 	"TODO"
-        ((org-agenda-overriding-header "Unprocessed Inbox Tasks")
-         (org-agenda-files '(,(concat my/org-dir "/inbox.org")))))))
-     ;; TODO: Come up with these
-     ;; ("1" "Next 7 Day Schedule"
-     ;;  ((agenda "" ((org-deadline-warning-days 7)))))
-     ;; ("2" "Next 14 Day Schedule"
-     ;;  ((agenda "" ((org-deadline-warning-days 14)))))
-     ;; ("3" "Next 30 Day Schedule"
-     ;;  ((agenda "" ((org-deadline-warning-days )))))
-     ))
+        ((org-agenda-overriding-header "Upcoming")
+	 (org-agenda-files '(,(concat my/org-dir "/work.org")))))))))
   (org-agenda-files
    (list
     (concat my/org-dir "/inbox.org")
@@ -538,10 +546,11 @@ color theme."
   (org-outline-path-complete-in-steps nil)
   (org-tags-column 0)
   (org-todo-keywords
-   `((sequence "TODO(t)" "HOLD(h)" "|" "DONE(d)")))
+   `((sequence "TODO(t)" "NEXT(n)" "HOLD(h)" "|" "DONE(d)")))
   ;; See colours here: https://alexschroeder.ch/geocities/kensanata/colors.html
   (org-todo-keyword-faces
    `(("TODO" . (:foreground "orange red" :weight bold))
+     ("NEXT" . (:foreground "green3" :weight bold))
      ("HOLD" . (:foreground "orange1" :weight bold))
      ("DONE" . (:foreground "DodgerBlue2" :weight bold)))))
 
