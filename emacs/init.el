@@ -135,9 +135,6 @@
 (global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i"))) ;; Capture to inbox.
 (global-set-key (kbd "C-c m") 'mu4e)
 
-;; Theme cycling.
-(global-set-key (kbd "C-c t") 'my/cycle-theme)
-
 ;; Show column numbers in the mode line.
 (column-number-mode t)
 
@@ -233,8 +230,6 @@
   :mode (("README\\.md\\'" . gfm-mode)
          ("\\.md\\'" . gfm-mode)
          ("\\.markdown\\'" . markdown-mode))
-  ;; Remove M-n keybinding as I don't use it and it overrides nerdtree.
-  :bind (:map markdown-mode-map ("M-n" . nil))
   :init (setq markdown-command "multimarkdown"))
 
 (use-package rainbow-delimiters
@@ -738,7 +733,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 	projectile-switch-project-action 'neotree-projectile-action)
   :bind
   (:map global-map
-	("M-n" . my/neotree-project-dir)))
+	("C-c t" . my/neotree-project-dir)))
 
 ;; Copied from https://www.emacswiki.org/emacs/NeoTree
 (defun my/neotree-project-dir ()
