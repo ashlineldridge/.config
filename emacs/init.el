@@ -449,13 +449,14 @@ color theme."
   :hook (org-mode . my/org-mode-init)
   :config
   ;; Save org buffers after refiling.
-  (advice-add 'org-refile :after 'org-save-all-org-buffers)
+  (advice-add 'org-refile :after (lambda (&rest _) (org-save-all-org-buffers)))
   ;; Make it easier to create org-babel code blocks.
   (require 'org-tempo)
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   :custom
   (org-agenda-custom-commands
-   `(("a" "All Tasks"
+   `(("Q" . "Custom Queries") ;; Creates command prefix "Q".
+     ("Qa" "All Tasks"
       ((alltodo
 	""
 	((org-agenda-overriding-header "Personal")
@@ -468,7 +469,7 @@ color theme."
 	""
 	((org-agenda-overriding-header "Inbox")
 	 (org-agenda-files '(,(concat my/org-dir "/inbox.org")))))))
-     ("p" "Personal Tasks"
+     ("Qp" "Personal Tasks"
       ((todo
 	"NEXT"
         ((org-agenda-overriding-header "Next")
@@ -477,7 +478,7 @@ color theme."
 	"TODO"
         ((org-agenda-overriding-header "Upcoming")
 	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))))))
-     ("w" "Work Tasks"
+     ("Qw" "Work Tasks"
       ((todo
 	"NEXT"
         ((org-agenda-overriding-header "Next")
