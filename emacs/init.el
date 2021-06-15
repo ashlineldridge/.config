@@ -382,11 +382,18 @@
 
 (use-package vterm
   :bind
-  (:map global-map("C-c v" . vterm))
+  ;; (:map global-map("C-c v" . vterm))
   :custom
   ;; Don't prompt for permission to compile on first install.
   (vterm-always-compile-module t)
   (vterm-max-scrollback 10000))
+
+(use-package multi-vterm
+  :bind (:map global-map
+	      ("C-c v v" . multi-vterm)
+	      ("C-c v n" . multi-vterm-next)
+	      ("C-c v p" . multi-vterm-prev)
+	      ("C-c v t" . multi-vterm-dedicated-toggle)))
 
 (defun my/org-mode-init ()
   "Personal `org-mode` configuration.
