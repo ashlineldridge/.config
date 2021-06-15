@@ -363,6 +363,24 @@
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
 
+;; Trying this out...
+(use-package golden-ratio
+  :config
+  (add-to-list 'golden-ratio-extra-commands 'ace-window))
+
+(use-package hydra)
+
+;; See roided out version here: https://github.com/jmercouris/configuration/blob/master/.emacs.d/hydra.el#L86
+;; See simpler version here: https://www.reddit.com/r/emacs/comments/b13n39/how_do_you_manage_window_sizes_in_emacs/eik6xzb
+(defhydra hydra-resize-window (global-map "C-c #")
+  "resize-windows"
+  ("<left>" shrink-window-horizontally)
+  ("<right>" enlarge-window-horizontally)
+  ("<down>" shrink-window)
+  ("<up>" enlarge-window)
+  ("=" balance-windows)
+  ("g" golden-ratio)
+
 (use-package yasnippet
   :hook (prog-mode . yas-minor-mode)
   ; Remove default key bindings which are crap.
@@ -735,27 +753,35 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 
 ; TODO: configure what's shown/hidden by default
 (use-package neotree
-  :config
-  (setq neo-theme (if window-system 'icons 'arrow)
-	neo-smart-open t
-	projectile-switch-project-action 'neotree-projectile-action)
+  :custom
+  (neo-theme (if window-system 'icons 'arrow))
+  (neo-smart-open t)
+  (neo-window-fixed-size nil)
+  (neo-toggle-window-keep-p t)
   :bind
   (:map global-map
-	("C-c t" . my/neotree-project-dir)))
+	("C-c t t" . my/neotree-toggle)
+	("C-c t r" . my/neotree-refresh)))
 
-;; Copied from https://www.emacswiki.org/emacs/NeoTree
-(defun my/neotree-project-dir ()
-  "Open NeoTree using the git root."
+(defun my/neotree-refresh ()
+  "Refresh the Neotree window (if open) to navigate to the current file/project."
   (interactive)
-  (let ((project-dir (projectile-project-root))
-        (file-name (buffer-file-name)))
-    (neotree-toggle)
-    (if project-dir
-        (if (neo-global--window-exists-p)
-            (progn
-              (neotree-dir project-dir)
-              (neotree-find file-name)))
-      (message "Could not find git project root."))))
+  (if (neo-global--window-exists-p)
+      (let ((project-dir (projectile-project-root))
+            (file-name (buffer-file-name))
+	    (cw (selected-window)))
+	(if project-dir
+	    (progn
+	      (neotree-dir project-dir)
+	      (neotree-find file-name)
+	      (select-window cw))
+	  (message "Could not find project root.")))))
+
+(defun my/neotree-toggle ()
+  "Toggle Neotree and navigates to the current file/project."
+  (interactive)
+  (neotree-toggle)
+  (my/neotree-refresh))
 
 ;; Similar to find symbol in project in Intellij
 (use-package lsp-ivy
