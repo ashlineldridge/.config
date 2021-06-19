@@ -134,6 +134,7 @@
 (global-set-key (kbd "C-c o c") 'org-capture)
 (global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i"))) ;; Capture to inbox.
 (global-set-key (kbd "C-c m") 'mu4e)
+(global-set-key (kbd "C-x C-r") 'eval-region)
 
 ;; Show column numbers in the mode line.
 (column-number-mode t)
@@ -237,6 +238,10 @@
 
 ;; Learn how to use first
 ;; (use-package paredit :hook (emacs-lisp-mode . paredit-mode))
+
+(use-package expand-region
+  :bind (("C-=" . er/expand-region)
+         ("C-+" . er/mark-outside-pairs)))
 
 (use-package which-key
   :init (progn
@@ -379,7 +384,7 @@
   ("<down>" shrink-window)
   ("<up>" enlarge-window)
   ("=" balance-windows)
-  ("g" golden-ratio)
+  ("g" golden-ratio))
 
 (use-package yasnippet
   :hook (prog-mode . yas-minor-mode)
@@ -411,7 +416,7 @@
 	      ("C-c v v" . multi-vterm)
 	      ("C-c v n" . multi-vterm-next)
 	      ("C-c v p" . multi-vterm-prev)
-	      ("C-c v t" . multi-vterm-dedicated-toggle)))
+	      ("C-c v b" . multi-vterm-rename-buffer)))
 
 (defun my/org-mode-init ()
   "Personal `org-mode` configuration.
@@ -453,6 +458,13 @@ color theme."
 			:weight 'regular
 			:height (cdr face)))
 
+  ;; Without this, some priorities are bolded/italicized while others are not which looks
+  ;; ugly. Strangely, I can't seem to make use of all the face attributes properly - but
+  ;; this at least makes them uniform.
+  (setq org-priority-faces '((?A . (:foreground "DeepSkyBlue1" :weight 'normal))
+			     (?B . (:foreground "DeepSkyBlue2" :weight 'normal))
+			     (?C . (:foreground "DeepSkyBlue3" :weight 'normal))))
+
   ;; Since variable pitch width is set as the default above, override the face attributes
   ;; that we want to appear in fixed pitch width.
   (set-face-attribute 'line-number nil :inherit 'fixed-pitch)
@@ -470,8 +482,29 @@ color theme."
   (set-face-attribute 'org-tag nil :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch)))
 
+(defvar my/org-todo-sort-order '("NEXT" "TODO" "HOLD" "DONE"))
+(defun my/org-agenda-cmp-todo (a b)
+  "Custom compares agenda items A and B based on their todo keywords."
+  (when-let ((state-a (get-text-property 14 'todo-state a))
+             (state-b (get-text-property 14 'todo-state b))
+             (cmp (--map (cl-position-if (lambda (x)
+                                           (equal x it))
+                                         my/org-todo-sort-order)
+                         (list state-a state-b))))
+    (cond ((apply '> cmp) 1)
+          ((apply '< cmp) -1)
+          (t nil))))
+
 (use-package org
   :hook (org-mode . my/org-mode-init)
+  :bind
+  (:map org-agenda-mode-map
+	;; Override '?' key to show helpful which-key display.
+	(("?" . which-key-show-full-major-mode)
+	 ;; Counsel provides a nicer tagging interface when multiple tags are assigned.
+	 ("C-c C-q" . counsel-org-tag-agenda)))
+  (:map org-mode-map
+	(("C-c C-q" . counsel-org-tag)))
   :config
   ;; Save org buffers after refiling.
   (advice-add 'org-refile :after (lambda (&rest _) (org-save-all-org-buffers)))
@@ -479,39 +512,48 @@ color theme."
   (require 'org-tempo)
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   :custom
+  (org-priority-default org-priority-lowest)
+  (org-agenda-cmp-user-defined 'my/org-agenda-cmp-todo)
   (org-agenda-custom-commands
    `(("Q" . "Custom Queries") ;; Creates command prefix "Q".
      ("Qa" "All Tasks"
       ((alltodo
 	""
 	((org-agenda-overriding-header "Personal")
-	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))))
+	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+	 (org-agenda-sorting-strategy '(user-defined-up priority-down))))
        (alltodo
 	""
 	((org-agenda-overriding-header "Work")
-	 (org-agenda-files '(,(concat my/org-dir "/work.org")))))
+	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
+	 (org-agenda-sorting-strategy '(user-defined-up priority-down))))
        (alltodo
 	""
 	((org-agenda-overriding-header "Inbox")
-	 (org-agenda-files '(,(concat my/org-dir "/inbox.org")))))))
+	 (org-agenda-files '(,(concat my/org-dir "/inbox.org")))
+	 (org-agenda-sorting-strategy '(user-defined-up priority-down))))))
      ("Qp" "Personal Tasks"
       ((todo
 	"NEXT"
         ((org-agenda-overriding-header "Next")
-	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))))
+	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"TODO"
         ((org-agenda-overriding-header "Upcoming")
-	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))))))
+	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+	 (org-agenda-sorting-strategy '(priority-down))))))
      ("Qw" "Work Tasks"
       ((todo
 	"NEXT"
         ((org-agenda-overriding-header "Next")
-	 (org-agenda-files '(,(concat my/org-dir "/work.org")))))
+	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
+	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"TODO"
         ((org-agenda-overriding-header "Upcoming")
-	 (org-agenda-files '(,(concat my/org-dir "/work.org")))))))))
+	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
+	 (org-agenda-sorting-strategy '(priority-down))))))))
   (org-agenda-files
    (list
     (concat my/org-dir "/inbox.org")
@@ -555,7 +597,7 @@ color theme."
   (org-log-into-drawer nil)
   (org-log-states-order-reversed nil) ; Make newest last
   (org-refile-targets
-   `((,(concat my/org-dir "/archive.org") :level . 1)
+   `((,(concat my/org-dir "/archive.org") :level . 2)
      (,(concat my/org-dir "/inbox.org") :level . 1)
      (,(concat my/org-dir "/personal.org") :regexp . "Tasks") ;; This seems to work nicer.
      (,(concat my/org-dir "/work.org") :regexp . "Tasks")
@@ -689,6 +731,9 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (go-mode . lsp)
   (typescript-mode . lsp)
   (rustic-mode . lsp)
+  ;; Disable lsp-mode for Terraform for now as neither the terraform-ls nor
+  ;; the terraform-lsp language servers seem reliable enough.
+  ;; (terraform-mode . lsp)
   :custom
   (lsp-log-io nil)
   (lsp-keymap-prefix "C-c l")
@@ -707,6 +752,9 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 			     ))
   (lsp-rust-analyzer-cargo-watch-command "clippy")
   (lsp-rust-analyzer-server-display-inlay-hints t)
+  ;; Configure lsp-mode to use the official terraform-ls LSP server rather than terraform-lsp
+  ;; which it uses by default and is more experimental (crashes constantly for me).
+  (lsp-terraform-server '("terraform-ls" "serve" "-tf-exec" "/usr/local/bin/terraform"))
   :config
   (lsp-enable-which-key-integration t)
   :bind (:map lsp-mode-map
@@ -772,6 +820,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 	    (cw (selected-window)))
 	(if project-dir
 	    (progn
+	      (message (concat "Refreshing Neotree to project "	project-dir " and file " file-name))
 	      (neotree-dir project-dir)
 	      (neotree-find file-name)
 	      (select-window cw))
@@ -796,7 +845,9 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 
 (use-package terraform-mode
   ; I prefer the // syntax to the default # comments.
-  :hook (terraform-mode . (lambda () (setq comment-start "//"))))
+  :hook
+  (terraform-mode . terraform-format-on-save-mode)
+  (terraform-mode . (lambda () (setq comment-start "//"))))
 
 ;; Shell scripting indentation
 (setq sh-basic-offset 2

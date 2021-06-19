@@ -58,3 +58,34 @@ Near :gmail-local:
 Patterns * !"*/Spam" !"*/All Mail" !*"Important" !*"Starred"
 Create Near
 SyncState *
+
+##
+## aeldridge@seek.com.au
+##
+
+# IMAPAccount seek
+# Host localhost
+# Port 1143
+# User aeldridge@seek.com.au
+# PassCmd "pass aeldridge@seek.com.au"
+# AuthMechs LOGIN
+# SSLType None
+
+# IMAPStore seek-remote
+# Account seek
+
+# MaildirStore seek-local
+# Path ~/Mail/Seek/
+# Inbox ~/Mail/Seek/Inbox
+# Trash ~/Mail/Seek/Trash
+# SubFolders Verbatim
+
+# Channel seek
+# Far :seek-remote:
+# Near :seek-local:
+# Patterns * !"*/Archive"
+# Expunge None
+# CopyArrivalDate yes
+# Sync All
+# Create Near
+# SyncState *
