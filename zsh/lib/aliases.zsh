@@ -72,6 +72,12 @@ alias ec='emacsclient --no-wait'
 alias lsp-clean="zsh -c 'setopt +o nomatch; rm -f ~/.config/emacs/.lsp-session-*'"
 alias dap-clean="zsh -c 'setopt +o nomatch; rm -f ~/.config/emacs/.dap-*'"
 
+# Make the clear command clear all data from the buffer in vterm (like it normally does in other terminals).
+# See: https://github.com/akermu/emacs-libvterm#vterm-clear-scrollback
+if [[ "${INSIDE_EMACS:-}" = 'vterm' ]]; then
+  alias clear='vterm_printf "51;Evterm-clear-scrollback";tput clear'
+fi
+
 # Force isync/mbsync to follow XDG conventions
 alias mbsync="mbsync -c ${XDG_CONFIG_HOME}/isync/mbsyncrc"
 

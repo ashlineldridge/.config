@@ -133,8 +133,11 @@
 (global-set-key (kbd "C-c o a") 'org-agenda)
 (global-set-key (kbd "C-c o c") 'org-capture)
 (global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i"))) ;; Capture to inbox.
+(global-set-key (kbd "C-c o b") (lambda () (interactive) (org-capture nil "b"))) ;; Capture to bookmarks.
+(global-set-key (kbd "C-c C-o") 'org-open-at-point-global) ;; Open links everywhere just like in org-mode.
 (global-set-key (kbd "C-c m") 'mu4e)
 (global-set-key (kbd "C-x C-r") 'eval-region)
+
 
 ;; Show column numbers in the mode line.
 (column-number-mode t)
@@ -236,12 +239,26 @@
 (use-package rainbow-delimiters
   :init (add-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode))
 
+(use-package smartparens
+  :hook (prog-mode . smartparens-mode))
+
 ;; Learn how to use first
 ;; (use-package paredit :hook (emacs-lisp-mode . paredit-mode))
 
 (use-package expand-region
   :bind (("C-=" . er/expand-region)
          ("C-+" . er/mark-outside-pairs)))
+
+(use-package highlight-chars
+  :bind (:map global-map
+              ("C-c h t" . hc-toggle-highlight-tabs)
+	      ("C-c h w" . hc-toggle-highlight-trailing-whitespace)))
+
+;; Whitespace settings
+;; (setq-default show-trailing-whitespace nil)
+(use-package ws-butler
+  :hook ((text-mode . ws-butler-mode)
+         (prog-mode . ws-butler-mode)))
 
 (use-package which-key
   :init (progn
@@ -255,6 +272,9 @@
 	 ("\\.yaml\\'" . yaml-mode))
   :config (add-hook 'yaml-mode-hook
 		    '(lambda () (define-key yaml-mode-map "\C-m" 'newline-and-indent))))
+
+;; Is there a better way/place to do this?
+(setq js-indent-level 2)
 
 (use-package helpful
   :custom
@@ -377,7 +397,7 @@
 
 ;; See roided out version here: https://github.com/jmercouris/configuration/blob/master/.emacs.d/hydra.el#L86
 ;; See simpler version here: https://www.reddit.com/r/emacs/comments/b13n39/how_do_you_manage_window_sizes_in_emacs/eik6xzb
-(defhydra hydra-resize-window (global-map "C-c #")
+(defhydra hydra-resize-window (global-map "C-c w")
   "resize-windows"
   ("<left>" shrink-window-horizontally)
   ("<right>" enlarge-window-horizontally)
@@ -405,7 +425,9 @@
 
 (use-package vterm
   :bind
-  ;; (:map global-map("C-c v" . vterm))
+  ;; Unbind C-s which sends a stop signal to the terminal which freezes
+  ;; output (and requires a C-q to unfreeze) as it's annoying.
+  (:map vterm-mode-map ("C-s" . nil))
   :custom
   ;; Don't prompt for permission to compile on first install.
   (vterm-always-compile-module t)
@@ -496,15 +518,22 @@ color theme."
           (t nil))))
 
 (use-package org
-  :hook (org-mode . my/org-mode-init)
+  :hook
+  (org-mode . my/org-mode-init)
+  (org-agenda-mode . (lambda ()
+		       ;; Override '?' key to show helpful which-key display.
+		       (define-key org-agenda-mode-map "?" 'which-key-show-full-major-mode)
+		       ;; Counsel provides a nicer tagging interface when multiple tags are assigned.
+		       (define-key org-agenda-mode-map "\C-c \C-q" 'counsel-org-tag-agenda)))
   :bind
-  (:map org-agenda-mode-map
-	;; Override '?' key to show helpful which-key display.
-	(("?" . which-key-show-full-major-mode)
-	 ;; Counsel provides a nicer tagging interface when multiple tags are assigned.
-	 ("C-c C-q" . counsel-org-tag-agenda)))
+  ;; Below produces errors that look like org-agenda-mode-map isn't in scope sometimes.
+  ;; Unsure why this doesn't work when the mapping for org-mode-map does work. The above lambda
+  ;; is a workaround. Will try to clean up at some point.
+  ;; (:map org-agenda-mode-map
+  ;; (("?" . which-key-show-full-major-mode)
+  ;; ("C-c C-q" . counsel-org-tag-agenda)))
   (:map org-mode-map
-	(("C-c C-q" . counsel-org-tag)))
+	("C-c C-q" . counsel-org-tag))
   :config
   ;; Save org buffers after refiling.
   (advice-add 'org-refile :after (lambda (&rest _) (org-save-all-org-buffers)))
@@ -571,9 +600,10 @@ color theme."
   (org-agenda-window-setup 'current-window)
   (org-capture-templates `(("i" "Inbox" entry
                             (file+headline ,(concat my/org-dir "/inbox.org") "Inbox")
-			    "* TODO %i%?"
-                            ;; "* TODO %i%?\nCREATED: %U\n"
-			    :empty-lines-after 0)
+			    "* TODO %i%?")
+			   ("b" "Bookmark" entry
+			    (file+olp+datetree ,(concat my/org-dir "/bookmarks.org") "Bookmarks")
+			    "* %(org-cliplink-capture)%?\n")
 			   ;; TODO: Come up with these
 			   ;; ("p" "Project" entry
 			   ;;  (file+headline ,(concat my/org-dir "/projects.org") "Projects")
@@ -681,6 +711,10 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
               (("C-c n i" . org-roam-insert))
               (("C-c n I" . org-roam-insert-immediate))))
 
+(use-package org-cliplink
+  :bind (:map org-mode-map
+	      ("C-c C-S-l" . org-cliplink)))
+
 ;;
 ;; Languages
 ;;
@@ -731,6 +765,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (go-mode . lsp)
   (typescript-mode . lsp)
   (rustic-mode . lsp)
+  (sh-mode . lsp)
   ;; Disable lsp-mode for Terraform for now as neither the terraform-ls nor
   ;; the terraform-lsp language servers seem reliable enough.
   ;; (terraform-mode . lsp)
@@ -852,6 +887,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 ;; Shell scripting indentation
 (setq sh-basic-offset 2
       sh-indentation 2)
+(setq-default indent-tabs-mode nil)
 
 (use-package go-mode
   :mode "\\.go\\'"
@@ -862,7 +898,22 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   ;; TODO: setup go-mode + integrations https://github.com/dominikh/go-mode.el
   )
 
-(use-package rustic)
+;; As a practice, start putting all language specific commands as single keys
+;; under C-c C-c.
+(use-package rustic
+  :bind (:map rustic-mode-map
+              ("C-c C-c a" . lsp-execute-code-action)
+              ("C-c C-c g" . lsp-find-definition)
+              ("C-c C-c f" . lsp-find-references)
+              ("C-c C-c m" . lsp-ui-imenu)
+              ("C-c C-c r" . lsp-rename)
+              ("C-c C-c q" . lsp-workspace-restart)
+              ("C-c C-c Q" . lsp-workspace-shutdown)
+              ("C-c C-c s" . lsp-rust-analyzer-status)
+              ("C-c C-c l" . flycheck-list-errors))
+  :config
+  ;; Following settings aren't defined as custom vars.
+  (setq rustic-format-on-save t))
 
 (use-package docker
   :bind ("C-c d" . docker))
