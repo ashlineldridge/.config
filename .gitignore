@@ -22,6 +22,7 @@ emacs/projectile.cache
 emacs/recentf
 emacs/straight/
 emacs/transient/
+emacs/url/
 target/
 .idea/
 *.swp

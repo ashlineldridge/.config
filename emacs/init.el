@@ -138,7 +138,6 @@
 (global-set-key (kbd "C-c m") 'mu4e)
 (global-set-key (kbd "C-x C-r") 'eval-region)
 
-
 ;; Show column numbers in the mode line.
 (column-number-mode t)
 
@@ -172,6 +171,14 @@
 ;; Revert buffers when the underlying file has changed
 (global-auto-revert-mode 1)
 
+;;; Mark settings
+;; When poping marks off the mark ring (C-u C-SPC for local or C-x C-SPC for global),
+;; allow repeated pops by invoking C-SPC without additionally specifying the prefix argument.
+(setq set-mark-command-repeat-pop t)
+;; Make the rings a bit shorter (default 16) to make rotating around the ring quicker.
+(setq mark-ring-max 8)
+(setq global-mark-ring-max 8)
+
 ;; Next, import environment variables from the shell (defined in "${XDG_BASE_CONFIG}/zsh/lib/env.zsh")
 ;; so that they are available to subsequent expressions.
 (use-package exec-path-from-shell
@@ -201,6 +208,11 @@
    ("C-x C-f" . counsel-find-file)
    ("C-x b"   . counsel-switch-buffer)
    ("M-y"     . counsel-yank-pop)
+   ;; Remove M-Space which is assigned to just-one-space which I never use
+   ;; and also since M-SPC is used by Spotlight on Mac. Instead use M-S-SPC
+   ;; to launch counsel-mark-ring for a nicer view of te mark ring.
+   ("M-SPC"   . nil)
+   ("M-S-SPC" . counsel-mark-ring)
    :map minibuffer-local-map ("C-r" . 'counsel-minibuffer-history))
   :config
   (setq ivy-initial-inputs-alist nil)) ; Don't start searches with ^
@@ -522,9 +534,9 @@ color theme."
   (org-mode . my/org-mode-init)
   (org-agenda-mode . (lambda ()
 		       ;; Override '?' key to show helpful which-key display.
-		       (define-key org-agenda-mode-map "?" 'which-key-show-full-major-mode)
+		       (define-key org-agenda-mode-map "?" 'which-key-show-major-mode)
 		       ;; Counsel provides a nicer tagging interface when multiple tags are assigned.
-		       (define-key org-agenda-mode-map "\C-c \C-q" 'counsel-org-tag-agenda)))
+		       (define-key org-agenda-mode-map "\C-c\C-q" 'counsel-org-tag-agenda)))
   :bind
   ;; Below produces errors that look like org-agenda-mode-map isn't in scope sometimes.
   ;; Unsure why this doesn't work when the mapping for org-mode-map does work. The above lambda
