@@ -386,8 +386,16 @@
   :config (counsel-projectile-mode))
 
 (use-package magit
+  :bind
+  (("C-c g s" . magit-status)
+   ("C-c g d" . magit-dispatch)
+   ("C-c g f" . magit-file-dispatch))
+  :custom
+  ;; Tell Magit not to add the C-x bindings as I like to keep C-x reserved
+  ;; for Emacs native commands.
+  (magit-define-global-key-bindings nil)
   :config
-  ;; Disable this as it takes over C-n and C-p which I'm used to using for navigation
+  ;; Disable as I get errors about `project-switch-commands' being nil.
   (setq magit-bind-magit-project-status nil))
 
 (use-package forge
