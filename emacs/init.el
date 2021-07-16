@@ -408,6 +408,12 @@
   :config
   (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
 
+(use-package avy
+  :bind
+  (("C-: c" . avy-goto-char)
+   ("C-: l" . avy-goto-line)
+   ("C-: w" . avy-goto-word-1)))
+
 ;; Trying this out...
 (use-package golden-ratio
   :config
@@ -934,9 +940,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   :config
   ;; Following settings aren't defined as custom vars.
   (setq rustic-format-on-save t))
-
-(use-package docker
-  :bind ("C-c d" . docker))
 
 (use-package dockerfile-mode)
 
