@@ -1,0 +1,29 @@
+{
+  "name": "lib",
+  "dependencies": {
+    "autocannon": {
+      "version": "7.4.0"
+    },
+    "bash-language-server": {
+      "version": "1.17.0"
+    },
+    "npm": {
+      "version": "7.20.0"
+    },
+    "pure-prompt": {
+      "version": "1.16.0"
+    },
+    "smee-client": {
+      "version": "1.2.2"
+    },
+    "snyk": {
+      "version": "1.646.0"
+    },
+    "typescript-language-server": {
+      "version": "0.5.1"
+    },
+    "typescript": {
+      "version": "4.1.5"
+    }
+  }
+}
