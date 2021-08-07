@@ -42,9 +42,8 @@
 		     (format "%.2f seconds" (float-time (time-subtract after-init-time before-init-time)))
                      gcs-done)))
 
-(defvar straight-repository-branch "develop")
-
 ;; Bootstrap straight.el.
+;; See: https://github.com/raxod502/straight.el#bootstrapping-straightel
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
@@ -423,24 +422,61 @@
    ("C-: l" . avy-goto-line)
    ("C-: w" . avy-goto-word-1)))
 
-;; Trying this out...
 (use-package golden-ratio
+  :init (golden-ratio-mode 1)
   :config
   (add-to-list 'golden-ratio-extra-commands 'ace-window))
 
 (use-package hydra)
+
+(defun my/window-shrink-horizontal ()
+  "Shrink window horizontally, disabling golden-ratio-mode if enabled."
+  (interactive)
+  (golden-ratio-mode 0)
+  (shrink-window-horizontally 1))
+
+(defun my/window-grow-horizontal ()
+  "Grow window horizontally, disabling golden-ratio-mode if enabled."
+  (interactive)
+  (golden-ratio-mode 0)
+  (enlarge-window-horizontally 1))
+
+(defun my/window-shrink-vertical ()
+  "Shrink window vertically, disabling golden-ratio-mode if enabled."
+  (interactive)
+  (golden-ratio-mode 0)
+  (shrink-window 1))
+
+(defun my/window-grow-vertical ()
+  "Grow window vertically, disabling golden-ratio-mode if enabled."
+  (interactive)
+  (golden-ratio-mode 0)
+  (enlarge-window 1))
+
+(defun my/window-balance ()
+  "Balance windows, disabling golden-ratio-mode if enabled."
+  (interactive)
+  (golden-ratio-mode 0)
+  (balance-windows))
+
+(defun my/window-golden ()
+  "Size windows according to the golden ratio but do not enable golden-ratio-mode."
+  (interactive)
+  (golden-ratio-mode 0)
+  (golden-ratio))
 
 ;; See roided out version here: https://github.com/jmercouris/configuration/blob/master/.emacs.d/hydra.el#L86
 ;; See simpler version here: https://www.reddit.com/r/emacs/comments/b13n39/how_do_you_manage_window_sizes_in_emacs/eik6xzb
 ;; Use C-x as the prefix since windowing behaviour is already bound under C-x.
 (defhydra hydra-resize-window (global-map "C-x w")
   "resize-windows"
-  ("<left>" shrink-window-horizontally)
-  ("<right>" enlarge-window-horizontally)
-  ("<down>" shrink-window)
-  ("<up>" enlarge-window)
-  ("=" balance-windows)
-  ("g" golden-ratio))
+  ("<left>"  my/window-shrink-horizontal "shrink-horizontal")
+  ("<right>" my/window-grow-horizontal   "grow-horizontal")
+  ("<down>"  my/window-shrink-vertical   "shrink-vertical")
+  ("<up>"    my/window-grow-vertical     "grow-vertical")
+  ("="       my/window-balance           "balance" :exit t)
+  ("g"       my/window-golden            "golden-ratio" :exit t)
+  ("G"       golden-ratio-mode           "golden-ratio-mode" :exit t))
 
 (use-package yasnippet
   :hook (prog-mode . yas-minor-mode)
@@ -540,7 +576,8 @@ color theme."
   (set-face-attribute 'org-tag nil :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch)))
 
-(defvar my/org-todo-sort-order '("NEXT" "TODO" "HOLD" "DONE"))
+(defvar my/org-todo-sort-order '("PROG" "NEXT" "TODO" "HOLD" "DONE"))
+
 (defun my/org-agenda-cmp-todo (a b)
   "Custom compares agenda items A and B based on their todo keywords."
   (when-let ((state-a (get-text-property 14 'todo-state a))
@@ -569,7 +606,10 @@ color theme."
   ;; (("?" . which-key-show-full-major-mode)
   ;; ("C-c C-q" . counsel-org-tag-agenda)))
   (:map org-mode-map
-	("C-c C-q" . counsel-org-tag))
+	("C-c C-q" . counsel-org-tag)
+        ("C-c C-S-l" . org-cliplink)
+        ;; Can't use plain tab as org uses that for cycling visibility
+        ("C-c <tab>" . company-indent-or-complete-common))
   :config
   ;; Save org buffers after refiling.
   (advice-add 'org-refile :after (lambda (&rest _) (org-save-all-org-buffers)))
@@ -582,56 +622,89 @@ color theme."
   (org-agenda-custom-commands
    `(("d" . "Dashboards") ;; Creates command prefix "d".
      ("da" "All Tasks"
-      ((alltodo
-	""
-	((org-agenda-overriding-header "Personal")
-	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
-	 (org-agenda-sorting-strategy '(user-defined-up priority-down))))
-       (alltodo
-	""
-	((org-agenda-overriding-header "Work")
-	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
-	 (org-agenda-sorting-strategy '(user-defined-up priority-down))))
+      ((agenda
+        ""
+        ((org-agenda-overriding-header "Weekly Agenda")
+         (org-agenda-span 'week)))
        (alltodo
 	""
 	((org-agenda-overriding-header "Inbox")
-	 (org-agenda-files '(,(concat my/org-dir "/inbox.org")))
-	 (org-agenda-sorting-strategy '(user-defined-up priority-down))))))
+	 (org-agenda-files '(,(concat my/org-dir "/inbox.org")))))
+       (alltodo
+        ""
+        ((org-agenda-overriding-header "Personal")
+         (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+         (org-agenda-sorting-strategy '(user-defined-up priority-down))))
+       (alltodo
+        ""
+        ((org-agenda-overriding-header "Work")
+         (org-agenda-files '(,(concat my/org-dir "/work.org")))
+         (org-agenda-sorting-strategy '(user-defined-up priority-down))))))
      ("dp" "Personal Tasks"
-      ((todo
+      ((agenda
+        ""
+        ((org-agenda-overriding-header "Weekly Agenda")
+         (org-agenda-span 'week)))
+       (todo
+	"PROG"
+        ((org-agenda-overriding-header "Progress")
+	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+	 (org-agenda-sorting-strategy '(priority-down))))
+       (todo
 	"NEXT"
         ((org-agenda-overriding-header "Next")
 	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
-	"TODO"
-        ((org-agenda-overriding-header "Upcoming")
+        "HOLD"
+        ((org-agenda-overriding-header "Hold")
 	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
-	 (org-agenda-sorting-strategy '(priority-down))))))
+	 (org-agenda-sorting-strategy '(priority-down))))
+       (todo
+        "TODO"
+        ((org-agenda-overriding-header "Backlog")
+	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+	 (org-agenda-sorting-strategy '(priority-down)))))
+      ((org-agenda-tag-filter-preset '("-@work"))))
      ("dw" "Work Tasks"
-      ((todo
+      ((agenda
+        ""
+        ((org-agenda-overriding-header "Weekly Agenda")
+         (org-agenda-span 'week)))
+       (todo
+	"PROG"
+        ((org-agenda-overriding-header "Progress")
+	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
+	 (org-agenda-sorting-strategy '(priority-down))))
+       (todo
 	"NEXT"
         ((org-agenda-overriding-header "Next")
 	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
-	"TODO"
-        ((org-agenda-overriding-header "Upcoming")
+	"HOLD"
+        ((org-agenda-overriding-header "Hold")
 	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
-	 (org-agenda-sorting-strategy '(priority-down))))))))
+	 (org-agenda-sorting-strategy '(priority-down))))
+       (todo
+	"TODO"
+        ((org-agenda-overriding-header "Backlog")
+	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
+	 (org-agenda-sorting-strategy '(priority-down)))))
+      ((org-agenda-tag-filter-preset '("-@personal"))))))
   (org-agenda-files
    (list
     (concat my/org-dir "/inbox.org")
     (concat my/org-dir "/personal.org")
     (concat my/org-dir "/work.org")
-    (concat my/org-dir "/tickler.org")))
+    (concat my/org-dir "/recurring.org")))
   ;; Following variable allows customization of the agenda columns.
   (org-agenda-prefix-format
    '((agenda . " %i %-16:c%?-12t% s")
      (todo . " %i %-16:c")
      (tags . " %i %-16:c")
      (search . " %i %-16:c")))
-  (org-agenda-span 'day)
+  (org-agenda-span 'week)
   (org-agenda-start-with-log-mode t)
   (org-agenda-window-setup 'current-window)
   (org-capture-templates `(("i" "Inbox" entry
@@ -639,17 +712,7 @@ color theme."
 			    "* TODO %i%?")
 			   ("b" "Bookmark" entry
 			    (file+olp+datetree ,(concat my/org-dir "/bookmarks.org") "Bookmarks")
-			    "* %(org-cliplink-capture)%?\n")
-			   ;; TODO: Come up with these
-			   ;; ("p" "Project" entry
-			   ;;  (file+headline ,(concat my/org-dir "/projects.org") "Projects")
-			   ;;  "* %i%? %^g%^{CATEGORY}p\n** Tasks\n** Notes"
-			   ;;  :empty-lines-before 1 :empty-lines-after 1 :jump-to-captured t)
-                           ;; ("b" "Birthday" entry
-                           ;;  (file+headline ,(concat my/org-dir "/tickler.org") "Birthdays")
-                           ;;  "* %i%?\n<%<%Y-%m-%d +1y>>"
-			   ;;  :empty-lines-after 1)
-			   ))
+			    "* %(org-cliplink-capture)%?\n")))
   (org-confirm-babel-evaluate nil)
   (org-default-notes-file (concat my/org-dir "/inbox.org"))
   (org-directory my/org-dir)
@@ -668,20 +731,21 @@ color theme."
      (,(concat my/org-dir "/personal.org") :regexp . "Tasks") ;; This seems to work nicer.
      (,(concat my/org-dir "/work.org") :regexp . "Tasks")
      (,(concat my/org-dir "/someday.org") :level . 1)
-     (,(concat my/org-dir "/tickler.org") :level . 2)))
+     (,(concat my/org-dir "/recurring.org") :level . 2)))
   ;; The following two settings are required to make org-refile show the full heading path
   ;; to subheading refile candidates. Took a while to get this working properly.
   (org-refile-use-outline-path t)
   (org-outline-path-complete-in-steps nil)
   (org-tags-column 0)
   (org-todo-keywords
-   `((sequence "TODO(t)" "NEXT(n)" "HOLD(h)" "|" "DONE(d)")))
+   `((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "HOLD(h)" "|" "DONE(d)")))
   ;; See colours here: https://alexschroeder.ch/geocities/kensanata/colors.html
   (org-todo-keyword-faces
-   `(("TODO" . (:foreground "orange red" :weight bold))
-     ("NEXT" . (:foreground "green3" :weight bold))
+   `(("TODO" . (:foreground "DodgerBlue2" :weight bold))
+     ("NEXT" . (:foreground "hot pink" :weight bold))
+     ("PROG" . (:foreground "SpringGreen4" :weight bold))
      ("HOLD" . (:foreground "orange1" :weight bold))
-     ("DONE" . (:foreground "DodgerBlue2" :weight bold)))))
+     ("DONE" . (:foreground "orange red" :weight bold)))))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
@@ -702,6 +766,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
         (replace-match (downcase (match-string-no-properties 1)) :fixedcase nil nil 1))
       (message "Lower-cased %d matches" count))))
 
+;; (setq org-roam-v2-ack t)
 (use-package org-roam
   :hook
   ;; Should I just enable org-roam-mode when editing a .org file?
@@ -730,7 +795,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
        :unnarrowed t)))
   :bind (:map org-roam-mode-map
               (("C-c n r" . org-roam)
-               ("C-c n c" . org-roam-capture)
+               ("C-c n c" . org-roam-capturef)
                ("C-c n f" . org-roam-find-file)
 	       ("C-c n g" . org-roam-graph)
 	       ;; Figure out how to bind these to simpler bindings that are only
@@ -747,9 +812,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
               (("C-c n i" . org-roam-insert))
               (("C-c n I" . org-roam-insert-immediate))))
 
-(use-package org-cliplink
-  :bind (:map org-mode-map
-	      ("C-c C-S-l" . org-cliplink)))
+(use-package org-cliplink)
 
 ;;
 ;; Languages
@@ -778,8 +841,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 	("<tab>" . company-complete-selection)
 	("C-n" . company-select-next-or-abort)
 	("C-p" . company-select-previous-or-abort))
-  ;; Can't use plain tab as org uses that for cycling visibility
-  (:map org-mode-map ("C-c <tab>" . company-indent-or-complete-common))
   :custom
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
@@ -1023,9 +1084,13 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 
 (use-package mu4e
   ;; Use the version of mu4e packaged with mu
-  :straight nil
-  :load-path "/usr/local/opt/mu/share/emacs/site-lisp/mu/mu4e/"
+  :straight
+  ;; The mu installation comes prepackaged with its Lisp files and it seems better to use these
+  ;; rather than creating the possibility for a version mismatch between an mu4e package pulled
+  ;; from GitHub or Melpa and the mu binary. See https://github.com/raxod502/straight.el/issues/491.
+  (:local-repo "/usr/local/opt/mu/share/emacs/site-lisp/mu/mu4e" :pre-build ())
   :bind
+  ;; Take back '?' for which-key and use '@' for marking unread.
   (:map mu4e-headers-mode-map
 	("@" . mu4e-headers-mark-for-unread)
         ("?" . which-key-show-major-mode))
