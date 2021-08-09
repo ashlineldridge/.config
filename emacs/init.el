@@ -422,61 +422,85 @@
    ("C-: l" . avy-goto-line)
    ("C-: w" . avy-goto-word-1)))
 
-(use-package golden-ratio
-  :init (golden-ratio-mode 1)
-  :config
-  (add-to-list 'golden-ratio-extra-commands 'ace-window))
+(use-package winner
+  :straight nil ;; Comes pre-installed.
+  :config (winner-mode 1))
+
+(use-package zoom
+  :custom
+  (zoom-size '(0.618 . 0.618)) ;; Golden ratio
+  (zoom-ignored-major-modes '(neotree-mode)))
+
+;; (use-package golden-ratio
+;;   :init (golden-ratio-mode 1)
+;;   :config
+;;   (add-to-list 'golden-ratio-extra-commands 'ace-window))
 
 (use-package hydra)
 
 (defun my/window-shrink-horizontal ()
-  "Shrink window horizontally, disabling golden-ratio-mode if enabled."
+  "Shrink window horizontally, disabling zoom-mode if enabled."
   (interactive)
-  (golden-ratio-mode 0)
+  (zoom-mode 0)
   (shrink-window-horizontally 1))
 
 (defun my/window-grow-horizontal ()
-  "Grow window horizontally, disabling golden-ratio-mode if enabled."
+  "Grow window horizontally, disabling zoom-mode if enabled."
   (interactive)
-  (golden-ratio-mode 0)
+  (zoom-mode 0)
   (enlarge-window-horizontally 1))
 
 (defun my/window-shrink-vertical ()
-  "Shrink window vertically, disabling golden-ratio-mode if enabled."
+  "Shrink window vertically, disabling zoom-mode if enabled."
   (interactive)
-  (golden-ratio-mode 0)
+  (zoom-mode 0)
   (shrink-window 1))
 
 (defun my/window-grow-vertical ()
-  "Grow window vertically, disabling golden-ratio-mode if enabled."
+  "Grow window vertically, disabling zoom-mode if enabled."
   (interactive)
-  (golden-ratio-mode 0)
+  (zoom-mode 0)
   (enlarge-window 1))
 
 (defun my/window-balance ()
-  "Balance windows, disabling golden-ratio-mode if enabled."
+  "Balance windows, disabling zoom-mode if enabled."
   (interactive)
-  (golden-ratio-mode 0)
+  (zoom-mode 0)
   (balance-windows))
 
-(defun my/window-golden ()
-  "Size windows according to the golden ratio but do not enable golden-ratio-mode."
+(defun my/window-zoom ()
+  "Size windows using a one-off zoom invocation."
   (interactive)
-  (golden-ratio-mode 0)
-  (golden-ratio))
+  (zoom-mode 0)
+  (zoom))
 
 ;; See roided out version here: https://github.com/jmercouris/configuration/blob/master/.emacs.d/hydra.el#L86
 ;; See simpler version here: https://www.reddit.com/r/emacs/comments/b13n39/how_do_you_manage_window_sizes_in_emacs/eik6xzb
 ;; Use C-x as the prefix since windowing behaviour is already bound under C-x.
-(defhydra hydra-resize-window (global-map "C-x w")
+(defhydra hydra-resize-window (global-map "C-c w")
   "resize-windows"
   ("<left>"  my/window-shrink-horizontal "shrink-horizontal")
   ("<right>" my/window-grow-horizontal   "grow-horizontal")
   ("<down>"  my/window-shrink-vertical   "shrink-vertical")
   ("<up>"    my/window-grow-vertical     "grow-vertical")
   ("="       my/window-balance           "balance" :exit t)
-  ("g"       my/window-golden            "golden-ratio" :exit t)
-  ("G"       golden-ratio-mode           "golden-ratio-mode" :exit t))
+  ;; ("g"       my/window-golden            "golden-ratio" :exit t)
+  ;; ("G"       golden-ratio-mode           "golden-ratio-mode" :exit t)
+  ("u"       winner-undo                 "winner-undo")
+  ("U"       winner-redo                 "winner-redo")
+  ("z"       zoom                        "zoom" :exit t)
+  ("Z"       zoom-mode                   "zoom-mode" :exit t))
+
+;; Take over Emacs' default buffer placement algorithm. Taken from here:
+;; https://github.com/daviwil/dotfiles/blob/master/Emacs.org#control-buffer-placement.
+;; Watch https://www.youtube.com/watch?v=-H2nU0rsUMY
+(setq display-buffer-base-action
+      '((display-buffer-reuse-mode-window
+        display-buffer-reuse-window
+        display-buffer-same-window)))
+
+;; If a popup does happen, don't resize windows to be equal-sized
+(setq even-window-sizes nil)
 
 (use-package yasnippet
   :hook (prog-mode . yas-minor-mode)
@@ -649,6 +673,9 @@ color theme."
 	"PROG"
         ((org-agenda-overriding-header "Progress")
 	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+         (org-refile-targets
+          `((,(concat my/org-dir "/archive.org") :level . 2)
+            (,(concat my/org-dir "/someday.org") :level . 1)))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"NEXT"
@@ -766,51 +793,39 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
         (replace-match (downcase (match-string-no-properties 1)) :fixedcase nil nil 1))
       (message "Lower-cased %d matches" count))))
 
-;; (setq org-roam-v2-ack t)
+(setq org-roam-v2-ack t)
 (use-package org-roam
-  :hook
-  ;; Should I just enable org-roam-mode when editing a .org file?
-  (after-init . org-roam-mode)
+  :bind
+  (("C-c n l" . org-roam-buffer-toggle)
+   ("C-c n f" . org-roam-node-find)
+   ("C-c n g" . org-roam-graph)
+   ("C-c n i" . org-roam-node-insert)
+   ("C-c n c" . org-roam-capture))
+   ;; Dailies
+   ;; ("C-c n j" . org-roam-dailies-capture-today))
+  :config
+  (org-roam-setup)
+  (require 'org-roam-protocol)
   :custom
   (org-roam-directory (concat my/org-dir "/notes"))
   (org-roam-db-location (concat my/xdg-cache-dir "/emacs/org-roam.db"))
   (org-roam-completion-everywhere t)
-  (org-roam-completion-system 'ivy)
   (org-roam-capture-templates
-    `(("d" "default" plain
-       #'org-roam-capture--get-point
-       ,(concat
-	 "* Note\n"
-	 "Replace or delete this section\n\n"
-	 "* Links\n"
-	 "** Roam Links\n"
-	 "- Use org-roam-insert here\n\n"
-	 "** Web Links\n"
-	 "- Use org-insert-link or paste URL here\n")
-       :file-name "%<%Y%m%d%H%M%S>-${slug}"
-       :head ,(concat
-	       "#+title: ${title}\n"
-	       "#+created: %<%Y-%m-%d>\n"
-	       "#+roam_tags: tag1 tag2%?\n\n")
-       :unnarrowed t)))
-  :bind (:map org-roam-mode-map
-              (("C-c n r" . org-roam)
-               ("C-c n c" . org-roam-capturef)
-               ("C-c n f" . org-roam-find-file)
-	       ("C-c n g" . org-roam-graph)
-	       ;; Figure out how to bind these to simpler bindings that are only
-	       ;; availble when editing an org-roam file.
-	       ("C-c n t" . org-roam-tag-add)
-	       ("C-c n a" . org-roam-alias-add))
-              ;; ("C-c n d"   . org-roam-dailies-find-date)
-              ;; ("C-c n c"   . org-roam-dailies-capture-today)
-              ;; ("C-c n C r" . org-roam-dailies-capture-tomorrow)
-              ;; ("C-c n t"   . org-roam-dailies-find-today)
-              ;; ("C-c n y"   . org-roam-dailies-find-yesterday)
-              ;; ("C-c n r"   . org-roam-dailies-find-tomorrow)
-              :map org-mode-map
-              (("C-c n i" . org-roam-insert))
-              (("C-c n I" . org-roam-insert-immediate))))
+   `(("d" "default" plain
+      ,(concat
+        "#+title: ${title}\n"
+        "#+created: %<%Y-%m-%d>\n"
+        "#+filetags: :tag1:tag2:\n\n"
+        "* Note\n"
+        "Replace or delete this section\n\n"
+        "* Links\n"
+        "** Roam Links\n"
+        "- Use org-roam-node-insert (C-c n i) here\n\n"
+        "** Web Links\n"
+        "- Use org-insert-link (C-c C-l), org-cliplink (C-c C-S-l), or paste URL here\n")
+      :if-new (file "%<%Y%m%d%H%M%S>-${slug}.org")
+      :empty-lines-before 1
+      :unnarrowed t))))
 
 (use-package org-cliplink)
 
