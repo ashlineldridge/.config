@@ -144,6 +144,7 @@
 (global-set-key (kbd "C-c o b") (lambda () (interactive) (org-capture nil "b"))) ;; Capture to bookmarks.
 (global-set-key (kbd "C-c C-o") 'org-open-at-point-global) ;; Open links everywhere just like in org-mode.
 (global-set-key (kbd "C-c m") 'mu4e)
+(global-set-key (kbd "C-c e") 'elfeed)
 (global-set-key (kbd "C-x C-r") 'eval-region)
 
 ;; Show column numbers in the mode line.
@@ -281,11 +282,13 @@
          (prog-mode . ws-butler-mode)))
 
 (use-package which-key
-  :init (progn
-	  (setq which-key-show-early-on-C-h t)
-          (setq which-key-idle-delay 2)
-          (setq which-key-idle-secondary-delay 0.05)
-	  (which-key-mode)))
+  :init (which-key-mode)
+  :custom
+  (which-key-show-early-on-C-h t)
+  (which-key-idle-delay 2)
+  (which-key-idle-secondary-delay 0.05)
+  (which-key-popup-type 'side-window)
+  (which-key-side-window-location '(right bottom)))
 
 (use-package yaml-mode
   :mode (("\\.yml\\'" . yaml-mode)
@@ -426,80 +429,29 @@
   :straight nil ;; Comes pre-installed.
   :config (winner-mode 1))
 
-(use-package zoom
-  :custom
-  (zoom-size '(0.618 . 0.618)) ;; Golden ratio
-  (zoom-ignored-major-modes '(neotree-mode)))
-
-;; (use-package golden-ratio
-;;   :init (golden-ratio-mode 1)
-;;   :config
-;;   (add-to-list 'golden-ratio-extra-commands 'ace-window))
-
 (use-package hydra)
-
-(defun my/window-shrink-horizontal ()
-  "Shrink window horizontally, disabling zoom-mode if enabled."
-  (interactive)
-  (zoom-mode 0)
-  (shrink-window-horizontally 1))
-
-(defun my/window-grow-horizontal ()
-  "Grow window horizontally, disabling zoom-mode if enabled."
-  (interactive)
-  (zoom-mode 0)
-  (enlarge-window-horizontally 1))
-
-(defun my/window-shrink-vertical ()
-  "Shrink window vertically, disabling zoom-mode if enabled."
-  (interactive)
-  (zoom-mode 0)
-  (shrink-window 1))
-
-(defun my/window-grow-vertical ()
-  "Grow window vertically, disabling zoom-mode if enabled."
-  (interactive)
-  (zoom-mode 0)
-  (enlarge-window 1))
-
-(defun my/window-balance ()
-  "Balance windows, disabling zoom-mode if enabled."
-  (interactive)
-  (zoom-mode 0)
-  (balance-windows))
-
-(defun my/window-zoom ()
-  "Size windows using a one-off zoom invocation."
-  (interactive)
-  (zoom-mode 0)
-  (zoom))
 
 ;; See roided out version here: https://github.com/jmercouris/configuration/blob/master/.emacs.d/hydra.el#L86
 ;; See simpler version here: https://www.reddit.com/r/emacs/comments/b13n39/how_do_you_manage_window_sizes_in_emacs/eik6xzb
-;; Use C-x as the prefix since windowing behaviour is already bound under C-x.
 (defhydra hydra-resize-window (global-map "C-c w")
   "resize-windows"
-  ("<left>"  my/window-shrink-horizontal "shrink-horizontal")
-  ("<right>" my/window-grow-horizontal   "grow-horizontal")
-  ("<down>"  my/window-shrink-vertical   "shrink-vertical")
-  ("<up>"    my/window-grow-vertical     "grow-vertical")
-  ("="       my/window-balance           "balance" :exit t)
-  ;; ("g"       my/window-golden            "golden-ratio" :exit t)
-  ;; ("G"       golden-ratio-mode           "golden-ratio-mode" :exit t)
+  ("<left>"  shrink-window-horizontally  "shrink-horizontal")
+  ("<right>" enlarge-window-horizontally "grow-horizontal")
+  ("<down>"  shrink-window               "shrink-vertical")
+  ("<up>"    enlarge-window              "grow-vertical")
+  ("="       balance-windows             "balance")
   ("u"       winner-undo                 "winner-undo")
-  ("U"       winner-redo                 "winner-redo")
-  ("z"       zoom                        "zoom" :exit t)
-  ("Z"       zoom-mode                   "zoom-mode" :exit t))
+  ("U"       winner-redo                 "winner-redo"))
 
 ;; Take over Emacs' default buffer placement algorithm. Taken from here:
 ;; https://github.com/daviwil/dotfiles/blob/master/Emacs.org#control-buffer-placement.
-;; Watch https://www.youtube.com/watch?v=-H2nU0rsUMY
+;; See also: https://www.youtube.com/watch?v=-H2nU0rsUMY.
 (setq display-buffer-base-action
       '((display-buffer-reuse-mode-window
         display-buffer-reuse-window
         display-buffer-same-window)))
 
-;; If a popup does happen, don't resize windows to be equal-sized
+;; If a popup does happen, don't resize windows to be equal-sized.
 (setq even-window-sizes nil)
 
 (use-package yasnippet
@@ -885,7 +837,12 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (lsp-log-io nil)
   (lsp-keymap-prefix "C-c l")
   (lsp-disabled-clients '(ccls))
-  (lsp-eldoc-render-all nil)
+  ;; I'd prefer only single line signature/syntax documentation to be shown in the minibuffer,
+  ;; which should be the default behaviour when lsp-eldoc-render-all is nil, but it looks like
+  ;; do the current integration between rust-analyzer and lsp-mode this needs to be enabled to
+  ;; get the full function signature. See https://github.com/emacs-lsp/lsp-mode/issues/2613
+  ;; and https://github.com/rust-analyzer/rust-analyzer/issues/3415.
+  (lsp-eldoc-render-all t)
 
   ;; Uncomment for less flashiness
   ;; (lsp-eldoc-hook nil)
@@ -1023,21 +980,21 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 ;; under C-c C-c.
 (use-package rustic
   :bind (:map rustic-mode-map
-              ("C-c C-c a" . lsp-execute-code-action)
-              ("C-c C-c g" . lsp-find-definition)
-              ("C-c C-c f" . lsp-find-references)
-              ("C-c C-c G" . lsp-ui-peek-find-definitions)
-              ("C-c C-c F" . lsp-ui-peek-find-references)
-              ("C-c C-c m" . lsp-ui-imenu)
-              ("C-c C-c r" . lsp-rename)
-              ("C-c C-c q" . lsp-workspace-restart)
-              ("C-c C-c Q" . lsp-workspace-shutdown)
-              ("C-c C-c s" . lsp-rust-analyzer-status)
-              ("C-c C-c l" . flycheck-list-errors))
+              ("C-c C-c C-a" . rustic-cargo-add)
+              ("C-c C-c a"   . lsp-execute-code-action)
+              ("C-c C-c g"   . lsp-find-definition)
+              ("C-c C-c f"   . lsp-find-references)
+              ("C-c C-c G"   . lsp-ui-peek-find-definitions)
+              ("C-c C-c F"   . lsp-ui-peek-find-references)
+              ("C-c C-c m"   . lsp-ui-imenu)
+              ("C-c C-c r"   . lsp-rename)
+              ("C-c C-c q"   . lsp-workspace-restart)
+              ("C-c C-c Q"   . lsp-workspace-shutdown)
+              ("C-c C-c s"   . lsp-rust-analyzer-status)
+              ("C-c C-c l"   . flycheck-list-errors))
   :config
   ;; Following settings aren't defined as custom vars.
   (setq rustic-format-on-save t))
-
 
 (use-package dockerfile-mode)
 
@@ -1208,3 +1165,24 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 		  (smtpmail-stream-type  . ssl)
 		  ;; Trash sent messages because Gmail will already keep a copy in the sent folder.
 		  (mu4e-sent-messages-behavior . trash))))))
+
+ ;; Configure Elfeed
+(use-package elfeed
+  :bind
+  (:map elfeed-show-mode-map ("?" . which-key-show-major-mode))
+  (:map elfeed-search-mode-map ("?" . which-key-show-major-mode))
+  :custom
+  (elfeed-db-directory (concat my/xdg-cache-dir "/elfeed"))
+  :config
+  (use-package elfeed-org
+    :custom
+    (rmh-elfeed-org-files `(,(concat my/org-dir "/feeds.org")))
+    :config
+    (elfeed-org)))
+
+;; (elfeed-feeds
+   ;; '("https://clux.github.io/probes/index.xml"
+     ;; "https://www.pavel.cool/feed.xml")))
+
+(provide 'init)
+;;; init.el ends here
