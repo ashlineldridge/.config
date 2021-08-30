@@ -136,6 +136,7 @@
 (global-unset-key (kbd "<up>"))
 (global-unset-key (kbd "<down>"))
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+(global-set-key (kbd "C-x C-b") 'ibuffer) ;; Replace list-buffers with the more advanced ibuffer.
 (global-set-key (kbd "C-;") 'comment-line)
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
@@ -288,7 +289,7 @@
   (which-key-idle-delay 2)
   (which-key-idle-secondary-delay 0.05)
   (which-key-popup-type 'side-window)
-  (which-key-side-window-location '(right bottom)))
+  (which-key-side-window-location '(bottom right)))
 
 (use-package yaml-mode
   :mode (("\\.yml\\'" . yaml-mode)
@@ -450,6 +451,19 @@
       '((display-buffer-reuse-mode-window
         display-buffer-reuse-window
         display-buffer-same-window)))
+
+;; One day I will learn how this bloody monster actually works. See:
+;; https://www.reddit.com/r/emacs/comments/dqz5ux/thanks_for_the_displaybuffer_knowledge/ and
+;; https://www.reddit.com/r/emacs/comments/cpdr6m/any_additional_docstutorials_on_displaybuffer_and/
+(setq display-buffer-alist
+      '(("\\*rustic-"
+         (display-buffer-below-selected))
+        ("\\*cargo-"
+         (display-buffer-below-selected))
+        ("\\*Flycheck "
+         (display-buffer-below-selected))
+        ("\\*xref\\*"
+         (display-buffer-below-selected))))
 
 ;; If a popup does happen, don't resize windows to be equal-sized.
 (setq even-window-sizes nil)
@@ -785,10 +799,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 ;; Languages
 ;;
 
-  ;; Completion
-  ;; (company-mode)
-  ;; (setq company-idle-delay nil)
-
 (defun my/company-mode ()
   "Run company-mode and configure autocompletion based on the major mode."
   (interactive)
@@ -807,7 +817,9 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (:map company-active-map
 	("<tab>" . company-complete-selection)
 	("C-n" . company-select-next-or-abort)
-	("C-p" . company-select-previous-or-abort))
+	("C-p" . company-select-previous-or-abort)
+        ("M-<". company-select-first)
+	("M->". company-select-last))
   :custom
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
@@ -833,16 +845,28 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   ;; Disable lsp-mode for Terraform for now as neither the terraform-ls nor
   ;; the terraform-lsp language servers seem reliable enough.
   ;; (terraform-mode . lsp)
+  :bind
+  (:map lsp-mode-map
+	("<tab>" . company-indent-or-complete-common)
+        ;; M-? is normally bound to xref-find-references but the way that this function exposes
+        ;; references is not particularly helpful so we override it with lsp-find-references.
+        ;; M-. (xref-find-definitions) and M-, (xref-pop-marker-stack) we'll leave in place since
+        ;; they work well.
+        ("M-?" . lsp-find-references))
   :custom
   (lsp-log-io nil)
   (lsp-keymap-prefix "C-c l")
   (lsp-disabled-clients '(ccls))
-  ;; I'd prefer only single line signature/syntax documentation to be shown in the minibuffer,
-  ;; which should be the default behaviour when lsp-eldoc-render-all is nil, but it looks like
-  ;; do the current integration between rust-analyzer and lsp-mode this needs to be enabled to
-  ;; get the full function signature. See https://github.com/emacs-lsp/lsp-mode/issues/2613
-  ;; and https://github.com/rust-analyzer/rust-analyzer/issues/3415.
-  (lsp-eldoc-render-all t)
+  ;; When lsp-eldoc-render-all is set to nil, moving point to a function call should result
+  ;; in a one line function signature being displayed in the minibuffer. There is an issue
+  ;; with lsp-mode and rust-analyzer however where what gets displayed is not the function
+  ;; signature but (usually) the type of struct to which the function belongs. However,
+  ;; setting lsp-eldoc-render-all to non-nil is even worse as it often results in a huge block
+  ;; of text being displayed that contains too much information. Going to disable for now,
+  ;; and use lsp-ui-doc-glance to view type information.
+  ;; See: https://github.com/emacs-lsp/lsp-mode/issues/2613
+  ;; Also: https://github.com/rust-analyzer/rust-analyzer/issues/3415
+  (lsp-eldoc-render-all nil)
 
   ;; Uncomment for less flashiness
   ;; (lsp-eldoc-hook nil)
@@ -865,18 +889,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   ;; which it uses by default and is more experimental (crashes constantly for me).
   (lsp-terraform-server '("terraform-ls" "serve" "-tf-exec" "/usr/local/bin/terraform"))
   :config
-  (lsp-enable-which-key-integration t)
-  :bind (:map lsp-mode-map
-	      ("<tab>" . company-indent-or-complete-common)))
-
-(use-package lsp-ui
-  :bind
-  (:map lsp-ui-mode-map
-        ("C-c C-c d" . lsp-ui-doc-show))
-  :custom
-  (lsp-ui-sideline-enable nil) ;; Disable sideline popups.
-  (lsp-ui-doc-enable nil)
-  (lsp-ui-doc-position 'at-point))
+  (lsp-enable-which-key-integration t))
 
 (use-package dap-mode
   ;; :custom
@@ -902,7 +915,10 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 
 (use-package flycheck
   :defer t
-  :hook (prog-mode . flycheck-mode))
+  :hook (prog-mode . flycheck-mode)
+  :bind
+  (:map flycheck-mode-map
+        ("C-c C-c l" . flycheck-list-errors)))
 
 (use-package lsp-treemacs
   :if window-system
@@ -976,22 +992,21 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   ;; TODO: setup go-mode + integrations https://github.com/dominikh/go-mode.el
   )
 
-;; As a practice, start putting all language specific commands as single keys
-;; under C-c C-c.
 (use-package rustic
-  :bind (:map rustic-mode-map
-              ("C-c C-c C-a" . rustic-cargo-add)
-              ("C-c C-c a"   . lsp-execute-code-action)
-              ("C-c C-c g"   . lsp-find-definition)
-              ("C-c C-c f"   . lsp-find-references)
-              ("C-c C-c G"   . lsp-ui-peek-find-definitions)
-              ("C-c C-c F"   . lsp-ui-peek-find-references)
-              ("C-c C-c m"   . lsp-ui-imenu)
-              ("C-c C-c r"   . lsp-rename)
-              ("C-c C-c q"   . lsp-workspace-restart)
-              ("C-c C-c Q"   . lsp-workspace-shutdown)
-              ("C-c C-c s"   . lsp-rust-analyzer-status)
-              ("C-c C-c l"   . flycheck-list-errors))
+  :init
+  (setq rustic-mode-map (make-sparse-keymap))
+  :bind
+  (:map rustic-mode-map
+        ("C-c r b" . rustic-cargo-build)
+        ("C-c r f" . rustic-cargo-fmt)
+        ("C-c r F" . rustic-format-buffer)
+        ("C-c r l" . rustic-cargo-clippy)
+        ("C-c r r" . rustic-cargo-run)
+        ("C-c r t" . rustic-cargo-test)
+        ("C-c r T" . rustic-cargo-current-test)
+        ("C-c r c a" . rustic-cargo-add)
+        ("C-c r c o" . rustic-cargo-outdated)
+        ("C-c r c u" . rustic-cargo-upgrade))
   :config
   ;; Following settings aren't defined as custom vars.
   (setq rustic-format-on-save t))
@@ -1179,10 +1194,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
     (rmh-elfeed-org-files `(,(concat my/org-dir "/feeds.org")))
     :config
     (elfeed-org)))
-
-;; (elfeed-feeds
-   ;; '("https://clux.github.io/probes/index.xml"
-     ;; "https://www.pavel.cool/feed.xml")))
 
 (provide 'init)
 ;;; init.el ends here
