@@ -199,24 +199,49 @@
 	  (setq exec-path-from-shell-arguments nil)
 	  (exec-path-from-shell-initialize)))
 
-(use-package ivy
-  :init (ivy-mode t) ; globally at startup
+;;; Completion system
+
+(use-package savehist
   :config
-  (setq ivy-use-virtual-buffers t)
-  (setq ivy-height 20)
-  (setq ivy-count-format "%d/%d "))
+  (setq history-length 25)
+  (savehist-mode 1))
+
+;; Enable vertico
+(use-package vertico
+  :straight '(vertico :host github :repo "minad/vertico" :branch "main")
+  :init
+  (vertico-mode 1)
+
+  ;; Grow and shrink the Vertico minibuffer
+  ;; (setq vertico-resize t)
+
+  ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
+  ;; (setq vertico-cycle t)
+  )
+
+(use-package ivy
+  :disabled
+  :init (ivy-mode t) ; globally at startup
+  :custom
+  (ivy-use-virtual-buffers t)
+  (ivy-height 20)
+  (ivy-count-format "%d/%d ")
+  (ivy-virtual-abbreviate 'abbreviate))
 
 (use-package ivy-rich
+  :disabled
   :after 'counsel
   :init (ivy-rich-mode 1))
 
 (use-package counsel
+  :disabled
   :bind
   (("M-x"     . counsel-M-x)
    ("C-s"     . swiper)
    ("C-S-s"   . swiper-thing-at-point)
    ("C-x C-f" . counsel-find-file)
-   ("C-x b"   . counsel-switch-buffer)
+   ;; Don't use counsel-switch-buffer as showing preview and starting new modes is a PITA.
+   ;; ("C-x b"   . counsel-switch-buffer)
    ("M-y"     . counsel-yank-pop)
    ;; Remove M-Space which is assigned to just-one-space which I never use
    ;; and also since M-SPC is used by Spotlight on Mac. Instead use M-S-SPC
@@ -227,7 +252,7 @@
   :config
   (setq ivy-initial-inputs-alist nil)) ; Don't start searches with ^
 
-;; Credential management
+;;; Credential management
 
 (use-package pass)
 
@@ -300,7 +325,9 @@
 ;; Is there a better way/place to do this?
 (setq js-indent-level 2)
 
+;;; TODO: Fix using consult
 (use-package helpful
+  :disabled
   :custom
   (counsel-describe-function-function #'helpful-callable)
   (counsel-describe-variable-function #'helpful-variable)
@@ -395,6 +422,7 @@
   :custom ((projectile-completion-system 'ivy)))
 
 (use-package counsel-projectile
+  :disabled
   :config (counsel-projectile-mode))
 
 (use-package magit
@@ -469,13 +497,16 @@
 (setq even-window-sizes nil)
 
 (use-package yasnippet
-  :hook (prog-mode . yas-minor-mode)
-  ; Remove default key bindings which are crap.
-  :init (setq yas-minor-mode-map (make-sparse-keymap))
-  :bind (:map yas-minor-mode-map
-	      ("C-c y s" . yas-insert-snippet)
-	      ("C-c y v" . yas-visit-snippet-file)
-  	      ("C-c y n" . yas-new-snippet))
+  :hook
+  (prog-mode . yas-minor-mode)
+  :init
+  ;; Remove default key bindings which are crap.
+  (setq yas-minor-mode-map (make-sparse-keymap))
+  :bind
+  (:map yas-minor-mode-map
+	("C-c y i" . yas-insert-snippet)
+	("C-c y f" . yas-visit-snippet-file)
+  	("C-c y c" . yas-new-snippet))
   :config
   (setq
    yas-verbosity 1
@@ -639,9 +670,6 @@ color theme."
 	"PROG"
         ((org-agenda-overriding-header "Progress")
 	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
-         (org-refile-targets
-          `((,(concat my/org-dir "/archive.org") :level . 2)
-            (,(concat my/org-dir "/someday.org") :level . 1)))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"NEXT"
@@ -723,7 +751,7 @@ color theme."
      (,(concat my/org-dir "/inbox.org") :level . 1)
      (,(concat my/org-dir "/personal.org") :regexp . "Tasks") ;; This seems to work nicer.
      (,(concat my/org-dir "/work.org") :regexp . "Tasks")
-     (,(concat my/org-dir "/someday.org") :level . 1)
+     (,(concat my/org-dir "/someday.org") :regexp . "Tasks") ;; TODO: Make it possible to refile into Projects or Tasks.
      (,(concat my/org-dir "/recurring.org") :level . 2)))
   ;; The following two settings are required to make org-refile show the full heading path
   ;; to subheading refile candidates. Took a while to get this working properly.
@@ -812,14 +840,16 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 (use-package company
   :hook
   (prog-mode . my/company-mode)
-  (org-mode . my/company-mode)
+  (org-mode  . my/company-mode)
   :bind
+  (:map company-mode-map
+        ("<tab>" . company-indent-or-complete-common))
   (:map company-active-map
 	("<tab>" . company-complete-selection)
-	("C-n" . company-select-next-or-abort)
-	("C-p" . company-select-previous-or-abort)
-        ("M-<". company-select-first)
-	("M->". company-select-last))
+	("C-n"   . company-select-next-or-abort)
+	("C-p"   . company-select-previous-or-abort)
+        ("M-<"   . company-select-first)
+	("M->"   . company-select-last))
   :custom
   (company-minimum-prefix-length 1)
   (company-idle-delay 0.0))
@@ -847,7 +877,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   ;; (terraform-mode . lsp)
   :bind
   (:map lsp-mode-map
-	("<tab>" . company-indent-or-complete-common)
         ;; M-? is normally bound to xref-find-references but the way that this function exposes
         ;; references is not particularly helpful so we override it with lsp-find-references.
         ;; M-. (xref-find-definitions) and M-, (xref-pop-marker-stack) we'll leave in place since
@@ -994,6 +1023,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 
 (use-package rustic
   :init
+  ;; Remove the default rustic keybindings (C-c C-c x) in favour of C-c r x.
   (setq rustic-mode-map (make-sparse-keymap))
   :bind
   (:map rustic-mode-map
