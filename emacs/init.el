@@ -201,56 +201,55 @@
 
 ;;; Completion system
 
+(use-package vertico
+  :init
+  (vertico-mode t)
+  :custom
+  (vertico-cycle t))
+
+;; Persist history over Emacs restarts. Vertico sorts by history position.
 (use-package savehist
   :config
   (setq history-length 25)
   (savehist-mode 1))
 
-;; Enable vertico
-(use-package vertico
-  :straight '(vertico :host github :repo "minad/vertico" :branch "main")
+(use-package orderless
   :init
-  (vertico-mode 1)
+  (setq completion-styles '(orderless)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion)))))
 
-  ;; Grow and shrink the Vertico minibuffer
-  ;; (setq vertico-resize t)
+(use-package marginalia
+  :init
+  (marginalia-mode t))
 
-  ;; Optionally enable cycling for `vertico-next' and `vertico-previous'.
-  ;; (setq vertico-cycle t)
-  )
-
-(use-package ivy
-  :disabled
-  :init (ivy-mode t) ; globally at startup
-  :custom
-  (ivy-use-virtual-buffers t)
-  (ivy-height 20)
-  (ivy-count-format "%d/%d ")
-  (ivy-virtual-abbreviate 'abbreviate))
-
-(use-package ivy-rich
-  :disabled
-  :after 'counsel
-  :init (ivy-rich-mode 1))
-
-(use-package counsel
-  :disabled
+(use-package consult
   :bind
-  (("M-x"     . counsel-M-x)
-   ("C-s"     . swiper)
-   ("C-S-s"   . swiper-thing-at-point)
-   ("C-x C-f" . counsel-find-file)
-   ;; Don't use counsel-switch-buffer as showing preview and starting new modes is a PITA.
-   ;; ("C-x b"   . counsel-switch-buffer)
-   ("M-y"     . counsel-yank-pop)
-   ;; Remove M-Space which is assigned to just-one-space which I never use
-   ;; and also since M-SPC is used by Spotlight on Mac. Instead use M-S-SPC
-   ;; to launch counsel-mark-ring for a nicer view of te mark ring.
-   ("M-SPC"   . nil)
-   ("M-S-SPC" . counsel-mark-ring)
-   :map minibuffer-local-map ("C-r" . 'counsel-minibuffer-history))
+  (;; Search bindings
+   ("C-s"   . consult-line) ; For convenience
+   ("M-s s" . consult-line)
+   ("M-s r" . consult-ripgrep)
+   ;; Other bindings (reconsider keys used)
+   ("C-c b" . consult-bookmark))
+  :custom
+  (consult-project-root-function
+   (lambda()
+     (when (fboundp 'projectile-project-root)
+       (projectile-project-root))))
   :config
-  (setq ivy-initial-inputs-alist nil)) ; Don't start searches with ^
+  (consult-customize
+   ;; Disable preview for the following consult functions.
+   consult-ripgrep consult-git-grep
+   consult-grep consult-bookmark
+   :preview-key nil))
+
+(use-package embark
+  :bind
+  (("C-." . embark-act)
+   ("M-." . embark-dwim)))
+
+(use-package embark-consult
+  :after (embark consult))
 
 ;;; Credential management
 
@@ -262,19 +261,6 @@
 
 ;; Don't cache secrets.
 (setq auth-source-do-cache nil)
-
-;; Am finding prescient a bit confusing
-;; (use-package prescient)
-
-;; (use-package ivy-prescient
-;;   ;; We can't hook off ivy-mode as it was already enabled above.
-;;   :init (ivy-prescient-mode t))
-
-;; (use-package company-prescient
-;;   :hook (company-mode . company-prescient-mode))
-
-;; (straight-use-package 'selectrum-prescient)
-;; TODO: Investiage selectrum as a replacement for ivy?
 
 (use-package markdown-mode
   :commands (markdown-mode gfm-mode)
@@ -296,10 +282,10 @@
   :bind (("C-=" . er/expand-region)
          ("C-+" . er/mark-outside-pairs)))
 
-(use-package highlight-chars
-  :bind (:map global-map
-              ("C-c h t" . hc-toggle-highlight-tabs)
-	      ("C-c h w" . hc-toggle-highlight-trailing-whitespace)))
+(use-package highlight-chars)
+  ;; :bind (:map global-map
+              ;; ("C-c h t" . hc-toggle-highlight-tabs)
+	      ;; ("C-c h w" . hc-toggle-highlight-trailing-whitespace)))
 
 ;; Whitespace settings
 ;; (setq-default show-trailing-whitespace nil)
@@ -325,16 +311,12 @@
 ;; Is there a better way/place to do this?
 (setq js-indent-level 2)
 
-;;; TODO: Fix using consult
 (use-package helpful
-  :disabled
-  :custom
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
   :bind
-  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-function] . helpful-function)
+  ([remap describe-symbol] . helpful-symbol)
+  ([remap describe-variable] . helpful-variable)
   ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
 (use-package doom-themes)
@@ -351,7 +333,7 @@
         (buffer-list)))
 
 (defun my/load-theme (theme)
-  "Load the specified theme."
+  "Load the THEME."
   (interactive)
   (load-theme theme t)
   (my/org-reset-buffers)
@@ -418,12 +400,7 @@
   (setq projectile-switch-project-action #'projectile-dired)
   :config (projectile-mode)
   :bind-keymap
-  ("C-c p" . projectile-command-map)
-  :custom ((projectile-completion-system 'ivy)))
-
-(use-package counsel-projectile
-  :disabled
-  :config (counsel-projectile-mode))
+  ("C-c p" . projectile-command-map))
 
 (use-package magit
   :bind
@@ -616,18 +593,14 @@ color theme."
   (org-mode . my/org-mode-init)
   (org-agenda-mode . (lambda ()
 		       ;; Override '?' key to show helpful which-key display.
-		       (define-key org-agenda-mode-map "?" 'which-key-show-major-mode)
-		       ;; Counsel provides a nicer tagging interface when multiple tags are assigned.
-		       (define-key org-agenda-mode-map "\C-c\C-q" 'counsel-org-tag-agenda)))
+		       (define-key org-agenda-mode-map "?" 'which-key-show-major-mode)))
   :bind
   ;; Below produces errors that look like org-agenda-mode-map isn't in scope sometimes.
   ;; Unsure why this doesn't work when the mapping for org-mode-map does work. The above lambda
   ;; is a workaround. Will try to clean up at some point.
   ;; (:map org-agenda-mode-map
   ;; (("?" . which-key-show-full-major-mode)
-  ;; ("C-c C-q" . counsel-org-tag-agenda)))
   (:map org-mode-map
-	("C-c C-q" . counsel-org-tag)
         ("C-c C-S-l" . org-cliplink)
         ;; Can't use plain tab as org uses that for cycling visibility
         ("C-c <tab>" . company-indent-or-complete-common))
@@ -990,10 +963,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (neotree-toggle)
   (my/neotree-refresh))
 
-;; Similar to find symbol in project in Intellij
-(use-package lsp-ivy
-  :after lsp-mode)
-
 (use-package typescript-mode
   :mode "\\.ts\\'"
   :config
@@ -1120,9 +1089,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (mu4e-maildir "~/Mail")
   (mu4e-view-show-images t)
   (mu4e-view-show-addresses 't)
-
-  ;; Use Ivy for mu4e completions (maildir folders, etc)
-  (mu4e-completing-read-function #'ivy-completing-read)
 
   ;; Make sure that moving a message (like to Trash) causes the
   ;; message to get a new file name.  This helps to avoid the
