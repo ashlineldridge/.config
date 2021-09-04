@@ -17,6 +17,7 @@ emacs/elpa
 emacs/eshell/history
 emacs/eshell/lastdir
 emacs/forge-database.sqlite
+emacs/history
 emacs/projectile-bookmarks.eld
 emacs/projectile.cache
 emacs/recentf

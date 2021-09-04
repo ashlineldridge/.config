@@ -244,12 +244,16 @@
    :preview-key nil))
 
 (use-package embark
+  ;; Load after xref so that the overidden keybinding below takes effect.
+  :after xref
   :bind
   (("C-." . embark-act)
    ("M-." . embark-dwim)))
 
 (use-package embark-consult
   :after (embark consult))
+
+(use-package wgrep)
 
 ;;; Credential management
 
@@ -481,6 +485,7 @@
   (setq yas-minor-mode-map (make-sparse-keymap))
   :bind
   (:map yas-minor-mode-map
+        ("C-c y y" . yas-expand)
 	("C-c y i" . yas-insert-snippet)
 	("C-c y f" . yas-visit-snippet-file)
   	("C-c y c" . yas-new-snippet))
@@ -989,6 +994,11 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   ;; :config
   ;; TODO: setup go-mode + integrations https://github.com/dominikh/go-mode.el
   )
+
+(use-package python
+  :straight (:type built-in)
+  :init
+  (setq python-shell-interpreter "python3"))
 
 (use-package rustic
   :init
