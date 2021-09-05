@@ -253,7 +253,11 @@
 (use-package embark-consult
   :after (embark consult))
 
-(use-package wgrep)
+(use-package wgrep
+  :bind
+  (("C-c C-w" . wgrep-change-to-wgrep-mode))
+  :custom
+  (wgrep-auto-save-buffer t))
 
 ;;; Credential management
 
