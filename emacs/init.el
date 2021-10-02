@@ -10,15 +10,13 @@
 
 ;;; Code:
 
-;; Theme-related variable definitions.
-(defvar my/dark-theme 'doom-tomorrow-night)
-(defvar my/light-theme 'spacemacs-light)
-(defvar my/current-theme my/dark-theme)
+;; List of themes I like.
+(defvar my/themes '(doom-Iosvkem doom-tomorrow-night doom-vibrant))
 
 ;; Font-related variable definitions.
-(defvar my/default-fixed-font "Jetbrains Mono") ;; Cantarell is another good one.
+(defvar my/default-fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
 (defvar my/default-variable-font "Iosevka Aile") ;; ETBembo is another good one.
-(defvar my/default-fixed-font-size 130)
+(defvar my/default-fixed-font-size 145)
 (defvar my/default-variable-font-size 130)
 
 ;; Org-related variable definitions.
@@ -73,11 +71,11 @@
 ;; Do not show the startup screen.
 (setq inhibit-startup-message t)
 
-(tool-bar-mode -1)   ; Disable the tool bar
-(tooltip-mode -1)    ; Disable tool tips
-(menu-bar-mode -1)   ; Disable the menu bar
-(scroll-bar-mode -1) ; Disable visible scrollbar
-(set-fringe-mode 10) ; Increase left/right margins slightly
+(tool-bar-mode 0)    ;; Disable the tool bar.
+(tooltip-mode 0)     ;; Disable tool tips.
+(menu-bar-mode 0)    ;; Disable the menu bar.
+(scroll-bar-mode 0)  ;; Disable visible scrollbar.
+(set-fringe-mode 10) ;; Increase left/right margins slightly.
 
 ;; Why would this be true? https://blog.sumtypeofway.com/posts/emacs-config.html
 (setq sentence-end-double-space nil)
@@ -86,7 +84,7 @@
 (defalias 'yes-or-no-p 'y-or-n-p)
 
 ;; Make input characters overwrite the current region.
-(delete-selection-mode t)
+(delete-selection-mode 1)
 
 ;; If I need to run Emacs in the terminal I'll use `-nw -q`. Better than
 ;; littering this file with unnecessary window system checks.
@@ -112,18 +110,21 @@
 (set-face-attribute 'default nil
                     :font my/default-fixed-font
                     :height my/default-fixed-font-size
-                    :weight 'light)
+                    :width 'normal
+                    :weight 'normal)
 
 ;; Set the fixed pitch face.
 (set-face-attribute 'fixed-pitch nil
                     :font my/default-fixed-font
                     :height my/default-fixed-font-size
-                    :weight 'light)
+                    :width 'normal
+                    :weight 'normal)
 
 ;; Set the variable pitch face
 (set-face-attribute 'variable-pitch nil
                     :font my/default-fixed-font
                     :height my/default-variable-font-size
+                    :width 'normal
                     :weight 'light)
 
 ;; Show echoed keystrokes quicker.
@@ -138,6 +139,8 @@
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-x C-b") 'ibuffer) ;; Replace list-buffers with the more advanced ibuffer.
 (global-set-key (kbd "C-;") 'comment-line)
+(global-set-key (kbd "C-S-k") 'my/copy-to-end-of-line)
+(global-set-key (kbd "C-M-k") 'my/delete-to-end-of-line)
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
 (global-set-key (kbd "C-c o c") 'org-capture)
@@ -149,7 +152,7 @@
 (global-set-key (kbd "C-x C-r") 'eval-region)
 
 ;; Show column numbers in the mode line.
-(column-number-mode t)
+(column-number-mode 1)
 
 ;; Enable line numbers for some modes.
 (dolist (mode '(text-mode-hook
@@ -203,9 +206,7 @@
 
 (use-package vertico
   :init
-  (vertico-mode t)
-  :custom
-  (vertico-cycle t))
+  (vertico-mode 1))
 
 ;; Persist history over Emacs restarts. Vertico sorts by history position.
 (use-package savehist
@@ -221,7 +222,7 @@
 
 (use-package marginalia
   :init
-  (marginalia-mode t))
+  (marginalia-mode 1))
 
 (use-package consult
   :bind
@@ -229,6 +230,8 @@
    ("C-s"   . consult-line) ; For convenience
    ("M-s s" . consult-line)
    ("M-s r" . consult-ripgrep)
+   ;; Text editing bindings
+   ("M-y" . consult-yank-pop)
    ;; Other bindings (reconsider keys used)
    ("C-c b" . consult-bookmark))
   :custom
@@ -248,7 +251,8 @@
   :after xref
   :bind
   (("C-." . embark-act)
-   ("M-." . embark-dwim)))
+   ;; ("M-." . embark-dwim)
+   ))
 
 (use-package embark-consult
   :after (embark consult))
@@ -344,33 +348,17 @@
   "Load the THEME."
   (interactive)
   (load-theme theme t)
-  (my/org-reset-buffers)
-  )
-
-(defun my/light-theme ()
-  "Switch to light theme."
-  (interactive)
-  (disable-theme my/dark-theme)
-  (my/load-theme my/light-theme))
-
-(defun my/dark-theme ()
-  "Switch to dark theme."
-  (interactive)
-  (disable-theme my/light-theme)
-  (my/load-theme my/dark-theme))
+  ;; Reset the org buffers as otherwise they can look a bit strange after a theme change.
+  (my/org-reset-buffers))
 
 (defun my/cycle-theme ()
-  "Cycle between dark and light themes."
+  "Cycle around the list of themes."
   (interactive)
-  (if (eq my/current-theme my/dark-theme)
-      (progn
-        (my/light-theme)
-        (setq my/current-theme my/light-theme))
-    (progn
-      (my/dark-theme)
-      (setq my/current-theme my/dark-theme))))
+  (setq my/themes (append (cdr my/themes) `(,(car my/themes))))
+  (my/load-theme (car my/themes)))
 
-(my/load-theme my/current-theme)
+;; Load the first theme in the list.
+(my/load-theme (car my/themes))
 
 ;; The package all-the-icons is required by doom-modeline.
 (use-package all-the-icons
@@ -405,7 +393,6 @@
   (setq projectile-project-search-path
 	; Search path is displayed from right to left.
 	'("~/Development/home" "~/Development/work" "~/Dropbox"))
-  (setq projectile-switch-project-action #'projectile-dired)
   :config (projectile-mode)
   :bind-keymap
   ("C-c p" . projectile-command-map))
@@ -419,6 +406,9 @@
   ;; Tell Magit not to add the C-x bindings as I like to keep C-x reserved
   ;; for Emacs native commands.
   (magit-define-global-key-bindings nil)
+  ;; Otherwise Magit shows a read-only diff screen when you press C-c C-c and
+  ;; you've already had a chance to look at the diff when you stage the files.
+  (magit-commit-show-diff nil)
   :config
   ;; Disable as I get errors about `project-switch-commands' being nil.
   (setq magit-bind-magit-project-status nil))
@@ -510,7 +500,10 @@
   :custom
   ;; Don't prompt for permission to compile on first install.
   (vterm-always-compile-module t)
-  (vterm-max-scrollback 10000))
+  (vterm-max-scrollback 10000)
+  ;; I can't seem to get a reliable way of clearing without losing buffer history.
+  ;; The below setting (which is already the default) should work but doesn't.
+  (vterm-clear-scrollback-when-clearing nil))
 
 (use-package multi-vterm
   :bind (:map global-map
@@ -610,9 +603,9 @@ color theme."
   ;; (:map org-agenda-mode-map
   ;; (("?" . which-key-show-full-major-mode)
   (:map org-mode-map
-        ("C-c C-S-l" . org-cliplink)
+        ("C-c C-S-l" . org-cliplink))
         ;; Can't use plain tab as org uses that for cycling visibility
-        ("C-c <tab>" . company-indent-or-complete-common))
+        ;; ("C-c <tab>" . company-indent-or-complete-common))
   :config
   ;; Save org buffers after refiling.
   (advice-add 'org-refile :after (lambda (&rest _) (org-save-all-org-buffers)))
@@ -746,7 +739,7 @@ color theme."
   (org-todo-keyword-faces
    `(("TODO" . (:foreground "DodgerBlue2" :weight bold))
      ("NEXT" . (:foreground "hot pink" :weight bold))
-     ("PROG" . (:foreground "SpringGreen4" :weight bold))
+     ("PROG" . (:foreground "CadetBlue1" :weight bold))
      ("HOLD" . (:foreground "orange1" :weight bold))
      ("DONE" . (:foreground "orange red" :weight bold)))))
 
@@ -776,7 +769,8 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
    ("C-c n f" . org-roam-node-find)
    ("C-c n g" . org-roam-graph)
    ("C-c n i" . org-roam-node-insert)
-   ("C-c n c" . org-roam-capture))
+   ("C-c n c" . org-roam-capture)
+   ("C-c n t" . org-roam-tag-add))
    ;; Dailies
    ;; ("C-c n j" . org-roam-dailies-capture-today))
   :config
@@ -822,7 +816,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 (use-package company
   :hook
   (prog-mode . my/company-mode)
-  (org-mode  . my/company-mode)
+  ;; (org-mode  . my/company-mode)
   :bind
   (:map company-mode-map
         ("<tab>" . company-indent-or-complete-common))
@@ -895,6 +889,8 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 			     ;; "-j=1"
 			     ))
   (lsp-rust-analyzer-cargo-watch-command "clippy")
+  ;; I'd prefer to have this off by default but there seem to be some hooks configured where if
+  ;; this is going to be set it needs to be set when lsp-mode starts.
   (lsp-rust-analyzer-server-display-inlay-hints t)
   ;; Configure lsp-mode to use the official terraform-ls LSP server rather than terraform-lsp
   ;; which it uses by default and is more experimental (crashes constantly for me).
@@ -931,18 +927,9 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (:map flycheck-mode-map
         ("C-c C-c l" . flycheck-list-errors)))
 
-(use-package lsp-treemacs
-  :if window-system
-  :after lsp-mode)
-
-(use-package treemacs-all-the-icons
-  :if window-system
-  :config (treemacs-load-theme "all-the-icons"))
-
-; TODO: configure what's shown/hidden by default
 (use-package neotree
   :custom
-  (neo-theme (if window-system 'icons 'arrow))
+  (neo-theme 'ascii)
   (neo-smart-open t)
   (neo-window-fixed-size nil)
   (neo-toggle-window-keep-p t)
@@ -1004,6 +991,17 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   :init
   (setq python-shell-interpreter "python3"))
 
+(defun my/toggle-rust-inlay-hints ()
+  "Toggle whether Rust inlay type hints are shown."
+  (interactive)
+  (if lsp-rust-analyzer-server-display-inlay-hints
+    (progn
+      (setq lsp-rust-analyzer-server-display-inlay-hints nil)
+      (lsp-rust-analyzer-inlay-hints-mode 0))
+    (progn
+      (setq lsp-rust-analyzer-server-display-inlay-hints t)
+      (lsp-rust-analyzer-inlay-hints-mode 1))))
+
 (use-package rustic
   :init
   ;; Remove the default rustic keybindings (C-c C-c x) in favour of C-c r x.
@@ -1017,6 +1015,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
         ("C-c r r" . rustic-cargo-run)
         ("C-c r t" . rustic-cargo-test)
         ("C-c r T" . rustic-cargo-current-test)
+        ("C-c r i" . my/toggle-rust-inlay-hints) ;; Toggle inlay type hints.
         ("C-c r c a" . rustic-cargo-add)
         ("C-c r c o" . rustic-cargo-outdated)
         ("C-c r c u" . rustic-cargo-upgrade))
@@ -1066,6 +1065,22 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   "Run 'delete-trailing-whitespace' if the current mode derives from 'prog-mode'."
   (when (derived-mode-p 'prog-mode)
     (delete-trailing-whitespace)))
+
+(defun my/copy-to-end-of-line ()
+  "Copy the text from point to the end of the line to the kill ring."
+  (interactive)
+  (let* ((num-chars (- (line-end-position) (point)))
+         (suffix (if (eq 1 num-chars) "" "s")))
+    (kill-ring-save (point) (line-end-position))
+    (message "Copied %d character%s." num-chars suffix)))
+
+(defun my/delete-to-end-of-line ()
+  "Delete the text from point to the end of the line without copying to the kill ring."
+  (interactive)
+  (let* ((num-chars (- (line-end-position) (point)))
+         (suffix (if (eq 1 num-chars) "" "s")))
+    (delete-region (point) (line-end-position))
+    (message "Deleted %d character%s." num-chars suffix)))
 
 ;; Requires initial mu init command of:
 ;; mu init --maildir=~/Mail --my-address=aeldridge@fastmail.com --my-address=ashlin.eldridge@gmail.com
