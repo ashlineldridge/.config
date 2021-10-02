@@ -55,7 +55,7 @@ SubFolders Verbatim
 Channel gmail
 Far :gmail-remote:
 Near :gmail-local:
-Patterns * !"*/Spam" !"*/All Mail" !*"Important" !*"Starred"
+Patterns * !"*/Spam" !"*/All Mail" !"*/All mail" !*"Important" !*"Starred"
 Create Near
 SyncState *
 
