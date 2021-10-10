@@ -16,8 +16,8 @@
 ;; Font-related variable definitions.
 (defvar my/default-fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
 (defvar my/default-variable-font "Iosevka Aile") ;; ETBembo is another good one.
-(defvar my/default-fixed-font-size 145)
-(defvar my/default-variable-font-size 130)
+(defvar my/default-fixed-font-size 148)
+(defvar my/default-variable-font-size 132)
 
 ;; Org-related variable definitions.
 (defvar my/org-dir "~/Dropbox/org")
@@ -131,13 +131,9 @@
 (setq echo-keystrokes 0.01)
 
 ;; Global key bindings.
-;; Disable arrow keys to "encourage" standard navigation.
-(global-unset-key (kbd "<left>"))
-(global-unset-key (kbd "<right>"))
-(global-unset-key (kbd "<up>"))
-(global-unset-key (kbd "<down>"))
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 (global-set-key (kbd "C-x C-b") 'ibuffer) ;; Replace list-buffers with the more advanced ibuffer.
+(global-set-key (kbd "C-x C-k") 'kill-this-buffer)
 (global-set-key (kbd "C-;") 'comment-line)
 (global-set-key (kbd "C-S-k") 'my/copy-to-end-of-line)
 (global-set-key (kbd "C-M-k") 'my/delete-to-end-of-line)
@@ -284,23 +280,24 @@
 (use-package rainbow-delimiters
   :init (add-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode))
 
+;; See example configurations here:
+;; - https://www.reddit.com/r/emacs/comments/adkj95/smartparens_configuration_for_elisp_and_other/
+;; - https://gist.github.com/oantolin/5751fbaa7b8ab4f9570893f2adfe1862
+;; - https://alexpeits.github.io/emacs.d/#org687ce2c
 (use-package smartparens
-  :hook (prog-mode . smartparens-mode))
-
-;; Learn how to use first
-;; (use-package paredit :hook (emacs-lisp-mode . paredit-mode))
+  ;; Giving global mode a try.
+  ;; :hook (prog-mode . smartparens-mode)
+  :init
+  (smartparens-global-mode)
+  :config
+  (require 'smartparens-config))
 
 (use-package expand-region
   :bind (("C-=" . er/expand-region)
          ("C-+" . er/mark-outside-pairs)))
 
 (use-package highlight-chars)
-  ;; :bind (:map global-map
-              ;; ("C-c h t" . hc-toggle-highlight-tabs)
-	      ;; ("C-c h w" . hc-toggle-highlight-trailing-whitespace)))
 
-;; Whitespace settings
-;; (setq-default show-trailing-whitespace nil)
 (use-package ws-butler
   :hook ((text-mode . ws-butler-mode)
          (prog-mode . ws-butler-mode)))
@@ -332,10 +329,6 @@
   ([remap describe-key] . helpful-key))
 
 (use-package doom-themes)
-
-;; Need :defer t to prevent requiring spacemacs-theme, which doesn't exist.
-;; See https://github.com/nashamri/spacemacs-theme/issues/42.
-(use-package spacemacs-theme :defer t)
 
 (defun my/org-reset-buffers ()
   "Reset `org-mode` in all org buffers."
@@ -455,18 +448,42 @@
         display-buffer-reuse-window
         display-buffer-same-window)))
 
-;; One day I will learn how this bloody monster actually works. See:
+;; One day I will learn how this bloody monster actually works.
+;; Just read: https://www.gnu.org/software/emacs/manual/html_node/elisp/Displaying-Buffers.html
+;; For examples see:
+;; https://github.com/daviwil/emacs-from-scratch/blob/master/show-notes/Emacs-Tips-DisplayBuffer-1.org
 ;; https://www.reddit.com/r/emacs/comments/dqz5ux/thanks_for_the_displaybuffer_knowledge/ and
 ;; https://www.reddit.com/r/emacs/comments/cpdr6m/any_additional_docstutorials_on_displaybuffer_and/
 (setq display-buffer-alist
-      '(("\\*rustic-"
-         (display-buffer-below-selected))
-        ("\\*cargo-"
-         (display-buffer-below-selected))
+      '(
+        ;; Rust operation windows:
+        ("\\(cargo-\\|rustic-\\|rustfmt\\)"
+         ;; It is not really necessary for me to use display-buffer-reuse-mode-window below since I'm
+         ;; always displaying Rust operation windows in the bottom side window. The below mode-based
+         ;; configuration only takes effect if I manually open a Rustic mode window and then expect
+         ;; subsequent Rustic buffers to reuse that window. But I'm going to leave the below in place
+         ;; for the moment to remind myself of how this works.
+         (display-buffer-reuse-mode-window display-buffer-in-side-window)
+         ;; This alist argument caters for a list of modes as well as a single mode. Even though all of
+         ;; the modes below derive (or are) rustic-compilation-mode, they all need to be specified to have
+         ;; the desired effect because if, for example, a window displays a buffer in rustic-cargo-test-mode,
+         ;; rustic-cargo-run-mode does not derive from that (it is a sibling) so that window will not be used.
+         (mode . (rustic-compilation-mode
+                  rustic-format-mode
+                  rustic-cargo-test-mode
+                  rustic-cargo-run-mode
+                  rustic-cargo-clippy-mode
+                  rustic-cargo-outdated-mode))
+         (side . bottom))
         ("\\*Flycheck "
-         (display-buffer-below-selected))
+         (display-buffer-in-side-window)
+         (side . bottom))
         ("\\*xref\\*"
-         (display-buffer-below-selected))))
+         (display-buffer-in-side-window)
+         (side . bottom))
+        ("\\*lsp-help\\*"
+         (display-buffer-in-side-window)
+         (side . bottom))))
 
 ;; If a popup does happen, don't resize windows to be equal-sized.
 (setq even-window-sizes nil)
@@ -1009,8 +1026,8 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   :bind
   (:map rustic-mode-map
         ("C-c r b" . rustic-cargo-build)
-        ("C-c r f" . rustic-cargo-fmt)
-        ("C-c r F" . rustic-format-buffer)
+        ("C-c r f" . rustic-format-buffer)
+        ("C-c r F" . rustic-cargo-fmt)
         ("C-c r l" . rustic-cargo-clippy)
         ("C-c r r" . rustic-cargo-run)
         ("C-c r t" . rustic-cargo-test)
@@ -1021,7 +1038,12 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
         ("C-c r c u" . rustic-cargo-upgrade))
   :config
   ;; Following settings aren't defined as custom vars.
-  (setq rustic-format-on-save t))
+  ;; Disabling as I often need to save the buffer to get any errors that I've fixed
+  ;; to no longer be displayed. But if there are any syntax errors remaining then rustfmt
+  ;; will jump to another window. If Rustic/lsp-mode more constantly evaluated errors
+  ;; without requiring a save, I could turn this back on.
+  ;; (setq rustic-format-on-save t)
+  )
 
 (use-package dockerfile-mode)
 
