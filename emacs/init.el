@@ -438,7 +438,18 @@
   ("<up>"    enlarge-window              "grow-vertical")
   ("="       balance-windows             "balance")
   ("u"       winner-undo                 "winner-undo")
-  ("U"       winner-redo                 "winner-redo"))
+  ("U"       winner-redo                 "winner-redo")
+  ("k l"     (my/delete-window 'left)    "delete-window-left")
+  ("k r"     (my/delete-window 'right)   "delete-window-right")
+  ("k a"     (my/delete-window 'above)   "delete-window-above")
+  ("k b"     (my/delete-window 'below)   "delete-window-below"))
+
+(defun my/delete-window (direction)
+  "Deletes the window in the specified DIRECTION."
+  (let ((window (window-in-direction direction)))
+    (if window
+        (delete-window window)
+      (message "No window in direction: %s." direction))))
 
 ;; Take over Emacs' default buffer placement algorithm. Taken from here:
 ;; https://github.com/daviwil/dotfiles/blob/master/Emacs.org#control-buffer-placement.
@@ -511,9 +522,12 @@
 
 (use-package vterm
   :bind
-  ;; Unbind C-s which sends a stop signal to the terminal which freezes
-  ;; output (and requires a C-q to unfreeze) as it's annoying.
-  (:map vterm-mode-map ("C-s" . nil))
+  (:map vterm-mode-map
+        ;; Unbind C-s which sends a stop signal to the terminal which freezes
+        ;; output (and requires a C-q to unfreeze) as it's annoying.
+        ("C-s" . nil)
+        ;; Unbind ESC as I prefer this to be globally bound to keyboard-escape-quit
+        ("<escape>" . nil))
   :custom
   ;; Don't prompt for permission to compile on first install.
   (vterm-always-compile-module t)
