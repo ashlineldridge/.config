@@ -526,8 +526,11 @@
         ;; Unbind C-s which sends a stop signal to the terminal which freezes
         ;; output (and requires a C-q to unfreeze) as it's annoying.
         ("C-s" . nil)
+        ;; Unbind C-SPC as otherwise it prevents pop-global-mark from working across
+        ;; vterm buffers.
+        ("C-SPC" . nil)
         ;; Unbind ESC as I prefer this to be globally bound to keyboard-escape-quit
-        ("<escape>" . nil))
+        ("<escape>" . nil)
   :custom
   ;; Don't prompt for permission to compile on first install.
   (vterm-always-compile-module t)
