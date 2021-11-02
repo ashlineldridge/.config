@@ -314,8 +314,7 @@
 (use-package yaml-mode
   :mode (("\\.yml\\'" . yaml-mode)
 	 ("\\.yaml\\'" . yaml-mode))
-  :config (add-hook 'yaml-mode-hook
-		    '(lambda () (define-key yaml-mode-map "\C-m" 'newline-and-indent))))
+  :hook ((yaml-mode . (lambda () (define-key yaml-mode-map "\C-m" 'newline-and-indent)))))
 
 ;; Is there a better way/place to do this?
 (setq js-indent-level 2)
@@ -531,6 +530,8 @@
         ("C-SPC" . nil)
         ;; Unbind ESC as I prefer this to be globally bound to keyboard-escape-quit
         ("<escape>" . nil)
+        ;; Unbind F11 as this is used to fullscreen the window.
+        ("<f11>" . nil))
   :custom
   ;; Don't prompt for permission to compile on first install.
   (vterm-always-compile-module t)
@@ -932,27 +933,36 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   :config
   (lsp-enable-which-key-integration t))
 
+;; The following DAP configuration is optimised for debugging Rust using the LLVM's
+;; lldb-vscode binary. The easiest way to get the latest version of this binary on MacOS
+;; is to install llvm as a brew package. The following configuration expects a launch.json
+;; file to exist at the root of the project. The launch.json file should have the format below.
+;; Each time a code change is made you'll need to rebuild the debug binary.
+;;
+;; {
+;;   "version": "0.2.0",
+;;   "configurations": [{
+;;     "name": "lldb-vscode-launch",
+;;     "type": "lldb-vscode",
+;;     "request": "launch",
+;;     "program": "${workspaceFolder}/target/debug/name_of_binary",
+;;     "args": [],
+;;     "env": {},
+;;     "cwd": "${workspaceFolder}",
+;;     "stopOnEntry": false,
+;;     "debuggerRoot": "${workspaceFolder}"
+;;   }]
+;; }
 (use-package dap-mode
-  ;; :custom
-  ;; (lsp-enable-dap-auto-configure nil)
   :hook
   (dap-stopped . (lambda (arg) (call-interactively #'dap-hydra)))
-  :custom
-  (dap-print-io t)
-  ;; (dap-lldb-debug-program '("/Users/aeldridge/Development/home/llvm-project/build/bin/lldb-vscode"))
   :config
+  (require 'dap-lldb)
   (dap-ui-mode 1)
   (dap-tooltip-mode 1)
-  ;; (require 'dap-node)
-  ;; (dap-node-setup)
-  (require 'dap-lldb)
-  ;; (require 'dap-gdb-lldb)
-  ;; (dap-gdb-lldb-setup)
-  ;; (require 'dap-cpptools)
-  ;; (dap-cpptools-setup))
-  ;; Do I need to call this?
-  ;; (dap-auto-configure-mode)
-  )
+  :custom
+  (dap-print-io t)
+  (dap-lldb-debug-program '("/usr/local/opt/llvm/bin/lldb-vscode")))
 
 (use-package flycheck
   :defer t
@@ -992,13 +1002,6 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (interactive)
   (neotree-toggle)
   (my/neotree-refresh))
-
-(use-package typescript-mode
-  :mode "\\.ts\\'"
-  :config
-  (setq typescript-indent-level 2)
-  (require 'dap-node)
-  (dap-node-setup))
 
 (use-package terraform-mode
   ; I prefer the // syntax to the default # comments.
@@ -1052,7 +1055,10 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
         ("C-c r i" . my/toggle-rust-inlay-hints) ;; Toggle inlay type hints.
         ("C-c r c a" . rustic-cargo-add)
         ("C-c r c o" . rustic-cargo-outdated)
-        ("C-c r c u" . rustic-cargo-upgrade))
+        ("C-c r c u" . rustic-cargo-upgrade)
+        ("C-c r d d" . dap-debug)
+        ("C-c r d l" . dap-debug-last)
+        ("C-c r d m" . dap-hydra))
   :config
   ;; Following settings aren't defined as custom vars.
   ;; Disabling as I often need to save the buffer to get any errors that I've fixed
@@ -1076,18 +1082,12 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (call-interactively 'compile))
 
 (use-package cc-mode
-  ;; :config
-  ;; (require 'dap-lldb)
-  ;; (require 'dap-cpptools)
-  ;; (dap-cpptools-setup)
-  ;; ()
   :bind (:map c++-mode-map
 	      ("C-c f b" . clang-format-buffer)
 	      ("C-c f r" . clang-format-region)
 	      ;; ("M-p" . company-complete-common)
 	      ("C-c c" . my/compile)))
 
-;; TODO: consider switching to https://github.com/SavchenkoValeriy/emacs-clang-format-plus.
 (use-package clang-format
   :commands clang-format clang-format-buffer clang-format-region
   :config
