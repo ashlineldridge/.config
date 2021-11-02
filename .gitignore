@@ -13,6 +13,7 @@ emacs/.lsp-session-v1
 emacs/.last-package-update-day
 emacs/.org-id-locations
 emacs/bookmarks
+emacs/eln-cache/
 emacs/elpa
 emacs/eshell/history
 emacs/eshell/lastdir
