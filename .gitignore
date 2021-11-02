@@ -25,6 +25,7 @@ emacs/recentf
 emacs/straight/
 emacs/transient/
 emacs/url/
+exercism/
 target/
 .idea/
 *.swp
