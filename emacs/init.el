@@ -11,7 +11,7 @@
 ;;; Code:
 
 ;; List of themes I like.
-(defvar my/themes '(doom-Iosvkem doom-tomorrow-night doom-vibrant))
+(defvar my/themes '(ample-flat ample zenburn doom-Iosvkem doom-tomorrow-night))
 
 ;; Font-related variable definitions.
 (defvar my/default-fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
@@ -198,6 +198,8 @@
 	  (setq exec-path-from-shell-arguments nil)
 	  (exec-path-from-shell-initialize)))
 
+(use-package hydra)
+
 ;;; Completion system
 
 (use-package vertico
@@ -328,29 +330,42 @@
   ([remap describe-key] . helpful-key))
 
 (use-package doom-themes)
+(use-package zenburn-theme)
+(use-package ample-theme)
 
-(defun my/org-reset-buffers ()
-  "Reset `org-mode` in all org buffers."
-  (mapc (lambda (buf)
-          (with-current-buffer buf
-            (if (string-equal "org-mode" major-mode) (org-mode))))
-        (buffer-list)))
+(defun my/disable-all-themes ()
+  "Disable all active themes."
+  (dolist (theme custom-enabled-themes)
+    (disable-theme theme)))
 
 (defun my/load-theme (theme)
   "Load the THEME."
   (interactive)
+  (my/disable-all-themes)
   (load-theme theme t)
-  ;; Reset the org buffers as otherwise they can look a bit strange after a theme change.
-  (my/org-reset-buffers))
+  (message "Loaded theme: %s" theme))
 
-(defun my/cycle-theme ()
-  "Cycle around the list of themes."
+(defun my/load-next-theme ()
+  "Cycle through and load the next theme in the list."
   (interactive)
   (setq my/themes (append (cdr my/themes) `(,(car my/themes))))
   (my/load-theme (car my/themes)))
 
+(defun my/load-prev-theme ()
+  "Cycle back and load the previous theme in the list."
+  (interactive)
+  (setq my/themes (append (last my/themes) (butlast my/themes)))
+  (my/load-theme (car my/themes)))
+
 ;; Load the first theme in the list.
 (my/load-theme (car my/themes))
+
+(defhydra hydra-manage-themes (global-map "C-c h")
+  "manage-themes"
+  ("n" my/load-next-theme "load-next-theme")
+  ("p" my/load-prev-theme "load-prev-theme")
+  ("d" my/disable-all-themes "disable-all-themes")
+  ("q" nil "quit"))
 
 ;; The package all-the-icons is required by doom-modeline.
 (use-package all-the-icons
@@ -425,12 +440,10 @@
   :straight nil ;; Comes pre-installed.
   :config (winner-mode 1))
 
-(use-package hydra)
-
 ;; See roided out version here: https://github.com/jmercouris/configuration/blob/master/.emacs.d/hydra.el#L86
 ;; See simpler version here: https://www.reddit.com/r/emacs/comments/b13n39/how_do_you_manage_window_sizes_in_emacs/eik6xzb
-(defhydra hydra-resize-window (global-map "C-c w")
-  "resize-windows"
+(defhydra hydra-manage-windows (global-map "C-c w")
+  "manage-windows"
   ("<left>"  shrink-window-horizontally  "shrink-horizontal")
   ("<right>" enlarge-window-horizontally "grow-horizontal")
   ("<down>"  shrink-window               "shrink-vertical")
@@ -441,7 +454,8 @@
   ("k l"     (my/delete-window 'left)    "delete-window-left")
   ("k r"     (my/delete-window 'right)   "delete-window-right")
   ("k a"     (my/delete-window 'above)   "delete-window-above")
-  ("k b"     (my/delete-window 'below)   "delete-window-below"))
+  ("k b"     (my/delete-window 'below)   "delete-window-below")
+  ("q" nil "quit"))
 
 (defun my/delete-window (direction)
   "Deletes the window in the specified DIRECTION."
