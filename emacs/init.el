@@ -1,7 +1,9 @@
+;; -*- lexical-binding: t; -*-
+
 ;;; init.el --- Emacs init file.
 
 ;; Author: Ashlin Eldridge
-;; Version: 0.0.2
+;; Version: 0.0.3
 ;; Keywords: emacs, init, lisp
 
 ;;; Commentary:
@@ -11,7 +13,7 @@
 ;;; Code:
 
 ;; List of themes I like.
-(defvar my/themes '(ample-flat ample zenburn doom-Iosvkem doom-tomorrow-night))
+(defvar my/themes '(zenburn ample-flat ample doom-Iosvkem doom-tomorrow-night))
 
 ;; Font-related variable definitions.
 (defvar my/default-fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
@@ -36,8 +38,8 @@
 ;; Keep track of start up time.
 (add-hook 'emacs-startup-hook
 	  (lambda ()
-            (message "Emacs ready in %s with %d garbage collections."
-		     (format "%.2f seconds" (float-time (time-subtract after-init-time before-init-time)))
+            (message "Emacs ready in %s seconds with %d garbage collections."
+		     (emacs-init-time "%.2f")
                      gcs-done)))
 
 ;; Bootstrap straight.el.
@@ -58,15 +60,36 @@
 ;; Load straight helper package.
 (require 'straight-x)
 
+;; TODO: Uninstall use-package
+
 ;; Install use-package.
 (straight-use-package 'use-package)
+
+;; Make use-package use straight for package installation.
+(setq straight-use-package-by-default t)
 
 ;; Install org as early as possible after straight so that the built-in version of org doesn't get activated
 ;; between here and where org is actually configured below.
 (straight-use-package 'org)
 
-;; Make use-package use straight for package installation.
-(setq straight-use-package-by-default t)
+;; Use setup.el for package configuration.
+(straight-use-package '(setup :type git :host nil :repo "https://git.sr.ht/~pkal/setup"))
+(require 'setup)
+
+(setup-define
+ :straight (lambda (recipe)
+             `(unless
+                  (straight-use-package ',recipe)
+                ,(setup-quit)))
+ :documentation "Install RECIPE with `straight-use-package'.
+This macro can be used as HEAD, and will replace itself with the
+first RECIPE's package."
+ :repeatable t
+ :shorthand (lambda (sexp)
+              (let ((recipe (cadr sexp)))
+                (if (consp recipe)
+                    (car recipe)
+                  recipe))))
 
 ;; Do not show the startup screen.
 (setq inhibit-startup-message t)
@@ -140,8 +163,9 @@
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
 (global-set-key (kbd "C-c o c") 'org-capture)
-(global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i"))) ;; Capture to inbox.
-(global-set-key (kbd "C-c o b") (lambda () (interactive) (org-capture nil "b"))) ;; Capture to bookmarks.
+(global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i"))) ;; Capture inbox item.
+(global-set-key (kbd "C-c o b") (lambda () (interactive) (org-capture nil "b"))) ;; Capture bookmark.
+(global-set-key (kbd "C-c o t") (lambda () (interactive) (org-capture nil "t"))) ;; Capture training log.
 (global-set-key (kbd "C-c C-o") 'org-open-at-point-global) ;; Open links everywhere just like in org-mode.
 (global-set-key (kbd "C-c m") 'mu4e)
 (global-set-key (kbd "C-c e") 'elfeed)
@@ -757,7 +781,16 @@ color theme."
 			    "* TODO %i%?")
 			   ("b" "Bookmark" entry
 			    (file+olp+datetree ,(concat my/org-dir "/bookmarks.org") "Bookmarks")
-			    "* %(org-cliplink-capture)%?\n")))
+			    "* %(org-cliplink-capture)%?\n")
+			   ("t" "Training Log" entry
+			    (file+olp+datetree ,(concat my/org-dir "/training.org") "Training Log")
+                            ,(concat
+			      "* 3%?:00 PM\n"
+                              "- Workout: 3 x 20' / 3' @ 20\n"
+                              "- Warm-up Distance: 1000\n"
+                              "- Workout Distance: 15000\n"
+                              "- Average: 2:00.0 @ 20\n"
+                              "- Comments: This was fun!\n") :jump-to-captured t)))
   (org-confirm-babel-evaluate nil)
   (org-default-notes-file (concat my/org-dir "/inbox.org"))
   (org-directory my/org-dir)
@@ -947,7 +980,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   :config
   (lsp-enable-which-key-integration t))
 
-;; The following DAP configuration is optimised for debugging Rust using the LLVM's
+;; The following DAP configuration is optimised for debugging Rust using the LLVM
 ;; lldb-vscode binary. The easiest way to get the latest version of this binary on MacOS
 ;; is to install llvm as a brew package. The following configuration expects a launch.json
 ;; file to exist at the root of the project. The launch.json file should have the format below.
@@ -967,6 +1000,12 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 ;;     "debuggerRoot": "${workspaceFolder}"
 ;;   }]
 ;; }
+;;
+;; Note: dap-mode uses the value of dap-variables-project-root-function to determine the root
+;; project directory for the current buffer. By default, this seems to resolve to the closest
+;; parent directory that contains a .git directory. In multi-bin projects this may or may
+;; not be desired since you will likely want separate launch.json files for each binary. Keep
+;; the default behaviour as is for now but you may need to customise at some point.
 (use-package dap-mode
   :hook
   (dap-stopped . (lambda (arg) (call-interactively #'dap-hydra)))
