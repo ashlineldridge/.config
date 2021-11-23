@@ -1,10 +1,9 @@
-;; -*- lexical-binding: t; -*-
+;;; init.el --- Emacs Init -*- lexical-binding: t -*-
 
-;;; init.el --- Emacs init file.
-
-;; Author: Ashlin Eldridge
-;; Version: 0.0.3
-;; Keywords: emacs, init, lisp
+;; Author: Ashlin Eldridge <aeldridge@fastmail.com>
+;; URL: https://github.com/ashlineldridge/.config
+;; Version: 0.1.0
+;; Package-Requires: ((emacs "28.1"))
 
 ;;; Commentary:
 ;;
@@ -12,22 +11,12 @@
 
 ;;; Code:
 
-;; List of themes I like.
-(defvar my/themes '(zenburn ample-flat ample doom-Iosvkem doom-tomorrow-night))
+;;;; Emacs Boot
 
-;; Font-related variable definitions.
-(defvar my/default-fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
-(defvar my/default-variable-font "Iosevka Aile") ;; ETBembo is another good one.
-(defvar my/default-fixed-font-size 148)
-(defvar my/default-variable-font-size 132)
-
-;; Org-related variable definitions.
-(defvar my/org-dir "~/Dropbox/org")
-
-;; Emacs config directory-related variable definitions.
-(defvar my/xdg-config-dir "~/.config")
-(defvar my/xdg-cache-dir "~/.cache")
-(defvar my/xdg-data-dir "~/.local/share")
+;; If I need to run Emacs in the terminal I'll use `-nw -q`. Better than littering this file with
+;; unnecessary window system checks.
+(unless window-system
+  (error "Emacs init file is for window systems only"))
 
 ;; Emacs performance settings. I'm following the general performance recommendations of lsp-mode
 ;; here https://emacs-lsp.github.io/lsp-mode/page/performance. Some people recommend against
@@ -41,6 +30,12 @@
             (message "Emacs ready in %s seconds with %d garbage collections."
 		     (emacs-init-time "%.2f")
                      gcs-done)))
+
+;; Prefer running Emacs in server mode and have Git and $EDITOR use emacsclient
+;; to open files in a single Emacs instance.
+(server-mode)
+
+;;;; Package Management
 
 ;; Bootstrap straight.el.
 ;; See: https://github.com/raxod502/straight.el#bootstrapping-straightel
@@ -59,8 +54,6 @@
 
 ;; Load straight helper package.
 (require 'straight-x)
-
-;; TODO: Uninstall use-package
 
 ;; Install use-package.
 (straight-use-package 'use-package)
@@ -91,14 +84,12 @@ first RECIPE's package."
                     (car recipe)
                   recipe))))
 
-;; Do not show the startup screen.
-(setq inhibit-startup-message t)
+;;;; General Definitions and Behaviours
 
-(tool-bar-mode 0)    ;; Disable the tool bar.
-(tooltip-mode 0)     ;; Disable tool tips.
-(menu-bar-mode 0)    ;; Disable the menu bar.
-(scroll-bar-mode 0)  ;; Disable visible scrollbar.
-(set-fringe-mode 10) ;; Increase left/right margins slightly.
+;; Prefer XDG conventions.
+(defvar my/xdg-config-dir "~/.config")
+(defvar my/xdg-cache-dir "~/.cache")
+(defvar my/xdg-data-dir "~/.local/share")
 
 ;; Why would this be true? https://blog.sumtypeofway.com/posts/emacs-config.html
 (setq sentence-end-double-space nil)
@@ -109,25 +100,115 @@ first RECIPE's package."
 ;; Make input characters overwrite the current region.
 (delete-selection-mode 1)
 
-;; If I need to run Emacs in the terminal I'll use `-nw -q`. Better than
-;; littering this file with unnecessary window system checks.
-(unless window-system
-  (error "This Emacs init file is for window systems only"))
+;; Show echoed keystrokes quicker.
+(setq echo-keystrokes 0.01)
 
-;; Enlargen frame size if we're running within a window system.
-(when window-system
-  (set-frame-size (selected-frame) 110 50))
+;; Use CMD key for META.
+(setq mac-option-key-is-meta nil
+      mac-command-key-is-meta t
+      mac-command-modifier 'meta
+      mac-option-modifier nil)
 
-;; Prefer running Emacs in server mode and have Git and $EDITOR use emacsclient
-;; to open files in a single Emacs instance.
-(when window-system
-  (server-mode))
+;; Store all backup files in XDG_CACHE_HOME.
+(setq backup-directory-alist '(("" . "~/.cache/emacs/backup/")))
+(setq auto-save-file-name-transforms '((".*" "~/.cache/emacs/saves/" t)))
+
+;; Save interrupted session records in XDG_DATA_HOME.
+;(setq auto-save-list-file-prefix (concat emacs-data-home "/auto-save-list"))
+(setq auto-save-list-file-prefix "~/.cache/emacs/auto-save-list/")
+
+;; Revert Dired and other buffers.
+(setq global-auto-revert-non-file-buffers t)
+
+;; Revert buffers when the underlying file has changed.
+(global-auto-revert-mode 1)
+
+;;;; Appearance
+
+;;;;; App and Frame Appearance
+
+;; Do not show the startup screen.
+(setq inhibit-startup-message t)
+
+(tool-bar-mode 0)    ;; Disable the tool bar.
+(tooltip-mode 0)     ;; Disable tool tips.
+(menu-bar-mode 0)    ;; Disable the menu bar.
+(scroll-bar-mode 0)  ;; Disable visible scrollbar.
+(set-fringe-mode 10) ;; Increase left/right margins slightly.
+
+;; Make frame size bigger.
+(set-frame-size (selected-frame) 110 50)
 
 ;; Flash the mode line rather than use an audible bell.
 (setq visible-bell nil)
 (setq ring-bell-function (lambda ()
   (invert-face 'mode-line)
   (run-with-timer 0.1 nil 'invert-face 'mode-line)))
+
+;;;;; Line and Column Numbers
+
+;; Show column numbers in the mode line.
+(column-number-mode 1)
+
+;; Enable line numbers for some modes.
+(dolist (mode '(text-mode-hook
+                prog-mode-hook
+                conf-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 1))))
+
+;; Override some modes which derive from the above.
+(dolist (mode '(org-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+;;;;; Themes
+
+(defvar my/themes '(zenburn ample-flat ample doom-Iosvkem doom-tomorrow-night))
+
+(use-package doom-themes)
+(use-package zenburn-theme)
+(use-package ample-theme)
+
+(defun my/disable-all-themes ()
+  "Disable all active themes."
+  (dolist (theme custom-enabled-themes)
+    (disable-theme theme)))
+
+(defun my/load-theme (theme)
+  "Load the THEME."
+  (interactive)
+  (my/disable-all-themes)
+  (load-theme theme t)
+  (message "Loaded theme: %s" theme))
+
+(defun my/load-next-theme ()
+  "Cycle through and load the next theme in the list."
+  (interactive)
+  (setq my/themes (append (cdr my/themes) `(,(car my/themes))))
+  (my/load-theme (car my/themes)))
+
+(defun my/load-prev-theme ()
+  "Cycle back and load the previous theme in the list."
+  (interactive)
+  (setq my/themes (append (last my/themes) (butlast my/themes)))
+  (my/load-theme (car my/themes)))
+
+(defhydra hydra-manage-themes (global-map "C-c h")
+  "manage-themes"
+  ("n" my/load-next-theme "load-next-theme")
+  ("p" my/load-prev-theme "load-prev-theme")
+  ("d" my/disable-all-themes "disable-all-themes")
+  ("q" nil "quit"))
+
+;; Load the first theme in the list.
+(my/load-theme (car my/themes))
+
+;;;;; Fonts
+
+;; Font-related variable definitions.
+(defvar my/default-fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
+(defvar my/default-variable-font "Iosevka Aile") ;; ETBembo is another good one.
+(defvar my/default-fixed-font-size 148)
+(defvar my/default-variable-font-size 132)
 
 ;; Set the default face.
 (set-face-attribute 'default nil
@@ -150,8 +231,14 @@ first RECIPE's package."
                     :width 'normal
                     :weight 'light)
 
-;; Show echoed keystrokes quicker.
-(setq echo-keystrokes 0.01)
+
+
+;;;; Crap
+;;; Blah
+
+;; Org-related variable definitions.
+(defvar my/org-dir "~/Dropbox/org")
+
 
 ;; Global key bindings.
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
@@ -170,39 +257,8 @@ first RECIPE's package."
 (global-set-key (kbd "C-c m") 'mu4e)
 (global-set-key (kbd "C-c e") 'elfeed)
 (global-set-key (kbd "C-x C-r") 'eval-region)
+(global-set-key (kbd "<f10>") 'my/outline-minor-mode-safe)
 
-;; Show column numbers in the mode line.
-(column-number-mode 1)
-
-;; Enable line numbers for some modes.
-(dolist (mode '(text-mode-hook
-                prog-mode-hook
-                conf-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 1))))
-
-;; Override some modes which derive from the above.
-(dolist (mode '(org-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 0))))
-
-;; Use CMD key for META.
-(setq mac-option-key-is-meta nil
-      mac-command-key-is-meta t
-      mac-command-modifier 'meta
-      mac-option-modifier nil)
-
-;; Store all backup files in XDG_CACHE_HOME.
-(setq backup-directory-alist '(("" . "~/.cache/emacs/backup/")))
-(setq auto-save-file-name-transforms '((".*" "~/.cache/emacs/saves/" t)))
-
-;; Save interrupted session records in XDG_DATA_HOME.
-;(setq auto-save-list-file-prefix (concat emacs-data-home "/auto-save-list"))
-(setq auto-save-list-file-prefix "~/.cache/emacs/auto-save-list/")
-
-;; Revert Dired and other buffers
-(setq global-auto-revert-non-file-buffers t)
-
-;; Revert buffers when the underlying file has changed
-(global-auto-revert-mode 1)
 
 ;;; Mark settings
 ;; When popping marks off the mark ring (C-u C-SPC for local or C-x C-SPC for global),
@@ -353,43 +409,6 @@ first RECIPE's package."
   ([remap describe-command] . helpful-command)
   ([remap describe-key] . helpful-key))
 
-(use-package doom-themes)
-(use-package zenburn-theme)
-(use-package ample-theme)
-
-(defun my/disable-all-themes ()
-  "Disable all active themes."
-  (dolist (theme custom-enabled-themes)
-    (disable-theme theme)))
-
-(defun my/load-theme (theme)
-  "Load the THEME."
-  (interactive)
-  (my/disable-all-themes)
-  (load-theme theme t)
-  (message "Loaded theme: %s" theme))
-
-(defun my/load-next-theme ()
-  "Cycle through and load the next theme in the list."
-  (interactive)
-  (setq my/themes (append (cdr my/themes) `(,(car my/themes))))
-  (my/load-theme (car my/themes)))
-
-(defun my/load-prev-theme ()
-  "Cycle back and load the previous theme in the list."
-  (interactive)
-  (setq my/themes (append (last my/themes) (butlast my/themes)))
-  (my/load-theme (car my/themes)))
-
-;; Load the first theme in the list.
-(my/load-theme (car my/themes))
-
-(defhydra hydra-manage-themes (global-map "C-c h")
-  "manage-themes"
-  ("n" my/load-next-theme "load-next-theme")
-  ("p" my/load-prev-theme "load-prev-theme")
-  ("d" my/disable-all-themes "disable-all-themes")
-  ("q" nil "quit"))
 
 ;; The package all-the-icons is required by doom-modeline.
 (use-package all-the-icons
@@ -585,6 +604,71 @@ first RECIPE's package."
 	      ("C-c v p" . multi-vterm-prev)
 	      ("C-c v b" . multi-vterm-rename-buffer)))
 
+;;;; Outline
+
+;; Mostly taken from https://protesilaos.com/emacs/dotemacs
+
+(defun my/outline-move-subtree-down (&optional arg)
+  "If on an Outline heading, move the subtree down one or, optionally, ARG times."
+  (interactive "p")
+  (if (outline-on-heading-p)
+      (outline-move-subtree-down (or arg 1))
+    (forward-line (or arg 1))))
+
+(defun my/outline-move-subtree-up (&optional arg)
+  "If on an Outline heading, move the subtree up one or, optionally, ARG times."
+  (interactive "p")
+  (if (outline-on-heading-p)
+      (outline-move-subtree-up (or arg 1))
+    (forward-line (- (or arg 1)))))
+
+(defvar my/outline-headings-per-mode
+  '((emacs-lisp-mode . ";\\{3,\\}+ [^\n]")))
+
+(defvar my/outline-major-modes-blocklist
+  '(org-mode outline-mode markdown-mode))
+
+(defun my/outline-minor-mode-safe ()
+  "Enables and configures outline-minor-mode if it is safe to do so."
+  (interactive)
+  (let* ((blocklist my/outline-major-modes-blocklist)
+         (mode major-mode)
+         (headings (alist-get mode my/outline-headings-per-mode)))
+    (when (derived-mode-p (car (member mode blocklist)))
+      (error "You shouldn't use `outline-minor-mode' with `%s'" mode))
+    (if (null outline-minor-mode)
+        (progn
+          (when (derived-mode-p mode)
+            (setq-local outline-regexp headings))
+          (outline-minor-mode 1)
+          (message "Enabled `outline-minor-mode'"))
+      (outline-minor-mode -1)
+      (message "Disabled `outline-minor-mode'"))))
+
+(use-package outline
+  :straight nil ;; Built-in.
+  :hook
+  (emacs-lisp-mode . my/outline-minor-mode-safe)
+  :bind
+  (:map outline-minor-mode-map
+        ("C-c C-n"  . outline-next-visible-heading)
+        ("C-c C-p"  . outline-previous-visible-heading)
+        ("C-c C-f"  . outline-forward-same-level)
+        ("C-c C-b"  . outline-backward-same-level)
+        ("C-c C-a"  . outline-show-all)
+        ("C-c C-h"  . outline-hide-other)
+        ("C-c C-u"  . outline-up-heading)
+        ("M-<down>" . my/outline-move-subtree-down)
+        ("M-<up>"   . my/outline-move-subtree-up))
+  :custom
+  (outline-minor-mode-cycle t))
+
+
+
+
+
+;;; heading 4
+
 (defun my/org-mode-init ()
   "Personal `org-mode` configuration.
 
@@ -677,8 +761,6 @@ color theme."
   ;; (("?" . which-key-show-full-major-mode)
   (:map org-mode-map
         ("C-c C-S-l" . org-cliplink))
-        ;; Can't use plain tab as org uses that for cycling visibility
-        ;; ("C-c <tab>" . company-indent-or-complete-common))
   :config
   ;; Save org buffers after refiling.
   (advice-add 'org-refile :after (lambda (&rest _) (org-save-all-org-buffers)))
@@ -885,20 +967,9 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 ;; Languages
 ;;
 
-(defun my/company-mode ()
-  "Run company-mode and configure autocompletion based on the major mode."
-  (interactive)
-  ;; Disable autocompletion for org files (it's annoying) but enable it for programming
-  ;; modes. The variable company-idle-delay is global so we make a buffer local variable
-  ;; out of it so that setting it in one buffer doesn't affect others.
-  (set (make-local-variable 'company-idle-delay)
-       (if (eq major-mode 'org-mode) nil 0.0))
-  (company-mode))
-
 (use-package company
   :hook
-  (prog-mode . my/company-mode)
-  ;; (org-mode  . my/company-mode)
+  (rustic-mode . company-mode)
   :bind
   (:map company-mode-map
         ("<tab>" . company-indent-or-complete-common))
