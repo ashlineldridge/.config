@@ -261,8 +261,6 @@ first RECIPE's package."
                     :width 'normal
                     :weight 'light)
 
-
-
 ;;;;; Icons
 
 (use-package all-the-icons
@@ -484,6 +482,8 @@ first RECIPE's package."
 
 (use-package company
   :hook
+  ;; Only enable company in specific modes. Ideally, I'd like to switch
+  ;; to Corfu but can do that over time.
   (rustic-mode . company-mode)
   :bind
   (:map company-mode-map
@@ -514,7 +514,6 @@ first RECIPE's package."
 
 ;; Mostly useful for highlighting whitespace characters.
 (use-package highlight-chars)
-
 
 ;;;;; Yanking and Deleting
 
@@ -552,8 +551,8 @@ first RECIPE's package."
   :bind (("C-=" . er/expand-region)
          ("C-+" . er/mark-outside-pairs)))
 
-
 ;;;; File System
+
 ;;;;; Project Management
 
 (use-package projectile
@@ -602,6 +601,7 @@ first RECIPE's package."
   (my/neotree-refresh))
 
 ;;;; Programming
+
 ;;;;; Outline
 
 (defvar my/outline-headings-per-mode
@@ -771,9 +771,7 @@ first RECIPE's package."
   (dap-print-io t)
   (dap-lldb-debug-program '("/usr/local/opt/llvm/bin/lldb-vscode")))
 
-;;;;;; Linting
-
-;;;;;;; Flycheck
+;;;;;; Flycheck
 
 (use-package flycheck
   :defer t
