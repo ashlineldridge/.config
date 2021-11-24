@@ -6,6 +6,7 @@
 
 zsh/.zcompdump
 zsh/.zsh_history
+zsh/.zcompcache
 emacs/.cache/
 emacs/.dap-breakpoints
 emacs/.extension
