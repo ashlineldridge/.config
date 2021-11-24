@@ -1,6 +1,8 @@
 no_color := \033[0m
 ok_color := \033[38;5;74m
 
+emacs_version := 28
+
 ## Function for printing a pretty banner.
 banner = \
 	echo "\n$(ok_color)=====> $1$(no_color)"
@@ -38,3 +40,10 @@ npm-install:
 		printf "\n===> Installing %s\n" "$${pkg}"; \
 		npm install -g $$pkg; \
 	done
+
+.PHONY: upgrade-emacs
+upgrade-emacs:
+	@brew uninstall emacs-plus@$(emacs_version)
+	@brew install emacs-plus@$(emacs_version) \
+		--with-native-comp \
+		--with-modern-black-gnu-head-icon
