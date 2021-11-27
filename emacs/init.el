@@ -49,6 +49,9 @@
 ;; Revert Dired and other buffers.
 (setq global-auto-revert-non-file-buffers t)
 
+;; Don't ask when following symlinks to source code.
+(setq vc-follow-symlinks t)
+
 ;; Revert buffers when the underlying file has changed.
 (global-auto-revert-mode 1)
 
@@ -156,7 +159,7 @@ first RECIPE's package."
 ;;;;; General Appearance
 
 ;; Do not show the startup screen.
-(setq inhibit-startup-message t)
+;; (setq inhibit-startup-message t)
 
 (tool-bar-mode 0)    ;; Disable the tool bar.
 (tooltip-mode 0)     ;; Disable tool tips.
@@ -190,13 +193,15 @@ first RECIPE's package."
 
 ;;;;; Themes
 
-(defvar my/themes '(zenburn ample-flat ample doom-Iosvkem doom-tomorrow-night))
-
 (use-package doom-themes
   :config
   (doom-themes-visual-bell-config))
+
 (use-package zenburn-theme)
+
 (use-package ample-theme)
+
+(defvar my/themes '(doom-tomorrow-night doom-Iosvkem zenburn))
 
 (defun my/disable-all-themes ()
   "Disable all active themes."
@@ -421,6 +426,55 @@ first RECIPE's package."
 
 ;;;; Completion System
 
+(use-package corfu
+  :straight '(corfu-mode :host github
+			 :repo "minad/corfu")
+  :hook ((emacs-lisp-mode . corfu-mode)
+         (terraform-mode . corfu-mode)
+         (org-mode . corfu-mode))
+  :bind
+  (:map corfu-map
+        ("<tab>" . corfu-next)
+        ("S-<tab>" . corfu-previous))
+  :custom
+  ;; Needs to be set so that the Corfu post-command-hook is installed and Corfu is
+  ;; called on every key press (so that it knows whether to display a pop-up).
+  (corfu-auto t)
+  ;; Number of typed characters before Corfu displays its pop-up.
+  (corfu-auto-prefix 2)
+  ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This setting
+  ;; only applies after the minimum number of prefix characters have been entered.
+  (corfu-auto-delay 0.2))
+
+;; TODO: Install https://github.com/minad/cape as well for additional capfs.
+
+(setq completion-cycle-threshold 3)
+
+;; Enable indentation + completion using the TAB key. This is required for Corfu
+;; integration.
+(setq tab-always-indent 'complete)
+
+(use-package company
+  ;; Only enable Company in specific modes. Ideally, I'd like to switch to
+  ;; to Corfu entirely but Company still seems to be required to get
+  ;; https://github.com/minad/corfu/issues/87
+  :hook (rustic-mode . company-mode)
+  :bind
+  (:map company-mode-map
+        ("<tab>" . company-indent-or-complete-common))
+  (:map company-active-map
+	("<tab>" . company-complete-selection)
+	("C-n"   . company-select-next-or-abort)
+	("C-p"   . company-select-previous-or-abort)
+        ("M-<"   . company-select-first)
+	("M->"   . company-select-last))
+  :custom
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode))
+
 (use-package vertico
   :init
   (vertico-mode 1))
@@ -479,27 +533,6 @@ first RECIPE's package."
   (("C-c C-w" . wgrep-change-to-wgrep-mode))
   :custom
   (wgrep-auto-save-buffer t))
-
-(use-package company
-  :hook
-  ;; Only enable company in specific modes. Ideally, I'd like to switch
-  ;; to Corfu but can do that over time.
-  (rustic-mode . company-mode)
-  :bind
-  (:map company-mode-map
-        ("<tab>" . company-indent-or-complete-common))
-  (:map company-active-map
-	("<tab>" . company-complete-selection)
-	("C-n"   . company-select-next-or-abort)
-	("C-p"   . company-select-previous-or-abort)
-        ("M-<"   . company-select-first)
-	("M->"   . company-select-last))
-  :custom
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0))
-
-(use-package company-box
-  :hook (company-mode . company-box-mode))
 
 ;;;; General Editing
 
@@ -608,7 +641,7 @@ first RECIPE's package."
   '((emacs-lisp-mode . ";\\{3,\\}+ [^\n]")))
 
 (defvar my/outline-major-modes-blocklist
-  '(org-mode outline-mode markdown-mode))
+  '(org-mode outline-mode markdown-mode edebug-eval-mode))
 
 ;; Taken from https://protesilaos.com/emacs/dotemacs
 (defun my/outline-minor-mode-safe ()
@@ -617,16 +650,13 @@ first RECIPE's package."
   (let* ((blocklist my/outline-major-modes-blocklist)
          (mode major-mode)
          (headings (alist-get mode my/outline-headings-per-mode)))
-    (when (derived-mode-p (car (member mode blocklist)))
-      (error "You shouldn't use `outline-minor-mode' with `%s'" mode))
-    (if (null outline-minor-mode)
-        (progn
-          (when (derived-mode-p mode)
-            (setq-local outline-regexp headings))
-          (outline-minor-mode 1)
-          (message "Enabled `outline-minor-mode'"))
-      (outline-minor-mode -1)
-      (message "Disabled `outline-minor-mode'"))))
+    (unless (derived-mode-p (car (member mode blocklist)))
+      (if (null outline-minor-mode)
+          (progn
+            (when (derived-mode-p mode)
+              (setq-local outline-regexp headings))
+            (outline-minor-mode 1))
+        (outline-minor-mode -1)))))
 
 (use-package outline
   :straight nil ;; Built-in.
@@ -684,9 +714,7 @@ first RECIPE's package."
   (typescript-mode . lsp)
   (rustic-mode . lsp)
   (sh-mode . lsp)
-  ;; Disable lsp-mode for Terraform for now as neither the terraform-ls nor
-  ;; the terraform-lsp language servers seem reliable enough.
-  ;; (terraform-mode . lsp)
+  (terraform-mode . lsp)
   :bind
   (:map lsp-mode-map
         ;; M-? is normally bound to xref-find-references but the way that this function exposes
@@ -698,6 +726,10 @@ first RECIPE's package."
   (lsp-log-io nil)
   (lsp-keymap-prefix "C-c l")
   (lsp-disabled-clients '(ccls))
+  ;; The following must be set to :none otherwise company-mode will be started by lsp-mode.
+  ;; By setting it to :none we allow Corfu to take over.
+  ;; See: https://github.com/minad/corfu/issues/71#issuecomment-977693717
+  (lsp-completion-provider :none)
   ;; When lsp-eldoc-render-all is set to nil, moving point to a function call should result
   ;; in a one line function signature being displayed in the minibuffer. There is an issue
   ;; with lsp-mode and rust-analyzer however where what gets displayed is not the function
@@ -730,7 +762,7 @@ first RECIPE's package."
   (lsp-rust-analyzer-server-display-inlay-hints t)
   ;; Configure lsp-mode to use the official terraform-ls LSP server rather than terraform-lsp
   ;; which it uses by default and is more experimental (crashes constantly for me).
-  (lsp-terraform-server '("terraform-ls" "serve" "-tf-exec" "/usr/local/bin/terraform"))
+  (lsp-terraform-server '("terraform-ls" "serve"))
   :config
   (lsp-enable-which-key-integration t))
 
@@ -829,6 +861,8 @@ first RECIPE's package."
 
 ;;;;;; Terraform
 
+;; Note: Tab completion for Terraform mode is broken due to https://github.com/purcell/emacs-hcl-mode/issues/7.
+;; Normal completion that relies on typing corfu-auto-prefix number of characters does work, however.
 (use-package terraform-mode
   ; I prefer the // syntax to the default # comments.
   :hook
@@ -1440,6 +1474,15 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 
 ;; Don't cache secrets.
 (setq auth-source-do-cache nil)
+
+;;;; Miscellaneous
+
+;; Function for starting "An Introduction to Programming in Emacs Lisp" which is no longer
+;; shown on the main info page (C-h i) and I can never remember how else to get to it.
+(defun my/emacs-lisp-intro ()
+  "Opens \"An Introduction to Programming in Emacs Lisp\" by Robert J. Chassell"
+  (interactive)
+  (info "(eintr) Top"))
 
 ;;; End:
 (provide 'init)
