@@ -55,6 +55,11 @@
 ;; Revert buffers when the underlying file has changed.
 (global-auto-revert-mode 1)
 
+;; Enable Emacs functionality which is disabled by default.
+(put 'narrow-to-region 'disabled nil)
+(put 'upcase-region 'disabled nil)
+(put 'downcase-region 'disabled nil)
+
 ;; Prefer running Emacs in server mode and have Git and $EDITOR use emacsclient
 ;; to open files in a single Emacs instance.
 (server-start)
@@ -431,6 +436,7 @@ first RECIPE's package."
 			 :repo "minad/corfu")
   :hook ((emacs-lisp-mode . corfu-mode)
          (terraform-mode . corfu-mode)
+         (sh-mode . corfu-mode)
          (org-mode . corfu-mode))
   :bind
   (:map corfu-map
@@ -598,6 +604,11 @@ first RECIPE's package."
   :config (projectile-mode)
   :bind-keymap
   ("C-c p" . projectile-command-map))
+
+(use-package perspective
+  :bind ("C-x C-b" . persp-ibuffer)
+  :init
+  (persp-mode))
 
 ;;;;; File Browsing
 
@@ -787,11 +798,12 @@ first RECIPE's package."
 ;;   }]
 ;; }
 ;;
-;; Note: dap-mode uses the value of dap-variables-project-root-function to determine the root
-;; project directory for the current buffer. By default, this seems to resolve to the closest
-;; parent directory that contains a .git directory. In multi-bin projects this may or may
-;; not be desired since you will likely want separate launch.json files for each binary. Keep
-;; the default behaviour as is for now but you may need to customise at some point.
+;; Note: dap-mode uses `lsp-workspace-root' to determine the root project directory that should
+;; contain the launch.json (or .vscode/launch.json) file. In projects with submodules where you
+;; want to debug a submodule independently, this can cause problems if `lsp-workspace-root' says
+;; that the project root is higher up the directory tree than you want it to be. If you get stuck
+;; in this cycle you will probably want to delete or edit ~/.config/emacs/.lsp-session-v1 or
+;; find a way to hook into dap-mode/lsp-mode so the process is a bit smarter.
 (use-package dap-mode
   :hook
   (dap-stopped . (lambda (arg) (call-interactively #'dap-hydra)))
@@ -861,13 +873,38 @@ first RECIPE's package."
 
 ;;;;;; Terraform
 
-;; Note: Tab completion for Terraform mode is broken due to https://github.com/purcell/emacs-hcl-mode/issues/7.
-;; Normal completion that relies on typing corfu-auto-prefix number of characters does work, however.
 (use-package terraform-mode
   ; I prefer the // syntax to the default # comments.
   :hook
   (terraform-mode . terraform-format-on-save-mode)
-  (terraform-mode . (lambda () (setq comment-start "//"))))
+  (terraform-mode . (lambda () (setq comment-start "//")))
+  (terraform-mode . (lambda () (setq-local indent-line-function 'my/hcl-indent-line))))
+
+;; This function is a modified version of hcl-indent-line in an attempt
+;; to fix https://github.com/purcell/emacs-hcl-mode/issues/7.
+(defun my/hcl-indent-line ()
+  "Indent current line as HCL configuration."
+  (interactive)
+  (let* ((curpoint (point))
+         (pos (- (point-max) curpoint)))
+    (back-to-indentation)
+    (if (hcl--in-string-or-comment-p)
+        (goto-char curpoint)
+      (let ((block-indentation (hcl--block-indentation)))
+        (if block-indentation
+            (if (looking-at "[]}]")
+                (my/hcl--maybe-indent-line block-indentation)
+              (my/hcl--maybe-indent-line (+ block-indentation hcl-indent-level)))
+          (my/hcl--maybe-indent-line (hcl--previous-indentation)))
+        (when (> (- (point-max) pos) (point))
+          (goto-char (- (point-max) pos)))))))
+
+(defun my/hcl--maybe-indent-line (column)
+  "Indent current line to COLUMN if required."
+  (let ((curcol (- (point) (line-beginning-position))))
+    (unless (= curcol column)
+      (delete-region (line-beginning-position) (point))
+      (indent-to column))))
 
 ;;;;;; Python
 
@@ -1139,10 +1176,11 @@ first RECIPE's package."
         ;; Unbind C-SPC as otherwise it prevents pop-global-mark from working across
         ;; vterm buffers.
         ("C-SPC" . nil)
-        ;; Unbind ESC as I prefer this to be globally bound to keyboard-escape-quit
-        ("<escape>" . nil)
         ;; Unbind F11 as this is used to fullscreen the window.
-        ("<f11>" . nil))
+        ("<f11>" . nil)
+        ;; Bind S-ESC to keyboard-escape-quit when in vterm-mode as ESC is used for
+        ;; shell signals (e.g., ESC + underscore for last word of the previous command).
+        ("S-<escape>" . keyboard-escape-quit))
   :custom
   ;; Don't prompt for permission to compile on first install.
   (vterm-always-compile-module t)
