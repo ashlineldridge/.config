@@ -48,7 +48,7 @@ export GOPATH="${DEVELOPMENT_HOME}/go"
 export GOROOT="/usr/local/opt/go/libexec"
 
 # Path
-export PATH="${HOME}/bin:/usr/local/bin:/usr/local/opt/coreutils/libexec/gnubin:/usr/local/opt/findutils/libexec/gnubin:/usr/local/opt/gettext/bin:/usr/local/opt/llvm/bin:/usr/local/kubebuilder/bin:${GOROOT}/bin:${GOPATH}/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.local/bin"
+export PATH="${HOME}/bin:/usr/local/bin:/usr/local/opt/curl/bin:/usr/local/opt/coreutils/libexec/gnubin:/usr/local/opt/findutils/libexec/gnubin:/usr/local/opt/gettext/bin:/usr/local/opt/llvm/bin:/usr/local/kubebuilder/bin:${GOROOT}/bin:${GOPATH}/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.local/bin"
 
 # Kubernetes
 export KUBECONFIG="${HOME}/.kube/config"
