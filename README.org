@@ -1,0 +1,7 @@
+* .config
+
+My dot files including Emacs configuration.
+
+To set up a new computer:
+- Clone this repository into =~/.config=
+- From within =~/.config= run =make bootstrap=

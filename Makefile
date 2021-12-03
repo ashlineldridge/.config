@@ -12,10 +12,11 @@ check_defined = \
 	$(if $(value $1),,$(error Error: Variable $1 is required but undefined))
 
 .PHONY: bootstrap
-bootstrap:
+bootstrap: brew-install npm-install
 	@$(call banner,Bootstrapping config)
 	@ln -sf ~/.config/zsh/lib/env.zsh ~/.zshenv
 	@ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
+	@chsh -s /usr/local/bin/zsh
 	@echo Done.
 
 .PHONY: brew-dump
