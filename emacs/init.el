@@ -34,10 +34,8 @@
 (setq echo-keystrokes 0.01)
 
 ;; Use CMD key for META.
-(setq mac-option-key-is-meta nil
-      mac-command-key-is-meta t
-      mac-command-modifier 'meta
-      mac-option-modifier nil)
+(setq mac-command-modifier 'meta)
+(setq mac-option-modifier nil)
 
 ;; Store all backup files under XDG_CACHE_HOME.
 (setq backup-directory-alist `(("" . ,(expand-file-name "backup/" my/emacs-cache-dir))))
@@ -808,9 +806,17 @@ first RECIPE's package."
    :state (consult--jump-state)))
 
 (use-package lsp-ui
+  :bind
+  (:map lsp-ui-mode-map
+        ("M-p" . lsp-ui-doc-show)
+        ("M-P" . lsp-ui-doc-hide))
   :custom
   (lsp-ui-sideline-delay 0)
-  (lsp-ui-imenu-auto-refresh t))
+  (lsp-ui-doc-delay 0)
+  (lsp-ui-imenu-auto-refresh t)
+  (lsp-ui-doc-position 'at-point)
+  (lsp-ui-doc-max-width 150)
+  (lsp-ui-doc-max-height 30))
 
 (use-package consult-lsp
   :custom
