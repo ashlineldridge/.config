@@ -393,6 +393,9 @@ first RECIPE's package."
          (side . bottom))
         ("\\*lsp-help\\*"
          (display-buffer-in-side-window)
+         (side . bottom))
+        ("\\*org-roam\\*"
+         (display-buffer-in-side-window)
          (side . bottom))))
 
 ;; If a popup does happen, don't resize windows to be equal-sized.
@@ -436,8 +439,7 @@ first RECIPE's package."
 			 :repo "minad/corfu")
   :hook ((emacs-lisp-mode . corfu-mode)
          (terraform-mode . corfu-mode)
-         (sh-mode . corfu-mode)
-         (org-mode . corfu-mode))
+         (sh-mode . corfu-mode))
   :bind
   (:map corfu-map
         ("<tab>" . corfu-next)
@@ -735,7 +737,7 @@ first RECIPE's package."
         ("M-?" . lsp-find-references)
         ("C-c l m" . lsp-ui-imenu)
         ("C-c l c d" . consult-lsp-diagnostics)
-        ("C-c l c s" . my/consult-lsp-file-symbols)
+        ("C-c l c s" . (lambda () (interactive) (consult-lsp-file-symbols t)))
         ;; Still trying to figure out the benefit of consult-lsp-symbols.
         ("C-c l c S" . consult-lsp-symbols))
   :custom
@@ -786,32 +788,13 @@ first RECIPE's package."
   :config
   (lsp-enable-which-key-integration t))
 
-;; See: https://github.com/gagbo/consult-lsp/issues/23
-(defun my/consult-lsp-file-symbols (arg)
-  "Version of my/consult-lsp-file-symbols that groups its results like `consult-line'."
-  (interactive)
-  ;; Extra (require) to ensure all the utility functions are accessible
-  (require 'consult-lsp)
-  (consult--read
-   (consult--with-increased-gc (consult-lsp--file-symbols-candidates))
-   :prompt "Go to symbol: "
-   :annotate (funcall consult-lsp-file-symbols-annotate-builder-function)
-   :require-match t
-   :sort nil
-   :history '(:input consult--line-history)
-   :category 'consult-lsp-file-symbols
-   :lookup #'consult--line-match
-   :group (consult--type-group consult-lsp-symbols-narrow)
-   :narrow (consult--type-narrow consult-lsp-symbols-narrow)
-   :state (consult--jump-state)))
-
 (use-package lsp-ui
   :bind
   (:map lsp-ui-mode-map
         ("M-p" . lsp-ui-doc-show)
         ("M-P" . lsp-ui-doc-hide))
   :custom
-  (lsp-ui-sideline-delay 0)
+  (lsp-ui-sideline-delay 0.2)
   (lsp-ui-doc-delay 0)
   (lsp-ui-imenu-auto-refresh t)
   (lsp-ui-doc-position 'at-point)
@@ -902,6 +885,7 @@ first RECIPE's package."
         ("C-c r T" . rustic-cargo-current-test)
         ("C-c r i" . my/toggle-rust-inlay-hints) ;; Toggle inlay type hints.
         ("C-c r c a" . rustic-cargo-add)
+        ("C-c r c c" . rustic-cargo-clean)
         ("C-c r c o" . rustic-cargo-outdated)
         ("C-c r c u" . rustic-cargo-upgrade)
         ("C-c r d d" . dap-debug)
@@ -1453,6 +1437,7 @@ color theme."
   (org-directory my/org-dir)
   (org-ellipsis " 》")
   (org-fontify-done-headline t)
+  (org-fontify-quote-and-verse-blocks t)
   (org-hide-emphasis-markers t)
   (org-log-done 'time)
   ;; Leaving drawer logging disabled for now as I don't like the format of the log items,
@@ -1501,8 +1486,9 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
         (replace-match (downcase (match-string-no-properties 1)) :fixedcase nil nil 1))
       (message "Lower-cased %d matches" count))))
 
-(setq org-roam-v2-ack t)
 (use-package org-roam
+  :init
+  (setq org-roam-v2-ack t)
   :bind
   (("C-c n l" . org-roam-buffer-toggle)
    ("C-c n f" . org-roam-node-find)
