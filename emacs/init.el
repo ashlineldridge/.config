@@ -602,7 +602,7 @@ first RECIPE's package."
   (projectile-add-known-project "~/.config")
   (setq projectile-project-search-path
 	; Search path is displayed from right to left.
-	'("~/Development/home" "~/Development/work" "~/Dropbox"))
+	'("~/Development/home" "~/Development/work"))
   :config (projectile-mode)
   :bind-keymap
   ("C-c p" . projectile-command-map))
@@ -1187,7 +1187,7 @@ first RECIPE's package."
   :config
   (use-package elfeed-org
     :custom
-    (rmh-elfeed-org-files `(,(concat my/org-dir "/feeds.org")))
+    (rmh-elfeed-org-files `(,(concat my/gtd-dir "/feeds.org")))
     :config
     (elfeed-org)))
 
@@ -1226,7 +1226,8 @@ first RECIPE's package."
 
 ;;;; Org Mode
 
-(defvar my/org-dir "~/Dropbox/org")
+(defvar my/gtd-dir "~/Development/home/gtd")
+(defvar my/pkm-dir "~/Development/home/pkm")
 
 (defun my/org-mode-init ()
   "Personal `org-mode` configuration.
@@ -1339,16 +1340,16 @@ color theme."
        (alltodo
 	""
 	((org-agenda-overriding-header "Inbox")
-	 (org-agenda-files '(,(concat my/org-dir "/inbox.org")))))
+	 (org-agenda-files '(,(concat my/gtd-dir "/inbox.org")))))
        (alltodo
         ""
         ((org-agenda-overriding-header "Personal")
-         (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+         (org-agenda-files '(,(concat my/gtd-dir "/personal.org")))
          (org-agenda-sorting-strategy '(user-defined-up priority-down))))
        (alltodo
         ""
         ((org-agenda-overriding-header "Work")
-         (org-agenda-files '(,(concat my/org-dir "/work.org")))
+         (org-agenda-files '(,(concat my/gtd-dir "/work.org")))
          (org-agenda-sorting-strategy '(user-defined-up priority-down))))))
      ("dp" "Personal Tasks"
       ((agenda
@@ -1358,22 +1359,22 @@ color theme."
        (todo
 	"PROG"
         ((org-agenda-overriding-header "Progress")
-	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+	 (org-agenda-files '(,(concat my/gtd-dir "/personal.org")))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"NEXT"
         ((org-agenda-overriding-header "Next")
-	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+	 (org-agenda-files '(,(concat my/gtd-dir "/personal.org")))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
         "HOLD"
         ((org-agenda-overriding-header "Hold")
-	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+	 (org-agenda-files '(,(concat my/gtd-dir "/personal.org")))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
         "TODO"
         ((org-agenda-overriding-header "Backlog")
-	 (org-agenda-files '(,(concat my/org-dir "/personal.org")))
+	 (org-agenda-files '(,(concat my/gtd-dir "/personal.org")))
 	 (org-agenda-sorting-strategy '(priority-down)))))
       ((org-agenda-tag-filter-preset '("-@work"))))
      ("dw" "Work Tasks"
@@ -1384,30 +1385,30 @@ color theme."
        (todo
 	"PROG"
         ((org-agenda-overriding-header "Progress")
-	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
+	 (org-agenda-files '(,(concat my/gtd-dir "/work.org")))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"NEXT"
         ((org-agenda-overriding-header "Next")
-	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
+	 (org-agenda-files '(,(concat my/gtd-dir "/work.org")))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"HOLD"
         ((org-agenda-overriding-header "Hold")
-	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
+	 (org-agenda-files '(,(concat my/gtd-dir "/work.org")))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"TODO"
         ((org-agenda-overriding-header "Backlog")
-	 (org-agenda-files '(,(concat my/org-dir "/work.org")))
+	 (org-agenda-files '(,(concat my/gtd-dir "/work.org")))
 	 (org-agenda-sorting-strategy '(priority-down)))))
       ((org-agenda-tag-filter-preset '("-@personal"))))))
   (org-agenda-files
    (list
-    (concat my/org-dir "/inbox.org")
-    (concat my/org-dir "/personal.org")
-    (concat my/org-dir "/work.org")
-    (concat my/org-dir "/recurring.org")))
+    (concat my/gtd-dir "/inbox.org")
+    (concat my/gtd-dir "/personal.org")
+    (concat my/gtd-dir "/work.org")
+    (concat my/gtd-dir "/recurring.org")))
   ;; Following variable allows customization of the agenda columns.
   (org-agenda-prefix-format
    '((agenda . " %i %-16:c%?-12t% s")
@@ -1418,13 +1419,13 @@ color theme."
   (org-agenda-start-with-log-mode t)
   (org-agenda-window-setup 'current-window)
   (org-capture-templates `(("i" "Inbox" entry
-                            (file+headline ,(concat my/org-dir "/inbox.org") "Inbox")
+                            (file+headline ,(concat my/gtd-dir "/inbox.org") "Inbox")
 			    "* TODO %i%?")
 			   ("b" "Bookmark" entry
-			    (file+olp+datetree ,(concat my/org-dir "/bookmarks.org") "Bookmarks")
+			    (file+olp+datetree ,(concat my/gtd-dir "/bookmarks.org") "Bookmarks")
 			    "* %(org-cliplink-capture)%?\n")
 			   ("t" "Training Log" entry
-			    (file+olp+datetree ,(concat my/org-dir "/training.org") "Training Log")
+			    (file+olp+datetree ,(concat my/gtd-dir "/training.org") "Training Log")
                             ,(concat
 			      "* 3%?:00 PM\n"
                               "- Workout: 3 x 20' / 3' @ 20\n"
@@ -1433,8 +1434,8 @@ color theme."
                               "- Average: 2:00.0 @ 20\n"
                               "- Comments: This was fun!\n") :jump-to-captured t)))
   (org-confirm-babel-evaluate nil)
-  (org-default-notes-file (concat my/org-dir "/inbox.org"))
-  (org-directory my/org-dir)
+  (org-default-notes-file (concat my/gtd-dir "/inbox.org"))
+  (org-directory my/gtd-dir)
   (org-ellipsis " 》")
   (org-fontify-done-headline t)
   (org-fontify-quote-and-verse-blocks t)
@@ -1446,12 +1447,12 @@ color theme."
   (org-log-into-drawer nil)
   (org-log-states-order-reversed nil) ; Make newest last
   (org-refile-targets
-   `((,(concat my/org-dir "/archive.org") :level . 2)
-     (,(concat my/org-dir "/inbox.org") :level . 1)
-     (,(concat my/org-dir "/personal.org") :regexp . "Tasks") ;; This seems to work nicer.
-     (,(concat my/org-dir "/work.org") :regexp . "Tasks")
-     (,(concat my/org-dir "/someday.org") :regexp . "Tasks") ;; TODO: Make it possible to refile into Projects or Tasks.
-     (,(concat my/org-dir "/recurring.org") :level . 2)))
+   `((,(concat my/gtd-dir "/archive.org") :level . 2)
+     (,(concat my/gtd-dir "/inbox.org") :level . 1)
+     (,(concat my/gtd-dir "/personal.org") :regexp . "Tasks") ;; This seems to work nicer.
+     (,(concat my/gtd-dir "/work.org") :regexp . "Tasks")
+     (,(concat my/gtd-dir "/someday.org") :regexp . "Tasks") ;; TODO: Make it possible to refile into Projects or Tasks.
+     (,(concat my/gtd-dir "/recurring.org") :level . 2)))
   ;; The following two settings are required to make org-refile show the full heading path
   ;; to subheading refile candidates. Took a while to get this working properly.
   (org-refile-use-outline-path t)
@@ -1502,7 +1503,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (org-roam-setup)
   (require 'org-roam-protocol)
   :custom
-  (org-roam-directory (concat my/org-dir "/notes"))
+  (org-roam-directory (concat my/pkm-dir "/notes"))
   (org-roam-db-location (concat my/xdg-cache-dir "/emacs/org-roam.db"))
   (org-roam-completion-everywhere t)
   (org-roam-capture-templates
