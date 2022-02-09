@@ -50,6 +50,9 @@
 ;; Don't ask when following symlinks to source code.
 (setq vc-follow-symlinks t)
 
+;; Automatically save unsaved files before compilation.
+(setq compilation-ask-about-save nil)
+
 ;; Revert buffers when the underlying file has changed.
 (global-auto-revert-mode 1)
 
@@ -891,14 +894,12 @@ first RECIPE's package."
         ("C-c r d d" . dap-debug)
         ("C-c r d l" . dap-debug-last)
         ("C-c r d m" . dap-hydra))
-  :config
-  ;; Following settings aren't defined as custom vars.
-  ;; Disabling as I often need to save the buffer to get any errors that I've fixed
-  ;; to no longer be displayed. But if there are any syntax errors remaining then rustfmt
-  ;; will jump to another window. If Rustic/lsp-mode more constantly evaluated errors
-  ;; without requiring a save, I could turn this back on.
-  (setq rustic-format-on-save t)
-  )
+  :custom
+  ;; Format the current buffer on save. By default, Rustic will call rustic-format-file if
+  ;; rustic-format-trigger is set to on-save but this is very laggy. Calling rustic-format-buffer
+  ;; is much snappier.
+  (rustic-format-trigger 'on-save)
+  (rustic-format-on-save-method 'rustic-format-buffer))
 
 ;;;;;; Terraform
 
