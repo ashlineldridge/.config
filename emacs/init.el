@@ -1424,16 +1424,7 @@ color theme."
 			    "* TODO %i%?")
 			   ("b" "Bookmark" entry
 			    (file+olp+datetree ,(concat my/gtd-dir "/bookmarks.org") "Bookmarks")
-			    "* %(org-cliplink-capture)%?\n")
-			   ("t" "Training Log" entry
-			    (file+olp+datetree ,(concat my/gtd-dir "/training.org") "Training Log")
-                            ,(concat
-			      "* 3%?:00 PM\n"
-                              "- Workout: 3 x 20' / 3' @ 20\n"
-                              "- Warm-up Distance: 1000\n"
-                              "- Workout Distance: 15000\n"
-                              "- Average: 2:00.0 @ 20\n"
-                              "- Comments: This was fun!\n") :jump-to-captured t)))
+			    "* %(org-cliplink-capture)%?\n")))
   (org-confirm-babel-evaluate nil)
   (org-default-notes-file (concat my/gtd-dir "/inbox.org"))
   (org-directory my/gtd-dir)
