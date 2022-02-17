@@ -1424,7 +1424,21 @@ color theme."
 			    "* TODO %i%?")
 			   ("b" "Bookmark" entry
 			    (file+olp+datetree ,(concat my/gtd-dir "/bookmarks.org") "Bookmarks")
-			    "* %(org-cliplink-capture)%?\n")))
+			    "* %(org-cliplink-capture)%?\n")
+                           ("c" "Coffee Journal" entry
+			    (file+olp+datetree ,(concat my/gtd-dir "/coffee.org") "Coffee Journal" "Log")
+                            ,(concat
+			      "* 6%?:00 AM\n"
+                              "- Beans: Use org-store-link (C-c o l) then org-insert-link (C-c C-l)\n"
+                              "- Grind: KM47C+PO @ 4.5.0\n"
+                              "- Water: Brisbane tap @ 95°C\n"
+                              "- Brew method: V60 4:6\n"
+                              "- Brew notes:\n"
+                              "  - Coffee / water: 20g coffee / 300g water\n"
+                              "  - Breakdown: 50g/70g/60g/60g/60g on 45s with no extra agitation\n"
+                              "  - Next time: Grind a bit finer\n"
+                              "- Taste notes:\n"
+                              "  - Yum yum\n") :jump-to-captured t)))
   (org-confirm-babel-evaluate nil)
   (org-default-notes-file (concat my/gtd-dir "/inbox.org"))
   (org-directory my/gtd-dir)
@@ -1519,10 +1533,10 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
-(global-set-key (kbd "C-c o c") 'org-capture)
+(global-set-key (kbd "C-c o m") 'org-capture)
 (global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i"))) ;; Capture inbox item.
 (global-set-key (kbd "C-c o b") (lambda () (interactive) (org-capture nil "b"))) ;; Capture bookmark.
-(global-set-key (kbd "C-c o t") (lambda () (interactive) (org-capture nil "t"))) ;; Capture training log.
+(global-set-key (kbd "C-c o c") (lambda () (interactive) (org-capture nil "c"))) ;; Capture coffee log.
 (global-set-key (kbd "C-c C-o") 'org-open-at-point-global) ;; Open links everywhere just like in org-mode.
 
 ;;;; Credential Management
