@@ -56,6 +56,9 @@
 ;; Revert buffers when the underlying file has changed.
 (global-auto-revert-mode 1)
 
+;; Enable recentf-mode so that we can reopen recently opened files.
+(recentf-mode 1)
+
 ;; Enable Emacs functionality which is disabled by default.
 (put 'narrow-to-region 'disabled nil)
 (put 'upcase-region 'disabled nil)
@@ -207,7 +210,7 @@ first RECIPE's package."
 
 (use-package ample-theme)
 
-(defvar my/themes '(doom-tomorrow-night doom-Iosvkem zenburn))
+(defvar my/themes '(doom-opera-light doom-tomorrow-night zenburn doom-one doom-nord-light))
 
 (defun my/disable-all-themes ()
   "Disable all active themes."
@@ -219,6 +222,8 @@ first RECIPE's package."
   (interactive)
   (my/disable-all-themes)
   (load-theme theme t)
+  ;; Re-init org-mode if it's been loaded.
+  (if (fboundp 'my/org-mode-init) (my/org-mode-init))
   (message "Loaded theme: %s" theme))
 
 (defun my/load-next-theme ()
@@ -248,8 +253,8 @@ first RECIPE's package."
 ;; Font-related variable definitions.
 (defvar my/default-fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
 (defvar my/default-variable-font "Iosevka Aile") ;; ETBembo is another good one.
-(defvar my/default-fixed-font-size 148)
-(defvar my/default-variable-font-size 132)
+(defvar my/default-fixed-font-size 144)
+(defvar my/default-variable-font-size 144)
 
 ;; Set the default face.
 (set-face-attribute 'default nil
@@ -267,7 +272,7 @@ first RECIPE's package."
 
 ;; Set the variable pitch face
 (set-face-attribute 'variable-pitch nil
-                    :font my/default-fixed-font
+                    :font my/default-variable-font
                     :height my/default-variable-font-size
                     :width 'normal
                     :weight 'light)
@@ -336,12 +341,12 @@ first RECIPE's package."
   ("<down>"  shrink-window               "shrink-vertical")
   ("<up>"    enlarge-window              "grow-vertical")
   ("="       balance-windows             "balance")
-  ("u"       winner-undo                 "winner-undo")
-  ("U"       winner-redo                 "winner-redo")
-  ("k l"     (my/delete-window 'left)    "delete-window-left")
-  ("k r"     (my/delete-window 'right)   "delete-window-right")
-  ("k a"     (my/delete-window 'above)   "delete-window-above")
-  ("k b"     (my/delete-window 'below)   "delete-window-below")
+  ("u"       winner-undo                 "winner-undo" :exit t)
+  ("U"       winner-redo                 "winner-redo" :exit t)
+  ("k l"     (my/delete-window 'left)    "delete-window-left" :exit t)
+  ("k r"     (my/delete-window 'right)   "delete-window-right" :exit t)
+  ("k a"     (my/delete-window 'above)   "delete-window-above" :exit t)
+  ("k b"     (my/delete-window 'below)   "delete-window-below" :exit t)
   ("q" nil "quit"))
 
 (defun my/delete-window (direction)
@@ -360,6 +365,9 @@ first RECIPE's package."
       '((display-buffer-reuse-mode-window
         display-buffer-reuse-window
         display-buffer-same-window)))
+
+;; If a popup does happen, don't resize windows to be equal-sized.
+(setq even-window-sizes nil)
 
 ;; One day I will learn how this bloody monster actually works.
 ;; Just read: https://www.gnu.org/software/emacs/manual/html_node/elisp/Displaying-Buffers.html
@@ -400,9 +408,6 @@ first RECIPE's package."
         ("\\*org-roam\\*"
          (display-buffer-in-side-window)
          (side . bottom))))
-
-;; If a popup does happen, don't resize windows to be equal-sized.
-(setq even-window-sizes nil)
 
 ;;;; Environment Variables
 
@@ -487,6 +492,7 @@ first RECIPE's package."
   :hook (company-mode . company-box-mode))
 
 (use-package vertico
+  :straight '(vertico-mode :host github :repo "minad/vertico")
   :init
   (vertico-mode 1))
 
@@ -508,25 +514,28 @@ first RECIPE's package."
 
 (use-package consult
   :bind
-  (;; Search bindings
-   ("C-s"   . consult-line) ; For convenience
-   ("M-s s" . consult-line)
-   ("M-s r" . consult-ripgrep)
-   ;; Text editing bindings
-   ("M-y" . consult-yank-pop)
-   ;; Other bindings (reconsider keys used)
-   ("C-c b" . consult-bookmark))
+  (("C-s"     . consult-line)
+   ("M-s s"   . consult-line)
+   ("M-s r"   . consult-ripgrep)
+   ("M-s m"   . consult-imenu)
+   ("C-x b"   . consult-buffer)
+   ("C-c b"   . consult-bookmark)
+   ("M-g M-g" . consult-goto-line)
+   ("M-y"     . consult-yank-pop))
   :custom
   (consult-project-root-function
    (lambda()
      (when (fboundp 'projectile-project-root)
        (projectile-project-root))))
   :config
-  (consult-customize
-   ;; Disable preview for the following consult functions.
-   consult-ripgrep consult-git-grep
-   consult-grep consult-bookmark
-   :preview-key nil))
+  ;; Disable preview for the following consult functions.
+  ;; (consult-customize
+  ;;  consult-ripgrep
+  ;;  consult-git-grep
+  ;;  consult-grep
+  ;;  consult-bookmark
+  ;;  :preview-key nil)
+  )
 
 (use-package embark
   ;; Load after xref so that the overidden keybinding below takes effect.
@@ -609,11 +618,6 @@ first RECIPE's package."
   :config (projectile-mode)
   :bind-keymap
   ("C-c p" . projectile-command-map))
-
-(use-package perspective
-  :bind ("C-x C-b" . persp-ibuffer)
-  :init
-  (persp-mode))
 
 ;;;;; File Browsing
 
@@ -1243,8 +1247,8 @@ color theme."
 
   ;;; Indentation and page structure configuration.
 
-  (org-indent-mode)
-  (visual-line-mode)
+  (org-indent-mode 1)
+  (visual-line-mode 1)
   (setq left-margin-width 2)
   (setq right-margin-width 2)
   (variable-pitch-mode 1)
@@ -1430,7 +1434,7 @@ color theme."
                             ,(concat
 			      "* 6%?:00 AM\n"
                               "- Beans: Use org-store-link (C-c o l) then org-insert-link (C-c C-l)\n"
-                              "- Grind: KM47C+PO @ 4.5.0\n"
+                              "- Grind: KM47C+PO @ 3.0.0\n"
                               "- Water: Brisbane tap @ 95°C\n"
                               "- Brew method: V60 4:6\n"
                               "- Brew notes:\n"
@@ -1512,6 +1516,8 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
   (org-roam-directory (concat my/pkm-dir "/notes"))
   (org-roam-db-location (concat my/xdg-cache-dir "/emacs/org-roam.db"))
   (org-roam-completion-everywhere t)
+  (org-roam-node-display-template
+   (concat "${title:70} " (propertize "${tags:70}" 'face 'org-tag)))
   (org-roam-capture-templates
    `(("d" "default" plain
       ,(concat
