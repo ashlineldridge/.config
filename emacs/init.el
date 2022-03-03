@@ -513,6 +513,7 @@ first RECIPE's package."
   (marginalia-mode 1))
 
 (use-package consult
+  :straight '(consult-mode :host github :repo "minad/consult")
   :bind
   (("C-s"     . consult-line)
    ("M-s s"   . consult-line)
@@ -522,20 +523,34 @@ first RECIPE's package."
    ("C-c b"   . consult-bookmark)
    ("M-g M-g" . consult-goto-line)
    ("M-y"     . consult-yank-pop))
-  :custom
-  (consult-project-root-function
-   (lambda()
-     (when (fboundp 'projectile-project-root)
-       (projectile-project-root))))
+
+  :init
+  ;; Replace completing-read-multiple with an enhanced version.
+  (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
+
+  ;; Use Consult to select xref locations with preview.
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
+
   :config
-  ;; Disable preview for the following consult functions.
-  ;; (consult-customize
-  ;;  consult-ripgrep
-  ;;  consult-git-grep
-  ;;  consult-grep
-  ;;  consult-bookmark
-  ;;  :preview-key nil)
-  )
+  ;; Have consult use projectile to determine the project root.
+  (autoload 'projectile-project-root "projectile")
+  (setq consult-project-function (lambda (_) (projectile-project-root)))
+
+  ;; Show narrowing help in the minibuffer when ? is pressed.
+  ;; Narrowing by group requires pressing the group key (e.g., p for project) and then <spc>.
+  (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+
+  (consult-customize
+   ;; The following functions will show the preview after a delay.
+   consult-theme
+   :preview-key '(:debounce 0.5 any)
+   ;; The following functions will show the preview when M-. is pressed.
+   consult-ripgrep consult-git-grep consult-grep
+   consult-bookmark consult-recent-file consult-xref
+   consult--source-bookmark consult--source-recent-file
+   consult--source-project-recent-file
+   :preview-key (kbd "M-.")))
 
 (use-package embark
   ;; Load after xref so that the overidden keybinding below takes effect.
@@ -724,6 +739,17 @@ first RECIPE's package."
 ;;;;; Language Support
 
 ;;;;;; Language Server Support
+
+(defun my/if-essential-advice (f &rest args)
+  "Around advice that invokes F with ARGS if `non-essential' is non-nil."
+  (message "non-essential is %s" non-essential)
+  (unless non-essential
+    (apply f args)))
+
+;; Advise lsp-deferred and lsp so that they only run if non-essential is non-nil.
+;; This prevents lsp-mode from starting duing consult previews.
+(advice-add 'lsp :around #'my/if-essential-advice)
+(advice-add 'lsp-deferred :around #'my/if-essential-advice)
 
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
