@@ -1,7 +1,7 @@
+EMACS_VERSION ?= 28
+
 no_color := \033[0m
 ok_color := \033[38;5;74m
-
-emacs_version := 29
 
 ## Function for printing a pretty banner.
 banner = \
@@ -42,9 +42,14 @@ npm-install:
 		npm install -g $$pkg; \
 	done
 
-.PHONY: upgrade-emacs
-upgrade-emacs:
-	@brew uninstall emacs-plus
-	@brew install emacs-plus@$(emacs_version) \
+.PHONY: uninstall-emacs
+uninstall-emacs:
+	@$(call banner,Uninstalling Emacs version $(EMACS_VERSION))
+	@brew uninstall emacs-plus@$(EMACS_VERSION)
+
+.PHONY: install-emacs
+install-emacs:
+	@$(call banner,Installing Emacs version $(EMACS_VERSION))
+	@brew install emacs-plus@$(EMACS_VERSION) \
 		--with-native-comp \
 		--with-modern-black-gnu-head-icon

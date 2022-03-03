@@ -5,3 +5,13 @@ My dot files including Emacs configuration.
 To set up a new computer:
 - Clone this repository into =~/.config=
 - From within =~/.config= run =make bootstrap=
+
+Note: After a major MacOS upgrade you might need to perform the following to get Emacs working:
+
+```
+xcode-select --install
+brew reinstall gcc
+brew reinstall libgccjit
+
+# And then update LIBRARY_PATH in ~/.config/emacs/early-init.el
+```
