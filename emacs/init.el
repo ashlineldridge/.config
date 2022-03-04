@@ -127,25 +127,6 @@
 ;; get activated between here and where org is actually configured below.
 (straight-use-package 'org)
 
-;; Use setup.el for package configuration.
-(straight-use-package '(setup :type git :host nil :repo "https://git.sr.ht/~pkal/setup"))
-(require 'setup)
-
-(setup-define
- :straight (lambda (recipe)
-             `(unless
-                  (straight-use-package ',recipe)
-                ,(setup-quit)))
- :documentation "Install RECIPE with `straight-use-package'.
-This macro can be used as HEAD, and will replace itself with the
-first RECIPE's package."
- :repeatable t
- :shorthand (lambda (sexp)
-              (let ((recipe (cadr sexp)))
-                (if (consp recipe)
-                    (car recipe)
-                  recipe))))
-
 ;;;; Keyboard Bindings
 
 ;;;;; Stateful Keymaps
@@ -443,53 +424,52 @@ first RECIPE's package."
 ;;;; Completion System
 
 (use-package corfu
-  :straight '(corfu-mode :host github
-			 :repo "minad/corfu")
-  :hook ((emacs-lisp-mode . corfu-mode)
-         (terraform-mode . corfu-mode)
-         (sh-mode . corfu-mode))
+  :straight '(corfu-mode :host github :repo "minad/corfu")
+  ;; :hook ((emacs-lisp-mode . corfu-mode)
+         ;; (rustic-mode     . corfu-mode)
+         ;; (terraform-mode  . corfu-mode)
+         ;; (sh-mode         . corfu-mode))
   :bind
   (:map corfu-map
-        ("<tab>" . corfu-next)
-        ("S-<tab>" . corfu-previous))
+        ("<tab>"   . corfu-next)
+        ("S-<tab>" . corfu-previous)
+        ("M-d"     . corfu-doc-toggle)
+        ("M-p"     . corfu-doc-scroll-down)
+        ("M-n"     . corfu-doc-scroll-up))
+  :init
+  ;; Enable everywhere for now...
+  (corfu-global-mode)
   :custom
   ;; Needs to be set so that the Corfu post-command-hook is installed and Corfu is
   ;; called on every key press (so that it knows whether to display a pop-up).
   (corfu-auto t)
   ;; Number of typed characters before Corfu displays its pop-up.
-  (corfu-auto-prefix 2)
+  (corfu-auto-prefix 1)
   ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This setting
   ;; only applies after the minimum number of prefix characters have been entered.
-  (corfu-auto-delay 0.2))
-
-;; TODO: Install https://github.com/minad/cape as well for additional capfs.
+  (corfu-auto-delay 0.0))
 
 (setq completion-cycle-threshold 3)
 
-;; Enable indentation + completion using the TAB key. This is required for Corfu
-;; integration.
+;; Enable indentation + completion using the TAB key. This is required for Corfu integration.
 (setq tab-always-indent 'complete)
 
-(use-package company
-  ;; Only enable Company in specific modes. Ideally, I'd like to switch
-  ;; to Corfu entirely but Company still seems to be required.
-  ;; See: https://github.com/minad/corfu/issues/87.
-  :hook (rustic-mode . company-mode)
-  :bind
-  (:map company-mode-map
-        ("<tab>" . company-indent-or-complete-common))
-  (:map company-active-map
-	("<tab>" . company-complete-selection)
-	("C-n"   . company-select-next-or-abort)
-	("C-p"   . company-select-previous-or-abort)
-        ("M-<"   . company-select-first)
-	("M->"   . company-select-last))
+;; Nice icons in the margin of corfu completion popups.
+(use-package kind-icon
+  :after corfu
   :custom
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0))
+  (kind-icon-default-face 'corfu-default) ; To compute blended backgrounds correctly.
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
-(use-package company-box
-  :hook (company-mode . company-box-mode))
+;; Documentation shown alongside corfu completion popups.
+(use-package corfu-doc
+  :straight '(corfu-doc-mode :host github :repo "galeo/corfu-doc")
+  ;; Don't enable corfu-doc-mode by default as it can be a bit much and with my smaller
+  ;; screen the popup frame sometimes shows in odd places. For now, manually launch the
+  ;; doc pop-up when M-d is pressed (configured above in corfu).
+  ;:hook (corfu-mode . corfu-doc-mode)
+  )
 
 (use-package vertico
   :straight '(vertico-mode :host github :repo "minad/vertico")
