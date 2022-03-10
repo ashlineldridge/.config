@@ -256,7 +256,7 @@
                     :font my/default-variable-font
                     :height my/default-variable-font-size
                     :width 'normal
-                    :weight 'light)
+                    :weight 'normal)
 
 ;;;;; Icons
 
@@ -447,7 +447,10 @@
   (corfu-auto-prefix 1)
   ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This setting
   ;; only applies after the minimum number of prefix characters have been entered.
-  (corfu-auto-delay 0.0))
+  (corfu-auto-delay 0.0)
+  ;; Modes which shouldn't use cofu. Org-mode is excluded as the only completions that
+  ;; get shown are org-roam note names which is pretty useless.
+  (corfu-excluded-modes '(org-mode)))
 
 (setq completion-cycle-threshold 3)
 
@@ -618,7 +621,7 @@
 
 (use-package neotree
   :custom
-  (neo-theme 'ascii)
+  (neo-theme 'nerd)
   (neo-smart-open t)
   (neo-window-fixed-size nil)
   (neo-toggle-window-keep-p t)
@@ -737,7 +740,6 @@
   (c-mode . lsp)
   (c++-mode . lsp)
   (go-mode . lsp)
-  (typescript-mode . lsp)
   (rustic-mode . lsp)
   (sh-mode . lsp)
   (terraform-mode . lsp)
@@ -759,9 +761,9 @@
   (lsp-modeline-code-actions-segments '(icon)) ;; No need to also show the count.
   (lsp-lens-enable nil)                        ;; Haven't found a great use for these.
   (lsp-modeline-diagnostics-enable nil)        ;; The Flycheck modeline segment already displays this.
-  ;; The following should be set to :none when I can replace company-mode with Corfu.
+  ;; Recommended setting as I'm using corfu instead of company for completion.
   ;; See: https://github.com/minad/corfu/issues/71#issuecomment-977693717
-  ;; (lsp-completion-provider :none)
+  (lsp-completion-provider :none)
 
   ;; When lsp-eldoc-render-all is set to nil, moving point to a function call should result
   ;; in a one line function signature being displayed in the minibuffer. There is an issue
@@ -1026,6 +1028,17 @@
   (require 'smartparens-config))
 
 (global-set-key (kbd "C-x C-r") 'eval-region)
+
+;;;;;; SGML/HTML
+
+;; The following configuration needs to be done on the built-in sgml-mode rather than
+;; html-mode as the latter is not actually a package and use-package will complain.
+(use-package sgml-mode
+  :straight nil ;; Built-in.
+  :bind
+  (:map html-mode-map
+        ;; Unbind M-o as I want that for ace-window.
+        (("M-o" . nil))))
 
 ;;;;;; Markdown
 
@@ -1542,6 +1555,8 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
       :unnarrowed t))))
 
 (use-package org-cliplink)
+
+(use-package ox-hugo :after ox)
 
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
