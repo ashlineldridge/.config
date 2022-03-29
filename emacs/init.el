@@ -204,7 +204,8 @@
   (my/disable-all-themes)
   (load-theme theme t)
   ;; Re-init org-mode if it's been loaded.
-  (if (fboundp 'my/org-mode-init) (my/org-mode-init))
+  ;; Disabling for now as it's making fixed fonts variable.
+  ;; (if (fboundp 'my/org-mode-init) (my/org-mode-init))
   (message "Loaded theme: %s" theme))
 
 (defun my/load-next-theme ()
@@ -505,8 +506,10 @@
    ("C-x b"   . consult-buffer)
    ("C-c b"   . consult-bookmark)
    ("M-g M-g" . consult-goto-line)
-   ("M-y"     . consult-yank-pop))
-
+   ("M-y"     . consult-yank-pop)
+   ("C-x r r" . consult-register)
+   ("C-x r l" . consult-register-load)
+   ("C-x r s" . consult-register-store))
   :init
   ;; Replace completing-read-multiple with an enhanced version.
   (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
@@ -899,6 +902,7 @@
         ("C-c r t" . rustic-cargo-test)
         ("C-c r T" . rustic-cargo-current-test)
         ("C-c r i" . my/toggle-rust-inlay-hints) ;; Toggle inlay type hints.
+        ("C-c r o" . lsp-rust-analyzer-open-external-docs)
         ("C-c r c a" . rustic-cargo-add)
         ("C-c r c c" . rustic-cargo-clean)
         ("C-c r c o" . rustic-cargo-outdated)
@@ -1346,8 +1350,12 @@ color theme."
   (:map org-mode-map
         ("C-c C-S-l" . org-cliplink))
   :config
-  ;; Save org buffers after refiling.
-  (advice-add 'org-refile :after (lambda (&rest _) (org-save-all-org-buffers)))
+  ;; Add org (typically agenda-related) actions here that require org buffers be saved.
+  (advice-add 'org-refile          :after 'org-save-all-org-buffers)
+  (advice-add 'org-todo            :after 'org-save-all-org-buffers)
+  (advice-add 'org-agenda-set-tags :after 'org-save-all-org-buffers)
+  (advice-add 'org-agenda-quit     :before 'org-save-all-org-buffers)
+
   ;; Make it easier to create org-babel code blocks.
   (require 'org-tempo)
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
