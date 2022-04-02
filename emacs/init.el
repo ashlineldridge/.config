@@ -13,13 +13,15 @@
 
 ;;;; System Settings
 
-;; Prefer XDG conventions.
+;; XDG directories.
 (defvar my/xdg-config-dir (expand-file-name "~/.config"))
-(defvar my/xdg-cache-dir (expand-file-name "~/.cache"))
-(defvar my/xdg-data-dir (expand-file-name "~/.local/share"))
+(defvar my/xdg-cache-dir  (expand-file-name "~/.cache"))
+(defvar my/xdg-data-dir   (expand-file-name "~/.local/share"))
+
+;; Emacs directories.
 (defvar my/emacs-config-dir (expand-file-name "emacs" my/xdg-config-dir))
-(defvar my/emacs-cache-dir (expand-file-name "emacs" my/xdg-cache-dir))
-(defvar my/emacs-data-dir (expand-file-name "emacs" my/xdg-data-dir))
+(defvar my/emacs-cache-dir  (expand-file-name "emacs" my/xdg-cache-dir))
+(defvar my/emacs-data-dir   (expand-file-name "emacs" my/xdg-data-dir))
 
 ;; Why would this be true? https://blog.sumtypeofway.com/posts/emacs-config.html
 (setq sentence-end-double-space nil)
@@ -496,6 +498,36 @@
   :init
   (marginalia-mode 1))
 
+(defvar my/consult-source-vterm-buffer
+  `(:name     "Vterm Buffer"
+    :narrow   ?v
+    :category vterm-buffer
+    :face     consult-buffer
+    :history  buffer-name-history
+    :state    ,#'consult--buffer-state
+    :action   ,#'consult--buffer-action
+    :items
+    ,(lambda () (consult--buffer-query :sort 'visibility
+                                       :as #'buffer-name
+                                       :mode 'vterm-mode)))
+  "Vterm buffer source for `consult-buffer'.")
+
+(defun my/consult-project-file (selected-root)
+  "Create a view for selecting project files for the project at SELECTED-ROOT.
+This function is adapted from consult-project-extra--file so that we can patch
+in the :preview-key; otherwise, selection of the project file to open will
+automatically display the preview which we don't want. Unfortunately, it
+doesn't appear possible to achieve this behaviour using consult-customize."
+  (find-file (consult--read
+              (consult-project-extra--project-files selected-root)
+              :prompt "Project File: "
+              :sort t
+              :require-match t
+              :preview-key (kbd "M-.")
+              :category 'file
+              :state (consult--file-preview)
+              :history 'file-name-history)))
+
 (use-package consult
   :straight '(consult-mode :host github :repo "minad/consult")
   :bind
@@ -510,6 +542,7 @@
    ("C-x r r" . consult-register)
    ("C-x r l" . consult-register-load)
    ("C-x r s" . consult-register-store))
+
   :init
   ;; Replace completing-read-multiple with an enhanced version.
   (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
@@ -519,23 +552,52 @@
         xref-show-definitions-function #'consult-xref)
 
   :config
+  ;; Load consult-project-extra as we need some of its sources below.
+  (use-package consult-project-extra
+    :straight '(consult-project-extra :host github :repo "Qkessler/consult-project-extra"))
+
   ;; Show narrowing help in the minibuffer when ? is pressed.
   ;; Narrowing by group requires pressing the group key (e.g., p for project) and then <spc>.
   (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
   (consult-customize
-   ;; The following functions will show the preview after a delay.
-   consult-theme
-   :preview-key '(:debounce 0.5 any)
-   ;; The following functions will show the preview when M-. is pressed.
-   consult-ripgrep consult-git-grep consult-grep
-   consult-bookmark consult-recent-file consult-xref
-   consult--source-bookmark consult--source-recent-file
-   consult--source-project-recent-file
-   :preview-key (kbd "M-.")))
+   ;; Source name and narrow key customization. The consult-project-extra sources
+   ;; need to be patched with :state otherwise previewing will not work on them.
+   consult--source-buffer
+   :name "Open Buffer" :narrow ?b
+   consult--source-project-buffer
+   :name "Project Buffer" :narrow ?p
+   consult-project-extra--source-file
+   :name "Project File" :narrow ?f :state 'consult--file-state
+   consult--source-recent-file
+   :name "Recent File" :narrow ?r
+   consult-project-extra--source-project
+   :name "Switch Project" :narrow ?j :action 'my/consult-project-file
 
-(use-package consult-project-extra
-  :straight '(consult-project-extra :host github :repo "Qkessler/consult-project-extra"))
+   ;; By default, consult will automatically preview all commands and sources. Below
+   ;; we customize certain commands/sources so that the preview is shown on request.
+   consult-ripgrep
+   consult-git-grep
+   consult-grep
+   consult-bookmark
+   consult-recent-file
+   consult-xref
+   consult--source-bookmark
+   consult--source-recent-file
+   consult-project-extra--source-file
+   consult-project-extra--source-project
+   :preview-key (kbd "M-."))
+
+  ;; Customise the list of sources shown by consult-buffer.
+  (setq consult-buffer-sources
+        '(consult--source-buffer                ; Narrow: ?b
+          consult--source-project-buffer        ; Narrow: ?p
+          my/consult-source-vterm-buffer        ; Narrow: ?v
+          consult-project-extra--source-file    ; Narrow: ?f
+          consult--source-recent-file           ; Narrow: ?r
+          consult--source-bookmark              ; Narrow: ?m
+          consult-project-extra--source-project ; Narrow: ?j
+          )))
 
 (use-package embark
   ;; Load after xref so that the overidden keybinding below takes effect.
@@ -610,6 +672,7 @@
 
 (use-package project
   :straight nil ;; Built-in.
+  :bind (("C-x p u" . my/project-refresh-list))
   :custom
   (project-list-file (expand-file-name "projects" my/emacs-cache-dir))
   :config
@@ -628,6 +691,13 @@
   "Return the root directory of the current or nil."
   (if-let* ((proj (project-current)))
       (project-root proj)))
+
+(defun my/project-refresh-list ()
+  "Refresh list of known projects."
+  (interactive)
+  (project-forget-zombie-projects)
+  (project-remember-projects-under "~/Development/home")
+  (project-remember-projects-under "~/Development/work"))
 
 ;;;;; File Browsing
 
@@ -653,8 +723,7 @@
 	    (progn
 	      (neotree-dir project-dir)
 	      (neotree-find file-name)
-	      (select-window cw))
-	  (message "Could not find project root.")))))
+	      (select-window cw))))))
 
 (defun my/neotree-toggle ()
   "Toggle Neotree and navigates to the current file/project."
@@ -1251,7 +1320,8 @@
   (vterm-max-scrollback 10000)
   ;; I can't seem to get a reliable way of clearing without losing buffer history.
   ;; The below setting (which is already the default) should work but doesn't.
-  (vterm-clear-scrollback-when-clearing nil))
+  (vterm-clear-scrollback-when-clearing nil)
+  (vterm-buffer-name-string "vterm: %s"))
 
 (use-package multi-vterm
   :bind (:map global-map
@@ -1598,7 +1668,7 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 ;; Function for starting "An Introduction to Programming in Emacs Lisp" which is no longer
 ;; shown on the main info page (C-h i) and I can never remember how else to get to it.
 (defun my/emacs-lisp-intro ()
-  "Opens \"An Introduction to Programming in Emacs Lisp\" by Robert J. Chassell"
+  "Opens \"An Introduction to Programming in Emacs Lisp\" by Robert J. Chassell."
   (interactive)
   (info "(eintr) Top"))
 

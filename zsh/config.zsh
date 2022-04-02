@@ -12,6 +12,7 @@ libs=(
   colors.zsh
   functions.zsh
   prompt.zsh
+  vterm.zsh
   fzf.zsh
   secrets.zsh
 )
