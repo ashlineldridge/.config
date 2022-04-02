@@ -519,10 +519,6 @@
         xref-show-definitions-function #'consult-xref)
 
   :config
-  ;; Have consult use projectile to determine the project root.
-  (autoload 'projectile-project-root "projectile")
-  (setq consult-project-function (lambda (_) (projectile-project-root)))
-
   ;; Show narrowing help in the minibuffer when ? is pressed.
   ;; Narrowing by group requires pressing the group key (e.g., p for project) and then <spc>.
   (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
@@ -537,6 +533,9 @@
    consult--source-bookmark consult--source-recent-file
    consult--source-project-recent-file
    :preview-key (kbd "M-.")))
+
+(use-package consult-project-extra
+  :straight '(consult-project-extra :host github :repo "Qkessler/consult-project-extra"))
 
 (use-package embark
   ;; Load after xref so that the overidden keybinding below takes effect.
@@ -609,16 +608,26 @@
 
 ;;;;; Project Management
 
-(use-package projectile
-  :delight
-  :init
-  (projectile-add-known-project "~/.config")
-  (setq projectile-project-search-path
-	; Search path is displayed from right to left.
-	'("~/Development/home" "~/Development/work"))
-  :config (projectile-mode)
-  :bind-keymap
-  ("C-c p" . projectile-command-map))
+(use-package project
+  :straight nil ;; Built-in.
+  :custom
+  (project-list-file (expand-file-name "projects" my/emacs-cache-dir))
+  :config
+  (project-remember-projects-under "~/Development/home")
+  (project-remember-projects-under "~/Development/work"))
+
+(use-package project-x
+  :straight '(project-x-mode-mode :host github :repo "karthink/project-x")
+  :after project
+  :custom
+  (project-x-window-list-file (expand-file-name "project-window-list" my/emacs-cache-dir))
+  :config
+  (project-x-mode 1))
+
+(defun my/project-root ()
+  "Return the root directory of the current or nil."
+  (if-let* ((proj (project-current)))
+      (project-root proj)))
 
 ;;;;; File Browsing
 
@@ -637,12 +646,11 @@
   "Refresh the Neotree window (if open) to navigate to the current file/project."
   (interactive)
   (if (neo-global--window-exists-p)
-      (let ((project-dir (projectile-project-root))
+      (let ((project-dir (my/project-root))
             (file-name (buffer-file-name))
 	    (cw (selected-window)))
 	(if project-dir
 	    (progn
-	      (message (concat "Refreshing Neotree to project "	project-dir " and file " file-name))
 	      (neotree-dir project-dir)
 	      (neotree-find file-name)
 	      (select-window cw))
@@ -666,7 +674,7 @@
 
 ;; Taken from https://protesilaos.com/emacs/dotemacs
 (defun my/outline-minor-mode-safe ()
-  "Enables and configures outline-minor-mode if it is safe to do so."
+  "Enables and configures `outline-minor-mode' if it is safe to do so."
   (interactive)
   (let* ((blocklist my/outline-major-modes-blocklist)
          (mode major-mode)
