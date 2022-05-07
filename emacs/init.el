@@ -168,6 +168,9 @@
   (invert-face 'mode-line)
   (run-with-timer 0.1 nil 'invert-face 'mode-line)))
 
+;; This setting makes the Emacs window play nicer with window managers like yabai.
+(setq frame-resize-pixelwise t)
+
 ;;;;; Line and Column Numbers
 
 ;; Show column numbers in the mode line.
@@ -428,10 +431,6 @@
 
 (use-package corfu
   :straight '(corfu-mode :host github :repo "minad/corfu")
-  ;; :hook ((emacs-lisp-mode . corfu-mode)
-         ;; (rustic-mode     . corfu-mode)
-         ;; (terraform-mode  . corfu-mode)
-         ;; (sh-mode         . corfu-mode))
   :bind
   (:map corfu-map
         ("<tab>"   . corfu-next)
@@ -532,11 +531,9 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   :straight '(consult-mode :host github :repo "minad/consult")
   :bind
   (("C-s"     . consult-line)
-   ("M-s s"   . consult-line)
    ("M-s r"   . consult-ripgrep)
    ("M-s m"   . consult-imenu)
    ("C-x b"   . consult-buffer)
-   ("C-c b"   . consult-bookmark)
    ("M-g M-g" . consult-goto-line)
    ("M-y"     . consult-yank-pop)
    ("C-x r r" . consult-register)
@@ -877,6 +874,9 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   ;; I'd prefer to have this off by default but there seem to be some hooks configured where if
   ;; this is going to be set it needs to be set when lsp-mode starts.
   (lsp-rust-analyzer-server-display-inlay-hints t)
+  ;; Enable procedural macro support (apparently assists with auto-completion when procedural
+  ;; macros are involved; see https://news.ycombinator.com/item?id=28802428).
+  ;; (lsp-rust-analyzer-proc-macro-enable t)
   ;; Configure lsp-mode to use the official terraform-ls LSP server rather than terraform-lsp
   ;; which it uses by default and is more experimental (crashes constantly for me).
   (lsp-terraform-server '("terraform-ls" "serve"))

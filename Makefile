@@ -53,3 +53,14 @@ install-emacs:
 	@brew install emacs-plus@$(EMACS_VERSION) \
 		--with-native-comp \
 		--with-modern-black-gnu-head-icon
+
+## Function for upgrading yabai
+## Taken from: https://github.com/koekeishiya/yabai/wiki
+.PHONY: upgrade-yabai
+upgrade-yabai:
+	@$(call banner,Upgrading yabai)
+	brew services stop yabai
+	brew upgrade yabai
+	sudo yabai --uninstall-sa
+	sudo yabai --install-sa
+	brew services start yabai
