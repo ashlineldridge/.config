@@ -8,10 +8,10 @@ To set up a new computer:
 
 Note: After a major MacOS upgrade you might need to perform the following to get Emacs working:
 
-```
+#+begin_src bash
 xcode-select --install
 brew reinstall gcc
 brew reinstall libgccjit
 
 # And then update LIBRARY_PATH in ~/.config/emacs/early-init.el
-```
+#+end_src
