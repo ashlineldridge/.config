@@ -31,3 +31,11 @@ function decode_b64_gz_json() {
 function macdown() {
   "$(mdfind kMDItemCFBundleIdentifier=com.uranusjr.macdown | head -n1)/Contents/SharedSupport/bin/macdown" $@
 }
+
+function update_rust_analyzer() {
+  curl -Lsf \
+    https://github.com/rust-analyzer/rust-analyzer/releases/latest/download/rust-analyzer-x86_64-apple-darwin.gz \
+    | gunzip -c - > ~/bin/rust-analyzer
+  chmod +x ~/bin/rust-analyzer
+  rust-analyzer --version
+}
