@@ -55,6 +55,9 @@
 ;; Automatically save unsaved files before compilation.
 (setq compilation-ask-about-save nil)
 
+;; Make query replaces case-sensitive.
+(setq case-fold-search nil)
+
 ;; Revert buffers when the underlying file has changed.
 (global-auto-revert-mode 1)
 
@@ -728,6 +731,19 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   (neotree-toggle)
   (my/neotree-refresh))
 
+;;;;; Auto-Save
+
+(use-package super-save
+  :custom
+  (super-save-auto-save-when-idle t)
+  ;; Large idle duration to avoid programming modes (e.g., Rustic) that
+  ;; perform actions on save from running to eagerly.
+  (super-save-idle-duration 40)
+  (super-save-max-buffer-size 100000)
+  :config
+  (setq auto-save-default nil) ; Disable built-in auto-save-mode.
+  (super-save-mode +1))
+
 ;;;; Programming
 
 ;;;;; Outline
@@ -986,13 +1002,7 @@ doesn't appear possible to achieve this behaviour using consult-customize."
         ("C-c r c u" . rustic-cargo-upgrade)
         ("C-c r d d" . dap-debug)
         ("C-c r d l" . dap-debug-last)
-        ("C-c r d m" . dap-hydra))
-  :custom
-  ;; Format the current buffer on save. By default, Rustic will call rustic-format-file if
-  ;; rustic-format-trigger is set to on-save but this is very laggy. Calling rustic-format-buffer
-  ;; is much snappier.
-  (rustic-format-trigger 'on-save)
-  (rustic-format-on-save-method 'rustic-format-buffer))
+        ("C-c r d m" . dap-hydra)))
 
 ;;;;;; Terraform
 
@@ -1309,6 +1319,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
         ;; Unbind C-SPC as otherwise it prevents pop-global-mark from working across
         ;; vterm buffers.
         ("C-SPC" . nil)
+        ;; Unbind M-s so we can use ripgrep, etc.
+        ("M-s" . nil)
         ;; Unbind F11 as this is used to fullscreen the window.
         ("<f11>" . nil)
         ;; Bind S-ESC to keyboard-escape-quit when in vterm-mode as ESC is used for
