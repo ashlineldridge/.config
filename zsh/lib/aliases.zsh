@@ -62,6 +62,10 @@ alias h=helm
 alias kb=kubebuilder
 alias prom='prometheus --config.file=/usr/local/etc/prometheus.yml'
 alias am='alertmanager --config.file=/usr/local/etc/alertmanager.yml'
+# Following alias starts Grafana in the same way that it gets started when
+# running `brew services start grafana` (recommended way of running Grafana
+# on macOS: https://grafana.com/docs/grafana/latest/installation/mac/). See
+# /usr/local/opt/grafana/homebrew.grafana.service.
 alias grafana='grafana-server --config=/usr/local/etc/grafana/grafana.ini --homepath /usr/local/share/grafana --packaging=brew cfg:default.paths.logs=/usr/local/var/log/grafana cfg:default.paths.data=/usr/local/var/lib/grafana cfg:default.paths.plugins=/usr/local/var/lib/grafana/plugins'
 
 # Emacs

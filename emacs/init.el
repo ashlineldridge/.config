@@ -191,18 +191,50 @@
 
 ;;;;; Themes
 
+;; Note: I'm going to push forward with the excellenet and highly-customisable
+;; Modus themes and disable all the others for now. The Modus themes are already
+;; really good out-of-the-box (and the latest versions are better than the pre-
+;; packaged versions, IMO). There should be a setting for anything I'd want to
+;; configure. See https://systemcrafters.net/emacs-from-scratch/the-modus-themes
+;; for common customisations.
+
+(use-package modus-themes
+  ;; This package is pre-installed into Emacs 28+ but we pull latest to get
+  ;; the updates that have been made.
+  :custom
+  (modus-themes-italic-constructs t)
+  (modus-themes-region '(bg-only no-extend))
+  (modus-themes-mode-line '(borderless))
+  (modus-themes-paren-match '(intense underline))
+  (modus-themes-prompts '(bold intense))
+  (modus-themes-org-blocks 'gray-background)
+  (modus-themes-headings
+   '((1 . (variable-pitch rainbow background 1.3))
+     (2 . (variable-pitch rainbow background semibold 1.2))
+     (3 . (variable-pitch rainbow background semibold 1.1))
+     (t . (variable-pitch rainbow semilight 1.1)))))
+
 (use-package doom-themes
+  :disabled
   :config
   (doom-themes-visual-bell-config))
 
-(use-package zenburn-theme)
+(use-package zenburn-theme
+  :disabled)
 
-(use-package ample-theme)
-
-(defvar my/themes '(doom-opera-light doom-tomorrow-night zenburn doom-one doom-nord-light))
+(defvar my/themes
+  '(modus-vivendi
+    modus-operandi
+    ;; doom-opera-light
+    ;; doom-tomorrow-night
+    ;; doom-one
+    ;; doom-nord-light
+    ;; zenburn
+    ))
 
 (defun my/disable-all-themes ()
   "Disable all active themes."
+  (interactive)
   (dolist (theme custom-enabled-themes)
     (disable-theme theme)))
 
@@ -443,7 +475,7 @@
         ("M-n"     . corfu-doc-scroll-up))
   :init
   ;; Enable everywhere for now...
-  (corfu-global-mode)
+  (global-corfu-mode)
   :custom
   ;; Needs to be set so that the Corfu post-command-hook is installed and Corfu is
   ;; called on every key press (so that it knows whether to display a pop-up).
@@ -545,7 +577,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 
   :init
   ;; Replace completing-read-multiple with an enhanced version.
-  (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
+  ;; (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
+  ;; TODO: Review example consult config https://github.com/minad/consult
 
   ;; Use Consult to select xref locations with preview.
   (setq xref-show-xrefs-function #'consult-xref
@@ -830,12 +863,12 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :hook
-  (c-mode . lsp)
-  (c++-mode . lsp)
-  (go-mode . lsp)
-  (rustic-mode . lsp)
-  (sh-mode . lsp)
-  (terraform-mode . lsp)
+  (c-mode . lsp-deferred)
+  (c++-mode . lsp-deferred)
+  (go-mode . lsp-deferred)
+  (rustic-mode . lsp-deferred)
+  (sh-mode . lsp-deferred)
+  (terraform-mode . lsp-deferred)
   :bind
   (:map lsp-mode-map
         ;; M-? is normally bound to xref-find-references but the way that this function exposes
@@ -908,6 +941,7 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   (lsp-ui-sideline-delay 0.2)
   (lsp-ui-doc-delay 0)
   (lsp-ui-imenu-auto-refresh t)
+  (lsp-ui-doc-show-with-mouse nil)
   (lsp-ui-doc-position 'at-point)
   (lsp-ui-doc-max-width 150)
   (lsp-ui-doc-max-height 30))
@@ -1062,9 +1096,13 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 (use-package go-mode
   :mode "\\.go\\'"
   ;; Is this the best way to do this?
-  :hook (before-save . gofmt-before-save)
+  :hook
+  ((before-save . gofmt-before-save)
+   (go-mode . (lambda () (setq tab-width 4))))
+
   ;; :config
   ;; TODO: setup go-mode + integrations https://github.com/dominikh/go-mode.el
+  ;; TODO: Consider gopls settings here: https://github.com/golang/tools/blob/master/gopls/doc/emacs.md#configuring-gopls-via-lsp-mode
   )
 
 ;;;;;; Bazel
@@ -1374,18 +1412,20 @@ color theme."
                              (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
 
   ;; Vary heading sizes.
-  (dolist (face '((org-level-1 . 1.3)
-                  (org-level-2 . 1.25)
-                  (org-level-3 . 1.2)
-                  (org-level-4 . 1.15)
-                  (org-level-5 . 1.1)
-                  (org-level-6 . 1.1)
-                  (org-level-7 . 1.1)
-                  (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil
-			:font my/default-variable-font
-			:weight 'light
-			:height (cdr face)))
+  ;; This is commented out at the moment as I'm using the modus-themes package
+  ;; which has its own way of customising Org-mode headings.
+  ;; (dolist (face '((org-level-1 . 1.3)
+  ;;                 (org-level-2 . 1.25)
+  ;;                 (org-level-3 . 1.2)
+  ;;                 (org-level-4 . 1.15)
+  ;;                 (org-level-5 . 1.1)
+  ;;                 (org-level-6 . 1.1)
+  ;;                 (org-level-7 . 1.1)
+  ;;                 (org-level-8 . 1.1)))
+  ;;   (set-face-attribute (car face) nil
+  ;;       		:font my/default-variable-font
+  ;;       		:weight 'light
+  ;;       		:height (cdr face)))
 
   ;; Without this, some priorities are bolded/italicized while others are not which looks
   ;; ugly. Strangely, I can't seem to make use of all the face attributes properly - but
@@ -1674,6 +1714,22 @@ Example: \"#+TITLE\" -> \"#+title\", etc."
 
 ;; Don't cache secrets.
 (setq auth-source-do-cache nil)
+
+;;;; Kubernetes
+(use-package kubernetes
+  :bind
+  (:map global-map
+	("C-c k" . kubernetes-overview))
+  ;; By default, '?' will call `kubernetes-dispatch' which shows most of the
+  ;; available shortcuts but not all of them. Bind `which-key-show-major-mode'
+  ;; so that we can easily see all available shortcuts.
+  (:map kubernetes-mode-map
+        ("M-?" . which-key-show-major-mode))
+  :custom
+  ;; The following frequency settings effectively disables auto-refresh which
+  ;; can improve performance. Just press 'g' to refresh instead.
+  (kubernetes-poll-frequency 3600)
+  (kubernetes-redraw-frequency 3600))
 
 ;;;; Miscellaneous
 
