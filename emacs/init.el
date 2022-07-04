@@ -185,10 +185,6 @@
                 conf-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 1))))
 
-;; Override some modes which derive from the above.
-(dolist (mode '(org-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 0))))
-
 ;;;;; Themes
 
 ;; Note: I'm going to push forward with the excellenet and highly-customisable
@@ -203,7 +199,7 @@
   ;; the updates that have been made.
   :custom
   (modus-themes-italic-constructs t)
-  (modus-themes-region '(bg-only no-extend))
+  (modus-themes-region '(no-extend accented)) ; Play with bg-only as well.
   (modus-themes-mode-line '(borderless))
   (modus-themes-paren-match '(intense underline))
   (modus-themes-prompts '(bold intense))
@@ -243,9 +239,6 @@
   (interactive)
   (my/disable-all-themes)
   (load-theme theme t)
-  ;; Re-init org-mode if it's been loaded.
-  ;; Disabling for now as it's making fixed fonts variable.
-  ;; (if (fboundp 'my/org-mode-init) (my/org-mode-init))
   (message "Loaded theme: %s" theme))
 
 (defun my/load-next-theme ()
@@ -365,6 +358,7 @@
   ("="       balance-windows             "balance")
   ("u"       winner-undo                 "winner-undo" :exit t)
   ("U"       winner-redo                 "winner-redo" :exit t)
+  ("w"       window-toggle-side-windows  "toggle-side-windows" :exit t)
   ("k l"     (my/delete-window 'left)    "delete-window-left" :exit t)
   ("k r"     (my/delete-window 'right)   "delete-window-right" :exit t)
   ("k a"     (my/delete-window 'above)   "delete-window-above" :exit t)
@@ -468,13 +462,12 @@
   :straight '(corfu-mode :host github :repo "minad/corfu")
   :bind
   (:map corfu-map
-        ("<tab>"   . corfu-next)
-        ("S-<tab>" . corfu-previous)
-        ("M-d"     . corfu-doc-toggle)
-        ("M-p"     . corfu-doc-scroll-down)
-        ("M-n"     . corfu-doc-scroll-up))
+        ;; By default corfu-insert-separator is bound to M-SPC which on macOS is
+        ;; already taken by Spotlight. Instead, bind it to S-SPC - this allows us
+        ;; to enter a space character using S-SPC to keep the completion going.
+        ("S-SPC"   . corfu-insert-separator))
   :init
-  ;; Enable everywhere for now...
+  ;; Enable globally; exclusions are captured individually by `corfu-excluded-modes'.
   (global-corfu-mode)
   :custom
   ;; Needs to be set so that the Corfu post-command-hook is installed and Corfu is
@@ -484,15 +477,31 @@
   (corfu-auto-prefix 1)
   ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This setting
   ;; only applies after the minimum number of prefix characters have been entered.
-  (corfu-auto-delay 0.0)
+  (corfu-auto-delay 0)
   ;; Modes which shouldn't use cofu. Org-mode is excluded as the only completions that
   ;; get shown are org-roam note names which is pretty useless.
   (corfu-excluded-modes '(org-mode)))
 
-(setq completion-cycle-threshold 3)
-
 ;; Enable indentation + completion using the TAB key. This is required for Corfu integration.
 (setq tab-always-indent 'complete)
+
+;; Documentation shown alongside Corfu completion popups.
+(use-package corfu-doc
+  :straight '(corfu-doc-mode :host github :repo "galeo/corfu-doc")
+  :after corfu
+  :bind
+  (:map corfu-map
+        ("M-S-d"   . corfu-doc-mode)
+        ("M-d"     . corfu-doc-toggle)
+        ("M-p"     . corfu-doc-scroll-down)
+        ("M-n"     . corfu-doc-scroll-up))
+  ;; Don't enable corfu-doc-mode by default as it can be a bit much and with my smaller
+  ;; screen the popup frame sometimes shows in odd places. For now, toggle the doc pop-up
+  ;; using M-d or enable `corfu-doc-mode' using M-S-d (configured above).
+  ;; :hook (corfu-mode . corfu-doc-mode)
+  :custom
+  ;; Show doc immediately.
+  (corfu-doc-delay 0))
 
 ;; Nice icons in the margin of corfu completion popups.
 (use-package kind-icon
@@ -501,15 +510,6 @@
   (kind-icon-default-face 'corfu-default) ; To compute blended backgrounds correctly.
   :config
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
-
-;; Documentation shown alongside corfu completion popups.
-(use-package corfu-doc
-  :straight '(corfu-doc-mode :host github :repo "galeo/corfu-doc")
-  ;; Don't enable corfu-doc-mode by default as it can be a bit much and with my smaller
-  ;; screen the popup frame sometimes shows in odd places. For now, manually launch the
-  ;; doc pop-up when M-d is pressed (configured above in corfu).
-  ;:hook (corfu-mode . corfu-doc-mode)
-  )
 
 (use-package vertico
   :straight '(vertico-mode :host github :repo "minad/vertico")
@@ -522,11 +522,12 @@
   (setq history-length 25)
   (savehist-mode 1))
 
+;; Orderless configuration taken from https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
 (use-package orderless
   :init
-  (setq completion-styles '(orderless)
+  (setq completion-styles '(orderless partial-completion basic)
         completion-category-defaults nil
-        completion-category-overrides '((file (styles partial-completion)))))
+        completion-category-overrides '((file (styles . (partial-completion))))))
 
 (use-package marginalia
   :init
@@ -567,7 +568,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   :bind
   (("C-s"     . consult-line)
    ("M-s r"   . consult-ripgrep)
-   ("M-s m"   . consult-imenu)
+   ("M-s i i" . consult-imenu)       ; Local buffer imenu
+   ("M-s i o" . consult-imenu-multi) ; Open buffers imenu
    ("C-x b"   . consult-buffer)
    ("M-g M-g" . consult-goto-line)
    ("M-y"     . consult-yank-pop)
@@ -576,11 +578,9 @@ doesn't appear possible to achieve this behaviour using consult-customize."
    ("C-x r s" . consult-register-store))
 
   :init
-  ;; Replace completing-read-multiple with an enhanced version.
-  ;; (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
   ;; TODO: Review example consult config https://github.com/minad/consult
 
-  ;; Use Consult to select xref locations with preview.
+  ;; Use consult to select xref locations with preview.
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
 
@@ -630,15 +630,31 @@ doesn't appear possible to achieve this behaviour using consult-customize."
           consult--source-recent-file           ; Narrow: ?r
           consult--source-bookmark              ; Narrow: ?m
           consult-project-extra--source-project ; Narrow: ?j
-          )))
+          ))
+
+  ;; Add `consult-imenu' groupings for Rust. These groupings originate from the LSP specification:
+  ;; https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#symbolKind.
+  ;; The lsp-types crate defines the SymbolKind struct; rust-analyzer uses this crate to expose the set
+  ;; of symbols that it supports. lsp-mode, in turn, defines the `lsp-imenu-symbol-kinds' variable which
+  ;; maps each symbol's integer value to the group names (e.g., "Type Parameters") used below.
+  (require 'consult-imenu)
+  (add-to-list 'consult-imenu-config
+               '(rustic-mode
+                 :types ((?f "Functions")
+                         (?o "Objects")
+                         (?e "Enums")
+                         (?E "Enum Members")
+                         (?s "Structs")
+                         (?S "Fields")
+                         (?m "Modules")
+                         (?t "Type Parameters")
+                         (?c "Constants")))))
 
 (use-package embark
   ;; Load after xref so that the overidden keybinding below takes effect.
   :after xref
   :bind
-  (("C-." . embark-act)
-   ;; ("M-." . embark-dwim)
-   ))
+  (("C-." . embark-act)))
 
 (use-package embark-consult
   :after (embark consult))
@@ -697,7 +713,10 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 
 (use-package expand-region
   :bind (("C-=" . er/expand-region)
-         ("C-+" . er/mark-outside-pairs)))
+         ("C-+" . er/mark-outside-pairs))
+  :custom
+  (expand-region-fast-keys-enabled nil)
+  (expand-region-autocopy-register "e"))
 
 ;;;; File System
 
@@ -849,17 +868,6 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 
 ;;;;;; Language Server Support
 
-(defun my/if-essential-advice (f &rest args)
-  "Around advice that invokes F with ARGS if `non-essential' is non-nil."
-  (message "non-essential is %s" non-essential)
-  (unless non-essential
-    (apply f args)))
-
-;; Advise lsp-deferred and lsp so that they only run if non-essential is non-nil.
-;; This prevents lsp-mode from starting duing consult previews.
-(advice-add 'lsp :around #'my/if-essential-advice)
-(advice-add 'lsp-deferred :around #'my/if-essential-advice)
-
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :hook
@@ -881,6 +889,23 @@ doesn't appear possible to achieve this behaviour using consult-customize."
         ("C-c l c s" . (lambda () (interactive) (consult-lsp-file-symbols t)))
         ;; Still trying to figure out the benefit of consult-lsp-symbols.
         ("C-c l c S" . consult-lsp-symbols))
+  :init
+  (defun my/if-essential-advice (f &rest args)
+    "Around advice that invokes F with ARGS if `non-essential' is non-nil."
+    (unless non-essential
+      (apply f args)))
+
+  ;; Advise lsp-deferred and lsp so that they only run if non-essential is non-nil.
+  ;; This prevents lsp-mode from starting during consult previews.
+  (advice-add 'lsp :around #'my/if-essential-advice)
+  (advice-add 'lsp-deferred :around #'my/if-essential-advice)
+
+  ;; See https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
+  (defun my/lsp-mode-init-completion ()
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(orderless)))
+  :hook
+  (lsp-completion-mode . my/lsp-mode-init-completion)
   :custom
   (lsp-log-io nil)
   (lsp-keymap-prefix "C-c l")
@@ -890,6 +915,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   ;; Recommended setting as I'm using corfu instead of company for completion.
   ;; See: https://github.com/minad/corfu/issues/71#issuecomment-977693717
   (lsp-completion-provider :none)
+
+  (lsp-imenu-index-function 'lsp-imenu-create-categorized-index)
 
   ;; When lsp-eldoc-render-all is set to nil, moving point to a function call should result
   ;; in a one line function signature being displayed in the minibuffer. There is an issue
@@ -1385,24 +1412,21 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 (defvar my/gtd-dir "~/Development/home/gtd")
 (defvar my/pkm-dir "~/Development/home/pkm")
 
+;; TODO: Investigate replacing this with https://github.com/minad/org-modern
+;; See also: https://protesilaos.com/emacs/dotemacs#h:a6b1bb67-b62b-4018-999a-90cbd0bdceb5
+;; See also: https://github.com/daviwil/dotfiles/blob/master/Emacs.org#org-mode
 (defun my/org-mode-init ()
-  "Personal `org-mode` configuration.
-
-This function is intended to be attached to `org-mode-hook`.  While some of
-these settings typically only need to be configured once when Emacs starts
-\(e.g., font settings\), they are configured each time `org-mode` starts so
-that they can be easily refreshed after global changes, such as switching the
-color theme."
-
+  "Org-mode init function that should be attached to `org-mode-hook`."
   (interactive)
 
-  ;;; Indentation and page structure configuration.
-
+  ;;; Org-mode buffer local settings.
   (org-indent-mode 1)
+  (auto-fill-mode 0)
   (visual-line-mode 1)
-  (setq left-margin-width 2)
-  (setq right-margin-width 2)
   (variable-pitch-mode 1)
+  (display-line-numbers-mode 0)
+  (setq-local left-margin-width 2
+              right-margin-width 2)
 
   ;;; Font configuration.
 
@@ -1471,6 +1495,7 @@ color theme."
   (org-agenda-mode . (lambda ()
 		       ;; Override '?' key to show helpful which-key display.
 		       (define-key org-agenda-mode-map "?" 'which-key-show-major-mode)))
+
   :bind
   ;; Below produces errors that look like org-agenda-mode-map isn't in scope sometimes.
   ;; Unsure why this doesn't work when the mapping for org-mode-map does work. The above lambda
@@ -1479,6 +1504,7 @@ color theme."
   ;; (("?" . which-key-show-full-major-mode)
   (:map org-mode-map
         ("C-c C-S-l" . org-cliplink))
+
   :config
   ;; Add org (typically agenda-related) actions here that require org buffers be saved.
   (advice-add 'org-refile          :after 'org-save-all-org-buffers)
@@ -1489,6 +1515,7 @@ color theme."
   ;; Make it easier to create org-babel code blocks.
   (require 'org-tempo)
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+
   :custom
   (org-priority-default org-priority-lowest)
   (org-agenda-cmp-user-defined 'my/org-agenda-cmp-todo)
@@ -1639,20 +1666,6 @@ color theme."
   :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
-
-(defun my/org-keywords-to-lower ()
-  "Convert Org keywords to lower case.
-
-Example: \"#+TITLE\" -> \"#+title\", etc."
-  (interactive)
-  (save-excursion
-    (goto-char (point-min))
-    (let ((case-fold-search nil)
-          (count 0))
-      (while (re-search-forward "\\(?1:#\\+[A-Z_]+\\(?:_[[:alpha:]]+\\)*\\)\\(?:[ :=~’”]\\|$\\)" nil :noerror)
-        (setq count (1+ count))
-        (replace-match (downcase (match-string-no-properties 1)) :fixedcase nil nil 1))
-      (message "Lower-cased %d matches" count))))
 
 (use-package org-roam
   :init
