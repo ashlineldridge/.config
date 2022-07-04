@@ -1,0 +1,62 @@
+1Password.app
+AWS VPN Client
+Alacritty.app
+Alfred 4.app
+Amazon Chime.app
+CarbonBlack
+Confer.app
+Discord.app
+Docker.app
+Dropbox.app
+Emacs.app
+Firefox.app
+Flux.app
+GlobalProtect.app
+Google Chrome.app
+Hidden Bar.app
+Keynote.app
+Kindle.app
+LastPass.app
+Lens.app
+MacDown.app
+Microsoft Excel.app
+Microsoft OneNote.app
+Microsoft Outlook.app
+Microsoft PowerPoint.app
+Microsoft Teams.app
+Microsoft Word.app
+Minecraft.app
+MountSEEKFS.app
+Netskope Client.app
+NoMAD.app
+Notion.app
+Numbers.app
+OneDrive.app
+OpenEmu.app
+OpenVPN Connect
+OpenVPN Connect.app
+Pages.app
+PyCharm CE.app
+PyCharm.app
+Rancher Desktop.app
+Rectangle.app
+Remove Netskope Client.app
+Safari.app
+Self Service.app
+Skype for Business.app
+Slack.app
+Spectacle.app
+Spotify.app
+Time Out.app
+Tunnelblick.app
+Utilities
+VLC.app
+VMware Carbon Black Cloud
+VirtualBox.app
+Viscosity.app
+WhatsApp.app
+Xcode.app
+eul.app
+iTerm.app
+minecraftpe.app
+zoom.us.app

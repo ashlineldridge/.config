@@ -1,4 +1,8 @@
-EMACS_VERSION ?= 28
+EMACS_VERSION ?= 29
+
+go_bin_dir    := ~/Development/go/bin
+cargo_bin_dir := ~/.cargo/bin
+apps_dir      := /Applications
 
 no_color := \033[0m
 ok_color := \033[38;5;74m
@@ -12,12 +16,23 @@ check_defined = \
 	$(if $(value $1),,$(error Error: Variable $1 is required but undefined))
 
 .PHONY: bootstrap
-bootstrap: brew-install npm-install
+bootstrap: brew-install npm-install basic-init
 	@$(call banner,Bootstrapping config)
 	@ln -sf ~/.config/zsh/lib/env.zsh ~/.zshenv
 	@ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
 	@chsh -s /usr/local/bin/zsh
 	@echo Done.
+
+.PHONY: basic-init
+basic-init:
+	@$(call banner,Performing basic initialisation procedure)
+	@ln -sf ~/.config/zsh/lib/env.zsh ~/.zshenv
+	@ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
+	@chsh -s /usr/local/bin/zsh
+	@echo Done.
+
+.PHONY: dump-all
+dump-all: brew-dump npm-dump go-dump cargo-dump apps-dump
 
 .PHONY: brew-dump
 brew-dump:
@@ -32,20 +47,33 @@ brew-install:
 .PHONY: npm-dump
 npm-dump:
 	@$(call banner,Dumping NPM global packages)
-	@npm list -g --depth=0 --json > npm/global-packages.json
+	@npm list --location=global --depth=0 --json > npm/global-packages.json
 
 .PHONY: npm-install
 npm-install:
 	@$(call banner,Installing NPM global packages)
 	@for pkg in $$(jq -r '.dependencies | keys[]' < npm/global-packages.json); do \
 		printf "\n===> Installing %s\n" "$${pkg}"; \
-		npm install -g $$pkg; \
+		npm install --location=global $$pkg; \
 	done
 
-.PHONY: uninstall-emacs
-uninstall-emacs:
-	@$(call banner,Uninstalling Emacs version $(EMACS_VERSION))
-	@brew uninstall emacs-plus@$(EMACS_VERSION)
+.PHONY: go-dump
+go-dump:
+	@$(call banner,Dumping Go binaries)
+	@mkdir -p go
+	@ls -1 $(go_bin_dir) > go/bin.txt
+
+.PHONY: cargo-dump
+cargo-dump:
+	@$(call banner,Dumping Cargo binaries)
+	@mkdir -p cargo
+	@ls -1 $(cargo_bin_dir) > cargo/bin.txt
+
+.PHONY: apps-dump
+apps-dump:
+	@$(call banner,Dumping installed macOS applications)
+	@mkdir -p mac
+	@ls -1 $(apps_dir) > mac/apps.txt
 
 .PHONY: install-emacs
 install-emacs:
@@ -54,13 +82,7 @@ install-emacs:
 		--with-native-comp \
 		--with-modern-black-gnu-head-icon
 
-## Function for upgrading yabai
-## Taken from: https://github.com/koekeishiya/yabai/wiki
-.PHONY: upgrade-yabai
-upgrade-yabai:
-	@$(call banner,Upgrading yabai)
-	brew services stop yabai
-	brew upgrade yabai
-	sudo yabai --uninstall-sa
-	sudo yabai --install-sa
-	brew services start yabai
+.PHONY: uninstall-emacs
+uninstall-emacs:
+	@$(call banner,Uninstalling Emacs version $(EMACS_VERSION))
+	@brew uninstall emacs-plus@$(EMACS_VERSION)

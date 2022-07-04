@@ -194,6 +194,10 @@
       "keyCode" : 18,
       "modifierFlags" : 786432
     },
+    "firstThreeFourths" : {
+      "keyCode" : 21,
+      "modifierFlags" : 786432
+    },
     "firstTwoThirds" : {
       "keyCode" : 20,
       "modifierFlags" : 786432
@@ -204,6 +208,10 @@
     },
     "lastThird" : {
       "keyCode" : 29,
+      "modifierFlags" : 786432
+    },
+    "lastThreeFourths" : {
+      "keyCode" : 26,
       "modifierFlags" : 786432
     },
     "lastTwoThirds" : {
