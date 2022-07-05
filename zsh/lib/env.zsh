@@ -41,14 +41,14 @@ export LC_ALL="en_AU.UTF-8"
 export GREP_OPTIONS="--color=auto"
 
 # Home directories
-export DEVELOPMENT_HOME="${HOME}/Development"
+export DEVELOPMENT_HOME="${HOME}/dev"
 
 # Golang variables
 export GOPATH="${DEVELOPMENT_HOME}/go"
-export GOROOT="/usr/local/opt/go/libexec"
+export GOROOT="/opt/homebrew/opt/go/libexec"
 
 # Path
-export PATH="${HOME}/bin:/usr/local/bin:/usr/local/opt/curl/bin:/usr/local/opt/coreutils/libexec/gnubin:/usr/local/opt/findutils/libexec/gnubin:/usr/local/opt/gettext/bin:/usr/local/opt/llvm/bin:/usr/local/kubebuilder/bin:${GOROOT}/bin:${GOPATH}/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.rd/bin:${HOME}/.local/bin"
+export PATH="${HOME}/bin:/opt/homebrew/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/opt/coreutils/libexec/gnubin:/opt/homebrew/opt/findutils/libexec/gnubin:/opt/homebrew/opt/gettext/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.rd/bin:${HOME}/.local/bin"
 
 # Kubernetes
 export KUBECONFIG="${HOME}/.kube/config"
@@ -56,6 +56,6 @@ export KUBECONFIG="${HOME}/.kube/config"
 # Docker
 export DOCKER_SCAN_SUGGEST="false"
 
-# Variables used by Bazel's wrapped_clang executable that is embedded in generated compile_commands.json files
+# Variables used by tooling that depend on Xcode.
 export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
 export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"

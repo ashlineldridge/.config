@@ -9,7 +9,7 @@ User aeldridge@fastmail.com
 PassCmd "pass aeldridge@fastmail.com"
 SSLType IMAPS
 SSLVersions TLSv1.2
-CertificateFile /usr/local/etc/openssl@1.1/cert.pem
+CertificateFile /opt/homebrew/etc/openssl@1.1/cert.pem
 
 IMAPStore fastmail-remote
 Account fastmail
@@ -42,7 +42,7 @@ PassCmd "pass ashlin.eldridge@gmail.com"
 AuthMechs PLAIN
 SSLType IMAPS
 SSLVersions TLSv1.2
-CertificateFile /usr/local/etc/openssl@1.1/cert.pem
+CertificateFile /opt/homebrew/etc/openssl@1.1/cert.pem
 
 IMAPStore gmail-remote
 Account gmail

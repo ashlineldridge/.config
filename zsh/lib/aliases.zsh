@@ -1,7 +1,7 @@
 # Shortcuts
-alias dev="cd ~/Development"
-alias devh="cd ~/Development/home"
-alias devw="cd ~/Development/work"
+alias dev="cd ~/dev"
+alias devh="cd ~/dev/home"
+alias devw="cd ~/dev/work"
 alias devc="cd ${XDG_CONFIG_HOME}"
 alias devg="cd ${GOPATH}"
 alias g="git"
@@ -60,13 +60,13 @@ alias kctx=kubectx
 alias kns=kubens
 alias h=helm
 alias kb=kubebuilder
-alias prom='prometheus --config.file=/usr/local/etc/prometheus.yml'
-alias am='alertmanager --config.file=/usr/local/etc/alertmanager.yml'
+alias prom='prometheus --config.file=/opt/homebrew/etc/prometheus.yml'
+alias am='alertmanager --config.file=/opt/homebrew/etc/alertmanager.yml'
 # Following alias starts Grafana in the same way that it gets started when
 # running `brew services start grafana` (recommended way of running Grafana
 # on macOS: https://grafana.com/docs/grafana/latest/installation/mac/). See
-# /usr/local/opt/grafana/homebrew.grafana.service.
-alias grafana='grafana-server --config=/usr/local/etc/grafana/grafana.ini --homepath /usr/local/share/grafana --packaging=brew cfg:default.paths.logs=/usr/local/var/log/grafana cfg:default.paths.data=/usr/local/var/lib/grafana cfg:default.paths.plugins=/usr/local/var/lib/grafana/plugins'
+# /opt/homebrew/opt/grafana/homebrew.grafana.service.
+alias grafana='grafana-server --config=/opt/homebrew/etc/grafana/grafana.ini --homepath /opt/homebrew/share/grafana --packaging=brew cfg:default.paths.logs=/opt/homebrew/var/log/grafana cfg:default.paths.data=/opt/homebrew/var/lib/grafana cfg:default.paths.plugins=/opt/homebrew/var/lib/grafana/plugins'
 
 # Emacs
 alias e=emacs

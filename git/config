@@ -155,7 +155,7 @@
 [user]
 	name = Ashlin Eldridge
 	email = ashlineldridge@users.noreply.github.com
-	signingkey = AEBD61C2AF32180F
+	signingkey = 99B89D224560CD64
 [credential]
 	helper = osxkeychain
 [pull]

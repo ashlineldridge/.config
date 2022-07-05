@@ -728,8 +728,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   :custom
   (project-list-file (expand-file-name "projects" my/emacs-cache-dir))
   :config
-  (project-remember-projects-under "~/Development/home")
-  (project-remember-projects-under "~/Development/work"))
+  (project-remember-projects-under "~/dev/home")
+  (project-remember-projects-under "~/dev/work"))
 
 (use-package project-x
   :straight '(project-x-mode-mode :host github :repo "karthink/project-x")
@@ -748,8 +748,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   "Refresh list of known projects."
   (interactive)
   (project-forget-zombie-projects)
-  (project-remember-projects-under "~/Development/home")
-  (project-remember-projects-under "~/Development/work"))
+  (project-remember-projects-under "~/dev/home")
+  (project-remember-projects-under "~/dev/work"))
 
 ;;;;; File Browsing
 
@@ -1013,7 +1013,7 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   (dap-tooltip-mode 1)
   :custom
   (dap-print-io t)
-  (dap-lldb-debug-program '("/usr/local/opt/llvm/bin/lldb-vscode")))
+  (dap-lldb-debug-program '("/opt/homebrew/opt/llvm/bin/lldb-vscode")))
 
 ;;;;;; Flycheck
 
@@ -1251,7 +1251,7 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   ;; The mu installation comes prepackaged with its Lisp files and it seems better to use these
   ;; rather than creating the possibility for a version mismatch between an mu4e package pulled
   ;; from GitHub or Melpa and the mu binary. See https://github.com/raxod502/straight.el/issues/491.
-  (:local-repo "/usr/local/opt/mu/share/emacs/site-lisp/mu/mu4e" :pre-build ())
+  (:local-repo "/opt/homebrew/opt/mu/share/emacs/site-lisp/mu/mu4e" :pre-build ())
   :bind
   ;; Take back '?' for which-key and use '@' for marking unread.
   (:map mu4e-headers-mode-map
@@ -1409,8 +1409,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 
 ;;;; Org Mode
 
-(defvar my/gtd-dir "~/Development/home/gtd")
-(defvar my/pkm-dir "~/Development/home/pkm")
+(defvar my/gtd-dir "~/dev/home/gtd")
+(defvar my/pkm-dir "~/dev/home/pkm")
 
 ;; TODO: Investigate replacing this with https://github.com/minad/org-modern
 ;; See also: https://protesilaos.com/emacs/dotemacs#h:a6b1bb67-b62b-4018-999a-90cbd0bdceb5

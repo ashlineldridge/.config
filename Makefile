@@ -1,6 +1,7 @@
+SHELL         := /bin/zsh
 EMACS_VERSION ?= 29
 
-go_bin_dir    := ~/Development/go/bin
+go_bin_dir    := ~/dev/go/bin
 cargo_bin_dir := ~/.cargo/bin
 apps_dir      := /Applications
 
@@ -17,18 +18,15 @@ check_defined = \
 
 .PHONY: bootstrap
 bootstrap: brew-install npm-install basic-init
-	@$(call banner,Bootstrapping config)
-	@ln -sf ~/.config/zsh/lib/env.zsh ~/.zshenv
-	@ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
-	@chsh -s /usr/local/bin/zsh
-	@echo Done.
+	@$(call banner,Bootstrap complete)
 
 .PHONY: basic-init
 basic-init:
 	@$(call banner,Performing basic initialisation procedure)
 	@ln -sf ~/.config/zsh/lib/env.zsh ~/.zshenv
+	@mkdir -p ~/.local/share/gnupg
 	@ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
-	@chsh -s /usr/local/bin/zsh
+	@echo sudo dscl . -create /Users/$(USER) UserShell /opt/homebrew/bin/zsh
 	@echo Done.
 
 .PHONY: dump-all
@@ -75,14 +73,14 @@ apps-dump:
 	@mkdir -p mac
 	@ls -1 $(apps_dir) > mac/apps.txt
 
-.PHONY: install-emacs
-install-emacs:
+.PHONY: emacs-install
+emacs-install:
 	@$(call banner,Installing Emacs version $(EMACS_VERSION))
-	@brew install emacs-plus@$(EMACS_VERSION) \
+	brew install emacs-plus@$(EMACS_VERSION) \
 		--with-native-comp \
 		--with-modern-black-gnu-head-icon
 
-.PHONY: uninstall-emacs
-uninstall-emacs:
+.PHONY: emacs-uninstall
+emacs-uninstall:
 	@$(call banner,Uninstalling Emacs version $(EMACS_VERSION))
 	@brew uninstall emacs-plus@$(EMACS_VERSION)
