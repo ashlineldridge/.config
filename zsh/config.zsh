@@ -13,7 +13,8 @@ libs=(
   functions.zsh
   prompt.zsh
   vterm.zsh
-  fzf.zsh
+  completion.zsh
+  shortcuts.zsh
   secrets.zsh
 )
 
@@ -24,21 +25,7 @@ for f in "${libs[@]}"; do
   lib="${XDG_CONFIG_HOME}/zsh/lib/${f}"
   if [[ ! -f "${lib}" ]]; then
     echo >&1 "Expected zsh lib file ${lib} not found"
-    # exit 1
+    exit 1
   fi
   source "${lib}"
 done
-
-# Shortcuts
-bindkey "^[b" backward-word      # CMD+b
-bindkey "^[f" forward-word       # CMD+f
-bindkey "^u" backward-kill-line  # CTL+u
-
-# Enables completion system for sourced scripts below
-autoload -U +X compinit; compinit
-
-#
-compinit -d "${XDG_CACHE_HOME}/zsh/zcompdump-${ZSH_VERSION}"
-
-# Enable broot shell integration
-source /Users/aeldridge/.config/broot/launcher/bash/
