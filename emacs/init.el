@@ -1518,6 +1518,7 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 
   :custom
   (org-priority-default org-priority-lowest)
+  (org-use-fast-todo-selection 'expert)
   (org-agenda-cmp-user-defined 'my/org-agenda-cmp-todo)
   (org-agenda-custom-commands
    `(("d" . "Dashboards") ;; Creates command prefix "d".
