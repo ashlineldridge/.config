@@ -59,3 +59,6 @@ export DOCKER_SCAN_SUGGEST="false"
 # Variables used by tooling that depend on Xcode.
 export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
 export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
+
+# Node Version Manager installation directory (see lib/nvm.zsh).
+export NVM_DIR="/opt/share/nvm"
