@@ -32,9 +32,14 @@ function macdown() {
   "$(mdfind kMDItemCFBundleIdentifier=com.uranusjr.macdown | head -n1)/Contents/SharedSupport/bin/macdown" $@
 }
 
+# Installs the latest rust-analyzer into ~/bin which overrides the one installed by Homebrew.
+# Sometimes useful if I perhaps temporarily want a different version than the one managed by Homebrew.
 function update_rust_analyzer() {
+  # Use URL below to switch to nightly.
+  # https://github.com/rust-lang/rust-analyzer/releases/download/nightly/rust-analyzer-aarch64-apple-darwin.gz
+
   curl -Lsf \
-    https://github.com/rust-analyzer/rust-analyzer/releases/latest/download/rust-analyzer-x86_64-apple-darwin.gz \
+    https://github.com/rust-lang/rust-analyzer/releases/latest/download/rust-analyzer-aarch64-apple-darwin.gz \
     | gunzip -c - > ~/bin/rust-analyzer
   chmod +x ~/bin/rust-analyzer
   rust-analyzer --version
