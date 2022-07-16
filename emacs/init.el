@@ -46,6 +46,11 @@
 ;; Save interrupted session records under XDG_DATA_HOME.
 (setq auto-save-list-file-prefix (expand-file-name "auto-save-list/" my/emacs-cache-dir))
 
+;; I don't want `custom-set-variables'-managed configuration as I want to do it properly
+;; within the structure of this file. So here we tell Emacs to save custom settings into
+;; a separate file which we then never load.
+(setq custom-file (expand-file-name "custom.el" my/emacs-config-dir))
+
 ;; Revert Dired and other buffers.
 (setq global-auto-revert-non-file-buffers t)
 
@@ -1166,6 +1171,10 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 	 ("\\.yaml\\'" . yaml-mode))
   :hook ((yaml-mode . (lambda () (define-key yaml-mode-map "\C-m" 'newline-and-indent)))))
 
+;;;;;; Jsonnet
+
+(use-package jsonnet-mode)
+
 ;;;;;; Lisp
 
 (use-package rainbow-delimiters
@@ -1506,19 +1515,14 @@ doesn't appear possible to achieve this behaviour using consult-customize."
         ("C-c C-S-l" . org-cliplink))
 
   :config
-  ;; Add org (typically agenda-related) actions here that require org buffers be saved.
-  (advice-add 'org-refile          :after 'org-save-all-org-buffers)
-  (advice-add 'org-todo            :after 'org-save-all-org-buffers)
-  (advice-add 'org-agenda-set-tags :after 'org-save-all-org-buffers)
-  (advice-add 'org-agenda-quit     :before 'org-save-all-org-buffers)
+  ;; Always save all org buffers before quitting the agenda (press 's' to save immediately).
+  (advice-add 'org-agenda-quit :before 'org-save-all-org-buffers)
 
   ;; Make it easier to create org-babel code blocks.
   (require 'org-tempo)
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 
   :custom
-  (org-priority-default org-priority-lowest)
-  (org-use-fast-todo-selection 'expert)
   (org-agenda-cmp-user-defined 'my/org-agenda-cmp-todo)
   (org-agenda-custom-commands
    `(("d" . "Dashboards") ;; Creates command prefix "d".
@@ -1542,11 +1546,7 @@ doesn't appear possible to achieve this behaviour using consult-customize."
          (org-agenda-files '(,(concat my/gtd-dir "/work.org")))
          (org-agenda-sorting-strategy '(user-defined-up priority-down))))))
      ("dp" "Personal Tasks"
-      ((agenda
-        ""
-        ((org-agenda-overriding-header "Weekly Agenda")
-         (org-agenda-span 'week)))
-       (todo
+      ((todo
 	"PROG"
         ((org-agenda-overriding-header "Progress")
 	 (org-agenda-files '(,(concat my/gtd-dir "/personal.org")))
@@ -1565,14 +1565,14 @@ doesn't appear possible to achieve this behaviour using consult-customize."
         "TODO"
         ((org-agenda-overriding-header "Backlog")
 	 (org-agenda-files '(,(concat my/gtd-dir "/personal.org")))
-	 (org-agenda-sorting-strategy '(priority-down)))))
+	 (org-agenda-sorting-strategy '(priority-down))))
+       (alltodo
+	""
+	((org-agenda-overriding-header "Inbox")
+	 (org-agenda-files '(,(concat my/gtd-dir "/inbox.org"))))))
       ((org-agenda-tag-filter-preset '("-@work"))))
      ("dw" "Work Tasks"
-      ((agenda
-        ""
-        ((org-agenda-overriding-header "Weekly Agenda")
-         (org-agenda-span 'week)))
-       (todo
+      ((todo
 	"PROG"
         ((org-agenda-overriding-header "Progress")
 	 (org-agenda-files '(,(concat my/gtd-dir "/work.org")))
@@ -1591,7 +1591,11 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 	"TODO"
         ((org-agenda-overriding-header "Backlog")
 	 (org-agenda-files '(,(concat my/gtd-dir "/work.org")))
-	 (org-agenda-sorting-strategy '(priority-down)))))
+	 (org-agenda-sorting-strategy '(priority-down))))
+       (alltodo
+	""
+	((org-agenda-overriding-header "Inbox")
+	 (org-agenda-files '(,(concat my/gtd-dir "/inbox.org"))))))
       ((org-agenda-tag-filter-preset '("-@personal"))))))
   (org-agenda-files
    (list
@@ -1608,6 +1612,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   (org-agenda-span 'week)
   (org-agenda-start-with-log-mode t)
   (org-agenda-window-setup 'current-window)
+  (org-blank-before-new-entry '((heading . nil)
+                                (plain-list-item . nil)))
   (org-capture-templates `(("i" "Inbox" entry
                             (file+headline ,(concat my/gtd-dir "/inbox.org") "Inbox")
 			    "* TODO %i%?")
@@ -1641,6 +1647,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   ;; to be quite a bit of custom code.
   (org-log-into-drawer nil)
   (org-log-states-order-reversed nil) ; Make newest last
+  (org-outline-path-complete-in-steps nil)
+  (org-priority-default org-priority-lowest)
   (org-refile-targets
    `((,(concat my/gtd-dir "/archive.org") :level . 2)
      (,(concat my/gtd-dir "/inbox.org") :level . 1)
@@ -1651,7 +1659,6 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   ;; The following two settings are required to make org-refile show the full heading path
   ;; to subheading refile candidates. Took a while to get this working properly.
   (org-refile-use-outline-path t)
-  (org-outline-path-complete-in-steps nil)
   (org-tags-column 0)
   (org-todo-keywords
    `((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "HOLD(h)" "|" "DONE(d)")))
@@ -1661,7 +1668,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
      ("NEXT" . (:foreground "hot pink" :weight bold))
      ("PROG" . (:foreground "CadetBlue1" :weight bold))
      ("HOLD" . (:foreground "orange1" :weight bold))
-     ("DONE" . (:foreground "orange red" :weight bold)))))
+     ("DONE" . (:foreground "orange red" :weight bold))))
+  (org-use-fast-todo-selection 'expert))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
@@ -1669,20 +1677,25 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (use-package org-roam
-  :init
-  (setq org-roam-v2-ack t)
   :bind
   (("C-c n l" . org-roam-buffer-toggle)
    ("C-c n f" . org-roam-node-find)
    ("C-c n g" . org-roam-graph)
    ("C-c n i" . org-roam-node-insert)
    ("C-c n c" . org-roam-capture)
-   ("C-c n t" . org-roam-tag-add))
-   ;; Dailies
-   ;; ("C-c n j" . org-roam-dailies-capture-today))
+   ("C-c n t" . org-roam-tag-add)
+   ;; Org-roam daily jounal keybindings.
+   ("C-c j ." . org-roam-dailies-find-directory)
+   ("C-c j j" . org-roam-dailies-capture-today)
+   ("C-c j J" . org-roam-dailies-goto-today)
+   ("C-c j y" . org-roam-dailies-capture-yesterday)
+   ("C-c j Y" . org-roam-dailies-goto-yesterday)
+   ("C-c j d" . org-roam-dailies-capture-date)
+   ("C-c j D" . org-roam-dailies-goto-date))
   :config
-  (org-roam-setup)
   (require 'org-roam-protocol)
+  (require 'org-roam-dailies)
+  (org-roam-db-autosync-mode 1)
   :custom
   (org-roam-directory (concat my/pkm-dir "/notes"))
   (org-roam-db-location (concat my/xdg-cache-dir "/emacs/org-roam.db"))
@@ -1702,9 +1715,15 @@ doesn't appear possible to achieve this behaviour using consult-customize."
         "- Use org-roam-node-insert (C-c n i) here\n\n"
         "** Web Links\n"
         "- Use org-insert-link (C-c C-l), org-cliplink (C-c C-S-l), or paste URL here\n")
-      :if-new (file "%<%Y%m%d%H%M%S>-${slug}.org")
+      :target (file "%<%Y%m%d%H%M%S>-${slug}.org")
       :empty-lines-before 1
-      :unnarrowed t))))
+      :unnarrowed t)))
+  (org-roam-dailies-directory "../journal")
+  (org-roam-dailies-capture-templates
+   `(("d" "default" entry "* %?"
+      :target (file+head+olp "%<%Y-%m-%d>.org"
+                             "#+title: %<%Y-%m-%d>\n"
+                             ("Today"))))))
 
 (use-package org-cliplink)
 
