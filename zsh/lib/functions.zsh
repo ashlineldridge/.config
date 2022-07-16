@@ -1,5 +1,5 @@
 # AWS auths using the credentials in the specified file
-function awsauth_with() {
+function aws_auth_with() {
   if [ $# -ne 1 ]; then
     printf "You must specify the AWS credentials CSV file.\n"
     return
@@ -17,6 +17,32 @@ function awsauth_with() {
   export AWS_SECURITY_TOKEN=
   export AWS_ROLE_IDENTIFIER=
   printf "Done.\n"
+}
+
+# Uses https://github.com/remind101/assume-role to assume the AWS IAM role
+# that corresponds to the specified profile name within the context of the
+# current shell. If no argument is specified, the function prints the profile
+# name associated with the currently assumed role.
+function aws_assume_role() {
+  if [[ $# == 0 ]]; then
+    echo "Current role: ${ASSUMED_ROLE}"
+  else
+    eval $(command assume-role $@)
+    export AWS_DEFAULT_REGION=ap-southeast-2
+    printf "Assumed role: ${ASSUMED_ROLE}"
+  fi
+}
+
+# Clears any assumed role environment credentials.
+function aws_clear_role() {
+  local role="${ASSUMED_ROLE}"
+  unset AWS_ACCESS_KEY_ID
+  unset AWS_SECRET_ACCESS_KEY
+  unset AWS_SESSION_TOKEN
+  unset AWS_SECURITY_TOKEN
+  unset AWS_DEFAULT_REGION
+  unset ASSUMED_ROLE
+  printf "Cleared role: ${role}"
 }
 
 # Useful for decoding JSON that has been gzipped and base-64 encoded
