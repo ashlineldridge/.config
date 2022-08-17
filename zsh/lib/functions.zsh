@@ -70,3 +70,8 @@ function update_rust_analyzer() {
   chmod +x ~/bin/rust-analyzer
   rust-analyzer --version
 }
+
+# Show all processes listening on open ports.
+function open_ports() {
+  sudo lsof -iTCP -sTCP:LISTEN -n -P
+}

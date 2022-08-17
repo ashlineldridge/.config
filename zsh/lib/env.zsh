@@ -19,7 +19,8 @@ export GPG_TTY="$(tty)"
 export PASSWORD_STORE_DIR="${XDG_DATA_HOME}/pass"
 
 # Force Terraform to use XDG
-export TF_CLI_CONFIG_FILE="${XDG_CONFIG_HOME}/terraform/config"
+# Commented out for now because it breaks `terraform login`.
+# export TF_CLI_CONFIG_FILE="${XDG_CONFIG_HOME}/terraform/config"
 
 # Force Starship to use XDG
 export STARSHIP_CONFIG="${XDG_CONFIG_HOME}"/starship/config.toml
@@ -48,7 +49,7 @@ export GOPATH="${DEVELOPMENT_HOME}/go"
 export GOROOT="/opt/homebrew/opt/go/libexec"
 
 # Path
-export PATH="${HOME}/bin:/opt/homebrew/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/opt/coreutils/libexec/gnubin:/opt/homebrew/opt/findutils/libexec/gnubin:/opt/homebrew/opt/gettext/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.rd/bin:${HOME}/.local/bin"
+export PATH="${HOME}/bin:/opt/homebrew/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/opt/coreutils/libexec/gnubin:/opt/homebrew/opt/findutils/libexec/gnubin:/opt/homebrew/opt/gettext/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.rd/bin:${HOME}/.krew/bin:${HOME}/.local/bin"
 
 # Kubernetes
 export KUBECONFIG="${HOME}/.kube/config"

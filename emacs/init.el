@@ -438,7 +438,8 @@
   :init (when (memq window-system '(mac ns x))
 	  (setq exec-path-from-shell-variables
 		'("PATH" "MANPATH" "XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME"
-		  "SHELL" "GNUPGHOME" "PASSWORD_STORE_DIR" "DEVELOPER_DIR" "SDKROOT"))
+		  "SHELL" "GNUPGHOME" "PASSWORD_STORE_DIR" "DEVELOPER_DIR" "SDKROOT"
+                  "GOPATH" "GOROOT"))
 	  (setq exec-path-from-shell-arguments nil)
 	  (exec-path-from-shell-initialize)))
 
@@ -516,6 +517,13 @@
   :config
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
+;; Vertico provides the vertical completion minibuffer and Orderless provides the
+;; "completion style". Some commands that make use of Vertico's selection list also
+;; allow a new distinct value to be entered. E.g., `org-roam-node-insert' will create
+;; a new note when given a new note name. However, if the new value matches part of
+;; an existing value in the selection list (which is more likely when using Orderless)
+;; then you will need to press M-RET which calls `vertico-exit-input' to cancel the
+;; completion and use the new value.
 (use-package vertico
   :straight '(vertico-mode :host github :repo "minad/vertico")
   :init
@@ -849,8 +857,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 ;;;;; Code Templating
 
 (use-package yasnippet
-  :hook
-  (prog-mode . yas-minor-mode)
+  :hook ((text-mode . yas-minor-mode)
+         (prog-mode . yas-minor-mode))
   :init
   ;; Remove default key bindings which are crap.
   (setq yas-minor-mode-map (make-sparse-keymap))
