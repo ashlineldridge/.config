@@ -4,6 +4,7 @@ alias devh="cd ~/dev/home"
 alias devw="cd ~/dev/work"
 alias devc="cd ${XDG_CONFIG_HOME}"
 alias devg="cd ${GOPATH}"
+alias dev0="cd ~/dev/home/00rg"
 alias g="git"
 alias j="jobs"
 
@@ -60,6 +61,7 @@ alias kctx=kubectx
 alias kns=kubens
 alias h=helm
 alias kb=kubebuilder
+alias ku=kustomize
 alias prom='prometheus --config.file=/opt/homebrew/etc/prometheus.yml'
 alias am='alertmanager --config.file=/opt/homebrew/etc/alertmanager.yml'
 # Following alias starts Grafana in the same way that it gets started when
