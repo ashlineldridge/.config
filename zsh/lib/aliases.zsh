@@ -93,3 +93,9 @@ alias bz=bazel
 
 # Search hidden files/directories except .git.
 alias rg="rg --hidden --glob '!.git'"
+
+# Opinionated shfmt diff.
+alias shfmt_diff='shfmt -i 2 -ci -sr -bn -d'
+
+# Dockerfile linting.
+alias dockerfile_lint='docker run -it --rm -v "${PWD}:/root" projectatomic/dockerfile-lint dockerfile_lint -p -f'

@@ -16,7 +16,7 @@ function vterm_printf(){
     printf "\eP\e]%s\007\e\\" "$1"
   else
     printf "\e]%s\e\\" "$1"
-    fi
+  fi
 }
 
 # Completely clear the buffer. With this, everything that is not on screen
