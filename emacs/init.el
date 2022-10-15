@@ -686,9 +686,6 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   :hook ((text-mode . ws-butler-mode)
          (prog-mode . ws-butler-mode)))
 
-;; Is there a better way/place to do this?
-(setq js-indent-level 2)
-
 ;; Mostly useful for highlighting whitespace characters.
 (use-package highlight-chars)
 
@@ -741,18 +738,28 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   :custom
   (project-list-file (expand-file-name "projects" my/emacs-cache-dir))
   :config
-  (project-remember-projects-under "~/dev/home")
-  (project-remember-projects-under "~/dev/work"))
+  ;; Override the way that project.el determines the project root.
+  (setq project-find-functions '(my/project-find-root)))
 
-(use-package project-x
-  :straight '(project-x-mode-mode :host github :repo "karthink/project-x")
-  :after project
-  :custom
-  (project-x-window-list-file (expand-file-name "project-window-list" my/emacs-cache-dir))
-  :config
-  (project-x-mode 1))
+;; Customise project root identification (the default only searches for version control markers).
+;; See: https://andreyorst.gitlab.io/posts/2022-07-16-project-el-enhancements
+;; And: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/emacs.md#configuring-project-for-go-modules-in-emacs
+(defvar my/project-root-markers
+  '(".git" ".project" ".projectile" "Cargo.toml" "go.mod"))
 
-(defun my/project-root ()
+(defun my/project-root-p (dir)
+  "Check whether DIR is a project root."
+  (catch 'found
+    (dolist (marker my/project-root-markers)
+      (when (file-exists-p (expand-file-name marker dir))
+        (throw 'found marker)))))
+
+(defun my/project-find-root (dir)
+  "Search up the directory tree from DIR to find the project root."
+  (when-let ((root (locate-dominating-file dir #'my/project-root-p)))
+    `(transient . ,(expand-file-name root))))
+
+(defun my/project-current-root ()
   "Return the root directory of the current or nil."
   (if-let* ((proj (project-current)))
       (project-root proj)))
@@ -761,8 +768,43 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   "Refresh list of known projects."
   (interactive)
   (project-forget-zombie-projects)
-  (project-remember-projects-under "~/dev/home")
-  (project-remember-projects-under "~/dev/work"))
+  (my/project-index-under "~/dev/home")
+  (my/project-index-under "~/dev/home/00rg")
+  (my/project-index-under "~/dev/work"))
+
+(defun my/project-index-under (dir)
+  "Index all projects below directory DIR.
+This is an adaptation of a previous version of `project-remember-projects-under'
+as there appears to be a bug in the current version."
+  (interactive "DDirectory: \nP")
+  (project--ensure-read-project-list)
+  (let ((queue (directory-files dir t nil t)) (count 0)
+        (known (make-hash-table
+                :size (* 2 (length project--list))
+                :test #'equal )))
+    (dolist (project (mapcar #'car project--list))
+      (puthash project t known))
+    (while queue
+      (when-let ((subdir (pop queue))
+                 ((file-directory-p subdir))
+                 ((not (gethash subdir known))))
+        (when-let (pr (project--find-in-directory subdir))
+          (project-remember-project pr t)
+          (message "Found %s..." (project-root pr))
+          (setq count (1+ count)))))
+    (if (zerop count)
+        (message "No projects were found")
+      (project--write-project-list)
+      (message "%d project%s were found"
+               count (if (= count 1) "" "s")))))
+
+(use-package project-x
+  :straight '(project-x-mode-mode :host github :repo "karthink/project-x")
+  :after project
+  :custom
+  (project-x-window-list-file (expand-file-name "project-window-list" my/emacs-cache-dir))
+  :config
+  (project-x-mode 1))
 
 ;;;;; File Browsing
 
@@ -781,7 +823,7 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   "Refresh the Neotree window (if open) to navigate to the current file/project."
   (interactive)
   (if (neo-global--window-exists-p)
-      (let ((project-dir (my/project-root))
+      (let ((project-dir (my/project-current-root))
             (file-name (buffer-file-name))
 	    (cw (selected-window)))
 	(if project-dir
@@ -925,11 +967,16 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   (lsp-modeline-code-actions-segments '(icon)) ;; No need to also show the count.
   (lsp-lens-enable nil)                        ;; Haven't found a great use for these.
   (lsp-modeline-diagnostics-enable nil)        ;; The Flycheck modeline segment already displays this.
+
   ;; Recommended setting as I'm using corfu instead of company for completion.
   ;; See: https://github.com/minad/corfu/issues/71#issuecomment-977693717
   (lsp-completion-provider :none)
 
+  ;; Categorise lsp-ui-imenu entries by their type (variable, function, etc).
   (lsp-imenu-index-function 'lsp-imenu-create-categorized-index)
+
+  ;; Close the language server buffer when the last file in the workspace/project is closed.
+  (lsp-keep-workspace-alive nil)
 
   ;; When lsp-eldoc-render-all is set to nil, moving point to a function call should result
   ;; in a one line function signature being displayed in the minibuffer. There is an issue
@@ -959,18 +1006,32 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 			     ;; "--clang-tidy"
 			     ;; "-j=1"
 			     ))
+
   (lsp-rust-analyzer-cargo-watch-command "clippy")
   ;; I'd prefer to have this off by default but there seem to be some hooks configured where if
   ;; this is going to be set it needs to be set when lsp-mode starts.
   (lsp-rust-analyzer-server-display-inlay-hints t)
+
   ;; Enable procedural macro support (apparently assists with auto-completion when procedural
   ;; macros are involved; see https://news.ycombinator.com/item?id=28802428).
   ;; (lsp-rust-analyzer-proc-macro-enable t)
   ;; Configure lsp-mode to use the official terraform-ls LSP server rather than terraform-lsp
   ;; which it uses by default and is more experimental (crashes constantly for me).
   (lsp-terraform-server '("terraform-ls" "serve"))
+
   :config
-  (lsp-enable-which-key-integration t))
+  (lsp-enable-which-key-integration t)
+
+  ;; Configure custom LSP server settings.
+  ;;
+  ;; For gpls:
+  ;; See: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/emacs.md#configuring-gopls-via-lsp-mode
+  ;; And available settings: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/settings.md
+  ;; Not all experimental settings appear to be documented. For the full list, see the code here:
+  ;; https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/internal/lsp/source/options.go
+  (lsp-register-custom-settings
+   '(("gopls.completeUnimported" t t)
+     ("gopls.staticcheck" t t))))
 
 (use-package lsp-ui
   :bind
@@ -1120,6 +1181,20 @@ doesn't appear possible to achieve this behaviour using consult-customize."
   :init
   (setq python-shell-interpreter "python3"))
 
+;;;;;; JavaScript
+
+(use-package js2-mode
+  :mode "\\.js\\'")
+
+;;;;;; TypeScript
+
+;; Just basic syntax highlighting for now. God forbid I ever have to write TS.
+(use-package typescript-mode)
+
+;;;;;; Rego
+
+(use-package rego-mode)
+
 ;;;;;; Docker
 
 (use-package dockerfile-mode)
@@ -1134,16 +1209,17 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 ;;;;;; Go
 
 (use-package go-mode
-  :mode "\\.go\\'"
-  ;; Is this the best way to do this?
   :hook
-  ((before-save . gofmt-before-save)
-   (go-mode . (lambda () (setq tab-width 4))))
-
-  ;; :config
-  ;; TODO: setup go-mode + integrations https://github.com/dominikh/go-mode.el
-  ;; TODO: Consider gopls settings here: https://github.com/golang/tools/blob/master/gopls/doc/emacs.md#configuring-gopls-via-lsp-mode
-  )
+  ((go-mode . (lambda () (setq tab-width 4)))
+   (before-save . gofmt-before-save))
+  :bind
+  (:map go-mode-map
+        ("<f11>" . nil)
+        ("S-<escape>" . keyboard-escape-quit))
+  :custom
+  ;; Replace gofmt with goimports which also removes/adds imports as
+  ;; needed. See: https://pkg.go.dev/golang.org/x/tools/cmd/goimports.
+  (gofmt-command "goimports"))
 
 ;;;;;; Bazel
 
