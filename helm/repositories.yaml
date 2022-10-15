@@ -19,3 +19,39 @@ repositories:
   password: ""
   url: https://istio-release.storage.googleapis.com/charts
   username: ""
+- caFile: ""
+  certFile: ""
+  insecure_skip_tls_verify: false
+  keyFile: ""
+  name: crossplane-stable
+  pass_credentials_all: false
+  password: ""
+  url: https://charts.crossplane.io/stable
+  username: ""
+- caFile: ""
+  certFile: ""
+  insecure_skip_tls_verify: false
+  keyFile: ""
+  name: kiali
+  pass_credentials_all: false
+  password: ""
+  url: https://kiali.org/helm-charts
+  username: ""
+- caFile: ""
+  certFile: ""
+  insecure_skip_tls_verify: false
+  keyFile: ""
+  name: vector
+  pass_credentials_all: false
+  password: ""
+  url: https://helm.vector.dev
+  username: ""
+- caFile: ""
+  certFile: ""
+  insecure_skip_tls_verify: false
+  keyFile: ""
+  name: datadog
+  pass_credentials_all: false
+  password: ""
+  url: https://helm.datadoghq.com
+  username: ""
