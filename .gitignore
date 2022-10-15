@@ -4,6 +4,7 @@
 **/*token*
 **/*auth*
 
+argocd/
 zsh/.zcompdump
 zsh/.zsh_history
 zsh/.zcompcache
@@ -21,6 +22,7 @@ emacs/elpa
 emacs/eshell/history
 emacs/eshell/lastdir
 emacs/forge-database.sqlite
+emacs/games/
 emacs/history
 emacs/projectile-bookmarks.eld
 emacs/projectile.cache
@@ -44,6 +46,7 @@ target/
 auto-save-list
 tramp
 .\#*
+ngrok/
 nvim/bundle/*/doc/tags
 gcloud/logs/
 gh/
