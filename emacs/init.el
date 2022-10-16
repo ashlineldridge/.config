@@ -417,6 +417,9 @@
                   rustic-cargo-clippy-mode
                   rustic-cargo-outdated-mode))
          (side . bottom))
+        ("\\*compilation\\*"
+         (display-buffer-in-side-window)
+         (side . bottom))
         ("\\*Flycheck "
          (display-buffer-in-side-window)
          (side . bottom))
@@ -916,9 +919,6 @@ as there appears to be a bug in the current version."
    yas-wrap-around-region t)
   (yas-reload-all))
 
-(use-package yasnippet-snippets
-  :after yasnippet)
-
 ;;;;; Language Support
 
 ;;;;;; Language Server Support
@@ -1118,26 +1118,28 @@ as there appears to be a bug in the current version."
 
 (use-package rustic
   :init
-  ;; Remove the default rustic keybindings (C-c C-c x) in favour of C-c r x.
+  ;; Remove the default rustic keybindings.
   (setq rustic-mode-map (make-sparse-keymap))
   :bind
   (:map rustic-mode-map
-        ("C-c r b" . rustic-cargo-build)
-        ("C-c r f" . rustic-format-buffer)
-        ("C-c r F" . rustic-cargo-fmt)
-        ("C-c r l" . rustic-cargo-clippy)
-        ("C-c r r" . rustic-cargo-run)
-        ("C-c r t" . rustic-cargo-test)
-        ("C-c r T" . rustic-cargo-current-test)
-        ("C-c r i" . my/toggle-rust-inlay-hints) ;; Toggle inlay type hints.
-        ("C-c r o" . lsp-rust-analyzer-open-external-docs)
-        ("C-c r c a" . rustic-cargo-add)
-        ("C-c r c c" . rustic-cargo-clean)
-        ("C-c r c o" . rustic-cargo-outdated)
-        ("C-c r c u" . rustic-cargo-upgrade)
-        ("C-c r d d" . dap-debug)
-        ("C-c r d l" . dap-debug-last)
-        ("C-c r d m" . dap-hydra)))
+        ("C-c C-c b" . rustic-cargo-build)
+        ;; TODO: Fix Cargo C-c C-c c x prefixes below and then enable `compile'.
+        ;; ("C-c C-c c" . compile)
+        ("C-c C-c f" . rustic-format-buffer)
+        ("C-c C-c F" . rustic-cargo-fmt)
+        ("C-c C-c l" . rustic-cargo-clippy)
+        ("C-c C-c r" . rustic-cargo-run)
+        ("C-c C-c t" . rustic-cargo-test)
+        ("C-c C-c T" . rustic-cargo-current-test)
+        ("C-c C-c i" . my/toggle-rust-inlay-hints) ;; Toggle inlay type hints.
+        ("C-c C-c o" . lsp-rust-analyzer-open-external-docs)
+        ("C-c C-c c a" . rustic-cargo-add)
+        ("C-c C-c c c" . rustic-cargo-clean)
+        ("C-c C-c c o" . rustic-cargo-outdated)
+        ("C-c C-c c u" . rustic-cargo-upgrade)
+        ("C-c C-c d d" . dap-debug)
+        ("C-c C-c d l" . dap-debug-last)
+        ("C-c C-c d m" . dap-hydra)))
 
 ;;;;;; Terraform
 
@@ -1209,17 +1211,24 @@ as there appears to be a bug in the current version."
 ;;;;;; Go
 
 (use-package go-mode
+  :init
+  ;; Remove the default go-mode keybindings.
+  (setq go-mode-map (make-sparse-keymap))
   :hook
   ((go-mode . (lambda () (setq tab-width 4)))
    (before-save . gofmt-before-save))
   :bind
   (:map go-mode-map
-        ("<f11>" . nil)
-        ("S-<escape>" . keyboard-escape-quit))
+        ("C-c C-c p" . go-play-buffer)
+        ("C-c C-c P" . go-play-region)
+        ("C-c C-c c" . compile))
   :custom
   ;; Replace gofmt with goimports which also removes/adds imports as
   ;; needed. See: https://pkg.go.dev/golang.org/x/tools/cmd/goimports.
   (gofmt-command "goimports"))
+
+;; TODO: Implement inlay hints for gopls when possible. See:
+;; https://github.com/emacs-lsp/lsp-mode/issues/3618.
 
 ;;;;;; Bazel
 
@@ -1230,18 +1239,17 @@ as there appears to be a bug in the current version."
 
 ;;;;;; C/C++
 
-(defun my/compile ()
-  "Grabbed from https://github.com/rigtorp/dotemacs/blob/master/init.el."
+(defun my/compile-no-ask ()
+  "Run `compile' without prompting for confirmation of the command."
   (interactive)
   (setq-local compilation-read-command nil)
   (call-interactively 'compile))
 
 (use-package cc-mode
   :bind (:map c++-mode-map
-	      ("C-c f b" . clang-format-buffer)
-	      ("C-c f r" . clang-format-region)
-	      ;; ("M-p" . company-complete-common)
-	      ("C-c c" . my/compile)))
+	      ("C-c C-c f" . clang-format-buffer)
+	      ("C-c C-c F" . clang-format-region)
+	      ("C-c C-c c" . my/compile-no-ask)))
 
 (use-package clang-format
   :commands clang-format clang-format-buffer clang-format-region
