@@ -897,8 +897,6 @@ as there appears to be a bug in the current version."
   :custom
   (outline-minor-mode-cycle t))
 
-(global-set-key (kbd "<f10>") 'my/outline-minor-mode-safe)
-
 ;;;;; Code Templating
 
 (use-package yasnippet
@@ -910,13 +908,15 @@ as there appears to be a bug in the current version."
   :bind
   (:map yas-minor-mode-map
         ("C-c y y" . yas-expand)
-	("C-c y i" . yas-insert-snippet)
+        ("C-c y i" . consult-yasnippet))
+  (:map global-map
 	("C-c y f" . yas-visit-snippet-file)
-  	("C-c y c" . yas-new-snippet))
+  	("C-c y n" . yas-new-snippet)
+        ("C-c y u" . yas-reload-all))
   :config
-  (setq
-   yas-verbosity 1
-   yas-wrap-around-region t)
+  (use-package consult-yasnippet)
+  (setq yas-verbosity 1)
+  (setq yas-wrap-around-region t)
   (yas-reload-all))
 
 ;;;;; Language Support
@@ -1491,7 +1491,9 @@ as there appears to be a bug in the current version."
         ("<f11>" . nil)
         ;; Bind S-ESC to keyboard-escape-quit when in vterm-mode as ESC is used for
         ;; shell signals (e.g., ESC + underscore for last word of the previous command).
-        ("S-<escape>" . keyboard-escape-quit))
+        ("S-<escape>" . keyboard-escape-quit)
+        ;; Vterm yasnippet integration.
+        ("C-c y i" . my/vterm-consult-yasnippet))
   :custom
   ;; Don't prompt for permission to compile on first install.
   (vterm-always-compile-module t)
@@ -1502,11 +1504,37 @@ as there appears to be a bug in the current version."
   (vterm-buffer-name-string "vterm: %s"))
 
 (use-package multi-vterm
-  :bind (:map global-map
-	      ("C-c v v" . multi-vterm)
-	      ("C-c v n" . multi-vterm-next)
-	      ("C-c v p" . multi-vterm-prev)
-	      ("C-c v b" . multi-vterm-rename-buffer)))
+  :bind
+  (:map global-map
+	("C-c v v" . multi-vterm)
+	("C-c v n" . multi-vterm-next)
+	("C-c v p" . multi-vterm-prev)
+	("C-c v b" . multi-vterm-rename-buffer)))
+
+(define-derived-mode vterm-phony-mode text-mode "VTerm-Phony"
+  "Major mode used to run yasnippet expansion in terminals.")
+
+;; This function allows `consult-yasnippet' to be called from a vterm buffer.
+;; Oridinarly, these yasnippet functions can't be called from vterm as Emacs
+;; considers it a read-only buffer. This function creates a new temporary
+;; `vterm-phony-mode' buffer, executes `consult-yasnippet' there, and then
+;; copies the result into the vterm buffer.
+;; See also: https://mullikine.github.io/posts/use-yasnippets-in-term/
+(defun my/vterm-consult-yasnippet ()
+  "Run `consult-yasnippet' for the current vterm buffer."
+  (interactive)
+  (if (eq major-mode 'vterm-mode)
+      (let ((expansion))
+        (let ((b (generate-new-buffer (generate-new-buffer-name "yas-temp"))))
+          (with-current-buffer b
+            (vterm-phony-mode)
+            (consult-yasnippet nil)
+            (setq expansion (buffer-string)))
+          (kill-buffer b))
+        ;; Insert the expanded snippet.
+        (vterm-insert expansion)
+        ;; Send a key to unselect the region (must be a better way to do this).
+        (vterm-send-key "<right>"))))
 
 ;;;; Org Mode
 
