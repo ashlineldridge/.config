@@ -735,6 +735,11 @@
         ("C-x p w s" . project-x-window-state-save))
   :custom
   (project-list-file (expand-file-name "projects" my/emacs-cache-dir))
+  (project-switch-commands
+   '((project-find-file   "Find file"    ?f)
+     (magit-status        "Magit Status" ?g)
+     (multi-vterm-project "Vterm"        ?v)))
+
   :config
   ;; Override the way that project.el determines the project root.
   (setq project-find-functions '(my/project-find-root)))
