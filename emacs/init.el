@@ -344,6 +344,10 @@
    ("C-: l" . avy-goto-line)
    ("C-: w" . avy-goto-word-1)))
 
+;; Jump to the new window when splitting.
+(global-set-key "\C-x2" (lambda () (interactive)(split-window-vertically) (other-window 1)))
+(global-set-key "\C-x3" (lambda () (interactive)(split-window-horizontally) (other-window 1)))
+
 ;;;;; Window History
 
 (use-package winner
@@ -563,21 +567,42 @@
                                        :mode 'vterm-mode)))
   "Vterm buffer source for `consult-buffer'.")
 
+(defun my/consult-project-file-preview (selected-root)
+  "Create preview function for project files under SELECTED-ROOT.
+This function is adapted from consult--file-preview to make it aware of the
+project root."
+  (let ((open (consult--temporary-files))
+        (preview (consult--buffer-preview)))
+    (lambda (action cand)
+      (unless cand
+        (funcall open))
+      (funcall preview action
+               (and cand
+                    (eq action 'preview)
+                    (funcall open (expand-file-name cand selected-root)))))))
+
 (defun my/consult-project-file (selected-root)
   "Create a view for selecting project files for the project at SELECTED-ROOT.
 This function is adapted from consult-project-extra--file so that we can patch
 in the :preview-key; otherwise, selection of the project file to open will
 automatically display the preview which we don't want. Unfortunately, it
 doesn't appear possible to achieve this behaviour using consult-customize."
-  (find-file (consult--read
-              (consult-project-extra--project-files selected-root)
-              :prompt "Project File: "
-              :sort t
-              :require-match t
-              :preview-key (kbd "M-.")
-              :category 'file
-              :state (consult--file-preview)
-              :history 'file-name-history)))
+  (let ((cand (consult--read
+               (consult-project-extra--project-files selected-root)
+               :prompt "Project File: "
+               :sort t
+               :require-match t
+               :category 'file
+               :state (my/consult-project-file-preview selected-root)
+               :preview-key (kbd "M-.")
+               :history 'file-name-history)))
+    (find-file (expand-file-name cand selected-root))))
+
+;;(defun my/consult-project-find-with-concat-root (candidate)
+;;  "Find-file concatenating root with CANDIDATE."
+;;  (message "Project root: %s, file-file: %s, candidate: %s" (project-root (project-current)) (concat (project-root (project-current)) candidate) candidate)
+;;  ;; (find-file (concat (project-root (project-current)) candidate))
+;; )
 
 (use-package consult
   :straight '(consult-mode :host github :repo "minad/consult")
@@ -616,8 +641,11 @@ doesn't appear possible to achieve this behaviour using consult-customize."
    :name "Open Buffer" :narrow ?b
    consult--source-project-buffer
    :name "Project Buffer" :narrow ?p
+   ;; TODO: This is opening two buffers: the actual one but then one for the file but in the current
+   ;; project root? WTF?
+   ;; Uses action below but why open two files?
    consult-project-extra--source-file
-   :name "Project File" :narrow ?f :state 'consult--file-state
+   :name "Project File" :narrow ?f :state 'consult--file-state ; :action 'my/consult-project-find-with-concat-root
    consult--source-recent-file
    :name "Recent File" :narrow ?r
    consult-project-extra--source-project
@@ -631,10 +659,14 @@ doesn't appear possible to achieve this behaviour using consult-customize."
    consult-bookmark
    consult-recent-file
    consult-xref
+   consult--source-buffer
+   consult--source-project-buffer
    consult--source-bookmark
    consult--source-recent-file
+   consult-project-extra--file
    consult-project-extra--source-file
    consult-project-extra--source-project
+   my/consult-source-vterm-buffer
    :preview-key (kbd "M-."))
 
   ;; Customise the list of sources shown by consult-buffer.
@@ -642,10 +674,10 @@ doesn't appear possible to achieve this behaviour using consult-customize."
         '(consult--source-buffer                ; Narrow: ?b
           consult--source-project-buffer        ; Narrow: ?p
           my/consult-source-vterm-buffer        ; Narrow: ?v
-          consult-project-extra--source-file    ; Narrow: ?f
+          ;; consult-project-extra--source-file    ; Narrow: ?f
           consult--source-recent-file           ; Narrow: ?r
           consult--source-bookmark              ; Narrow: ?m
-          consult-project-extra--source-project ; Narrow: ?j
+          ;; consult-project-extra--source-project ; Narrow: ?j
           ))
 
   ;; Add `consult-imenu' groupings for Rust. These groupings originate from the LSP specification:
@@ -665,6 +697,14 @@ doesn't appear possible to achieve this behaviour using consult-customize."
                          (?m "Modules")
                          (?t "Type Parameters")
                          (?c "Constants")))))
+
+(use-package consult-dir
+  :bind
+  (:map global-map
+        ("C-x C-d" . consult-dir))
+  (:map vertico-map
+        ("C-x C-d" . consult-dir)
+        ("C-x C-j" . consult-dir-jump-file)))
 
 (use-package embark
   ;; Load after xref so that the overidden keybinding below takes effect.
@@ -906,13 +946,13 @@ as there appears to be a bug in the current version."
   ;; Remove default key bindings which are crap.
   (setq yas-minor-mode-map (make-sparse-keymap))
   :bind
+  (:map global-map
+        ("C-c y f" . yas-visit-snippet-file)
+  	("C-c y n" . yas-new-snippet)
+        ("C-c y u" . yas-reload-all))
   (:map yas-minor-mode-map
         ("C-c y y" . yas-expand)
         ("C-c y i" . consult-yasnippet))
-  (:map global-map
-	("C-c y f" . yas-visit-snippet-file)
-  	("C-c y n" . yas-new-snippet)
-        ("C-c y u" . yas-reload-all))
   :config
   (use-package consult-yasnippet)
   (setq yas-verbosity 1)
