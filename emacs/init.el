@@ -567,50 +567,12 @@
                                        :mode 'vterm-mode)))
   "Vterm buffer source for `consult-buffer'.")
 
-(defun my/consult-project-file-preview (selected-root)
-  "Create preview function for project files under SELECTED-ROOT.
-This function is adapted from consult--file-preview to make it aware of the
-project root."
-  (let ((open (consult--temporary-files))
-        (preview (consult--buffer-preview)))
-    (lambda (action cand)
-      (unless cand
-        (funcall open))
-      (funcall preview action
-               (and cand
-                    (eq action 'preview)
-                    (funcall open (expand-file-name cand selected-root)))))))
-
-(defun my/consult-project-file (selected-root)
-  "Create a view for selecting project files for the project at SELECTED-ROOT.
-This function is adapted from consult-project-extra--file so that we can patch
-in the :preview-key; otherwise, selection of the project file to open will
-automatically display the preview which we don't want. Unfortunately, it
-doesn't appear possible to achieve this behaviour using consult-customize."
-  (let ((cand (consult--read
-               (consult-project-extra--project-files selected-root)
-               :prompt "Project File: "
-               :sort t
-               :require-match t
-               :category 'file
-               :state (my/consult-project-file-preview selected-root)
-               :preview-key (kbd "M-.")
-               :history 'file-name-history)))
-    (find-file (expand-file-name cand selected-root))))
-
-;;(defun my/consult-project-find-with-concat-root (candidate)
-;;  "Find-file concatenating root with CANDIDATE."
-;;  (message "Project root: %s, file-file: %s, candidate: %s" (project-root (project-current)) (concat (project-root (project-current)) candidate) candidate)
-;;  ;; (find-file (concat (project-root (project-current)) candidate))
-;; )
-
 (use-package consult
   :straight '(consult-mode :host github :repo "minad/consult")
   :bind
   (("C-s"     . consult-line)
-   ("M-s r"   . consult-ripgrep)
-   ("M-s i i" . consult-imenu)       ; Local buffer imenu
-   ("M-s i o" . consult-imenu-multi) ; Open buffers imenu
+   ("C-x i"   . consult-imenu)       ; Local buffer imenu
+   ("C-x I"   . consult-imenu-multi) ; Open buffers imenu
    ("C-x b"   . consult-buffer)
    ("M-g M-g" . consult-goto-line)
    ("M-y"     . consult-yank-pop)
@@ -619,17 +581,11 @@ doesn't appear possible to achieve this behaviour using consult-customize."
    ("C-x r s" . consult-register-store))
 
   :init
-  ;; TODO: Review example consult config https://github.com/minad/consult
-
   ;; Use consult to select xref locations with preview.
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
 
   :config
-  ;; Load consult-project-extra as we need some of its sources below.
-  (use-package consult-project-extra
-    :straight '(consult-project-extra :host github :repo "Qkessler/consult-project-extra"))
-
   ;; Show narrowing help in the minibuffer when ? is pressed.
   ;; Narrowing by group requires pressing the group key (e.g., p for project) and then <spc>.
   (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
@@ -641,15 +597,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
    :name "Open Buffer" :narrow ?b
    consult--source-project-buffer
    :name "Project Buffer" :narrow ?p
-   ;; TODO: This is opening two buffers: the actual one but then one for the file but in the current
-   ;; project root? WTF?
-   ;; Uses action below but why open two files?
-   consult-project-extra--source-file
-   :name "Project File" :narrow ?f :state 'consult--file-state ; :action 'my/consult-project-find-with-concat-root
    consult--source-recent-file
    :name "Recent File" :narrow ?r
-   consult-project-extra--source-project
-   :name "Switch Project" :narrow ?j :action 'my/consult-project-file
 
    ;; By default, consult will automatically preview all commands and sources. Below
    ;; we customize certain commands/sources so that the preview is shown on request.
@@ -663,9 +612,6 @@ doesn't appear possible to achieve this behaviour using consult-customize."
    consult--source-project-buffer
    consult--source-bookmark
    consult--source-recent-file
-   consult-project-extra--file
-   consult-project-extra--source-file
-   consult-project-extra--source-project
    my/consult-source-vterm-buffer
    :preview-key (kbd "M-."))
 
@@ -674,10 +620,8 @@ doesn't appear possible to achieve this behaviour using consult-customize."
         '(consult--source-buffer                ; Narrow: ?b
           consult--source-project-buffer        ; Narrow: ?p
           my/consult-source-vterm-buffer        ; Narrow: ?v
-          ;; consult-project-extra--source-file    ; Narrow: ?f
           consult--source-recent-file           ; Narrow: ?r
           consult--source-bookmark              ; Narrow: ?m
-          ;; consult-project-extra--source-project ; Narrow: ?j
           ))
 
   ;; Add `consult-imenu' groupings for Rust. These groupings originate from the LSP specification:
@@ -777,7 +721,18 @@ doesn't appear possible to achieve this behaviour using consult-customize."
 
 (use-package project
   :straight nil ;; Built-in.
-  :bind (("C-x p u" . my/project-refresh-list))
+  :bind
+  (:map global-map
+        ("C-x p"     . nil) ; Remove previous bindings
+        ("C-x p d"   . project-dired)
+        ("C-x p c"   . project-compile)
+        ("C-x p f"   . project-find-file)
+        ("C-x p p"   . project-switch-project)
+        ("C-x p r"   . consult-ripgrep)
+        ("C-x p R"   . project-query-replace-regexp)
+        ("C-x p u"   . my/project-refresh-list)
+        ("C-x p w l" . project-x-window-state-load)
+        ("C-x p w s" . project-x-window-state-save))
   :custom
   (project-list-file (expand-file-name "projects" my/emacs-cache-dir))
   :config
@@ -1548,7 +1503,7 @@ as there appears to be a bug in the current version."
   (:map global-map
 	("C-c v v" . multi-vterm)
 	("C-c v n" . multi-vterm-next)
-	("C-c v p" . multi-vterm-prev)
+	("C-c v p" . multi-vterm-project)
 	("C-c v b" . multi-vterm-rename-buffer)))
 
 (define-derived-mode vterm-phony-mode text-mode "VTerm-Phony"
