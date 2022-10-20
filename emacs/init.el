@@ -153,6 +153,8 @@
 (global-set-key (kbd "C-;") 'comment-line)
 ;; Replace list-buffers with the more advanced ibuffer.
 (global-set-key (kbd "C-x C-b") 'ibuffer)
+;; Remove compose-mail binding.
+(global-set-key (kbd "C-x m") nil)
 
 ;;;; Appearance
 
@@ -613,6 +615,9 @@
    consult--source-bookmark
    consult--source-recent-file
    my/consult-source-vterm-buffer
+   ;; So that the consult-ripgrep project shortcut doesn't show previews (you need to customize
+   ;; the interactive function: https://github.com/minad/consult/issues/676#issuecomment-1286196998).
+   project-switch-project
    :preview-key (kbd "M-."))
 
   ;; Customise the list of sources shown by consult-buffer.
@@ -738,7 +743,7 @@
   (project-switch-commands
    '((project-find-file   "Find file"    ?f)
      (magit-status        "Magit Status" ?g)
-     (consult-ripgrep     "Ripgrep"      ?r) ; TODO: This auto-previews for some reason?
+     (consult-ripgrep     "Ripgrep"      ?r)
      (multi-vterm-project "Vterm"        ?v)))
 
   :config
