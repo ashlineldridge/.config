@@ -738,6 +738,7 @@
   (project-switch-commands
    '((project-find-file   "Find file"    ?f)
      (magit-status        "Magit Status" ?g)
+     (consult-ripgrep     "Ripgrep"      ?r) ; TODO: This auto-previews for some reason?
      (multi-vterm-project "Vterm"        ?v)))
 
   :config
@@ -1347,6 +1348,7 @@ as there appears to be a bug in the current version."
 ;; but with the extra '@' in the username it starts getting ugly.
 
 (use-package mu4e
+  :disabled t
   ;; Use the version of mu4e packaged with mu
   :straight
   ;; The mu installation comes prepackaged with its Lisp files and it seems better to use these
@@ -1460,6 +1462,7 @@ as there appears to be a bug in the current version."
 ;;;; Web Feeds
 
 (use-package elfeed
+  :disabled t
   :bind
   (:map elfeed-show-mode-map ("?" . which-key-show-major-mode))
   (:map elfeed-search-mode-map ("?" . which-key-show-major-mode))
@@ -1847,7 +1850,8 @@ as there appears to be a bug in the current version."
 
 (use-package org-cliplink)
 
-(use-package ox-hugo :after ox)
+(use-package ox-hugo
+  :disabled t)
 
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
