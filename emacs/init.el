@@ -1589,19 +1589,6 @@ as there appears to be a bug in the current version."
      ("DONE" . (:foreground "orange red" :weight bold))))
   (org-use-fast-todo-selection 'expert))
 
-(use-package org-modern
-  :hook
-  (org-mode            . org-modern-mode)
-  (org-agenda-finalize . org-modern-agenda)
-  :after org
-  :custom
-  (org-modern-star '("◉" "○" "●" "○" "●" "○" "●" "○" "●"))
-  (org-modern-list '((?+ . "◦") (?- . "•") (?* . "‣")))
-  (org-modern-table nil)
-  :config
-  ;; Font face used stars, checkboxes, etc by org-modern.
-  (set-face-attribute 'org-modern-symbol nil :family "Iosevka"))
-
 (use-package org-cliplink)
 
 (use-package org-roam
