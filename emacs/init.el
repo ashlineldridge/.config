@@ -285,13 +285,6 @@
                     :width 'normal
                     :weight 'normal)
 
-;; Set the fixed pitch face.
-(set-face-attribute 'fixed-pitch nil
-                    :font my/default-fixed-font
-                    :height my/default-fixed-font-size
-                    :width 'normal
-                    :weight 'normal)
-
 ;; Set the variable pitch face
 (set-face-attribute 'variable-pitch nil
                     :font my/default-variable-font
@@ -1397,68 +1390,13 @@ as there appears to be a bug in the current version."
 (defvar my/gtd-dir "~/dev/home/gtd")
 (defvar my/pkm-dir "~/dev/home/pkm")
 
-;; TODO: Investigate replacing this with https://github.com/minad/org-modern
-;; See also: https://protesilaos.com/emacs/dotemacs#h:a6b1bb67-b62b-4018-999a-90cbd0bdceb5
-;; See also: https://github.com/daviwil/dotfiles/blob/master/Emacs.org#org-mode
 (defun my/org-mode-init ()
   "Org-mode init function that should be attached to `org-mode-hook`."
   (interactive)
-
   ;;; Org-mode buffer local settings.
   (org-indent-mode 1)
-  (auto-fill-mode 0)
   (visual-line-mode 1)
-  (variable-pitch-mode 1)
-  (display-line-numbers-mode 0)
-  (setq-local left-margin-width 2
-              right-margin-width 2)
-
-  ;;; Font configuration.
-
-  ;; Replace list hyphen with dot.
-  (font-lock-add-keywords 'org-mode
-                          '(("^ *\\([-]\\) "
-                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
-
-  ;; Vary heading sizes.
-  ;; This is commented out at the moment as I'm using the modus-themes package
-  ;; which has its own way of customising Org-mode headings.
-  ;; (dolist (face '((org-level-1 . 1.3)
-  ;;                 (org-level-2 . 1.25)
-  ;;                 (org-level-3 . 1.2)
-  ;;                 (org-level-4 . 1.15)
-  ;;                 (org-level-5 . 1.1)
-  ;;                 (org-level-6 . 1.1)
-  ;;                 (org-level-7 . 1.1)
-  ;;                 (org-level-8 . 1.1)))
-  ;;   (set-face-attribute (car face) nil
-  ;;       		:font my/default-variable-font
-  ;;       		:weight 'light
-  ;;       		:height (cdr face)))
-
-  ;; Without this, some priorities are bolded/italicized while others are not which looks
-  ;; ugly. Strangely, I can't seem to make use of all the face attributes properly - but
-  ;; this at least makes them uniform.
-  (setq org-priority-faces '((?A . (:foreground "DeepSkyBlue1" :weight 'normal))
-			     (?B . (:foreground "DeepSkyBlue2" :weight 'normal))
-			     (?C . (:foreground "DeepSkyBlue3" :weight 'normal))))
-
-  ;; Since variable pitch width is set as the default above, override the face attributes
-  ;; that we want to appear in fixed pitch width.
-  (set-face-attribute 'line-number nil :inherit 'fixed-pitch)
-  (set-face-attribute 'line-number-current-line nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-code nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-document-info-keyword nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-drawer nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-indent nil :inherit '(org-hide fixed-pitch))
-  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-table nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-tag nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch)))
+  (display-line-numbers-mode 0))
 
 (defvar my/org-todo-sort-order '("PROG" "NEXT" "TODO" "HOLD" "DONE"))
 
@@ -1477,9 +1415,8 @@ as there appears to be a bug in the current version."
 (use-package org
   :hook
   (org-mode . my/org-mode-init)
-  (org-agenda-mode . (lambda ()
-		       ;; Override '?' key to show helpful which-key display.
-		       (define-key org-agenda-mode-map "?" 'which-key-show-major-mode)))
+  ;; Override '?' key to show helpful which-key display.
+  (org-agenda-mode . (lambda () (define-key org-agenda-mode-map "?" 'which-key-show-major-mode)))
 
   :bind
   ;; Below produces errors that look like org-agenda-mode-map isn't in scope sometimes.
@@ -1587,7 +1524,9 @@ as there appears to be a bug in the current version."
      (search . " %i %-16:c")))
   (org-agenda-span 'week)
   (org-agenda-start-with-log-mode t)
+  (org-agenda-tags-column 0)
   (org-agenda-window-setup 'current-window)
+  (org-auto-align-tags nil)
   (org-blank-before-new-entry '((heading . nil)
                                 (plain-list-item . nil)))
   (org-capture-templates `(("i" "Inbox" entry
@@ -1610,6 +1549,7 @@ as there appears to be a bug in the current version."
                               "  - Next time: Grind a bit finer\n"
                               "- Taste notes:\n"
                               "  - Yum yum\n") :jump-to-captured t)))
+  (org-catch-invisible-edits 'show-and-error)
   (org-confirm-babel-evaluate nil)
   (org-default-notes-file (concat my/gtd-dir "/inbox.org"))
   (org-directory my/gtd-dir)
@@ -1624,6 +1564,7 @@ as there appears to be a bug in the current version."
   (org-log-into-drawer nil)
   (org-log-states-order-reversed nil) ; Make newest last
   (org-outline-path-complete-in-steps nil)
+  (org-pretty-entities t)
   (org-priority-default org-priority-lowest)
   (org-refile-targets
    `((,(concat my/gtd-dir "/archive.org") :level . 2)
@@ -1635,6 +1576,7 @@ as there appears to be a bug in the current version."
   ;; The following two settings are required to make org-refile show the full heading path
   ;; to subheading refile candidates. Took a while to get this working properly.
   (org-refile-use-outline-path t)
+  (org-special-ctrl-a/e t)
   (org-tags-column 0)
   (org-todo-keywords
    `((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "HOLD(h)" "|" "DONE(d)")))
@@ -1647,10 +1589,20 @@ as there appears to be a bug in the current version."
      ("DONE" . (:foreground "orange red" :weight bold))))
   (org-use-fast-todo-selection 'expert))
 
-(use-package org-bullets
-  :hook (org-mode . org-bullets-mode)
+(use-package org-modern
+  :hook
+  (org-mode            . org-modern-mode)
+  (org-agenda-finalize . org-modern-agenda)
+  :after org
   :custom
-  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+  (org-modern-star '("◉" "○" "●" "○" "●" "○" "●" "○" "●"))
+  (org-modern-list '((?+ . "◦") (?- . "•") (?* . "‣")))
+  (org-modern-table nil)
+  :config
+  ;; Font face used stars, checkboxes, etc by org-modern.
+  (set-face-attribute 'org-modern-symbol nil :family "Iosevka"))
+
+(use-package org-cliplink)
 
 (use-package org-roam
   :bind
@@ -1700,8 +1652,6 @@ as there appears to be a bug in the current version."
       :target (file+head+olp "%<%Y-%m-%d>.org"
                              "#+title: %<%Y-%m-%d>\n"
                              ("Today"))))))
-
-(use-package org-cliplink)
 
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
