@@ -181,12 +181,10 @@
 ;; This setting makes the Emacs window play nicer with window managers like yabai.
 (setq frame-resize-pixelwise t)
 
-;;;;; Line and Column Numbers
+;; Truncate long lines in programming modes.
+(add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
 
-;; Show column numbers in the mode line.
-(column-number-mode 1)
-
-;; Enable line numbers for some modes.
+;; Enable (in left margin) line numbers for some modes.
 (dolist (mode '(text-mode-hook
                 prog-mode-hook
                 conf-mode-hook))
@@ -303,22 +301,38 @@
 
 ;;;;; Mode-Line
 
-(use-package doom-modeline
-  :hook (after-init . doom-modeline-mode)
-  :custom
-  (doom-modeline-height 15)
-  (doom-modeline-bar-width 4)
-  (doom-modeline-lsp t)
-  (doom-modeline-github nil)
-  (doom-modeline-mu4e nil)
-  (doom-modeline-irc nil)
-  (doom-modeline-minor-modes t)
-  (doom-modeline-persp-name nil)
-  (doom-modeline-buffer-file-name-style 'truncate-except-project)
-  (doom-modeline-major-mode-icon nil))
+(defvar my/no-line-number-modes
+  '(vterm-mode))
 
-(use-package minions
-  :hook (doom-modeline-mode . minions-mode))
+(use-package mini-modeline
+  :custom
+  (mini-modeline-echo-duration 3)
+  (mini-modeline-update-interval 0.1)
+  (mini-modeline-display-gui-line t)
+  (mini-modeline-r-format
+   '("%e"
+     (:eval
+      (let ((fg (cond ((eq buffer-read-only t) "orange1")
+                      ((buffer-modified-p) "tomato")
+                      (t "spring green"))))
+        (propertize "%b " 'face `(:weight bold :foreground ,fg))))
+     (:propertize (vc-mode vc-mode) face (:weight normal))
+     (:eval
+      (when (not (member major-mode my/no-line-number-modes))
+        (propertize " L%l" 'face '(:weight light))))
+     (:eval
+      (when (bound-and-true-p vterm-copy-mode)
+        (propertize "[COPY]" 'face '(:weight bold))))))
+  :config
+  (mini-modeline-mode 1))
+
+;; Enable recursive editing to allow multiple minibuffers to be opened on top of
+;; each other. E.g., this allows starting a query-replace, then open a file to look
+;; at something, then go back to the query-replace minibuffer.
+(setq enable-recursive-minibuffers t)
+;; Display a small "[n]" that shows the minibuffer recursive depth. Another option is to
+;; use the minad/recursion-indicator but it doesn't appear to work with mini-modeline.
+(minibuffer-depth-indicate-mode)
 
 ;;;; Window Management
 
@@ -1338,6 +1352,8 @@ as there appears to be a bug in the current version."
         ("M-s" . nil)
         ;; Unbind F11 as this is used to fullscreen the window.
         ("<f11>" . nil)
+        ;; Unbind M-: so we can have eval-expression back.
+        ("M-:" . nil)
         ;; Bind S-ESC to keyboard-escape-quit when in vterm-mode as ESC is used for
         ;; shell signals (e.g., ESC + underscore for last word of the previous command).
         ("S-<escape>" . keyboard-escape-quit)
@@ -1590,6 +1606,11 @@ as there appears to be a bug in the current version."
   (org-use-fast-todo-selection 'expert))
 
 (use-package org-cliplink)
+
+(use-package org-bullets
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (use-package org-roam
   :bind
