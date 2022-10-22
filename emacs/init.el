@@ -190,6 +190,43 @@
                 conf-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 1))))
 
+;;;;; Fonts
+
+;; Font-related variable definitions.
+(defvar my/default-fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
+(defvar my/default-variable-font "Iosevka Aile") ;; ETBembo is another good one.
+(defvar my/default-fixed-font-size 140)
+(defvar my/default-variable-font-size 140)
+(defvar my/default-line-number-font-size 120)
+
+(defun my/init-faces ()
+  "Intialize font face attributes."
+  (interactive)
+  (set-face-attribute 'default nil
+                      :font my/default-fixed-font
+                      :height my/default-fixed-font-size
+                      :width 'normal
+                      :weight 'normal)
+  (set-face-attribute 'variable-pitch nil
+                      :font my/default-variable-font
+                      :height my/default-variable-font-size
+                      :width 'normal
+                      :weight 'normal)
+  (set-face-attribute 'line-number nil
+                      :font my/default-fixed-font
+                      :height my/default-line-number-font-size
+                      :width 'normal
+                      :weight 'ultra-light))
+
+;;;;; Icons
+
+(use-package all-the-icons
+  :config
+  ;; Only install the fonts if they are not already installed. See:
+  ;; https://github.com/domtronn/all-the-icons.el/issues/120#issuecomment-480342779
+  (unless (member "all-the-icons" (font-family-list))
+      (all-the-icons-install-fonts t)))
+
 ;;;;; Themes
 
 ;; Note: I'm going to push forward with the excellenet and highly-customisable
@@ -244,6 +281,7 @@
   (interactive)
   (my/disable-all-themes)
   (load-theme theme t)
+  (my/init-faces)
   (message "Loaded theme: %s" theme))
 
 (defun my/load-next-theme ()
@@ -268,41 +306,10 @@
 ;; Load the first theme in the list.
 (my/load-theme (car my/themes))
 
-;;;;; Fonts
-
-;; Font-related variable definitions.
-(defvar my/default-fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
-(defvar my/default-variable-font "Iosevka Aile") ;; ETBembo is another good one.
-(defvar my/default-fixed-font-size 144)
-(defvar my/default-variable-font-size 144)
-
-;; Set the default face.
-(set-face-attribute 'default nil
-                    :font my/default-fixed-font
-                    :height my/default-fixed-font-size
-                    :width 'normal
-                    :weight 'normal)
-
-;; Set the variable pitch face
-(set-face-attribute 'variable-pitch nil
-                    :font my/default-variable-font
-                    :height my/default-variable-font-size
-                    :width 'normal
-                    :weight 'normal)
-
-;;;;; Icons
-
-(use-package all-the-icons
-  :config
-  ;; Only install the fonts if they are not already installed. See:
-  ;; https://github.com/domtronn/all-the-icons.el/issues/120#issuecomment-480342779
-  (unless (member "all-the-icons" (font-family-list))
-      (all-the-icons-install-fonts t)))
-
 ;;;;; Mode-Line
 
 (defvar my/no-line-number-modes
-  '(vterm-mode))
+  '(vterm-mode magit-status-mode))
 
 (use-package mini-modeline
   :custom
@@ -312,17 +319,16 @@
   (mini-modeline-r-format
    '("%e"
      (:eval
-      (let ((fg (cond ((eq buffer-read-only t) "orange1")
+      (let ((fg (cond ((eq buffer-read-only t) "dark grey")
                       ((buffer-modified-p) "tomato")
-                      (t "spring green"))))
-        (propertize "%b " 'face `(:weight bold :foreground ,fg))))
-     (:propertize (vc-mode vc-mode) face (:weight normal))
+                      (t "medium aquamarine"))))
+        (propertize "%b" 'face `(:weight bold :foreground ,fg))))
      (:eval
       (when (not (member major-mode my/no-line-number-modes))
-        (propertize " L%l" 'face '(:weight light))))
+        (propertize "  L%l" 'face '(:weight light))))
      (:eval
       (when (bound-and-true-p vterm-copy-mode)
-        (propertize "[COPY]" 'face '(:weight bold))))))
+        (propertize " [COPY]" 'face '(:weight bold))))))
   :config
   (mini-modeline-mode 1))
 
@@ -742,9 +748,7 @@
         ("C-x p p"   . project-switch-project)
         ("C-x p r"   . consult-ripgrep)
         ("C-x p R"   . project-query-replace-regexp)
-        ("C-x p u"   . my/project-refresh-list)
-        ("C-x p w l" . project-x-window-state-load)
-        ("C-x p w s" . project-x-window-state-save))
+        ("C-x p u"   . my/project-refresh-list))
   :custom
   (project-list-file (expand-file-name "projects" my/emacs-cache-dir))
   (project-switch-commands
@@ -752,7 +756,6 @@
      (magit-status        "Magit Status" ?g)
      (consult-ripgrep     "Ripgrep"      ?r)
      (multi-vterm-project "Vterm"        ?v)))
-
   :config
   ;; Override the way that project.el determines the project root.
   (setq project-find-functions '(my/project-find-root)))
@@ -813,14 +816,6 @@ as there appears to be a bug in the current version."
       (project--write-project-list)
       (message "%d project%s were found"
                count (if (= count 1) "" "s")))))
-
-(use-package project-x
-  :straight '(project-x-mode-mode :host github :repo "karthink/project-x")
-  :after project
-  :custom
-  (project-x-window-list-file (expand-file-name "project-window-list" my/emacs-cache-dir))
-  :config
-  (project-x-mode 1))
 
 ;;;;; File Browsing
 
