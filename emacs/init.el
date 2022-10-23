@@ -308,29 +308,36 @@
 
 ;;;;; Mode-Line
 
-(defvar my/no-line-number-modes
+(defvar my/mode-line-no-line-number-modes
   '(vterm-mode magit-status-mode))
+
+(defvar my/mode-line-format
+  '("%e"
+    (:eval
+     (let ((fg (cond ((eq buffer-read-only t) "dark grey")
+                     ((buffer-modified-p) "tomato")
+                     (t "medium aquamarine"))))
+       (propertize "%b" 'face `(:weight bold :foreground ,fg))))
+    (:eval
+     (when (not (member major-mode my/mode-line-no-line-number-modes))
+       (propertize "  L%l:C%c" 'face '(:weight light))))
+    (:eval
+     (when (bound-and-true-p vterm-copy-mode)
+       (propertize " [COPY]" 'face '(:weight bold))))))
+
+(defvar my/mode-line-minify t)
+
+(when (not my/mode-line-minify)
+  (setq mode-line-format my/mode-line-format))
 
 (use-package mini-modeline
   :custom
   (mini-modeline-echo-duration 3)
   (mini-modeline-update-interval 0.1)
   (mini-modeline-display-gui-line t)
-  (mini-modeline-r-format
-   '("%e"
-     (:eval
-      (let ((fg (cond ((eq buffer-read-only t) "dark grey")
-                      ((buffer-modified-p) "tomato")
-                      (t "medium aquamarine"))))
-        (propertize "%b" 'face `(:weight bold :foreground ,fg))))
-     (:eval
-      (when (not (member major-mode my/no-line-number-modes))
-        (propertize "  L%l" 'face '(:weight light))))
-     (:eval
-      (when (bound-and-true-p vterm-copy-mode)
-        (propertize " [COPY]" 'face '(:weight bold))))))
+  (mini-modeline-r-format my/mode-line-format)
   :config
-  (mini-modeline-mode 1))
+  (mini-modeline-mode (if my/mode-line-minify 1 0)))
 
 ;; Enable recursive editing to allow multiple minibuffers to be opened on top of
 ;; each other. E.g., this allows starting a query-replace, then open a file to look
@@ -1423,6 +1430,17 @@ as there appears to be a bug in the current version."
           ((apply '< cmp) -1)
           (t nil))))
 
+(defun my/org-capture (&optional goto keys)
+  "Wrap `org-capture' to handle issue with `mini-modeline'.
+See: https://github.com/kiennq/emacs-mini-modeline/issues/64 for details.
+This function passes the GOTO and KEYS arguments directly to `org-capture'."
+  (interactive "P")
+  ;; mini-modeline modifies face-remapping-alist which causes problems when
+  ;; functions such as org-capture call make-indirect-buffer. Below we set
+  ;; face-remapping-alist temporarily while org-capture is executed.
+  (let ((face-remapping-alist nil))
+    (org-capture goto keys)))
+
 (use-package org
   :hook
   (org-mode . my/org-mode-init)
@@ -1658,10 +1676,10 @@ as there appears to be a bug in the current version."
 
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
-(global-set-key (kbd "C-c o m") 'org-capture)
-(global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i"))) ;; Capture inbox item.
-(global-set-key (kbd "C-c o b") (lambda () (interactive) (org-capture nil "b"))) ;; Capture bookmark.
-(global-set-key (kbd "C-c o c") (lambda () (interactive) (org-capture nil "c"))) ;; Capture coffee log.
+(global-set-key (kbd "C-c o m") 'my/org-capture)
+(global-set-key (kbd "C-c o i") (lambda () (interactive) (my/org-capture nil "i"))) ;; Capture inbox item.
+(global-set-key (kbd "C-c o b") (lambda () (interactive) (my/org-capture nil "b"))) ;; Capture bookmark.
+(global-set-key (kbd "C-c o c") (lambda () (interactive) (my/org-capture nil "c"))) ;; Capture coffee log.
 (global-set-key (kbd "C-c C-o") 'org-open-at-point-global) ;; Open links everywhere just like in org-mode.
 
 ;;;; Credential Management
