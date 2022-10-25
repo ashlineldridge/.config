@@ -308,43 +308,16 @@
 
 ;;;;; Mode-Line
 
-(defvar my/mode-line-no-line-number-modes
-  '(vterm-mode magit-status-mode))
-
-(defvar my/mode-line-format
-  '("%e"
-    (:eval
-     (let ((fg (cond ((eq buffer-read-only t) "dark grey")
-                     ((buffer-modified-p) "tomato")
-                     (t "medium aquamarine"))))
-       (propertize "%b" 'face `(:weight bold :foreground ,fg))))
-    (:eval
-     (when (not (member major-mode my/mode-line-no-line-number-modes))
-       (propertize "  L%l:C%c" 'face '(:weight light))))
-    (:eval
-     (when (bound-and-true-p vterm-copy-mode)
-       (propertize " [COPY]" 'face '(:weight bold))))))
-
-(defvar my/mode-line-minify t)
-
-(when (not my/mode-line-minify)
-  (setq mode-line-format my/mode-line-format))
-
-(use-package mini-modeline
-  :custom
-  (mini-modeline-echo-duration 3)
-  (mini-modeline-update-interval 0.1)
-  (mini-modeline-display-gui-line t)
-  (mini-modeline-r-format my/mode-line-format)
+(use-package mood-line
   :config
-  (mini-modeline-mode (if my/mode-line-minify 1 0)))
+  (mood-line-mode 1))
 
 ;; Enable recursive editing to allow multiple minibuffers to be opened on top of
 ;; each other. E.g., this allows starting a query-replace, then open a file to look
 ;; at something, then go back to the query-replace minibuffer.
 (setq enable-recursive-minibuffers t)
 ;; Display a small "[n]" that shows the minibuffer recursive depth. Another option is to
-;; use the minad/recursion-indicator but it doesn't appear to work with mini-modeline.
+;; use the minad/recursion-indicator but I don't really use the feature enough.
 (minibuffer-depth-indicate-mode)
 
 ;;;; Window Management
@@ -748,14 +721,15 @@
   :straight nil ;; Built-in.
   :bind
   (:map global-map
-        ("C-x p"     . nil) ; Remove previous bindings
-        ("C-x p d"   . project-dired)
-        ("C-x p c"   . project-compile)
-        ("C-x p f"   . project-find-file)
-        ("C-x p p"   . project-switch-project)
-        ("C-x p r"   . consult-ripgrep)
-        ("C-x p R"   . project-query-replace-regexp)
-        ("C-x p u"   . my/project-refresh-list))
+        ("C-x p"   . nil) ; Remove previous bindings
+        ("C-x p d" . project-dired)
+        ("C-x p c" . project-compile)
+        ("C-x p f" . project-find-file)
+        ("C-x p k" . project-kill-buffers)
+        ("C-x p p" . project-switch-project)
+        ("C-x p r" . consult-ripgrep)
+        ("C-x p R" . project-query-replace-regexp)
+        ("C-x p u" . my/project-refresh-list))
   :custom
   (project-list-file (expand-file-name "projects" my/emacs-cache-dir))
   (project-switch-commands
@@ -1430,17 +1404,6 @@ as there appears to be a bug in the current version."
           ((apply '< cmp) -1)
           (t nil))))
 
-(defun my/org-capture (&optional goto keys)
-  "Wrap `org-capture' to handle issue with `mini-modeline'.
-See: https://github.com/kiennq/emacs-mini-modeline/issues/64 for details.
-This function passes the GOTO and KEYS arguments directly to `org-capture'."
-  (interactive "P")
-  ;; mini-modeline modifies face-remapping-alist which causes problems when
-  ;; functions such as org-capture call make-indirect-buffer. Below we set
-  ;; face-remapping-alist temporarily while org-capture is executed.
-  (let ((face-remapping-alist nil))
-    (org-capture goto keys)))
-
 (use-package org
   :hook
   (org-mode . my/org-mode-init)
@@ -1469,23 +1432,19 @@ This function passes the GOTO and KEYS arguments directly to `org-capture'."
   (org-agenda-custom-commands
    `(("d" . "Dashboards") ;; Creates command prefix "d".
      ("da" "All Tasks"
-      ((agenda
-        ""
-        ((org-agenda-overriding-header "Weekly Agenda")
-         (org-agenda-span 'week)))
-       (alltodo
+      ((alltodo
 	""
 	((org-agenda-overriding-header "Inbox")
 	 (org-agenda-files '(,(concat my/gtd-dir "/inbox.org")))))
        (alltodo
         ""
-        ((org-agenda-overriding-header "Personal")
-         (org-agenda-files '(,(concat my/gtd-dir "/personal.org")))
+        ((org-agenda-overriding-header "Work")
+         (org-agenda-files '(,(concat my/gtd-dir "/work.org")))
          (org-agenda-sorting-strategy '(user-defined-up priority-down))))
        (alltodo
         ""
-        ((org-agenda-overriding-header "Work")
-         (org-agenda-files '(,(concat my/gtd-dir "/work.org")))
+        ((org-agenda-overriding-header "Personal")
+         (org-agenda-files '(,(concat my/gtd-dir "/personal.org")))
          (org-agenda-sorting-strategy '(user-defined-up priority-down))))))
      ("dp" "Personal Tasks"
       ((todo
@@ -1676,10 +1635,10 @@ This function passes the GOTO and KEYS arguments directly to `org-capture'."
 
 (global-set-key (kbd "C-c o l") 'org-store-link)
 (global-set-key (kbd "C-c o a") 'org-agenda)
-(global-set-key (kbd "C-c o m") 'my/org-capture)
-(global-set-key (kbd "C-c o i") (lambda () (interactive) (my/org-capture nil "i"))) ;; Capture inbox item.
-(global-set-key (kbd "C-c o b") (lambda () (interactive) (my/org-capture nil "b"))) ;; Capture bookmark.
-(global-set-key (kbd "C-c o c") (lambda () (interactive) (my/org-capture nil "c"))) ;; Capture coffee log.
+(global-set-key (kbd "C-c o m") 'org-capture)
+(global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i"))) ;; Capture inbox item.
+(global-set-key (kbd "C-c o b") (lambda () (interactive) (org-capture nil "b"))) ;; Capture bookmark.
+(global-set-key (kbd "C-c o c") (lambda () (interactive) (org-capture nil "c"))) ;; Capture coffee log.
 (global-set-key (kbd "C-c C-o") 'org-open-at-point-global) ;; Open links everywhere just like in org-mode.
 
 ;;;; Credential Management
