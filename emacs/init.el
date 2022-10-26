@@ -193,30 +193,33 @@
 ;;;;; Fonts
 
 ;; Font-related variable definitions.
-(defvar my/default-fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
-(defvar my/default-variable-font "Iosevka Aile") ;; ETBembo is another good one.
-(defvar my/default-fixed-font-size 140)
-(defvar my/default-variable-font-size 140)
-(defvar my/default-line-number-font-size 120)
+(defvar my/fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
+(defvar my/variable-font "Iosevka Aile") ;; ETBembo is another good one.
+(defvar my/fixed-font-size 140)
+(defvar my/variable-font-size 140)
+(defvar my/line-number-font-size 120)
+(defvar my/mode-line-font-size 130)
 
 (defun my/init-faces ()
   "Intialize font face attributes."
   (interactive)
   (set-face-attribute 'default nil
-                      :font my/default-fixed-font
-                      :height my/default-fixed-font-size
+                      :font my/fixed-font
+                      :height my/fixed-font-size
                       :width 'normal
                       :weight 'normal)
   (set-face-attribute 'variable-pitch nil
-                      :font my/default-variable-font
-                      :height my/default-variable-font-size
+                      :font my/variable-font
+                      :height my/variable-font-size
                       :width 'normal
                       :weight 'normal)
   (set-face-attribute 'line-number nil
-                      :font my/default-fixed-font
-                      :height my/default-line-number-font-size
+                      :font my/fixed-font
+                      :height my/line-number-font-size
                       :width 'normal
-                      :weight 'ultra-light))
+                      :weight 'ultra-light)
+  (set-face-attribute 'mode-line nil :height my/mode-line-font-size)
+  (set-face-attribute 'mode-line-inactive nil :height my/mode-line-font-size))
 
 ;;;;; Icons
 
@@ -306,11 +309,32 @@
 ;; Load the first theme in the list.
 (my/load-theme (car my/themes))
 
-;;;;; Mode-Line
+;;;;; Mode Line
 
-(use-package mood-line
-  :config
-  (mood-line-mode 1))
+(use-package doom-modeline
+  :init
+  (doom-modeline-mode 1)
+  (setq column-number-indicator-zero-based nil)
+  (column-number-mode 1)
+  :custom
+  ;; Mode line height is determined by the smaller of doom-modeline-height and the mode line
+  ;; The function doom-modeline--font-height can be called to determine the actual font height
+  ;; that will be used when determining the minimum height of the mode line.
+  (doom-modeline-height 1)
+  (doom-modeline-bar-width 4)
+  (doom-modeline-lsp t)
+  (doom-modeline-github nil)
+  (doom-modeline-mu4e nil)
+  (doom-modeline-irc nil)
+  (doom-modeline-minor-modes t)
+  (doom-modeline-persp-name nil)
+  (doom-modeline-buffer-file-name-style 'relative-from-project)
+  (doom-modeline-major-mode-icon nil)
+  (doom-modeline-buffer-encoding nil)
+  (doom-modeline-buffer-state-icon t))
+
+(use-package minions
+  :init (minions-mode 1))
 
 ;; Enable recursive editing to allow multiple minibuffers to be opened on top of
 ;; each other. E.g., this allows starting a query-replace, then open a file to look
@@ -328,8 +352,10 @@
   :bind
   (("M-o" . ace-window)
    ("M-O" . ace-delete-window))
-  :config
-  (setq aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
+  :custom
+  (ace-window-display-mode 1) ; Show ace-window key in the mode line.
+  (aw-display-mode-overlay nil)
+  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
 
 ;;;;; Jump Between Windows
 
@@ -736,7 +762,8 @@
    '((project-find-file   "Find file"    ?f)
      (magit-status        "Magit Status" ?g)
      (consult-ripgrep     "Ripgrep"      ?r)
-     (multi-vterm-project "Vterm"        ?v)))
+     (multi-vterm-project "Vterm"        ?v)
+     (project-dired       "Dired"        ?d)))
   :config
   ;; Override the way that project.el determines the project root.
   (setq project-find-functions '(my/project-find-root)))
@@ -801,6 +828,8 @@ as there appears to be a bug in the current version."
 ;;;;; File Browsing
 
 (use-package neotree
+  ;; Try using dired and emacs find functions better.
+  :disabled
   :custom
   (neo-theme 'nerd)
   (neo-smart-open t)

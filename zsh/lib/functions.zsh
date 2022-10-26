@@ -75,3 +75,9 @@ function update_rust_analyzer() {
 function open_ports() {
   sudo lsof -iTCP -sTCP:LISTEN -n -P
 }
+
+# Enable tre editor aliasing. See: https://github.com/dduan/tre#editor-aliasing.
+tre() {
+  command tre "$@" -e 'emacsclient --no-wait'
+  source "/tmp/tre_aliases_${USER}" 2> /dev/null
+}
