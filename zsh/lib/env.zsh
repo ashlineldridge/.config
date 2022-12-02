@@ -22,9 +22,6 @@ export PASSWORD_STORE_DIR="${XDG_DATA_HOME}/pass"
 # Commented out for now because it breaks `terraform login`.
 # export TF_CLI_CONFIG_FILE="${XDG_CONFIG_HOME}/terraform/config"
 
-# Force Starship to use XDG
-export STARSHIP_CONFIG="${XDG_CONFIG_HOME}"/starship/config.toml
-
 # Make Emacs the default editor
 export EDITOR=emacsclient
 
@@ -63,3 +60,6 @@ export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.plat
 
 # Node Version Manager installation directory (see lib/nvm.zsh).
 export NVM_DIR="/opt/share/nvm"
+
+# Java (using latest https://docs.aws.amazon.com/corretto).
+export JAVA_HOME="$(/usr/libexec/java_home)"
