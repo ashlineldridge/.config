@@ -331,7 +331,8 @@
   (doom-modeline-buffer-file-name-style 'relative-from-project)
   (doom-modeline-major-mode-icon nil)
   (doom-modeline-buffer-encoding nil)
-  (doom-modeline-buffer-state-icon t))
+  (doom-modeline-buffer-state-icon t)
+  (doom-modeline-column-zero-based t))
 
 (use-package minions
   :init (minions-mode 1))
@@ -350,24 +351,32 @@
 
 (use-package ace-window
   :bind
-  (("M-o" . ace-window)
-   ("M-O" . ace-delete-window))
+  (:map global-map
+        ("M-o" . ace-window))
   :custom
-  (ace-window-display-mode 1) ; Show ace-window key in the mode line.
-  (aw-display-mode-overlay nil)
-  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
+  (aw-display-mode-overlay t)
+  ;; (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (aw-dispatch-always t)
+  (aw-background nil)
+  :config
+  (setq aw-dispatch-alist
+   '((?k aw-delete-window "Delete Window")
+     (?K delete-other-windows "Delete Other Windows")
+     (?s aw-swap-window "Swap Windows")
+     (?m aw-move-window "Move Window")
+     (?c aw-copy-window "Copy Window")
+     (?o aw-flip-window) ; Flip to previous window (adding description text doesn't work for some reason).
+     (?v aw-split-window-vert "Split Vert Window")
+     (?h aw-split-window-horz "Split Horz Window")
+     (?? aw-show-dispatch-help))))
 
-;;;;; Jump Between Windows
+;;;;; Jump Between Point Locations
 
 (use-package avy
   :bind
   (("C-: c" . avy-goto-char)
    ("C-: l" . avy-goto-line)
    ("C-: w" . avy-goto-word-1)))
-
-;; Jump to the new window when splitting.
-(global-set-key "\C-x2" (lambda () (interactive)(split-window-vertically) (other-window 1)))
-(global-set-key "\C-x3" (lambda () (interactive)(split-window-horizontally) (other-window 1)))
 
 ;;;;; Window History
 
@@ -389,10 +398,10 @@
   ("u"       winner-undo                 "winner-undo" :exit t)
   ("U"       winner-redo                 "winner-redo" :exit t)
   ("w"       window-toggle-side-windows  "toggle-side-windows" :exit t)
-  ("k l"     (my/delete-window 'left)    "delete-window-left" :exit t)
-  ("k r"     (my/delete-window 'right)   "delete-window-right" :exit t)
-  ("k a"     (my/delete-window 'above)   "delete-window-above" :exit t)
-  ("k b"     (my/delete-window 'below)   "delete-window-below" :exit t)
+  ;; ("k l"     (my/delete-window 'left)    "delete-window-left" :exit t)
+  ;; ("k r"     (my/delete-window 'right)   "delete-window-right" :exit t)
+  ;; ("k a"     (my/delete-window 'above)   "delete-window-above" :exit t)
+  ;; ("k b"     (my/delete-window 'below)   "delete-window-below" :exit t)
   ("q" nil "quit"))
 
 (defun my/delete-window (direction)
@@ -484,7 +493,8 @@
 (use-package which-key
   :init (which-key-mode)
   :custom
-  (which-key-show-early-on-C-h t)
+  ;; Use Embark which is searchable instead.
+  (which-key-show-early-on-C-h nil)
   (which-key-idle-delay 2)
   (which-key-idle-secondary-delay 0.05)
   (which-key-popup-type 'side-window)
@@ -512,9 +522,14 @@
   ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This setting
   ;; only applies after the minimum number of prefix characters have been entered.
   (corfu-auto-delay 0)
-  ;; Modes which shouldn't use cofu. Org-mode is excluded as the only completions that
-  ;; get shown are org-roam note names which is pretty useless.
-  (corfu-excluded-modes '(org-mode)))
+  ;; Modes which shouldn't use corfu. The following modes have been added as the
+  ;; completions are kinda useless. Seems like corfu requires the concrete mode -
+  ;; you can't use the derived-from mode.
+  (corfu-excluded-modes
+   '(org-mode
+     bazel-build-mode
+     bazel-workspace-mode
+     bazel-starlark-mode)))
 
 ;; Enable indentation + completion using the TAB key. This is required for Corfu integration.
 (setq tab-always-indent 'complete)
@@ -664,7 +679,10 @@
                          (?S "Fields")
                          (?m "Modules")
                          (?t "Type Parameters")
-                         (?c "Constants")))))
+                         (?c "Constants"))))
+
+  ;; (setq consult-ripgrep-args "rg --null --line-buffered --color=never --max-columns=1000 --path-separator / --smart-case --no-heading --line-number .")
+  )
 
 (use-package consult-dir
   :bind
@@ -674,14 +692,41 @@
         ("C-x C-d" . consult-dir)
         ("C-x C-j" . consult-dir-jump-file)))
 
+;; See more advanced configuration here:
+;; https://github.com/karthink/.emacs.d/blob/42875586daa23d69c581be01bdc1e12718aef083/lisp/setup-embark.el.
 (use-package embark
   ;; Load after xref so that the overidden keybinding below takes effect.
   :after xref
   :bind
-  (("C-." . embark-act)))
+  (:map global-map
+        ("C-."   . embark-act)
+        ("M-."   . embark-dwim)
+        ("C-h b" . embark-bindings)) ;; Replace `describe-bindings'.
+  :custom
+  (embark-mixed-indicator-delay 0.5)
+  :config
+  ;; Run Embark after a prefix (e.g. C-x) is pressed and then C-h.
+  (setq prefix-help-command #'embark-prefix-help-command))
 
 (use-package embark-consult
   :after (embark consult))
+
+;; Taken from here: https://karthinks.com/software/fifteen-ways-to-use-embark/
+;; TODO: Work in progress... What's a better way of organising this? Some of the
+;; embark maps seem to be wrong - e.g. I can't use C-c n f and then act on a note.
+;; (eval-when-compile
+;;   (defmacro my/embark-ace-action (fn)
+;;     `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
+;;        (interactive)
+;;        (with-demoted-errors "%s"
+;;          (require 'ace-window)
+;;          (let ((aw-dispatch-always t))
+;;            (aw-switch-to-window (aw-select nil))
+;;            (call-interactively (symbol-function ',fn)))))))
+
+;; (define-key embark-file-map     (kbd "o") (my/embark-ace-action find-file))
+;; (define-key embark-buffer-map   (kbd "o") (my/embark-ace-action switch-to-buffer))
+;; (define-key embark-bookmark-map (kbd "o") (my/embark-ace-action bookmark-jump))
 
 (use-package wgrep
   :bind
@@ -751,6 +796,7 @@
         ("C-x p d" . project-dired)
         ("C-x p c" . project-compile)
         ("C-x p f" . project-find-file)
+        ("C-x p F" . my/project-find-file-relative)
         ("C-x p k" . project-kill-buffers)
         ("C-x p p" . project-switch-project)
         ("C-x p r" . consult-ripgrep)
@@ -790,6 +836,14 @@
   "Return the root directory of the current or nil."
   (if-let* ((proj (project-current)))
       (project-root proj)))
+
+(defun my/project-find-file-relative ()
+  "Complete a file name relative to the current buffer and project."
+  (interactive)
+  (if-let* ((proj (project-current))
+            (dir default-directory))
+      (project-find-file-in (buffer-file-name) (list dir) proj nil)
+    (project-find-file)))
 
 (defun my/project-refresh-list ()
   "Refresh list of known projects."
@@ -950,6 +1004,7 @@ as there appears to be a bug in the current version."
   (rustic-mode . lsp-deferred)
   (sh-mode . lsp-deferred)
   (terraform-mode . lsp-deferred)
+  (python-mode . lsp-deferred)
   :bind
   (:map lsp-mode-map
         ;; M-? is normally bound to xref-find-references but the way that this function exposes
@@ -1253,7 +1308,19 @@ as there appears to be a bug in the current version."
 (use-package bazel-mode
   :straight '(bazel-mode :host github
 			 :repo "bazelbuild/emacs-bazel-mode")
-  :mode "\\.BUILD\\'")
+  :mode "\\.BUILD\\'"
+  :init
+  ;; Remove the default Bazel keybindings.
+  (setq bazel-mode-map (make-sparse-keymap))
+  :bind
+  (:map bazel-mode-map
+        ("C-c C-c b" . bazel-build)
+        ("C-c C-c f" . bazel-buildifier)
+        ("C-c C-c r" . bazel-run)
+        ("C-c C-c t" . bazel-test)
+        ("C-c C-c T" . bazel-coverage))
+  :custom
+  (bazel-buildifier-before-save t))
 
 ;;;;;; C/C++
 
@@ -1675,11 +1742,10 @@ as there appears to be a bug in the current version."
 (use-package pass)
 
 (use-package auth-source-pass
+  :custom
+  (auth-source-do-cache nil)
   :config
   (auth-source-pass-enable))
-
-;; Don't cache secrets.
-(setq auth-source-do-cache nil)
 
 ;;;; Kubernetes
 (use-package kubernetes
