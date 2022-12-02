@@ -87,8 +87,10 @@ fi
 # Force isync/mbsync to follow XDG conventions
 alias mbsync="mbsync -c ${XDG_CONFIG_HOME}/isync/mbsyncrc"
 
-# Others
-alias watch='watch -n 1 '
+# Watch every 1 second by default.
+alias watch='watch -n 1'
+
+# Bazel.
 alias bz=bazel
 
 # Search hidden files/directories except .git.

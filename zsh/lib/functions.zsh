@@ -19,6 +19,13 @@ function aws_auth_with() {
   printf "Done.\n"
 }
 
+function aws-vault() {
+  if [[ "${1}" == exec ]]; then
+    unset AWS_VAULT
+  fi
+  command aws-vault "$@"
+}
+
 # Uses https://github.com/remind101/assume-role to assume the AWS IAM role
 # that corresponds to the specified profile name within the context of the
 # current shell. If no argument is specified, the function prints the profile
@@ -43,15 +50,6 @@ function aws_clear_role() {
   unset AWS_DEFAULT_REGION
   unset ASSUMED_ROLE
   printf "Cleared role: ${role}"
-}
-
-# Useful for decoding JSON that has been gzipped and base-64 encoded
-function decode_b64_gz_json() {
-  if [ $# -ne 1 ]; then
-    printf "You must specify a string to decode.\n"
-    return
-  fi;
-  echo "$1" | base64 -d | gunzip | jq .
 }
 
 function macdown() {

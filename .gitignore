@@ -24,6 +24,7 @@ emacs/eshell/lastdir
 emacs/forge-database.sqlite
 emacs/games/
 emacs/history
+emacs/network-security.data
 emacs/projectile-bookmarks.eld
 emacs/projectile.cache
 emacs/projects

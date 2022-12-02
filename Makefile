@@ -26,7 +26,11 @@ basic-init:
 	@ln -sf ~/.config/zsh/lib/env.zsh ~/.zshenv
 	@mkdir -p ~/.local/share/gnupg
 	@ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
-	@echo sudo dscl . -create /Users/$(USER) UserShell /opt/homebrew/bin/zsh
+# Not sure what the line below was ever meant to be doing?
+#	@echo sudo dscl . -create /Users/$(USER) UserShell /opt/homebrew/bin/zsh
+# Bazel doesn't follow XDG conventions and adding --bazelrc to the bz alias is not an
+# option as it breaks completion.
+	@ln -sf ~/.config/bazel/bazelrc ~/.bazelrc
 	@echo Done.
 
 .PHONY: dump-all
