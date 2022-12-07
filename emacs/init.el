@@ -817,8 +817,10 @@
 ;; Customise project root identification (the default only searches for version control markers).
 ;; See: https://andreyorst.gitlab.io/posts/2022-07-16-project-el-enhancements
 ;; And: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/emacs.md#configuring-project-for-go-modules-in-emacs
+;; Note: Although it's sometimes handy to put files like go.mod and Cargo.toml in the list below, this
+;; is problematic when dealing with monorepos as you can get "stuck" in a subdirectory of the monorepo.
 (defvar my/project-root-markers
-  '(".git" ".project" ".projectile" "Cargo.toml" "go.mod"))
+  '(".git" ".project" ".projectile"))
 
 (defun my/project-root-p (dir)
   "Check whether DIR is a project root."
@@ -1671,7 +1673,8 @@ as there appears to be a bug in the current version."
      ("PROG" . (:foreground "CadetBlue1" :weight bold))
      ("HOLD" . (:foreground "orange1" :weight bold))
      ("DONE" . (:foreground "orange red" :weight bold))))
-  (org-use-fast-todo-selection 'expert))
+  (org-use-fast-todo-selection 'expert)
+  (org-use-sub-superscripts nil))
 
 (use-package org-cliplink)
 

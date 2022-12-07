@@ -88,7 +88,7 @@ fi
 alias mbsync="mbsync -c ${XDG_CONFIG_HOME}/isync/mbsyncrc"
 
 # Watch every 1 second by default.
-alias watch='watch -n 1'
+alias watch='watch -n 1 '
 
 # Bazel.
 alias bz=bazel
