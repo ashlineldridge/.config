@@ -15,3 +15,6 @@ brew reinstall libgccjit
 
 # And then update LIBRARY_PATH in ~/.config/emacs/early-init.el
 #+end_src
+
+See here for getting Homebrew Emacs working with Spotlight/Alfred
+https://github.com/d12frosted/homebrew-emacs-plus/pull/517
