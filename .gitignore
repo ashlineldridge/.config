@@ -29,7 +29,10 @@ emacs/projectile-bookmarks.eld
 emacs/projectile.cache
 emacs/projects
 emacs/recentf
-emacs/straight/
+emacs/straight/build/
+emacs/straight/build-cache.el
+emacs/straight/modified/
+emacs/straight/repos/
 emacs/transient/
 emacs/url/
 exercism/

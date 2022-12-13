@@ -13,6 +13,8 @@
 
 ;;;; System Settings
 
+(setq debug-on-error t)
+
 ;; XDG directories.
 (defvar my/xdg-config-dir (expand-file-name "~/.config"))
 (defvar my/xdg-cache-dir  (expand-file-name "~/.cache"))
@@ -955,8 +957,9 @@ as there appears to be a bug in the current version."
 
 (use-package outline
   :straight nil ;; Built-in.
-  :hook
-  (emacs-lisp-mode . my/outline-minor-mode-safe)
+  ;; :hook
+  ;; TODO: Seems broken since last upgrade to Emacs 29
+  ;; (emacs-lisp-mode . my/outline-minor-mode-safe)
   :bind
   (:map outline-minor-mode-map
         ("C-c C-n"  . outline-next-visible-heading)
