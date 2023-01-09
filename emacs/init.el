@@ -13,8 +13,6 @@
 
 ;;;; System Settings
 
-(setq debug-on-error t)
-
 ;; XDG directories.
 (defvar my/xdg-config-dir (expand-file-name "~/.config"))
 (defvar my/xdg-cache-dir  (expand-file-name "~/.cache"))
@@ -52,9 +50,6 @@
 ;; within the structure of this file. So here we tell Emacs to save custom settings into
 ;; a separate file which we then never load.
 (setq custom-file (expand-file-name "custom.el" my/emacs-config-dir))
-
-;; Revert Dired and other buffers.
-(setq global-auto-revert-non-file-buffers t)
 
 ;; Don't ask when following symlinks to source code.
 (setq vc-follow-symlinks t)
@@ -157,6 +152,8 @@
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 ;; Remove compose-mail binding.
 (global-set-key (kbd "C-x m") nil)
+;; Trim trailing whitespace.
+(global-set-key (kbd "C-x C-w") 'delete-trailing-whitespace)
 
 ;;;; Appearance
 
@@ -165,11 +162,11 @@
 ;; Do not show the startup screen.
 (setq inhibit-startup-message t)
 
-(tool-bar-mode 0)    ;; Disable the tool bar.
-(tooltip-mode 0)     ;; Disable tool tips.
-(menu-bar-mode 0)    ;; Disable the menu bar.
-(scroll-bar-mode 0)  ;; Disable visible scrollbar.
-(set-fringe-mode 10) ;; Increase left/right margins slightly.
+(tool-bar-mode 0)   ;; Disable the tool bar.
+(tooltip-mode 0)    ;; Disable tool tips.
+(menu-bar-mode 0)   ;; Disable the menu bar.
+(scroll-bar-mode 0) ;; Disable visible scrollbar.
+(set-fringe-mode 5) ;; Increase left/right margins slightly.
 
 ;; Make frame size bigger.
 (set-frame-size (selected-frame) 110 50)
@@ -186,11 +183,13 @@
 ;; Truncate long lines in programming modes.
 (add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
 
-;; Enable (in left margin) line numbers for some modes.
+;; Programming-ish mode hooks.
 (dolist (mode '(text-mode-hook
                 prog-mode-hook
                 conf-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 1))))
+  (add-hook mode (lambda ()
+                   (display-line-numbers-mode 1)        ;; Enable line numbers.
+                   (setq show-trailing-whitespace t)))) ;; Show trailing whitespace.
 
 ;;;;; Fonts
 
@@ -251,19 +250,12 @@
   (modus-themes-paren-match '(intense underline))
   (modus-themes-prompts '(bold intense))
   (modus-themes-org-blocks 'gray-background)
+  (modus-themes-fringes nil)
   (modus-themes-headings
    '((1 . (variable-pitch rainbow background 1.3))
      (2 . (variable-pitch rainbow background semibold 1.2))
      (3 . (variable-pitch rainbow background semibold 1.1))
      (t . (variable-pitch rainbow semilight 1.1)))))
-
-(use-package doom-themes
-  :disabled
-  :config
-  (doom-themes-visual-bell-config))
-
-(use-package zenburn-theme
-  :disabled)
 
 (defvar my/themes
   '(modus-vivendi
@@ -738,15 +730,6 @@
 
 ;;;; General Editing
 
-;;;;; Whitespace
-
-(use-package ws-butler
-  :hook ((text-mode . ws-butler-mode)
-         (prog-mode . ws-butler-mode)))
-
-;; Mostly useful for highlighting whitespace characters.
-(use-package highlight-chars)
-
 ;;;;; Yanking and Deleting
 
 (defun my/copy-to-end-of-line ()
@@ -787,6 +770,20 @@
   (expand-region-autocopy-register "e"))
 
 ;;;; File System
+
+;;;;; File Browsing
+
+(use-package dired
+  :straight nil ;; Built-in.
+  :bind
+  (:map dired-mode-map
+        ("N" . dired-create-empty-file)
+        ("?" . which-key-show-major-mode))
+  :config
+  ;; Revert Dired (and other non-file) buffers.
+  (setq global-auto-revert-non-file-buffers t)
+  ;; Kill current dired buffer when opening a new one (e.g. when navigating into a directory).
+  (setq dired-kill-when-opening-new-dired-buffer t))
 
 ;;;;; Project Management
 
@@ -882,40 +879,6 @@ as there appears to be a bug in the current version."
       (project--write-project-list)
       (message "%d project%s were found"
                count (if (= count 1) "" "s")))))
-
-;;;;; File Browsing
-
-(use-package neotree
-  ;; Try using dired and emacs find functions better.
-  :disabled
-  :custom
-  (neo-theme 'nerd)
-  (neo-smart-open t)
-  (neo-window-fixed-size nil)
-  (neo-toggle-window-keep-p t)
-  :bind
-  (:map global-map
-	("C-c t t" . my/neotree-toggle)
-	("C-c t r" . my/neotree-refresh)))
-
-(defun my/neotree-refresh ()
-  "Refresh the Neotree window (if open) to navigate to the current file/project."
-  (interactive)
-  (if (neo-global--window-exists-p)
-      (let ((project-dir (my/project-current-root))
-            (file-name (buffer-file-name))
-	    (cw (selected-window)))
-	(if project-dir
-	    (progn
-	      (neotree-dir project-dir)
-	      (neotree-find file-name)
-	      (select-window cw))))))
-
-(defun my/neotree-toggle ()
-  "Toggle Neotree and navigates to the current file/project."
-  (interactive)
-  (neotree-toggle)
-  (my/neotree-refresh))
 
 ;;;;; Auto-Save
 
@@ -1361,18 +1324,6 @@ as there appears to be a bug in the current version."
 
 (use-package rainbow-delimiters
   :init (add-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode))
-
-;; See example configurations here:
-;; - https://www.reddit.com/r/emacs/comments/adkj95/smartparens_configuration_for_elisp_and_other/
-;; - https://gist.github.com/oantolin/5751fbaa7b8ab4f9570893f2adfe1862
-;; - https://alexpeits.github.io/emacs.d/#org687ce2c
-(use-package smartparens
-  ;; Giving global mode a try.
-  ;; :hook (prog-mode . smartparens-mode)
-  :init
-  (smartparens-global-mode)
-  :config
-  (require 'smartparens-config))
 
 (global-set-key (kbd "C-x C-r") 'eval-region)
 
