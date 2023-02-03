@@ -1185,11 +1185,10 @@ as there appears to be a bug in the current version."
 ;;;;;; Terraform
 
 (use-package terraform-mode
-  ; I prefer the // syntax to the default # comments.
   :hook
-  (terraform-mode . terraform-format-on-save-mode)
-  (terraform-mode . (lambda () (setq comment-start "//")))
-  (terraform-mode . (lambda () (setq-local indent-line-function 'my/hcl-indent-line))))
+  (hcl-mode . terraform-format-on-save-mode)
+  (hcl-mode . (lambda () (setq comment-start "//"))) ; I prefer the // syntax to the default # comments.
+  (hcl-mode . (lambda () (setq-local indent-line-function 'my/hcl-indent-line))))
 
 ;; This function is a modified version of hcl-indent-line in an attempt
 ;; to fix https://github.com/purcell/emacs-hcl-mode/issues/7.
@@ -1607,7 +1606,7 @@ as there appears to be a bug in the current version."
   (org-pretty-entities t)
   (org-priority-default org-priority-lowest)
   (org-refile-targets
-   `((,(concat my/gtd-dir "/archive.org") :level . 2)
+   `((,(concat my/gtd-dir "/archive.org") :regexp . "Ongoing")
      (,(concat my/gtd-dir "/inbox.org") :level . 1)
      (,(concat my/gtd-dir "/personal.org") :regexp . "Tasks") ;; This seems to work nicer.
      (,(concat my/gtd-dir "/work.org") :regexp . "Tasks")

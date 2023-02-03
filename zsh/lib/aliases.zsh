@@ -48,12 +48,10 @@ alias reload="exec zsh -l && source ~/.zshenv"
 
 # Terraform
 alias tf="terraform"
+alias tg="terragrunt"
 
 # GUID generator with clipboard copy
 alias guid="uuidgen | tr '[:upper:]' '[:lower:]' | pbcopy && pbpaste"
-
-# Hub (Github helper) aliased over standard git command
-#eval "$(hub alias -s)"
 
 # Kubernetes tools
 alias k=kubectl
