@@ -106,6 +106,10 @@
 
 ;;;; Package Management
 
+;; TODO: remove.
+;; Temporary workaround for https://github.com/radian-software/straight.el/pull/1054.
+(setq straight-repository-branch "rr-fix-renamed-variable")
+
 ;; Bootstrap straight.el.
 ;; See: https://github.com/raxod502/straight.el#bootstrapping-straightel
 (defvar bootstrap-version)
@@ -340,6 +344,10 @@
 (minibuffer-depth-indicate-mode)
 
 ;;;; Window Management
+
+;; Move focus to new windows.
+(global-set-key "\C-x2" (lambda () (interactive) (split-window-vertically) (other-window 1)))
+(global-set-key "\C-x3" (lambda () (interactive) (split-window-horizontally) (other-window 1)))
 
 ;;;;; Window Selection with Ace Window
 
@@ -646,7 +654,7 @@
    ;; So that the consult-ripgrep project shortcut doesn't show previews (you need to customize
    ;; the interactive function: https://github.com/minad/consult/issues/676#issuecomment-1286196998).
    project-switch-project
-   :preview-key (kbd "M-."))
+   :preview-key "M-.")
 
   ;; Customise the list of sources shown by consult-buffer.
   (setq consult-buffer-sources
@@ -790,12 +798,46 @@
   :bind
   (:map dired-mode-map
         ("N" . dired-create-empty-file)
-        ("?" . which-key-show-major-mode))
+        ("?" . which-key-show-major-mode)
+        ("i" . dired-subtree-insert)
+        (";" . dired-subtree-remove))
+  :hook
+  (dired-mode . all-the-icons-dired-mode)
+  (dired-mode . diredfl-mode)
   :config
-  ;; Revert Dired (and other non-file) buffers.
-  (setq global-auto-revert-non-file-buffers t)
-  ;; Kill current dired buffer when opening a new one (e.g. when navigating into a directory).
+  ;; Show subtrees indented under the current directory.
+  (use-package dired-subtree)
+  (use-package all-the-icons-dired)
+  (use-package diredfl)
+
+  ;; See more settings here https://github.com/protesilaos/dotfiles/blob/master/emacs/.emacs.d/prot-emacs-modules/prot-emacs-dired.el
+  (setq dired-recursive-copies 'always)
+  (setq dired-recursive-deletes 'always)
+  (setq delete-by-moving-to-trash t)
   (setq dired-kill-when-opening-new-dired-buffer t))
+
+(use-package dired-rainbow
+  :config
+  (dired-rainbow-define-chmod directory "#6cb2eb" "d.*")
+  (dired-rainbow-define html "#eb5286" ("css" "less" "sass" "scss" "htm" "html" "jhtm" "mht" "eml" "mustache" "xhtml"))
+  (dired-rainbow-define xml "#f2d024" ("xml" "xsd" "xsl" "xslt" "wsdl" "bib" "json" "msg" "pgn" "rss" "yaml" "yml" "rdata"))
+  (dired-rainbow-define document "#9561e2" ("docm" "doc" "docx" "odb" "odt" "pdb" "pdf" "ps" "rtf" "djvu" "epub" "odp" "ppt" "pptx"))
+  (dired-rainbow-define markdown "#ffed4a" ("org" "etx" "info" "markdown" "md" "mkd" "nfo" "pod" "rst" "tex" "textfile" "txt"))
+  (dired-rainbow-define database "#6574cd" ("xlsx" "xls" "csv" "accdb" "db" "mdb" "sqlite" "nc"))
+  (dired-rainbow-define media "#de751f" ("mp3" "mp4" "mkv" "MP3" "MP4" "avi" "mpeg" "mpg" "flv" "ogg" "mov" "mid" "midi" "wav" "aiff" "flac"))
+  (dired-rainbow-define image "#f66d9b" ("tiff" "tif" "cdr" "gif" "ico" "jpeg" "jpg" "png" "psd" "eps" "svg"))
+  (dired-rainbow-define log "#c17d11" ("log"))
+  (dired-rainbow-define shell "#f6993f" ("awk" "bash" "bat" "sed" "sh" "zsh" "vim"))
+  (dired-rainbow-define interpreted "#38c172" ("py" "ipynb" "rb" "pl" "t" "msql" "mysql" "pgsql" "sql" "r" "clj" "cljs" "scala" "js"))
+  (dired-rainbow-define compiled "#4dc0b5" ("asm" "cl" "lisp" "el" "c" "h" "c++" "h++" "hpp" "hxx" "m" "cc" "cs" "cp" "cpp" "go" "f" "for" "ftn" "f90" "f95" "f03" "f08" "s" "rs" "hi" "hs" "pyc" "java"))
+  (dired-rainbow-define executable "#8cc4ff" ("exe" "msi"))
+  (dired-rainbow-define compressed "#51d88a" ("7z" "zip" "bz2" "tgz" "txz" "gz" "xz" "z" "Z" "jar" "war" "ear" "rar" "sar" "xpi" "apk" "xz" "tar"))
+  (dired-rainbow-define packaged "#faad63" ("deb" "rpm" "apk" "jad" "jar" "cab" "pak" "pk3" "vdf" "vpk" "bsp"))
+  (dired-rainbow-define encrypted "#ffed4a" ("gpg" "pgp" "asc" "bfe" "enc" "signature" "sig" "p12" "pem"))
+  (dired-rainbow-define fonts "#6cb2eb" ("afm" "fon" "fnt" "pfb" "pfm" "ttf" "otf"))
+  (dired-rainbow-define partition "#e3342f" ("dmg" "iso" "bin" "nrg" "qcow" "toast" "vcd" "vmdk" "bak"))
+  (dired-rainbow-define vc "#0074d9" ("git" "gitignore" "gitattributes" "gitmodules"))
+  (dired-rainbow-define-chmod executable-unix "#38c172" "-.*x.*"))
 
 ;;;;; Project Management
 
@@ -816,11 +858,12 @@
   :custom
   (project-list-file (expand-file-name "projects" my/emacs-cache-dir))
   (project-switch-commands
-   '((project-find-file   "Find file"    ?f)
-     (magit-status        "Magit Status" ?g)
-     (consult-ripgrep     "Ripgrep"      ?r)
-     (multi-vterm-project "Vterm"        ?v)
-     (project-dired       "Dired"        ?d)))
+   '((project-find-file   "File"    ?f)
+     (project-dired       "Dired"   ?d)
+     (consult-ripgrep     "Ripgrep" ?r)
+     (magit-project-statu "Magit"   ?m)
+     (project-eshell      "Eshell"  ?e)
+     (multi-vterm-project "Vterm"   ?v)))
   :config
   ;; Override the way that project.el determines the project root.
   (setq project-find-functions '(my/project-find-root)))
@@ -983,7 +1026,9 @@ as there appears to be a bug in the current version."
   (go-mode . lsp-deferred)
   (rustic-mode . lsp-deferred)
   (sh-mode . lsp-deferred)
-  (terraform-mode . lsp-deferred)
+  ;; Disable LSP mode for Terraform as the language servers (both terraform-ls and terraform-lsp)
+  ;; don't support Terraform files in nested directories which is standard for Terragrunt projects.
+  ;; (terraform-mode . lsp-deferred)
   (python-mode . lsp-deferred)
   :bind
   (:map lsp-mode-map
@@ -1068,6 +1113,7 @@ as there appears to be a bug in the current version."
   ;; Enable procedural macro support (apparently assists with auto-completion when procedural
   ;; macros are involved; see https://news.ycombinator.com/item?id=28802428).
   ;; (lsp-rust-analyzer-proc-macro-enable t)
+
   ;; Configure lsp-mode to use the official terraform-ls LSP server rather than terraform-lsp
   ;; which it uses by default and is more experimental (crashes constantly for me).
   (lsp-terraform-server '("terraform-ls" "serve"))
@@ -1376,7 +1422,17 @@ as there appears to be a bug in the current version."
   ;; Disable as I get errors about `project-switch-commands' being nil.
   (setq magit-bind-magit-project-status nil))
 
-;;;; Terminal
+;;;; Shell/Terminal
+
+(use-package eshell
+  :straight nil ;; Built-in.
+  :hook
+  ;; Don't auto-show the Corfu completion popup (press tab instead).
+  (eshell-mode . (lambda () (setq-local corfu-auto nil)))
+  :bind
+  (:map global-map
+	("C-c e e" . eshell)
+        ("C-c e p" . project-eshell)))
 
 (use-package vterm
   :bind
@@ -1731,6 +1787,14 @@ as there appears to be a bug in the current version."
   (kubernetes-poll-frequency 3600)
   (kubernetes-redraw-frequency 3600))
 
+;;;; D2 Diagramming
+(use-package d2-mode
+  :mode (("\\.d2\\'" . d2-mode))
+  :hook
+  (d2-mode . (lambda ()
+               (setq comment-start "#")
+               (setq comment-start-skip "#+ *"))))
+
 ;;;; Miscellaneous
 
 ;; Function for starting "An Introduction to Programming in Emacs Lisp" which is no longer
@@ -1743,3 +1807,4 @@ as there appears to be a bug in the current version."
 ;;; End:
 (provide 'init)
 ;;; init.el ends here
+(put 'magit-clean 'disabled nil)
