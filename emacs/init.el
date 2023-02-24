@@ -477,7 +477,7 @@
   :init (when (memq window-system '(mac ns x))
 	  (setq exec-path-from-shell-variables
 		'("PATH" "MANPATH" "XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME"
-		  "SHELL" "GNUPGHOME" "PASSWORD_STORE_DIR" "DEVELOPER_DIR" "SDKROOT"
+		  "GNUPGHOME" "PASSWORD_STORE_DIR" "DEVELOPER_DIR" "SDKROOT" ; "SHELL"
                   "GOPATH" "GOROOT"))
 	  (setq exec-path-from-shell-arguments nil)
 	  (exec-path-from-shell-initialize)))
@@ -583,7 +583,7 @@
 ;; Orderless configuration taken from https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
 (use-package orderless
   :init
-  (setq completion-styles '(orderless partial-completion basic)
+  (setq completion-styles '(orderless basic)
         completion-category-defaults nil
         completion-category-overrides '((file (styles . (partial-completion))))))
 
@@ -591,32 +591,20 @@
   :init
   (marginalia-mode 1))
 
-(defvar my/consult-source-vterm-buffer
-  `(:name     "Vterm Buffer"
-    :narrow   ?v
-    :category vterm-buffer
-    :face     consult-buffer
-    :history  buffer-name-history
-    :state    ,#'consult--buffer-state
-    :action   ,#'consult--buffer-action
-    :items
-    ,(lambda () (consult--buffer-query :sort 'visibility
-                                       :as #'buffer-name
-                                       :mode 'vterm-mode)))
-  "Vterm buffer source for `consult-buffer'.")
-
 (use-package consult
   :straight '(consult-mode :host github :repo "minad/consult")
   :bind
-  (("C-s"     . consult-line)
-   ("C-x i"   . consult-imenu)       ; Local buffer imenu
-   ("C-x I"   . consult-imenu-multi) ; Open buffers imenu
-   ("C-x b"   . consult-buffer)
-   ("M-g M-g" . consult-goto-line)
-   ("M-y"     . consult-yank-pop)
-   ("C-x r r" . consult-register)
-   ("C-x r l" . consult-register-load)
-   ("C-x r s" . consult-register-store))
+  (:map global-map
+        ("C-s"     . consult-line)
+        ("C-r"     . consult-history)
+        ("C-x i"   . consult-imenu)       ; Local buffer imenu
+        ("C-x I"   . consult-imenu-multi) ; Open buffers imenu
+        ("C-x b"   . consult-buffer)
+        ("M-g M-g" . consult-goto-line)
+        ("M-y"     . consult-yank-pop)
+        ("C-x r r" . consult-register)
+        ("C-x r l" . consult-register-load)
+        ("C-x r s" . consult-register-store))
 
   :init
   ;; Use consult to select xref locations with preview.
@@ -650,7 +638,6 @@
    consult--source-project-buffer
    consult--source-bookmark
    consult--source-recent-file
-   my/consult-source-vterm-buffer
    ;; So that the consult-ripgrep project shortcut doesn't show previews (you need to customize
    ;; the interactive function: https://github.com/minad/consult/issues/676#issuecomment-1286196998).
    project-switch-project
@@ -660,7 +647,6 @@
   (setq consult-buffer-sources
         '(consult--source-buffer                ; Narrow: ?b
           consult--source-project-buffer        ; Narrow: ?p
-          my/consult-source-vterm-buffer        ; Narrow: ?v
           consult--source-recent-file           ; Narrow: ?r
           consult--source-bookmark              ; Narrow: ?m
           ))
@@ -862,8 +848,7 @@
      (project-dired       "Dired"   ?d)
      (consult-ripgrep     "Ripgrep" ?r)
      (magit-project-statu "Magit"   ?m)
-     (project-eshell      "Eshell"  ?e)
-     (multi-vterm-project "Vterm"   ?v)))
+     (project-eshell      "Eshell"  ?e)))
   :config
   ;; Override the way that project.el determines the project root.
   (setq project-find-functions '(my/project-find-root)))
@@ -1427,13 +1412,32 @@ as there appears to be a bug in the current version."
 (use-package eshell
   :straight nil ;; Built-in.
   :hook
-  ;; Don't auto-show the Corfu completion popup (press tab instead).
-  (eshell-mode . (lambda () (setq-local corfu-auto nil)))
+  (eshell-mode . my/eshell-mode-init)
   :bind
   (:map global-map
 	("C-c e e" . eshell)
+        ("C-c e n" . my/eshell-new)
         ("C-c e p" . project-eshell)))
 
+(defun my/eshell-mode-init ()
+  "Hook function executed when `eshell-mode' is run."
+
+  ;; Don't auto-show the Corfu completion popup (press tab instead).
+  (setq-local corfu-auto nil)
+  ;; Don't scroll the buffer around after it has been recentred (using C-l).
+  ;; This seems to need to be done as a mode hook rather than in `:config' as
+  ;; the latter results in `eshell-output-filter-functions' being set to nil.
+  ;; See: https://emacs.stackexchange.com/a/45281
+  (remove-hook 'eshell-output-filter-functions
+               'eshell-postoutput-scroll-to-bottom))
+
+(defun my/eshell-new ()
+  "Create a new eshell buffer."
+  (interactive)
+  (eshell t))
+
+;; TODO: I'm transitioning away from vterm (too slow, too many bugs/integration issues) to eshell.
+;; Will keep this here for now for emergencies though.
 (use-package vterm
   :bind
   (:map vterm-mode-map
@@ -1465,11 +1469,13 @@ as there appears to be a bug in the current version."
 
 (use-package multi-vterm
   :bind
-  (:map global-map
-	("C-c v v" . multi-vterm)
-	("C-c v n" . multi-vterm-next)
-	("C-c v p" . multi-vterm-project)
-	("C-c v b" . multi-vterm-rename-buffer)))
+  ;; Remove key-bindings while transitioning to eshell.
+  ;; (:map global-map
+  ;;       ("C-c v v" . multi-vterm)
+  ;;       ("C-c v n" . multi-vterm-next)
+  ;;       ("C-c v p" . multi-vterm-project)
+  ;;       ("C-c v b" . multi-vterm-rename-buffer))
+  )
 
 (define-derived-mode vterm-phony-mode text-mode "VTerm-Phony"
   "Major mode used to run yasnippet expansion in terminals.")
