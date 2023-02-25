@@ -156,8 +156,21 @@
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 ;; Remove compose-mail binding.
 (global-set-key (kbd "C-x m") nil)
-;; Trim trailing whitespace.
-(global-set-key (kbd "C-x C-w") 'delete-trailing-whitespace)
+
+;; Manage trailing whitespace.
+(global-set-key (kbd "C-x w w") 'my/toggle-show-trailing-whitespace)
+(global-set-key (kbd "C-x w k") 'delete-trailing-whitespace)
+
+(defun my/toggle-show-trailing-whitespace ()
+  "See or don't see all the whitespace."
+  (interactive)
+  (setq show-trailing-whitespace (if show-trailing-whitespace nil t)))
+
+(use-package ws-butler
+  :hook
+  ;; Do I want this on in text mode?
+  ;; (text-mode . ws-butler-mode)
+  (prog-mode . ws-butler-mode))
 
 ;;;; Appearance
 
