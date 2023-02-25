@@ -205,8 +205,7 @@
                 prog-mode-hook
                 conf-mode-hook))
   (add-hook mode (lambda ()
-                   (display-line-numbers-mode 1)        ;; Enable line numbers.
-                   (setq show-trailing-whitespace t)))) ;; Show trailing whitespace.
+                   (display-line-numbers-mode 1)))) ;; Enable line numbers.
 
 ;;;;; Fonts
 
@@ -309,13 +308,6 @@
   (interactive)
   (setq my/themes (append (last my/themes) (butlast my/themes)))
   (my/load-theme (car my/themes)))
-
-(defhydra hydra-manage-themes (global-map "C-c h")
-  "manage-themes"
-  ("n" my/load-next-theme "load-next-theme")
-  ("p" my/load-prev-theme "load-prev-theme")
-  ("d" my/disable-all-themes "disable-all-themes")
-  ("q" nil "quit"))
 
 ;; Load the first theme in the list.
 (my/load-theme (car my/themes))
@@ -489,9 +481,9 @@
 (use-package exec-path-from-shell
   :init (when (memq window-system '(mac ns x))
 	  (setq exec-path-from-shell-variables
-		'("PATH" "MANPATH" "XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME"
-		  "GNUPGHOME" "PASSWORD_STORE_DIR" "DEVELOPER_DIR" "SDKROOT" ; "SHELL"
-                  "GOPATH" "GOROOT"))
+		'("XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME"
+		  "PATH" "MANPATH" "GNUPGHOME" "PASSWORD_STORE_DIR"
+                  "DEVELOPER_DIR" "SDKROOT" "GOPATH" "GOROOT"))
 	  (setq exec-path-from-shell-arguments nil)
 	  (exec-path-from-shell-initialize)))
 
@@ -524,21 +516,24 @@
         ;; By default corfu-insert-separator is bound to M-SPC which on macOS is
         ;; already taken by Spotlight. Instead, bind it to S-SPC - this allows us
         ;; to enter a space character using S-SPC to keep the completion going.
-        ("S-SPC"   . corfu-insert-separator))
+        ("S-SPC" . corfu-insert-separator))
   :init
   ;; Enable globally; exclusions are captured individually by `corfu-excluded-modes'.
   (global-corfu-mode)
   :custom
-  ;; Needs to be set so that the Corfu post-command-hook is installed and Corfu is
-  ;; called on every key press (so that it knows whether to display a pop-up).
+  ;; Show the Corfu pop-up without requiring tab to be pressed (but after the delay
+  ;; configured below).
   (corfu-auto t)
-  ;; Number of typed characters before Corfu displays its pop-up.
+  ;; Number of typed characters before Corfu will consider displaying its pop-up.
   (corfu-auto-prefix 1)
   ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This setting
-  ;; only applies after the minimum number of prefix characters have been entered.
-  (corfu-auto-delay 0)
-  ;; Modes which shouldn't use corfu. The following modes have been added as the
-  ;; completions are kinda useless. Seems like corfu requires the concrete mode -
+  ;; only applies after the minimum number of prefix characters have been entered. This
+  ;; is really useful to keep so that short words that you don't want autocompleted don't
+  ;; trigger the Corfu pop-up (and subsequent completion which inserts a space after the
+  ;; completed word).
+  (corfu-auto-delay 0.5)
+  ;; Modes which shouldn't use Corfu. The following modes have been added as the
+  ;; completions are kinda useless. Seems like Corfu requires the concrete mode -
   ;; you can't use the derived-from mode.
   (corfu-excluded-modes
    '(org-mode
@@ -857,11 +852,11 @@
   :custom
   (project-list-file (expand-file-name "projects" my/emacs-cache-dir))
   (project-switch-commands
-   '((project-find-file   "File"    ?f)
-     (project-dired       "Dired"   ?d)
-     (consult-ripgrep     "Ripgrep" ?r)
-     (magit-project-statu "Magit"   ?m)
-     (project-eshell      "Eshell"  ?e)))
+   '((project-find-file    "File"    ?f)
+     (project-dired        "Dired"   ?d)
+     (consult-ripgrep      "Ripgrep" ?r)
+     (magit-project-status "Magit"   ?m)
+     (project-eshell       "Eshell"  ?e)))
   :config
   ;; Override the way that project.el determines the project root.
   (setq project-find-functions '(my/project-find-root)))
@@ -1430,7 +1425,10 @@ as there appears to be a bug in the current version."
   (:map global-map
 	("C-c e e" . eshell)
         ("C-c e n" . my/eshell-new)
-        ("C-c e p" . project-eshell)))
+        ("C-c e p" . project-eshell))
+  :config
+  (setq eshell-hist-ignoredups t)
+  (setq eshell-save-history-on-exit t))
 
 (defun my/eshell-mode-init ()
   "Hook function executed when `eshell-mode' is run."
@@ -1449,8 +1447,12 @@ as there appears to be a bug in the current version."
   (interactive)
   (eshell t))
 
-;; TODO: I'm transitioning away from vterm (too slow, too many bugs/integration issues) to eshell.
-;; Will keep this here for now for emergencies though.
+(defun my/eshell-refresh-aliases ()
+  "Refresh eshell aliases."
+  (interactive)
+  (eshell-read-aliases-list))
+
+;; I have switched to eshell as my daily shell but keep vterm here for odd occasions.
 (use-package vterm
   :bind
   (:map vterm-mode-map
@@ -1468,9 +1470,7 @@ as there appears to be a bug in the current version."
         ("M-:" . nil)
         ;; Bind S-ESC to keyboard-escape-quit when in vterm-mode as ESC is used for
         ;; shell signals (e.g., ESC + underscore for last word of the previous command).
-        ("S-<escape>" . keyboard-escape-quit)
-        ;; Vterm yasnippet integration.
-        ("C-c y i" . my/vterm-consult-yasnippet))
+        ("S-<escape>" . keyboard-escape-quit))
   :custom
   ;; Don't prompt for permission to compile on first install.
   (vterm-always-compile-module t)
@@ -1479,41 +1479,6 @@ as there appears to be a bug in the current version."
   ;; The below setting (which is already the default) should work but doesn't.
   (vterm-clear-scrollback-when-clearing nil)
   (vterm-buffer-name-string "vterm: %s"))
-
-(use-package multi-vterm
-  :bind
-  ;; Remove key-bindings while transitioning to eshell.
-  ;; (:map global-map
-  ;;       ("C-c v v" . multi-vterm)
-  ;;       ("C-c v n" . multi-vterm-next)
-  ;;       ("C-c v p" . multi-vterm-project)
-  ;;       ("C-c v b" . multi-vterm-rename-buffer))
-  )
-
-(define-derived-mode vterm-phony-mode text-mode "VTerm-Phony"
-  "Major mode used to run yasnippet expansion in terminals.")
-
-;; This function allows `consult-yasnippet' to be called from a vterm buffer.
-;; Oridinarly, these yasnippet functions can't be called from vterm as Emacs
-;; considers it a read-only buffer. This function creates a new temporary
-;; `vterm-phony-mode' buffer, executes `consult-yasnippet' there, and then
-;; copies the result into the vterm buffer.
-;; See also: https://mullikine.github.io/posts/use-yasnippets-in-term/
-(defun my/vterm-consult-yasnippet ()
-  "Run `consult-yasnippet' for the current vterm buffer."
-  (interactive)
-  (if (eq major-mode 'vterm-mode)
-      (let ((expansion))
-        (let ((b (generate-new-buffer (generate-new-buffer-name "yas-temp"))))
-          (with-current-buffer b
-            (vterm-phony-mode)
-            (consult-yasnippet nil)
-            (setq expansion (buffer-string)))
-          (kill-buffer b))
-        ;; Insert the expanded snippet.
-        (vterm-insert expansion)
-        ;; Send a key to unselect the region (must be a better way to do this).
-        (vterm-send-key "<right>"))))
 
 ;;;; Org Mode
 

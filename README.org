@@ -16,5 +16,4 @@ brew reinstall libgccjit
 # And then update LIBRARY_PATH in ~/.config/emacs/early-init.el
 #+end_src
 
-See here for getting Homebrew Emacs working with Spotlight/Alfred
-https://github.com/d12frosted/homebrew-emacs-plus/pull/517
+[[https://www.alfredforum.com/topic/16578-alfred-not-finding-homebrew-apps-on-m1-opthomebrew/?do=findComment&comment=92630][This]] is the only way I've found for getting Homebrew Emacs working with Alfred.
