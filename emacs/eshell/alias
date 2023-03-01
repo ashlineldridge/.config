@@ -23,8 +23,8 @@ alias tf terraform $*
 alias tg terragrunt $*
 
 alias k kubectl $*
-alias kctx kubectx $*
-alias kns kubens $*
+alias kctx kubectx $1
+alias kns kubens $1
 alias h helm $*
 alias hf helmfile $*
 alias kb kubebuilder $*
@@ -41,9 +41,6 @@ alias grafana grafana-server --config=/opt/homebrew/etc/grafana/grafana.ini --ho
 ;; Following deletes LSP/DAP session files and prevents zsh complaining if none exist.
 alias lsp-clean zsh -c setopt +o nomatch; rm -f ~/.config/emacs/.lsp-session-*
 alias dap-clean zsh -c setopt +o nomatch; rm -f ~/.config/emacs/.dap-*
-
-;; Watch every 1 second by default.
-alias watch watch -n 1 $*
 
 ;; Search hidden files/directories except .git.
 alias rg rg --hidden --glob !.git $*
