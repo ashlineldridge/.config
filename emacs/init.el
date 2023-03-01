@@ -362,9 +362,9 @@
         ("M-o" . ace-window))
   :custom
   (aw-display-mode-overlay t)
-  ;; (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
-  (aw-dispatch-always t)
-  (aw-background nil)
+  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (aw-dispatch-always nil)
+  (aw-background t)
   :config
   (setq aw-dispatch-alist
    '((?k aw-delete-window "Delete Window")
@@ -446,33 +446,29 @@
          ;; configuration only takes effect if I manually open a Rustic mode window and then expect
          ;; subsequent Rustic buffers to reuse that window. But I'm going to leave the below in place
          ;; for the moment to remind myself of how this works.
-         (display-buffer-reuse-mode-window display-buffer-in-side-window)
-         ;; This alist argument caters for a list of modes as well as a single mode. Even though all of
-         ;; the modes below derive (or are) rustic-compilation-mode, they all need to be specified to have
-         ;; the desired effect because if, for example, a window displays a buffer in rustic-cargo-test-mode,
-         ;; rustic-cargo-run-mode does not derive from that (it is a sibling) so that window will not be used.
-         (mode . (rustic-compilation-mode
-                  rustic-format-mode
-                  rustic-cargo-test-mode
-                  rustic-cargo-run-mode
-                  rustic-cargo-clippy-mode
-                  rustic-cargo-outdated-mode))
-         (side . bottom))
-        ("\\*compilation\\*"
-         (display-buffer-in-side-window)
-         (side . bottom))
-        ("\\*Flycheck "
-         (display-buffer-in-side-window)
-         (side . bottom))
-        ("\\*xref\\*"
-         (display-buffer-in-side-window)
-         (side . bottom))
-        ("\\*lsp-help\\*"
-         (display-buffer-in-side-window)
-         (side . bottom))
-        ("\\*org-roam\\*"
-         (display-buffer-in-side-window)
-         (side . bottom))))
+         (display-buffer-reuse-mode-window display-buffer-in-side-window))))
+
+;;;;; Pop-Up Windows
+
+(use-package popper
+  :bind
+  (:map global-map
+        ("C-'"   . popper-toggle-latest)
+        ("M-'"   . popper-cycle)
+        ("C-M-'" . popper-toggle-type))
+  :init
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "\\*Flycheck "
+
+          ;; Match all modes that derive from compilation-mode.
+          (lambda (buf)
+            (with-current-buffer buf (derived-mode-p 'compilation-mode)))))
+  (setq popper-window-height 15)
+  ;; Hide modeline for pop-ups as it looks cleaner and extra space is good.
+  (setq popper-mode-line nil)
+  (popper-mode 1)
+  (popper-echo-mode 1))
 
 ;;;; Environment Variables
 
@@ -646,6 +642,7 @@
    consult--source-project-buffer
    consult--source-bookmark
    consult--source-recent-file
+   my/consult-source-eshell-buffer
    ;; So that the consult-ripgrep project shortcut doesn't show previews (you need to customize
    ;; the interactive function: https://github.com/minad/consult/issues/676#issuecomment-1286196998).
    project-switch-project
@@ -655,6 +652,7 @@
   (setq consult-buffer-sources
         '(consult--source-buffer                ; Narrow: ?b
           consult--source-project-buffer        ; Narrow: ?p
+          my/consult-source-eshell-buffer       ; Narrow: ?e
           consult--source-recent-file           ; Narrow: ?r
           consult--source-bookmark              ; Narrow: ?m
           ))
@@ -692,6 +690,20 @@
           "--line-number"
           ".")))
 
+(defvar my/consult-source-eshell-buffer
+  `(:name     "Eshell Buffer"
+    :narrow   ?e
+    :category eshell-buffer
+    :face     consult-buffer
+    :history  buffer-name-history
+    :state    ,#'consult--buffer-state
+    :action   ,#'consult--buffer-action
+    :items
+    ,(lambda () (consult--buffer-query :sort 'visibility
+                                       :as #'buffer-name
+                                       :mode 'eshell-mode)))
+  "Eshell buffer source for `consult-buffer'.")
+
 (use-package consult-dir
   :bind
   (:map global-map
@@ -711,7 +723,7 @@
         ("M-."   . embark-dwim)
         ("C-h b" . embark-bindings)) ;; Replace `describe-bindings'.
   :custom
-  (embark-mixed-indicator-delay 0.5)
+  (embark-mixed-indicator-delay 0.3)
   :config
   ;; Run Embark after a prefix (e.g. C-x) is pressed and then C-h.
   (setq prefix-help-command #'embark-prefix-help-command))
@@ -822,7 +834,7 @@
   (dired-rainbow-define image "#f66d9b" ("tiff" "tif" "cdr" "gif" "ico" "jpeg" "jpg" "png" "psd" "eps" "svg"))
   (dired-rainbow-define log "#c17d11" ("log"))
   (dired-rainbow-define shell "#f6993f" ("awk" "bash" "bat" "sed" "sh" "zsh" "vim"))
-  (dired-rainbow-define interpreted "#38c172" ("py" "ipynb" "rb" "pl" "t" "msql" "mysql" "pgsql" "sql" "r" "clj" "cljs" "scala" "js"))
+  (dired-rainbow-define interpreted "#38c172" ("py" "ipynb" "rb" "pl" "t" "msql" "mysql" "pgsql" "sql" "r" "clj" "cljs" "scala" "js" "ts" "tf" "hcl" "bazel"))
   (dired-rainbow-define compiled "#4dc0b5" ("asm" "cl" "lisp" "el" "c" "h" "c++" "h++" "hpp" "hxx" "m" "cc" "cs" "cp" "cpp" "go" "f" "for" "ftn" "f90" "f95" "f03" "f08" "s" "rs" "hi" "hs" "pyc" "java"))
   (dired-rainbow-define executable "#8cc4ff" ("exe" "msi"))
   (dired-rainbow-define compressed "#51d88a" ("7z" "zip" "bz2" "tgz" "txz" "gz" "xz" "z" "Z" "jar" "war" "ear" "rar" "sar" "xpi" "apk" "xz" "tar"))
@@ -939,7 +951,7 @@ as there appears to be a bug in the current version."
   (super-save-max-buffer-size 100000)
   :config
   (setq auto-save-default nil) ; Disable built-in auto-save-mode.
-  (super-save-mode +1))
+  (super-save-mode 1))
 
 ;;;; Programming
 
@@ -1420,15 +1432,18 @@ as there appears to be a bug in the current version."
 (use-package eshell
   :straight nil ;; Built-in.
   :hook
-  (eshell-mode . my/eshell-mode-init)
+  (eshell-mode        . my/eshell-mode-init)
+  (eshell-pre-command . eshell-save-some-history) ; Save history more frequently.
   :bind
   (:map global-map
 	("C-c e e" . eshell)
         ("C-c e n" . my/eshell-new)
         ("C-c e p" . project-eshell))
-  :config
-  (setq eshell-hist-ignoredups t)
-  (setq eshell-save-history-on-exit t))
+  :custom
+  (eshell-hist-ignoredups t)
+  (eshell-save-history-on-exit t)
+  (eshell-prompt-function 'my/eshell-prompt)
+  (eshell-prompt-regexp "^[^#λ\n]* [#λ] "))
 
 (defun my/eshell-mode-init ()
   "Hook function executed when `eshell-mode' is run."
@@ -1451,6 +1466,41 @@ as there appears to be a bug in the current version."
   "Refresh eshell aliases."
   (interactive)
   (eshell-read-aliases-list))
+
+;; TODO: Check out https://github.com/daviwil/dotfiles/blob/master/Emacs.org#fish-completion
+(use-package fish-completion
+  :hook (eshell-mode . fish-completion-mode))
+
+(defun my/eshell-prompt ()
+  "Custom eshell prompt function."
+  (string-join
+   `(,(propertize (my/eshell-prompt-path) 'face '(:foreground "#ff80bf"))
+     ,(propertize (if (= (user-uid) 0) "#" "λ") 'face '(:foreground "#ff3333")) "") " "))
+
+;; Adapted from https://justin.abrah.ms/dotfiles/emacs.html.
+(defun my/eshell-prompt-path ()
+  "Return a shortened current directory path for use in the eshell prompt."
+  (let* ((path (eshell/pwd))
+         (max-len 40)
+         (components (split-string (abbreviate-file-name path) "/"))
+         (len (+ (1- (length components))
+                 (cl-reduce '+ components :key 'length)))
+         (str ""))
+    (while (and (> len max-len)
+                (cdr components))
+      (setq str (concat str
+                        (cond ((= 0 (length (car components))) "/")
+                              ((= 1 (length (car components)))
+                               (concat (car components) "/"))
+                              (t
+                               (if (string= "."
+                                            (string (elt (car components) 0)))
+                                   (concat (substring (car components) 0 2)
+                                           "/")
+                                 (string (elt (car components) 0) ?/)))))
+            len (- len (1- (length (car components))))
+            components (cdr components)))
+    (concat str (cl-reduce (lambda (a b) (concat a "/" b)) components))))
 
 ;; I have switched to eshell as my daily shell but keep vterm here for odd occasions.
 (use-package vterm
