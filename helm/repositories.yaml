@@ -82,3 +82,12 @@ repositories:
   password: ""
   url: https://kubernetes-sigs.github.io/metrics-server
   username: ""
+- caFile: ""
+  certFile: ""
+  insecure_skip_tls_verify: false
+  keyFile: ""
+  name: cluster-autoscaler
+  pass_credentials_all: false
+  password: ""
+  url: https://kubernetes.github.io/autoscaler
+  username: ""
