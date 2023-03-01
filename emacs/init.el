@@ -405,50 +405,9 @@
   ("u"       winner-undo                 "winner-undo" :exit t)
   ("U"       winner-redo                 "winner-redo" :exit t)
   ("w"       window-toggle-side-windows  "toggle-side-windows" :exit t)
-  ;; ("k l"     (my/delete-window 'left)    "delete-window-left" :exit t)
-  ;; ("k r"     (my/delete-window 'right)   "delete-window-right" :exit t)
-  ;; ("k a"     (my/delete-window 'above)   "delete-window-above" :exit t)
-  ;; ("k b"     (my/delete-window 'below)   "delete-window-below" :exit t)
   ("q" nil "quit"))
 
-(defun my/delete-window (direction)
-  "Deletes the window in the specified DIRECTION."
-  (let ((window (window-in-direction direction)))
-    (if window
-        (delete-window window)
-      (message "No window in direction: %s." direction))))
-
-;;;;; Display Buffer Settings
-
-;; Take over Emacs' default buffer placement algorithm. Taken from here:
-;; https://github.com/daviwil/dotfiles/blob/master/Emacs.org#control-buffer-placement.
-;; See also: https://www.youtube.com/watch?v=-H2nU0rsUMY.
-(setq display-buffer-base-action
-      '((display-buffer-reuse-mode-window
-        display-buffer-reuse-window
-        display-buffer-same-window)))
-
-;; If a popup does happen, don't resize windows to be equal-sized.
-(setq even-window-sizes nil)
-
-;; One day I will learn how this bloody monster actually works.
-;; Just read: https://www.gnu.org/software/emacs/manual/html_node/elisp/Displaying-Buffers.html
-;; For examples see:
-;; https://github.com/daviwil/emacs-from-scratch/blob/master/show-notes/Emacs-Tips-DisplayBuffer-1.org
-;; https://www.reddit.com/r/emacs/comments/dqz5ux/thanks_for_the_displaybuffer_knowledge/ and
-;; https://www.reddit.com/r/emacs/comments/cpdr6m/any_additional_docstutorials_on_displaybuffer_and/
-(setq display-buffer-alist
-      '(
-        ;; Rust operation windows:
-        ("\\(cargo-\\|rustic-\\|rustfmt\\)"
-         ;; It is not really necessary for me to use display-buffer-reuse-mode-window below since I'm
-         ;; always displaying Rust operation windows in the bottom side window. The below mode-based
-         ;; configuration only takes effect if I manually open a Rustic mode window and then expect
-         ;; subsequent Rustic buffers to reuse that window. But I'm going to leave the below in place
-         ;; for the moment to remind myself of how this works.
-         (display-buffer-reuse-mode-window display-buffer-in-side-window))))
-
-;;;;; Pop-Up Windows
+;;;;; Window Placement
 
 (use-package popper
   :bind
@@ -469,6 +428,17 @@
   (setq popper-mode-line nil)
   (popper-mode 1)
   (popper-echo-mode 1))
+
+;; Take over Emacs' default buffer placement algorithm. Taken from here:
+;; https://github.com/daviwil/dotfiles/blob/master/Emacs.org#control-buffer-placement.
+;; See also: https://www.youtube.com/watch?v=-H2nU0rsUMY.
+(setq display-buffer-base-action
+      '((display-buffer-reuse-mode-window
+        display-buffer-reuse-window
+        display-buffer-same-window)))
+
+;; If a popup does happen, don't resize windows to be equal-sized.
+(setq even-window-sizes nil)
 
 ;;;; Environment Variables
 
