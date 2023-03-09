@@ -249,7 +249,7 @@
 
 ;;;;; Themes
 
-;; Note: I'm going to push forward with the excellenet and highly-customisable
+;; Note: I'm going to push forward with the excellent and highly-customisable
 ;; Modus themes and disable all the others for now. The Modus themes are already
 ;; really good out-of-the-box (and the latest versions are better than the pre-
 ;; packaged versions, IMO). There should be a setting for anything I'd want to
@@ -1400,7 +1400,7 @@ as there appears to be a bug in the current version."
 ;;;; Shell/Terminal
 
 (use-package eshell
-  :straight nil ;; Built-in.
+  :straight nil
   :hook
   (eshell-mode        . my/eshell-mode-init)
   (eshell-pre-command . eshell-save-some-history) ; Save history more frequently.
@@ -1410,17 +1410,20 @@ as there appears to be a bug in the current version."
         ("C-c e n" . my/eshell-new)
         ("C-c e p" . project-eshell))
   :custom
+  (eshell-history-size 10000)
+  (eshell-buffer-maximum-lines 10000)
   (eshell-hist-ignoredups t)
   (eshell-save-history-on-exit t)
   (eshell-prompt-function 'my/eshell-prompt)
-  (eshell-prompt-regexp "^[^#λ\n]* [#λ] "))
+  (eshell-prompt-regexp "^[^λ\n]* λ "))
 
 (defun my/eshell-mode-init ()
   "Hook function executed when `eshell-mode' is run."
 
   ;; Don't auto-show the Corfu completion popup (press tab instead).
   (setq-local corfu-auto nil)
-  ;; Don't scroll the buffer around after it has been recentred (using C-l).
+
+  ;; Don't scroll the buffer around after it has been recentered (using C-l).
   ;; This seems to need to be done as a mode hook rather than in `:config' as
   ;; the latter results in `eshell-output-filter-functions' being set to nil.
   ;; See: https://emacs.stackexchange.com/a/45281
@@ -1445,7 +1448,7 @@ as there appears to be a bug in the current version."
   "Custom eshell prompt function."
   (string-join
    `(,(propertize (my/eshell-prompt-path) 'face '(:foreground "#ff80bf"))
-     ,(propertize (if (= (user-uid) 0) "#" "λ") 'face '(:foreground "#ff3333")) "") " "))
+     ,(propertize "λ" 'face '(:foreground "#ff3333")) "") " "))
 
 ;; Adapted from https://justin.abrah.ms/dotfiles/emacs.html.
 (defun my/eshell-prompt-path ()
@@ -1540,7 +1543,9 @@ as there appears to be a bug in the current version."
   ;; (:map org-agenda-mode-map
   ;; (("?" . which-key-show-full-major-mode)
   (:map org-mode-map
-        ("C-c C-S-l" . org-cliplink))
+        ("C-c C-S-l" . org-cliplink)
+        ;; Keep C-' keybinding for popper.
+        ("C-'" . nil))
 
   :config
   ;; Always save all org buffers before quitting the agenda (press 's' to save immediately).
