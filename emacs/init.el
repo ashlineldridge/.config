@@ -416,13 +416,17 @@
         ("M-'"   . popper-cycle)
         ("C-M-'" . popper-toggle-type))
   :init
+  (defvar my/popper-ignore-modes '(grep-mode))
   (setq popper-reference-buffers
         '("\\*Messages\\*"
           "\\*Flycheck "
 
-          ;; Match all modes that derive from compilation-mode.
+          ;; Match all modes that derive from compilation-mode but do not derive from
+          ;; a member of `my/popper-ignore-modes'.
           (lambda (buf)
-            (with-current-buffer buf (derived-mode-p 'compilation-mode)))))
+            (with-current-buffer buf
+              (unless (derived-mode-p (car (member major-mode my/popper-ignore-modes)))
+                (derived-mode-p 'compilation-mode))))))
   (setq popper-window-height 15)
   ;; Hide modeline for pop-ups as it looks cleaner and extra space is good.
   (setq popper-mode-line nil)
@@ -841,7 +845,10 @@
      (project-eshell       "Eshell"  ?e)))
   :config
   ;; Override the way that project.el determines the project root.
-  (setq project-find-functions '(my/project-find-root)))
+  ;; Disable below for now as my implementation results in .gitignore being ignored when running
+  ;; functions like `project-find-file` which results in target/, etc, showing up in the list.
+  ;; (setq project-find-functions '(my/project-find-root))
+  )
 
 ;; Customise project root identification (the default only searches for version control markers).
 ;; See: https://andreyorst.gitlab.io/posts/2022-07-16-project-el-enhancements
@@ -971,7 +978,8 @@ as there appears to be a bug in the current version."
 
 (use-package yasnippet
   :hook ((text-mode . yas-minor-mode)
-         (prog-mode . yas-minor-mode))
+         (prog-mode . yas-minor-mode)
+         (eshell-mode . yas-minor-mode))
   :init
   ;; Remove default key bindings which are crap.
   (setq yas-minor-mode-map (make-sparse-keymap))
@@ -1191,29 +1199,37 @@ as there appears to be a bug in the current version."
       (lsp-rust-analyzer-inlay-hints-mode 1))))
 
 (use-package rustic
-  :init
-  ;; Remove the default rustic keybindings.
-  (setq rustic-mode-map (make-sparse-keymap))
-  :bind
-  (:map rustic-mode-map
-        ("C-c C-c b" . rustic-cargo-build)
-        ;; TODO: Fix Cargo C-c C-c c x prefixes below and then enable `compile'.
-        ;; ("C-c C-c c" . compile)
-        ("C-c C-c f" . rustic-format-buffer)
-        ("C-c C-c F" . rustic-cargo-fmt)
-        ("C-c C-c l" . rustic-cargo-clippy)
-        ("C-c C-c r" . rustic-cargo-run)
-        ("C-c C-c t" . rustic-cargo-test)
-        ("C-c C-c T" . rustic-cargo-current-test)
-        ("C-c C-c i" . my/toggle-rust-inlay-hints) ;; Toggle inlay type hints.
-        ("C-c C-c o" . lsp-rust-analyzer-open-external-docs)
-        ("C-c C-c c a" . rustic-cargo-add)
-        ("C-c C-c c c" . rustic-cargo-clean)
-        ("C-c C-c c o" . rustic-cargo-outdated)
-        ("C-c C-c c u" . rustic-cargo-upgrade)
-        ("C-c C-c d d" . dap-debug)
-        ("C-c C-c d l" . dap-debug-last)
-        ("C-c C-c d m" . dap-hydra)))
+  :config
+  ;; The following function is used to ensure Rust keybindings are placed in both `rustic-mode-map'
+  ;; and `rustic-compilation-mode-map' (so they can also be used from within the compilation popup
+  ;; window). I'm sure there is a more idiomatic way to do this but I haven't found it yet.
+  (defun my/build-rust-keymap (base-map)
+    "Return custom Rust keymap built on top of BASE-MAP."
+    (define-key base-map (kbd "C-c C-c")     nil)
+    (define-key base-map (kbd "C-c C-c a")   'rustic-cargo-add)
+    (define-key base-map (kbd "C-c C-c b")   'rustic-cargo-build)
+    (define-key base-map (kbd "C-c C-c c")   'rustic-cargo-clean)
+    (define-key base-map (kbd "C-c C-c f")   'rustic-format-buffer)
+    (define-key base-map (kbd "C-c C-c F")   'rustic-cargo-fmt)
+    (define-key base-map (kbd "C-c C-c i")   'my/toggle-rust-inlay-hints)
+    (define-key base-map (kbd "C-c C-c l")   'rustic-cargo-clippy)
+    (define-key base-map (kbd "C-c C-c o")   'rustic-cargo-outdated)
+    (define-key base-map (kbd "C-c C-c r")   'rustic-cargo-run)
+    (define-key base-map (kbd "C-c C-c t")   'rustic-cargo-test)
+    (define-key base-map (kbd "C-c C-c T")   'rustic-cargo-current-test)
+    (define-key base-map (kbd "C-c C-c u")   'rustic-cargo-upgrade)
+    (define-key base-map (kbd "C-c C-c C-o") 'lsp-rust-analyzer-open-external-docs)
+    (define-key base-map (kbd "C-c C-d")     nil)
+    (define-key base-map (kbd "C-c C-d d")   'dap-debug)
+    (define-key base-map (kbd "C-c C-d l")   'dap-debug-last)
+    (define-key base-map (kbd "C-c C-d m")   'dap-hydra)
+    base-map)
+  (setq rustic-mode-map (my/build-rust-keymap (make-sparse-keymap)))
+  (setq rustic-compilation-mode-map (my/build-rust-keymap rustic-compilation-mode-map))
+  ;; Leave format-on-save off for now. Ideally, I'd like it on but the experience isn't great
+  ;; as by default `rustic-format-file' is used to format the file which edits the file on the
+  ;; filesystem which makes Emacs generate warnings.
+  (setq rustic-format-on-save nil))
 
 ;;;;;; Terraform
 
@@ -1403,17 +1419,21 @@ as there appears to be a bug in the current version."
   :straight nil
   :hook
   (eshell-mode        . my/eshell-mode-init)
-  (eshell-pre-command . eshell-save-some-history) ; Save history more frequently.
+  (eshell-pre-command . eshell-save-some-history)
   :bind
   (:map global-map
 	("C-c e e" . eshell)
         ("C-c e n" . my/eshell-new)
         ("C-c e p" . project-eshell))
+  :init
+  ;; So that AWS CLI doesn't page and doesn't complain about a missing terminal.
+  (setenv "AWS_PAGER" "")
+  ;; So that kubectx and kubens don't try to use fzf and hang due to missing terminal.
+  (setenv "KUBECTX_IGNORE_FZF" "true")
   :custom
   (eshell-history-size 10000)
   (eshell-buffer-maximum-lines 10000)
   (eshell-hist-ignoredups t)
-  (eshell-save-history-on-exit t)
   (eshell-prompt-function 'my/eshell-prompt)
   (eshell-prompt-regexp "^[^λ\n]* λ "))
 
@@ -1440,7 +1460,7 @@ as there appears to be a bug in the current version."
   (interactive)
   (eshell-read-aliases-list))
 
-;; TODO: Check out https://github.com/daviwil/dotfiles/blob/master/Emacs.org#fish-completion
+;; Leverages Fish Shell to provide autocompletion for eshell.
 (use-package fish-completion
   :hook (eshell-mode . fish-completion-mode))
 
