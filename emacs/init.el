@@ -501,7 +501,7 @@
   ;; is really useful to keep so that short words that you don't want autocompleted don't
   ;; trigger the Corfu pop-up (and subsequent completion which inserts a space after the
   ;; completed word).
-  (corfu-auto-delay 0.5)
+  (corfu-auto-delay 0.3)
   ;; Modes which shouldn't use Corfu. The following modes have been added as the
   ;; completions are kinda useless. Seems like Corfu requires the concrete mode -
   ;; you can't use the derived-from mode.
@@ -1019,8 +1019,8 @@ as there appears to be a bug in the current version."
         ;; references is not particularly helpful so we override it with lsp-find-references.
         ;; M-. (xref-find-definitions) and M-, (xref-pop-marker-stack) we'll leave in place since
         ;; they work well.
-        ("M-?" . lsp-find-references)
-        ("C-c l m" . lsp-ui-imenu)
+        ("M-?"       . lsp-find-references)
+        ("M-P"       . lsp-describe-thing-at-point)
         ("C-c l c d" . consult-lsp-diagnostics)
         ("C-c l c s" . (lambda () (interactive) (consult-lsp-file-symbols t)))
         ;; Still trying to figure out the benefit of consult-lsp-symbols.
@@ -1118,10 +1118,10 @@ as there appears to be a bug in the current version."
 (use-package lsp-ui
   :bind
   (:map lsp-ui-mode-map
-        ("M-p" . lsp-ui-doc-show)
-        ("M-P" . lsp-ui-doc-hide))
+        ("M-p"     . lsp-ui-doc-show)
+        ("C-c l i" . lsp-ui-imenu))
   :custom
-  (lsp-ui-sideline-delay 0.2)
+  (lsp-ui-sideline-delay 0)
   (lsp-ui-doc-delay 0)
   (lsp-ui-imenu-auto-refresh t)
   (lsp-ui-doc-show-with-mouse nil)
@@ -1338,6 +1338,10 @@ as there appears to be a bug in the current version."
   :custom
   (bazel-buildifier-before-save t))
 
+;;;;;; Just (Task Runner)
+
+(use-package just-mode)
+
 ;;;;;; C/C++
 
 (defun my/compile-no-ask ()
@@ -1425,6 +1429,9 @@ as there appears to be a bug in the current version."
 	("C-c e e" . eshell)
         ("C-c e n" . my/eshell-new)
         ("C-c e p" . project-eshell))
+  ;; TODO: Why does this break on start up?
+  ;; (:map eshell-mode-map
+  ;;       ("C-c C-o" . nil)) ; Needed for `org-open-at-point-global'.
   :init
   ;; So that AWS CLI doesn't page and doesn't complain about a missing terminal.
   (setenv "AWS_PAGER" "")
