@@ -91,3 +91,12 @@ repositories:
   password: ""
   url: https://kubernetes.github.io/autoscaler
   username: ""
+- caFile: ""
+  certFile: ""
+  insecure_skip_tls_verify: false
+  keyFile: ""
+  name: eks
+  pass_credentials_all: false
+  password: ""
+  url: https://aws.github.io/eks-charts
+  username: ""
