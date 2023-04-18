@@ -471,6 +471,7 @@
   :init (which-key-mode)
   :custom
   ;; Use Embark which is searchable instead.
+  ;; See: https://www.reddit.com/r/emacs/comments/otjn19/comment/h6vyx9q.
   (which-key-show-early-on-C-h nil)
   (which-key-idle-delay 2)
   (which-key-idle-secondary-delay 0.05)
@@ -1442,7 +1443,8 @@ as there appears to be a bug in the current version."
   (eshell-buffer-maximum-lines 10000)
   (eshell-hist-ignoredups t)
   (eshell-prompt-function 'my/eshell-prompt)
-  (eshell-prompt-regexp "^[^λ\n]* λ "))
+  (eshell-prompt-regexp "^[^λ\n]* λ ")
+  (eshell-visual-commands '("vi" "vim" "htop" "ktop")))
 
 (defun my/eshell-mode-init ()
   "Hook function executed when `eshell-mode' is run."
