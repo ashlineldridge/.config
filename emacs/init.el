@@ -17,6 +17,7 @@
 (defvar my/xdg-config-dir (expand-file-name "~/.config"))
 (defvar my/xdg-cache-dir  (expand-file-name "~/.cache"))
 (defvar my/xdg-data-dir   (expand-file-name "~/.local/share"))
+(defvar my/xdg-state-dir   (expand-file-name "~/.local/state"))
 
 ;; Emacs directories.
 (defvar my/emacs-config-dir (expand-file-name "emacs" my/xdg-config-dir))
@@ -446,16 +447,39 @@
 
 ;;;; Environment Variables
 
-;;;;; Import Shell Variables
-
-(use-package exec-path-from-shell
-  :init (when (memq window-system '(mac ns x))
-	  (setq exec-path-from-shell-variables
-		'("XDG_CONFIG_HOME" "XDG_CACHE_HOME" "XDG_DATA_HOME"
-		  "PATH" "MANPATH" "GNUPGHOME" "PASSWORD_STORE_DIR"
-                  "DEVELOPER_DIR" "SDKROOT" "GOPATH" "GOROOT"))
-	  (setq exec-path-from-shell-arguments nil)
-	  (exec-path-from-shell-initialize)))
+(setenv "XDG_CONFIG_HOME" my/xdg-config-dir)
+(setenv "XDG_CACHE_HOME" my/xdg-cache-dir)
+(setenv "XDG_DATA_HOME" my/xdg-data-dir)
+(setenv "XDG_STATE_HOME" my/xdg-state-dir)
+(setenv "PAGER" "cat")
+(setenv "AWS_PAGER" "")
+(setenv "KUBECTX_IGNORE_FZF" "true")
+(setenv "GNUPGHOME" (concat my/xdg-data-dir "/gnupg"))
+(setenv "EDITOR" "emacsclient")
+(setenv "PASSWORD_STORE_DIR" (concat my/xdg-data-dir "/pass"))
+(setenv "DEVELOPER_DIR" "/Applications/Xcode.app/Contents/Developer")
+(setenv "SDKROOT" "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
+(setenv "GOPATH" (expand-file-name "~/dev/go"))
+(setenv "GOROOT" "/opt/homebrew/opt/go/libexec")
+(setenv "PATH" (concat
+                (concat (getenv "HOME") "/bin:")
+                "/opt/homebrew/bin:"
+                "/opt/homebrew/opt/curl/bin:"
+                "/opt/homebrew/opt/coreutils/libexec/gnubin:"
+                "/opt/homebrew/opt/findutils/libexec/gnubin:"
+                "/opt/homebrew/opt/gettext/bin:"
+                "/opt/homebrew/opt/llvm/bin:"
+                (concat (getenv "GOROOT") "/bin:")
+                (concat (getenv "GOPATH") "/bin:")
+                "/usr/local/bin:"
+                "/usr/bin:"
+                "/bin:"
+                "/opt/homebrew/sbin:"
+                "/usr/sbin:"
+                "/sbin:"
+                (concat (getenv "HOME") "/.cargo/bin:")
+                (concat (getenv "HOME") "/.krew/bin:")
+                (concat (getenv "HOME") "/.local/bin")))
 
 ;;;; Help System
 
@@ -685,7 +709,9 @@
         ("C-x C-d" . consult-dir))
   (:map vertico-map
         ("C-x C-d" . consult-dir)
-        ("C-x C-j" . consult-dir-jump-file)))
+        ("C-x C-j" . consult-dir-jump-file))
+  :custom
+  (consult-dir-default-command 'consult-dir-dired))
 
 ;; See more advanced configuration here:
 ;; https://github.com/karthink/.emacs.d/blob/42875586daa23d69c581be01bdc1e12718aef083/lisp/setup-embark.el.
@@ -736,18 +762,18 @@
 (defun my/copy-to-end-of-line ()
   "Copy the text from point to the end of the line to the kill ring."
   (interactive)
-  (let* ((num-chars (- (line-end-position) (point)))
-         (suffix (if (eq 1 num-chars) "" "s")))
-    (kill-ring-save (point) (line-end-position))
-    (message "Copied %d character%s." num-chars suffix)))
+  (kill-ring-save (point) (line-end-position)))
 
 (defun my/delete-to-end-of-line ()
   "Delete the text from point to the end of the line without copying to the kill ring."
   (interactive)
-  (let* ((num-chars (- (line-end-position) (point)))
-         (suffix (if (eq 1 num-chars) "" "s")))
-    (delete-region (point) (line-end-position))
-    (message "Deleted %d character%s." num-chars suffix)))
+  (let* ((point (point))
+         (end (line-end-position)))
+    ;; Mirror `kill-line' behaviour by deleting to the end of the line if we are positioned
+    ;; behind the end, otherwise delete the newline itself.
+    (if (eq point end)
+        (delete-char 1 nil)
+      (delete-region point end))))
 
 (global-set-key (kbd "C-S-k") 'my/copy-to-end-of-line)
 (global-set-key (kbd "C-M-k") 'my/delete-to-end-of-line)
@@ -1423,21 +1449,19 @@ as there appears to be a bug in the current version."
 (use-package eshell
   :straight nil
   :hook
-  (eshell-mode        . my/eshell-mode-init)
-  (eshell-pre-command . eshell-save-some-history)
+  (eshell-mode         . my/eshell-mode-init)
+  (eshell-pre-command  . my/eshell-pre-command)
+  (eshell-post-command . my/eshell-post-command)
   :bind
   (:map global-map
 	("C-c e e" . eshell)
         ("C-c e n" . my/eshell-new)
         ("C-c e p" . project-eshell))
-  ;; TODO: Why does this break on start up?
-  ;; (:map eshell-mode-map
-  ;;       ("C-c C-o" . nil)) ; Needed for `org-open-at-point-global'.
+  (:map eshell-mode-map
+        ("C-c C-o" . nil)) ; Needed for `org-open-at-point-global'.
   :init
-  ;; So that AWS CLI doesn't page and doesn't complain about a missing terminal.
-  (setenv "AWS_PAGER" "")
-  ;; So that kubectx and kubens don't try to use fzf and hang due to missing terminal.
-  (setenv "KUBECTX_IGNORE_FZF" "true")
+  ;; Needed so that `eshell-mode-map' is available above.
+  (require 'esh-mode)
   :custom
   (eshell-history-size 10000)
   (eshell-buffer-maximum-lines 10000)
@@ -1458,6 +1482,18 @@ as there appears to be a bug in the current version."
   ;; See: https://emacs.stackexchange.com/a/45281
   (remove-hook 'eshell-output-filter-functions
                'eshell-postoutput-scroll-to-bottom))
+
+(defun my/eshell-pre-command ()
+  "Eshell pre-command hook function."
+  ;; Save history more frequently.
+  (eshell-save-some-history)
+  ;; Commands run interactively in eshell should use colors but this gets reverted in the
+  ;; post-command hook. From: https://github.com/daviwil/dotfiles/blob/master/Emacs.org#configuration.
+  (setenv "TERM" "xterm-256color"))
+
+(defun my/eshell-post-command ()
+  "Eshell post-command hook function."
+  (setenv "TERM" "dumb"))
 
 (defun my/eshell-new ()
   "Create a new eshell buffer."
