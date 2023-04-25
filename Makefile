@@ -81,8 +81,10 @@ apps-dump:
 emacs-install:
 	@$(call banner,Installing Emacs version $(EMACS_VERSION))
 	brew install emacs-plus@$(EMACS_VERSION) \
+		--with-imagemagick \
+		--with-no-frame-refocus \
 		--with-native-comp \
-		--with-modern-black-gnu-head-icon
+		--with-savchenkovaleriy-big-sur-icon
 
 .PHONY: emacs-uninstall
 emacs-uninstall:
