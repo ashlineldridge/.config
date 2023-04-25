@@ -364,7 +364,7 @@
   :custom
   (aw-display-mode-overlay t)
   (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
-  (aw-dispatch-always nil)
+  (aw-dispatch-always t)
   (aw-background t)
   :config
   (setq aw-dispatch-alist
@@ -497,6 +497,7 @@
   ;; Use Embark which is searchable instead.
   ;; See: https://www.reddit.com/r/emacs/comments/otjn19/comment/h6vyx9q.
   (which-key-show-early-on-C-h nil)
+  (which-key-use-C-h-commands nil)
   (which-key-idle-delay 2)
   (which-key-idle-secondary-delay 0.05)
   (which-key-popup-type 'side-window)
@@ -723,31 +724,44 @@
         ("C-."   . embark-act)
         ("M-."   . embark-dwim)
         ("C-h b" . embark-bindings)) ;; Replace `describe-bindings'.
-  :custom
-  (embark-mixed-indicator-delay 0.3)
-  :config
+  :init
   ;; Run Embark after a prefix (e.g. C-x) is pressed and then C-h.
-  (setq prefix-help-command #'embark-prefix-help-command))
+  (setq prefix-help-command #'embark-prefix-help-command)
+
+  :config
+  ;; The following two settings tell Embark to just use the minibuffer and completing-read
+  ;; for displaying the Embark popup (rather than using a window).
+  (setq embark-prompter 'embark-completing-read-prompter)
+  (setq embark-indicators '(embark-minimal-indicator))
+
+  ;; Org-roam nodes have their own Embark category and hence need their own keymap so that we
+  ;; can act on them. Here, we create a new Embark keymap and add it to `embark-keymap-alist'.
+  (defvar-keymap my/embark-org-roam-node-map
+    :doc "Keymap for Embark org-roam-node actions"
+    :parent embark-general-map)
+  (add-to-list 'embark-keymap-alist '(org-roam-node . my/embark-org-roam-node-map))
+
+  ;; Macro for defining an Embark action that executes FN using an ace-window selected window.
+  ;; Taken from: https://github.com/karthink/.emacs.d/blob/f0514340039502b79a306a77624a604de8a1b546/lisp/setup-embark.el#L93
+  (eval-when-compile
+    (defmacro my/embark-ace-action (fn)
+      `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
+         "Execute Embark action in conjunction with Ace window."
+         (interactive)
+         (with-demoted-errors "%s"
+           (require 'ace-window)
+           (let ((aw-dispatch-always t))
+             (aw-switch-to-window (aw-select nil))
+             (call-interactively (symbol-function ',fn)))))))
+
+  ;; Create ace-window actions against relevant keymaps.
+  (define-key embark-file-map             (kbd "o") (my/embark-ace-action find-file))
+  (define-key embark-buffer-map           (kbd "o") (my/embark-ace-action switch-to-buffer))
+  (define-key embark-bookmark-map         (kbd "o") (my/embark-ace-action bookmark-jump))
+  (define-key my/embark-org-roam-node-map (kbd "o") (my/embark-ace-action org-roam-node-find)))
 
 (use-package embark-consult
   :after (embark consult))
-
-;; Taken from here: https://karthinks.com/software/fifteen-ways-to-use-embark/
-;; TODO: Work in progress... What's a better way of organising this? Some of the
-;; embark maps seem to be wrong - e.g. I can't use C-c n f and then act on a note.
-;; (eval-when-compile
-;;   (defmacro my/embark-ace-action (fn)
-;;     `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
-;;        (interactive)
-;;        (with-demoted-errors "%s"
-;;          (require 'ace-window)
-;;          (let ((aw-dispatch-always t))
-;;            (aw-switch-to-window (aw-select nil))
-;;            (call-interactively (symbol-function ',fn)))))))
-
-;; (define-key embark-file-map     (kbd "o") (my/embark-ace-action find-file))
-;; (define-key embark-buffer-map   (kbd "o") (my/embark-ace-action switch-to-buffer))
-;; (define-key embark-bookmark-map (kbd "o") (my/embark-ace-action bookmark-jump))
 
 (use-package wgrep
   :bind
@@ -759,12 +773,12 @@
 
 ;;;;; Yanking and Deleting
 
-(defun my/copy-to-end-of-line ()
+(defun my/copy-to-eol ()
   "Copy the text from point to the end of the line to the kill ring."
   (interactive)
   (kill-ring-save (point) (line-end-position)))
 
-(defun my/delete-to-end-of-line ()
+(defun my/delete-to-eol ()
   "Delete the text from point to the end of the line without copying to the kill ring."
   (interactive)
   (let* ((point (point))
@@ -775,8 +789,14 @@
         (delete-char 1 nil)
       (delete-region point end))))
 
-(global-set-key (kbd "C-S-k") 'my/copy-to-end-of-line)
-(global-set-key (kbd "C-M-k") 'my/delete-to-end-of-line)
+(defun my/delete-to-bol ()
+  "Delete the text from point to the beginning of the line without copying to the kill ring."
+  (interactive)
+  (delete-region (line-beginning-position) (point)))
+
+(global-set-key (kbd "C-S-k") 'my/copy-to-eol)
+(global-set-key (kbd "C-M-k") 'my/delete-to-eol)
+(global-set-key (kbd "M-DEL") 'my/delete-to-bol)
 
 ;;;;; Mark Ring
 
