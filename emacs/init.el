@@ -1032,12 +1032,13 @@ as there appears to be a bug in the current version."
   (setq yas-minor-mode-map (make-sparse-keymap))
   :bind
   (:map global-map
-        ("C-c y f" . yas-visit-snippet-file)
   	("C-c y n" . yas-new-snippet)
-        ("C-c y u" . yas-reload-all))
+        ("C-c y u" . yas-reload-all)
+        ("C-c y d" . yas-describe-tables))
   (:map yas-minor-mode-map
         ("C-c y y" . yas-expand)
-        ("C-c y i" . consult-yasnippet))
+        ("C-c y i" . consult-yasnippet)
+        ("C-c y f" . yas-visit-snippet-file))
   :config
   (use-package consult-yasnippet)
   (setq yas-verbosity 1)
@@ -1631,6 +1632,10 @@ as there appears to be a bug in the current version."
         ("C-c C-S-l" . org-cliplink)
         ;; Keep C-' keybinding for popper.
         ("C-'" . nil))
+  (:map org-agenda-mode-map
+        ("A" . my/org-agenda-refile-archive)
+        ("P" . my/org-agenda-refile-personal-ongoing)
+        ("W" . my/org-agenda-refile-work-ongoing))
 
   :config
   ;; Always save all org buffers before quitting the agenda (press 's' to save immediately).
@@ -1768,11 +1773,11 @@ as there appears to be a bug in the current version."
   (org-pretty-entities t)
   (org-priority-default org-priority-lowest)
   (org-refile-targets
-   `((,(concat my/gtd-dir "/archive.org") :regexp . "Ongoing")
+   `((,(concat my/gtd-dir "/archive.org") :tag . "refile")
      (,(concat my/gtd-dir "/inbox.org") :level . 1)
-     (,(concat my/gtd-dir "/personal.org") :regexp . "Tasks") ;; This seems to work nicer.
+     (,(concat my/gtd-dir "/personal.org") :regexp . "Tasks")
      (,(concat my/gtd-dir "/work.org") :regexp . "Tasks")
-     (,(concat my/gtd-dir "/someday.org") :regexp . "Tasks") ;; TODO: Make it possible to refile into Projects or Tasks.
+     (,(concat my/gtd-dir "/someday.org") :tag . "refile")
      (,(concat my/gtd-dir "/recurring.org") :level . 2)))
   ;; The following two settings are required to make org-refile show the full heading path
   ;; to subheading refile candidates. Took a while to get this working properly.
@@ -1790,6 +1795,47 @@ as there appears to be a bug in the current version."
      ("DONE" . (:foreground "orange red" :weight bold))))
   (org-use-fast-todo-selection 'expert)
   (org-use-sub-superscripts nil))
+
+;; TODO: Pull all of the blah.org file names out into vars.
+
+(defun my/org-agenda-refile (file heading)
+  "Refiles the current org agenda item to the refile target associated with FILE and HEADING."
+  (org-agenda-refile nil
+                     (seq-find
+                      (lambda (refloc)
+                        (and
+                         (string= heading (nth 0 refloc))
+                         (string= file (nth 1 refloc))))
+                      (org-refile-get-targets)) t))
+
+(defun my/org-agenda-refile-archive ()
+  "Refiles the current org agenda item into the appropriate archive."
+  (interactive)
+  (let* ((hdm  (org-get-at-bol 'org-hd-marker))
+	 (tags (with-current-buffer (marker-buffer hdm) (org-get-tags hdm))))
+    (cond ((member "@personal" tags)
+           (my/org-agenda-refile
+            "/Users/aeldridge/dev/home/gtd/archive.org"
+            "Personal/Projects/Ongoing/Tasks"))
+          ((member "@work" tags)
+           (my/org-agenda-refile
+            "/Users/aeldridge/dev/home/gtd/archive.org"
+            "Work/Projects/Ongoing/Tasks"))
+          (t (message "Item must be tagged with @personal or @work")))))
+
+(defun my/org-agenda-refile-personal-ongoing ()
+  "Refiles the current org agenda item into the personal/ongoing list."
+  (interactive)
+  (my/org-agenda-refile
+   "/Users/aeldridge/dev/home/gtd/personal.org"
+   "Projects/Ongoing/Tasks"))
+
+(defun my/org-agenda-refile-work-ongoing ()
+  "Refiles the current org agenda item into the work/ongoing list."
+  (interactive)
+  (my/org-agenda-refile
+   "/Users/aeldridge/dev/home/gtd/work.org"
+   "Projects/Ongoing/Tasks"))
 
 (use-package org-cliplink)
 
