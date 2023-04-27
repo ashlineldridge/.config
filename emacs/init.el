@@ -396,17 +396,16 @@
 
 ;; See roided out version here: https://github.com/jmercouris/configuration/blob/master/.emacs.d/hydra.el#L86
 ;; See simpler version here: https://www.reddit.com/r/emacs/comments/b13n39/how_do_you_manage_window_sizes_in_emacs/eik6xzb
-(defhydra hydra-manage-windows (global-map "C-c w")
-  "manage-windows"
-  ("<left>"  shrink-window-horizontally  "shrink-horizontal")
-  ("<right>" enlarge-window-horizontally "grow-horizontal")
-  ("<down>"  shrink-window               "shrink-vertical")
-  ("<up>"    enlarge-window              "grow-vertical")
-  ("="       balance-windows             "balance")
-  ("u"       winner-undo                 "winner-undo" :exit t)
-  ("U"       winner-redo                 "winner-redo" :exit t)
-  ("w"       window-toggle-side-windows  "toggle-side-windows" :exit t)
-  ("q" nil "quit"))
+(defhydra my/hydra-manage-windows (global-map "C-c w")
+  ("h" shrink-window-horizontally)
+  ("H" enlarge-window-horizontally)
+  ("v" shrink-window)
+  ("V" enlarge-window)
+  ("=" balance-windows)
+  ("u" winner-undo :exit t)
+  ("r" winner-redo :exit t)
+  ("w" window-toggle-side-windows :exit t)
+  ("q" nil))
 
 ;;;;; Window Placement
 
@@ -1623,26 +1622,38 @@ as there appears to be a bug in the current version."
   (org-agenda-mode . (lambda () (define-key org-agenda-mode-map "?" 'which-key-show-major-mode)))
 
   :bind
-  ;; Below produces errors that look like org-agenda-mode-map isn't in scope sometimes.
-  ;; Unsure why this doesn't work when the mapping for org-mode-map does work. The above lambda
-  ;; is a workaround. Will try to clean up at some point.
-  ;; (:map org-agenda-mode-map
-  ;; (("?" . which-key-show-full-major-mode)
   (:map org-mode-map
         ("C-c C-S-l" . org-cliplink)
         ;; Keep C-' keybinding for popper.
         ("C-'" . nil))
   (:map org-agenda-mode-map
-        ("A" . my/org-agenda-refile-archive)
-        ("P" . my/org-agenda-refile-personal-ongoing)
-        ("W" . my/org-agenda-refile-work-ongoing))
+        ("r" . my/hydra-org-agenda-refile/body)
+        ("k" . org-agenda-kill))
+  :init
+  (require 'org-agenda)
+  (defhydra my/hydra-org-agenda-refile ()
+    "
+Refile this agenda item to:
+
+_a_: Archive
+_p_: Personal/ongoing
+_w_: Work/ongoing
+_s_: Someday/ongoing
+_i_: Inbox
+_q_: Quit this menu
+"
+    ("a" my/org-agenda-refile-archive :exit t)
+    ("p" my/org-agenda-refile-personal-ongoing :exit t)
+    ("w" my/org-agenda-refile-work-ongoing :exit t)
+    ("s" my/org-agenda-refile-someday-ongoing :exit t)
+    ("i" my/org-agenda-refile-inbox :exit t)
+    ("q" nil))
 
   :config
   ;; Always save all org buffers before quitting the agenda (press 's' to save immediately).
   (advice-add 'org-agenda-quit :before 'org-save-all-org-buffers)
 
   ;; Make it easier to create org-babel code blocks.
-  (require 'org-tempo)
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 
   :custom
@@ -1798,6 +1809,10 @@ as there appears to be a bug in the current version."
 
 ;; TODO: Pull all of the blah.org file names out into vars.
 
+;; Function for refiling the current agent item under point to the specified file and heading.
+;; `org-agenda-refile' requires a destination refloc list that is difficult to compose manually.
+;; This approach to pulling the refloc out of the return value from `org-refile-get-targets'
+;; is adapted from https://emacs.stackexchange.com/questions/54580/org-refile-under-a-given-heading.
 (defun my/org-agenda-refile (file heading)
   "Refiles the current org agenda item to the refile target associated with FILE and HEADING."
   (org-agenda-refile nil
@@ -1806,22 +1821,27 @@ as there appears to be a bug in the current version."
                         (and
                          (string= heading (nth 0 refloc))
                          (string= file (nth 1 refloc))))
-                      (org-refile-get-targets)) t))
+                      (org-refile-get-targets)) nil))
 
-(defun my/org-agenda-refile-archive ()
-  "Refiles the current org agenda item into the appropriate archive."
+(defun my/org-agenda-refile-archive (&optional category)
+  "Refiles the current org agenda item into the appropriate archive.
+If CATEGORY is specified it must equal 'personal or 'work; if it is not
+specified then a task category will be determined by the item's tags."
   (interactive)
   (let* ((hdm  (org-get-at-bol 'org-hd-marker))
 	 (tags (with-current-buffer (marker-buffer hdm) (org-get-tags hdm))))
-    (cond ((member "@personal" tags)
+    (cond ((or (eq 'personal category) (member "@personal" tags))
            (my/org-agenda-refile
             "/Users/aeldridge/dev/home/gtd/archive.org"
             "Personal/Projects/Ongoing/Tasks"))
-          ((member "@work" tags)
+          ((or (eq 'work category) (member "@work" tags))
            (my/org-agenda-refile
             "/Users/aeldridge/dev/home/gtd/archive.org"
             "Work/Projects/Ongoing/Tasks"))
-          (t (message "Item must be tagged with @personal or @work")))))
+          (t (cl-case (read-char "Archive as [p]ersonal or [w]ork?")
+               (?p (my/org-agenda-refile-archive 'personal))
+               (?w (my/org-agenda-refile-archive 'work))
+               (t (message "Bad selection")))))))
 
 (defun my/org-agenda-refile-personal-ongoing ()
   "Refiles the current org agenda item into the personal/ongoing list."
@@ -1836,6 +1856,20 @@ as there appears to be a bug in the current version."
   (my/org-agenda-refile
    "/Users/aeldridge/dev/home/gtd/work.org"
    "Projects/Ongoing/Tasks"))
+
+(defun my/org-agenda-refile-someday-ongoing ()
+  "Refiles the current org agenda item into the someday/ongoing list."
+  (interactive)
+  (my/org-agenda-refile
+   "/Users/aeldridge/dev/home/gtd/someday.org"
+   "Projects/Ongoing/Tasks"))
+
+(defun my/org-agenda-refile-inbox ()
+  "Refiles the current org agenda item into the inbox list."
+  (interactive)
+  (my/org-agenda-refile
+   "/Users/aeldridge/dev/home/gtd/inbox.org"
+   "Inbox"))
 
 (use-package org-cliplink)
 
