@@ -158,6 +158,10 @@
 ;; Remove compose-mail binding.
 (global-set-key (kbd "C-x m") nil)
 
+;; Navigate buffer history.
+(global-set-key (kbd "C-<") 'previous-buffer)
+(global-set-key (kbd "C->") 'next-buffer)
+
 ;; Manage trailing whitespace.
 (global-set-key (kbd "C-x w w") 'my/toggle-show-trailing-whitespace)
 (global-set-key (kbd "C-x w k") 'delete-trailing-whitespace)
@@ -796,6 +800,12 @@
 ;; Make the rings a bit shorter (default 16) to make rotating around the ring quicker.
 (setq mark-ring-max 8)
 (setq global-mark-ring-max 8)
+
+;;;;; Undo/Redo
+
+(use-package undo-tree
+  :config
+  (global-undo-tree-mode 1))
 
 ;;;;; Region Expansion
 
