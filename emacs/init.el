@@ -365,18 +365,7 @@
   (aw-display-mode-overlay t)
   (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   (aw-dispatch-always t)
-  (aw-background t)
-  :config
-  (setq aw-dispatch-alist
-   '((?k aw-delete-window "Delete Window")
-     (?K delete-other-windows "Delete Other Windows")
-     (?s aw-swap-window "Swap Windows")
-     (?m aw-move-window "Move Window")
-     (?c aw-copy-window "Copy Window")
-     (?o aw-flip-window) ; Flip to previous window (adding description text doesn't work for some reason).
-     (?v aw-split-window-vert "Split Vert Window")
-     (?h aw-split-window-horz "Split Horz Window")
-     (?? aw-show-dispatch-help))))
+  (aw-background t))
 
 ;;;;; Jump Between Point Locations
 
@@ -607,7 +596,8 @@
         ("M-y"     . consult-yank-pop)
         ("C-x r r" . consult-register)
         ("C-x r l" . consult-register-load)
-        ("C-x r s" . consult-register-store))
+        ("C-x r s" . consult-register-store)
+        ("C-c o s" . consult-org-agenda))
 
   :init
   ;; Use consult to select xref locations with preview.
@@ -636,6 +626,7 @@
    consult-grep
    consult-bookmark
    consult-recent-file
+   consult-org-agenda
    consult-xref
    consult--source-buffer
    consult--source-project-buffer
@@ -1622,6 +1613,14 @@ as there appears to be a bug in the current version."
   (org-agenda-mode . (lambda () (define-key org-agenda-mode-map "?" 'which-key-show-major-mode)))
 
   :bind
+  (:map global-map
+        ("C-c o l" . org-store-link)
+        ("C-c o a" . org-agenda)
+        ("C-c o m" . org-capture)
+        ("C-c o i" . (lambda () (interactive) (org-capture nil "i"))) ; Capture inbox item.
+        ("C-c o b" . (lambda () (interactive) (org-capture nil "b"))) ; Capture bookmark.
+        ("C-c o c" . (lambda () (interactive) (org-capture nil "c"))) ; Capture coffee log.
+        ("C-c C-o" . org-open-at-point-global)) ; Open links everywhere just like in org-mode.
   (:map org-mode-map
         ("C-c C-S-l" . org-cliplink)
         ;; Keep C-' keybinding for popper.
@@ -1629,6 +1628,7 @@ as there appears to be a bug in the current version."
   (:map org-agenda-mode-map
         ("r" . my/hydra-org-agenda-refile/body)
         ("k" . org-agenda-kill))
+
   :init
   (require 'org-agenda)
   (defhydra my/hydra-org-agenda-refile ()
@@ -1926,14 +1926,6 @@ specified then a task category will be determined by the item's tags."
       :target (file+head+olp "%<%Y-%m-%d>.org"
                              "#+title: %<%Y-%m-%d>\n"
                              ("Today"))))))
-
-(global-set-key (kbd "C-c o l") 'org-store-link)
-(global-set-key (kbd "C-c o a") 'org-agenda)
-(global-set-key (kbd "C-c o m") 'org-capture)
-(global-set-key (kbd "C-c o i") (lambda () (interactive) (org-capture nil "i"))) ;; Capture inbox item.
-(global-set-key (kbd "C-c o b") (lambda () (interactive) (org-capture nil "b"))) ;; Capture bookmark.
-(global-set-key (kbd "C-c o c") (lambda () (interactive) (org-capture nil "c"))) ;; Capture coffee log.
-(global-set-key (kbd "C-c C-o") 'org-open-at-point-global) ;; Open links everywhere just like in org-mode.
 
 ;;;; Credential Management
 
