@@ -107,16 +107,12 @@
 
 ;;;; Package Management
 
-;; TODO: remove.
-;; Temporary workaround for https://github.com/radian-software/straight.el/pull/1054.
-(setq straight-repository-branch "rr-fix-renamed-variable")
-
 ;; Bootstrap straight.el.
 ;; See: https://github.com/raxod502/straight.el#bootstrapping-straightel
 (defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
+      (bootstrap-version 6))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
         (url-retrieve-synchronously
@@ -159,8 +155,8 @@
 (global-set-key (kbd "C-x m") nil)
 
 ;; Navigate buffer history.
-(global-set-key (kbd "C-<") 'previous-buffer)
-(global-set-key (kbd "C->") 'next-buffer)
+(global-set-key (kbd "M-[") 'previous-buffer)
+(global-set-key (kbd "M-]") 'next-buffer)
 
 ;; Manage trailing whitespace.
 (global-set-key (kbd "C-x w w") 'my/toggle-show-trailing-whitespace)
@@ -373,11 +369,79 @@
 
 ;;;;; Jump Between Point Locations
 
+;; A lot of my Avy inspiration came from https://karthinks.com/software/avy-can-do-anything
+;; and https://github.com/karthink/.emacs.d/blob/master/lisp/setup-avy.el.
 (use-package avy
   :bind
-  (("C-: c" . avy-goto-char)
-   ("C-: l" . avy-goto-line)
-   ("C-: w" . avy-goto-word-1)))
+  (:map global-map
+        ("M-j"     . avy-goto-char-timer)
+        ("M-s"     . nil)
+        ("M-s j"   . avy-goto-char-timer)
+        ("M-s l"   . avy-goto-line)
+        ("M-s M-l" . avy-goto-end-of-line)
+        ("M-s y"   . avy-copy-line)
+        ("M-s M-y" . avy-copy-region)
+        ("M-s k"   . avy-kill-whole-line)
+        ("M-s M-k" . avy-kill-region)
+        ("M-s w"   . avy-kill-ring-save-whole-line)
+        ("M-s M-w" . avy-kill-ring-save-region)
+        ("M-s m"   . avy-move-line)
+        ("M-s M-m" . avy-move-region))
+
+  :init
+  (defun my/avy-action-embark (pt)
+    "Avy action for running `embark-act' on the selected candidate."
+    (unwind-protect
+        (save-excursion
+          (goto-char pt)
+          (embark-act))
+      (select-window
+       (cdr (ring-ref avy-ring 0)))) t)
+
+  (defun my/avy-action-kill-line (pt)
+    "Avy action for running `kill-line' on the line of the selected candidate."
+    (save-excursion
+      (goto-char pt)
+      (kill-line))
+    (select-window
+     (cdr (ring-ref avy-ring 0))) t)
+
+  (defun my/avy-action-kill-whole-line (pt)
+    "Avy action for running `kill-whole-line' on the line of the selected candidate."
+    (save-excursion
+      (goto-char pt)
+      (kill-whole-line))
+    (select-window
+     (cdr
+      (ring-ref avy-ring 0))) t)
+
+  (defun my/avy-action-copy-whole-line (pt)
+    "Avy action for copying the whole line of the selected candidate to the kill ring."
+    (save-excursion
+      (goto-char pt)
+      (cl-destructuring-bind (start . end)
+          (bounds-of-thing-at-point 'line)
+        (copy-region-as-kill start end)))
+    (select-window
+     (cdr
+      (ring-ref avy-ring 0))) t)
+
+  :custom
+  ;; Don't jump for single candidates otherwise we won't be able to run an action.
+  (avy-single-candidate-jump nil)
+  (avy-timeout-seconds 0.4)
+  (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?l ?v ?b))
+  (avy-dispatch-alist
+   '((?k . avy-action-kill-stay)
+     (?K . my/avy-action-kill-whole-line)
+     (?t . avy-action-teleport)
+     (?m . avy-action-mark)
+     (?w . avy-action-copy)
+     (?W . my/avy-action-copy-whole-line)
+     (?y . avy-action-yank)
+     (?Y . avy-action-yank-line)
+     (?z . avy-action-zap-to-char)
+     (?. . my/avy-action-embark))))
 
 ;;;;; Window History
 
@@ -578,10 +642,10 @@
 
 ;; Orderless configuration taken from https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
 (use-package orderless
-  :init
-  (setq completion-styles '(orderless basic)
-        completion-category-defaults nil
-        completion-category-overrides '((file (styles . (partial-completion))))))
+  :custom
+  ;; completion-category-defaults nil
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
 
 (use-package marginalia
   :init
@@ -1962,14 +2026,6 @@ specified then a task category will be determined by the item's tags."
   ;; can improve performance. Just press 'g' to refresh instead.
   (kubernetes-poll-frequency 3600)
   (kubernetes-redraw-frequency 3600))
-
-;;;; D2 Diagramming
-(use-package d2-mode
-  :mode (("\\.d2\\'" . d2-mode))
-  :hook
-  (d2-mode . (lambda ()
-               (setq comment-start "#")
-               (setq comment-start-skip "#+ *"))))
 
 ;;;; Miscellaneous
 
