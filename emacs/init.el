@@ -568,10 +568,34 @@
         ;; By default corfu-insert-separator is bound to M-SPC which on macOS is
         ;; already taken by Spotlight. Instead, bind it to S-SPC - this allows us
         ;; to enter a space character using S-SPC to keep the completion going.
-        ("S-SPC" . corfu-insert-separator))
+        ("S-SPC" . corfu-insert-separator)
+        ("M-m"   . my/corfu-move-to-minibuffer))
+
+  :hook
+  (minibuffer-setup . my/corfu-enable-in-minibuffer)
+
   :init
   ;; Enable globally; exclusions are captured individually by `corfu-excluded-modes'.
   (global-corfu-mode)
+
+  ;; Taken from https://github.com/minad/corfu#completing-in-the-minibuffer.
+  (defun my/corfu-enable-in-minibuffer ()
+    "Enable Corfu in the minibuffer if `completion-at-point' is bound."
+    (when (where-is-internal #'completion-at-point (list (current-local-map)))
+      ;; Disable automatic documentation echo and popup (if enabled).
+      (setq-local corfu-echo-delay nil
+                  corfu-popupinfo-delay nil)
+      (corfu-mode 1)))
+
+  ;; Great idea - from https://github.com/minad/corfu#transfer-completion-to-the-minibuffer.
+  (defun my/corfu-move-to-minibuffer ()
+    "Transfer the Corfu completion session to the minibuffer."
+    (interactive)
+    (when completion-in-region--data
+      (let ((completion-extra-properties corfu--extra)
+            completion-cycle-threshold completion-cycling)
+        (apply #'consult-completion-in-region completion-in-region--data))))
+
   :custom
   ;; Show the Corfu pop-up without requiring tab to be pressed (but after the delay
   ;; configured below).
@@ -584,12 +608,11 @@
   ;; trigger the Corfu pop-up (and subsequent completion which inserts a space after the
   ;; completed word).
   (corfu-auto-delay 0.3)
-  ;; Modes which shouldn't use Corfu. The following modes have been added as the
-  ;; completions are kinda useless. Seems like Corfu requires the concrete mode -
-  ;; you can't use the derived-from mode.
+  ;; Modes which shouldn't use Corfu. The following modes have been added as the default
+  ;; completions were annoying. Realistically, I should just modify the CAPF functions so
+  ;; that at least dabbrev completion is used.
   (corfu-excluded-modes
-   '(org-mode
-     bazel-build-mode
+   '(bazel-build-mode
      bazel-workspace-mode
      bazel-starlark-mode)))
 
@@ -597,22 +620,19 @@
 (setq tab-always-indent 'complete)
 
 ;; Documentation shown alongside Corfu completion popups.
-(use-package corfu-doc
-  :straight '(corfu-doc-mode :host github :repo "galeo/corfu-doc")
+(use-package corfu-popupinfo
   :after corfu
+  :straight (:host github :repo "minad/corfu" :files ("extensions/corfu-popupinfo.el"))
   :bind
   (:map corfu-map
-        ("M-S-d"   . corfu-doc-mode)
-        ("M-d"     . corfu-doc-toggle)
-        ("M-p"     . corfu-doc-scroll-down)
-        ("M-n"     . corfu-doc-scroll-up))
-  ;; Don't enable corfu-doc-mode by default as it can be a bit much and with my smaller
-  ;; screen the popup frame sometimes shows in odd places. For now, toggle the doc pop-up
-  ;; using M-d or enable `corfu-doc-mode' using M-S-d (configured above).
-  ;; :hook (corfu-mode . corfu-doc-mode)
-  :custom
-  ;; Show doc immediately.
-  (corfu-doc-delay 0))
+        ("M-d"     . corfu-popupinfo-toggle)
+        ("M-p"     . corfu-popupinfo-scroll-down)
+        ("M-n"     . corfu-popupinfo-scroll-up))
+  :hook (corfu-mode . corfu-popupinfo-mode)
+  ;; :custom
+  ;; Uncomment for manual display (via `corfu-popupinfo-toggle') only.
+  ;; (corfu-popupinfo-delay nil)
+  )
 
 ;; Nice icons in the margin of corfu completion popups.
 (use-package kind-icon
@@ -640,12 +660,81 @@
   (setq history-length 25)
   (savehist-mode 1))
 
+(use-package cape
+  ;; Dedicated completion commands.
+  :bind
+  (:map global-map
+        ("C-r"     . my/cape-history)
+        ("C-c p p" . completion-at-point)
+        ("C-c p t" . complete-tag)
+        ("C-c p d" . cape-dabbrev)
+        ("C-c p h" . cape-history)
+        ("C-c p f" . cape-file)
+        ("C-c p k" . cape-keyword)
+        ("C-c p s" . cape-symbol)
+        ("C-c p a" . cape-abbrev)
+        ("C-c p l" . cape-line)
+        ("C-c p w" . cape-dict))
+  :hook
+  (emacs-lisp-mode     . my/capf-setup-elisp)
+  (eshell-mode         . my/capf-setup-eshell)
+  (org-mode            . my/capf-setup-org)
+  (lsp-completion-mode . my/capf-setup-lsp)
+
+  :init
+  (defun my/cape-history ()
+    "Version of `cape-history' that runs as an in-buffer completion."
+    (interactive)
+    (let ((completion-at-point-functions (list #'cape-history)))
+      (completion-at-point)))
+
+  ;; See https://github.com/minad/corfu/wiki#using-cape-to-tweak-and-combine-capfs.
+  ;; This pattern of creating separate setup functions for major modes is a work-in-progress.
+  ;; Note that `cape-super-capf' can also be used to combine multiple backends like dabbrev, LSP,
+  ;; etc but so far it seems unnecessary as different completions kick in for different contexts
+  ;; (e.g. when inside a comment vs outside, etc).
+  (defun my/capf-setup-elisp ()
+    "Configure CAPFs to be used for `emacs-lisp-mode'."
+    (setq-local completion-at-point-functions
+                (list #'elisp-completion-at-point
+                      #'cape-file
+                      #'cape-dabbrev)))
+
+  (defun my/capf-setup-eshell ()
+    "Configure CAPFs to be used for `eshell-mode'."
+    (setq-local completion-at-point-functions (list
+                                               #'cape-file
+                                               #'pcomplete-completions-at-point
+                                               #'cape-dabbrev)))
+
+  (defun my/capf-setup-org ()
+    "Configure CAPFs to be used for `org-mode'."
+    (setq-local completion-at-point-functions (list #'cape-dabbrev)))
+
+  (defun my/capf-setup-lsp ()
+    "Configure CAPFs to be used for `lsp-mode'."
+    ;; See https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
+    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
+          '(orderless))
+    (setq-local completion-at-point-functions
+                (list #'lsp-completion-at-point #'cape-dabbrev)))
+
+  :custom
+  ;; Only show dabbrev completions of a decent length for performance.
+  (cape-dabbrev-min-length 3)
+  ;; Only show dabbrev completions for words in the current buffer for performance.
+  ;; AE: Ignoring above and trying this out...
+  ;; (cape-dabbrev-check-other-buffers t)
+  )
+
 ;; Orderless configuration taken from https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
 (use-package orderless
-  :custom
-  ;; completion-category-defaults nil
-  (completion-styles '(orderless basic))
-  (completion-category-overrides '((file (styles basic partial-completion)))))
+  :init
+  (setq completion-styles '(orderless basic)
+        completion-category-defaults nil
+        completion-category-overrides nil
+        ;; Allow backslash to escape the space separator to search for literal spaces.
+        orderless-component-separator #'orderless-escapable-split-on-space))
 
 (use-package marginalia
   :init
@@ -656,7 +745,7 @@
   :bind
   (:map global-map
         ("C-s"     . consult-line)
-        ("C-r"     . consult-history)
+        ("C-S-s"   . my/consult-line-strict)
         ("C-x i"   . consult-imenu)       ; Local buffer imenu
         ("C-x I"   . consult-imenu-multi) ; Open buffers imenu
         ("C-x b"   . consult-buffer)
@@ -671,6 +760,12 @@
   ;; Use consult to select xref locations with preview.
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
+
+  (defun my/consult-line-strict ()
+    "Version of `consult-line' that uses a strict substring completion style."
+    (interactive)
+    (let ((completion-styles '(substring)))
+      (consult-line)))
 
   :config
   ;; Show narrowing help in the minibuffer when ? is pressed.
@@ -868,6 +963,11 @@
 ;;;;; Undo/Redo
 
 (use-package undo-tree
+  :custom
+  ;; Disable history saving for now.
+  (undo-tree-auto-save-history nil)
+  ;; Save history in central location (no effect due to disabling above).
+  (undo-tree-history-directory-alist `(("." . ,(expand-file-name "undo-tree" my/emacs-data-dir))))
   :config
   (global-undo-tree-mode 1))
 
@@ -1148,12 +1248,6 @@ as there appears to be a bug in the current version."
   (advice-add 'lsp :around #'my/if-essential-advice)
   (advice-add 'lsp-deferred :around #'my/if-essential-advice)
 
-  ;; See https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
-  (defun my/lsp-mode-init-completion ()
-    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(orderless)))
-  :hook
-  (lsp-completion-mode . my/lsp-mode-init-completion)
   :custom
   (lsp-log-io nil)
   (lsp-keymap-prefix "C-c l")
@@ -1558,8 +1652,10 @@ as there appears to be a bug in the current version."
 (defun my/eshell-mode-init ()
   "Hook function executed when `eshell-mode' is run."
 
-  ;; Don't auto-show the Corfu completion popup (press tab instead).
-  (setq-local corfu-auto nil)
+  ;; I could disable `corfu-auto' to make eshell behave more like a normal
+  ;; shell that requires pressing tab. But I'm preferring going the other way:
+  ;; make eshell behave more like a standard Emacs buffer.
+  ;; (setq-local corfu-auto nil)
 
   ;; Don't scroll the buffer around after it has been recentered (using C-l).
   ;; This seems to need to be done as a mode hook rather than in `:config' as
@@ -1705,6 +1801,7 @@ as there appears to be a bug in the current version."
 
   :init
   (require 'org-agenda)
+  (require 'org-tempo) ; Enables <s TAB style shortcuts.
   (defhydra my/hydra-org-agenda-refile ()
     "
 Refile this agenda item to:
@@ -1975,7 +2072,9 @@ specified then a task category will be determined by the item's tags."
   :custom
   (org-roam-directory (concat my/pkm-dir "/notes"))
   (org-roam-db-location (concat my/xdg-cache-dir "/emacs/org-roam.db"))
-  (org-roam-completion-everywhere t)
+  ;; Disable org-roam completion as it's a bit annoying.
+  (org-roam-completion-everywhere nil)
+  (org-roam-completion-functions nil)
   (org-roam-node-display-template
    (concat "${title:70} " (propertize "${tags:70}" 'face 'org-tag)))
   (org-roam-capture-templates
