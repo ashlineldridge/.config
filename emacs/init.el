@@ -768,6 +768,7 @@
         ("C-x i"   . consult-imenu)       ; Local buffer imenu
         ("C-x I"   . consult-imenu-multi) ; Open buffers imenu
         ("C-x b"   . consult-buffer)
+        ("C-x o"   . consult-outline)
         ("M-g M-g" . consult-goto-line)
         ("M-y"     . consult-yank-pop)
         ("C-x r r" . consult-register)
@@ -1165,32 +1166,12 @@ as there appears to be a bug in the current version."
 
 ;;;;; Outline
 
-(defvar my/outline-headings-per-mode
-  '((emacs-lisp-mode . ";\\{3,\\}+ [^\n]")))
-
-(defvar my/outline-major-modes-blocklist
-  '(org-mode outline-mode markdown-mode edebug-eval-mode))
-
-;; Taken from https://protesilaos.com/emacs/dotemacs
-(defun my/outline-minor-mode-safe ()
-  "Enables and configures `outline-minor-mode' if it is safe to do so."
-  (interactive)
-  (let* ((blocklist my/outline-major-modes-blocklist)
-         (mode major-mode)
-         (headings (alist-get mode my/outline-headings-per-mode)))
-    (unless (derived-mode-p (car (member mode blocklist)))
-      (if (null outline-minor-mode)
-          (progn
-            (when (derived-mode-p mode)
-              (setq-local outline-regexp headings))
-            (outline-minor-mode 1))
-        (outline-minor-mode -1)))))
-
 (use-package outline
   :straight nil ;; Built-in.
-  ;; :hook
-  ;; TODO: Seems broken since last upgrade to Emacs 29
-  ;; (emacs-lisp-mode . my/outline-minor-mode-safe)
+  :hook
+  (emacs-lisp-mode . (lambda ()
+                       (setq-local outline-regexp ";;;+ [^\n]")
+                       (outline-minor-mode)))
   :bind
   (:map outline-minor-mode-map
         ("C-c C-n"  . outline-next-visible-heading)
