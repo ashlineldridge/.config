@@ -1222,6 +1222,14 @@ as there appears to be a bug in the current version."
 
 (use-package yasnippet-snippets)
 
+;;;;; Code Formatting and Linting
+
+(use-package apheleia
+  :config
+  (apheleia-global-mode 1)
+  ;; Use goimports rather than the gofmt so that imports get optimized.
+  (setf (alist-get 'go-mode apheleia-mode-alist) #'goimports))
+
 ;;;;; Language Support
 
 ;;;;;; Language Server Support
@@ -1229,15 +1237,13 @@ as there appears to be a bug in the current version."
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :hook
-  (c-mode . lsp-deferred)
-  (c++-mode . lsp-deferred)
-  (go-mode . lsp-deferred)
-  (rustic-mode . lsp-deferred)
-  (sh-mode . lsp-deferred)
-  ;; Disable LSP mode for Terraform as the language servers (both terraform-ls and terraform-lsp)
-  ;; don't support Terraform files in nested directories which is standard for Terragrunt projects.
-  ;; (terraform-mode . lsp-deferred)
-  (python-mode . lsp-deferred)
+  (c-mode         . lsp-deferred)
+  (c++-mode       . lsp-deferred)
+  (go-mode        . lsp-deferred)
+  (rustic-mode    . lsp-deferred)
+  (sh-mode        . lsp-deferred)
+  (terraform-mode . lsp-deferred)
+  (python-mode    . lsp-deferred)
   :bind
   (:map lsp-mode-map
         ;; M-? is normally bound to xref-find-references but the way that this function exposes
@@ -1544,11 +1550,7 @@ as there appears to be a bug in the current version."
     (define-key base-map (kbd "C-c C-c C-o") 'lsp-rust-analyzer-open-external-docs)
     base-map)
   (setq rustic-mode-map (my/build-rust-keymap (make-sparse-keymap)))
-  (setq rustic-compilation-mode-map (my/build-rust-keymap rustic-compilation-mode-map))
-  ;; Leave format-on-save off for now. Ideally, I'd like it on but the experience isn't great
-  ;; as by default `rustic-format-file' is used to format the file which edits the file on the
-  ;; filesystem which makes Emacs generate warnings.
-  (setq rustic-format-on-save nil))
+  (setq rustic-compilation-mode-map (my/build-rust-keymap rustic-compilation-mode-map)))
 
 ;;;;;; Terraform
 
@@ -1623,17 +1625,12 @@ as there appears to be a bug in the current version."
   ;; Remove the default go-mode keybindings.
   (setq go-mode-map (make-sparse-keymap))
   :hook
-  ((go-mode . (lambda () (setq tab-width 4)))
-   (before-save . gofmt-before-save))
+  (go-mode . (lambda () (setq-local tab-width 4)))
   :bind
   (:map go-mode-map
         ("C-c C-c p" . go-play-buffer)
         ("C-c C-c P" . go-play-region)
-        ("C-c C-c c" . compile))
-  :custom
-  ;; Replace gofmt with goimports which also removes/adds imports as
-  ;; needed. See: https://pkg.go.dev/golang.org/x/tools/cmd/goimports.
-  (gofmt-command "goimports"))
+        ("C-c C-c c" . compile)))
 
 ;; TODO: Implement inlay hints for gopls when possible. See:
 ;; https://github.com/emacs-lsp/lsp-mode/issues/3618.
@@ -1683,9 +1680,8 @@ as there appears to be a bug in the current version."
 ;;;;;; YAML
 
 (use-package yaml-mode
-  :mode (("\\.yml\\'" . yaml-mode)
-	 ("\\.yaml\\'" . yaml-mode))
-  :hook ((yaml-mode . (lambda () (define-key yaml-mode-map "\C-m" 'newline-and-indent)))))
+  :mode (("\\.yml\\'"  . yaml-mode)
+	 ("\\.yaml\\'" . yaml-mode)))
 
 ;;;;;; Jsonnet
 
