@@ -16,7 +16,6 @@ libs=(
   completion.zsh
   shortcuts.zsh
   secrets.zsh
-  nvm.zsh
 )
 
 # Load zsh configuration files. Note: this intentionally sources lib/env.zsh
