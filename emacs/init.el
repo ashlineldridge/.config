@@ -2248,15 +2248,6 @@ specified then a task category will be determined by the item's tags."
   (kubernetes-poll-frequency 3600)
   (kubernetes-redraw-frequency 3600))
 
-;;;; Miscellaneous
-
-;; Function for starting "An Introduction to Programming in Emacs Lisp" which is no longer
-;; shown on the main info page (C-h i) and I can never remember how else to get to it.
-(defun my/emacs-lisp-intro ()
-  "Opens \"An Introduction to Programming in Emacs Lisp\" by Robert J. Chassell."
-  (interactive)
-  (info "(eintr) Top"))
-
 ;;; End:
 (provide 'init)
 ;;; init.el ends here
