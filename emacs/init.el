@@ -151,6 +151,11 @@
 (global-set-key (kbd "C-;") 'comment-line)
 ;; Replace list-buffers with the more advanced ibuffer.
 (global-set-key (kbd "C-x C-b") 'ibuffer)
+;; Remove M-o binding from so we can use ace-window.
+;; TODO: Move this into a use-package emacs block.
+(require 'ibuffer)
+(define-key ibuffer-mode-map (kbd "M-o") nil)
+
 ;; Remove compose-mail binding.
 (global-set-key (kbd "C-x m") nil)
 
@@ -181,7 +186,7 @@
 (setq inhibit-startup-message t)
 
 (tool-bar-mode 0)   ;; Disable the tool bar.
-(tooltip-mode 0)    ;; Disable tool tips.
+(tooltip-mode 0)    ;; Disable tooltips.
 (menu-bar-mode 0)   ;; Disable the menu bar.
 (scroll-bar-mode 0) ;; Disable visible scrollbar.
 (set-fringe-mode 5) ;; Increase left/right margins slightly.
@@ -476,7 +481,9 @@
   (defvar my/popper-ignore-modes '(grep-mode))
   (setq popper-reference-buffers
         '("\\*Messages\\*"
+          "\\*Breakpoints\\*"
           "\\*Flycheck "
+          "\\*dap-ui-"
 
           ;; Match all modes that derive from compilation-mode but do not derive from
           ;; a member of `my/popper-ignore-modes'.
@@ -674,14 +681,22 @@
         ("C-c p s" . cape-symbol)
         ("C-c p a" . cape-abbrev)
         ("C-c p l" . cape-line)
+        ("C-c p y" . cape-yasnippet)
         ("C-c p w" . cape-dict))
   :hook
   (emacs-lisp-mode     . my/capf-setup-elisp)
   (eshell-mode         . my/capf-setup-eshell)
+  (minibuffer-mode     . my/capf-setup-eshell)
   (org-mode            . my/capf-setup-org)
   (lsp-completion-mode . my/capf-setup-lsp)
 
   :init
+  (use-package cape-yasnippet
+    :after yasnippet
+    :straight '(:host github :repo "elken/cape-yasnippet")
+    :custom
+    (cape-yasnippet-lookup-by 'key))
+
   (defun my/cape-history ()
     "Version of `cape-history' that runs as an in-buffer completion."
     (interactive)
@@ -705,11 +720,13 @@
     (setq-local completion-at-point-functions (list
                                                #'cape-file
                                                #'pcomplete-completions-at-point
-                                               #'cape-dabbrev)))
+                                               #'cape-dabbrev
+                                               #'cape-yasnippet)))
 
   (defun my/capf-setup-org ()
     "Configure CAPFs to be used for `org-mode'."
-    (setq-local completion-at-point-functions (list #'cape-dabbrev)))
+    (setq-local completion-at-point-functions
+                (list (cape-super-capf #'cape-dabbrev #'cape-yasnippet))))
 
   (defun my/capf-setup-lsp ()
     "Configure CAPFs to be used for `lsp-mode'."
@@ -717,7 +734,9 @@
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
           '(orderless))
     (setq-local completion-at-point-functions
-                (list #'lsp-completion-at-point #'cape-dabbrev)))
+                (list
+                 (cape-super-capf #'lsp-completion-at-point #'cape-yasnippet)
+                 #'cape-dabbrev)))
 
   :custom
   ;; Only show dabbrev completions of a decent length for performance.
@@ -1037,6 +1056,7 @@
   :bind
   (:map global-map
         ("C-x p"   . nil) ; Remove previous bindings
+        ("C-x p b" . consult-project-buffer)
         ("C-x p d" . project-dired)
         ("C-x p c" . project-compile)
         ("C-x p f" . project-find-file)
@@ -1209,6 +1229,8 @@ as there appears to be a bug in the current version."
   (setq yas-wrap-around-region t)
   (yas-reload-all))
 
+(use-package yasnippet-snippets)
+
 ;;;;; Language Support
 
 ;;;;;; Language Server Support
@@ -1236,7 +1258,8 @@ as there appears to be a bug in the current version."
         ("C-c l c d" . consult-lsp-diagnostics)
         ("C-c l c s" . (lambda () (interactive) (consult-lsp-file-symbols t)))
         ;; Still trying to figure out the benefit of consult-lsp-symbols.
-        ("C-c l c S" . consult-lsp-symbols))
+        ("C-c l c S" . consult-lsp-symbols)
+        ("C-c C-c i" . 'my/toggle-rust-inlay-hints))
   :init
   (defun my/if-essential-advice (f &rest args)
     "Around advice that invokes F with ARGS if `non-essential' is non-nil."
@@ -1248,12 +1271,44 @@ as there appears to be a bug in the current version."
   (advice-add 'lsp :around #'my/if-essential-advice)
   (advice-add 'lsp-deferred :around #'my/if-essential-advice)
 
+  ;; TODO: Revert to rust-analyzer specific hints until
+  ;; https://github.com/emacs-lsp/lsp-mode/issues/4029 is fixed.
+  ;; (defun my/lsp-toggle-inlay-hints ()
+  ;;   "Toggle whether LSP inlay type hints are shown."
+  ;;   (interactive)
+  ;;   (if lsp-inlay-hint-enable
+  ;;       (progn
+  ;;         (setq lsp-inlay-hint-enable nil)
+  ;;         (lsp-inlay-hints-mode 0))
+  ;;     (progn
+  ;;       (setq lsp-inlay-hint-enable t)
+  ;;       (lsp-inlay-hints-mode 1))))
+
+  (defun my/lsp-toggle-inlay-hints ()
+    "Toggle whether Rust inlay type hints are shown."
+    (interactive)
+    (if lsp-rust-analyzer-server-display-inlay-hints
+        (progn
+          (setq lsp-rust-analyzer-server-display-inlay-hints nil)
+          (lsp-rust-analyzer-inlay-hints-mode 0))
+      (progn
+        (setq lsp-rust-analyzer-server-display-inlay-hints t)
+        (lsp-rust-analyzer-inlay-hints-mode 1))))
+
   :custom
   (lsp-log-io nil)
   (lsp-keymap-prefix "C-c l")
   (lsp-modeline-code-actions-segments '(icon)) ;; No need to also show the count.
   (lsp-lens-enable nil)                        ;; Haven't found a great use for these.
   (lsp-modeline-diagnostics-enable nil)        ;; The Flycheck modeline segment already displays this.
+
+  ;; Display type hints by default (not supported by all language servers).
+  ;; (lsp-inlay-hint-enable t)
+  ;; TODO: Reverting to using rust-analyzer specific hints until
+  ;; https://github.com/emacs-lsp/lsp-mode/issues/4029 is fixed. I've pinned the lsp-mode
+  ;; package to 5c3ce8b795ca8a218b2301903395a629ae3523de (commit prior to regression) in
+  ;; ~/.config/emacs/straight/versions/default.el until the bug is resolved.
+  (lsp-rust-analyzer-server-display-inlay-hints t)
 
   ;; Recommended setting as I'm using corfu instead of company for completion.
   ;; See: https://github.com/minad/corfu/issues/71#issuecomment-977693717
@@ -1294,14 +1349,8 @@ as there appears to be a bug in the current version."
 			     ;; "-j=1"
 			     ))
 
+  ;; Use "clippy" rather than "check" for additional lints.
   (lsp-rust-analyzer-cargo-watch-command "clippy")
-  ;; I'd prefer to have this off by default but there seem to be some hooks configured where if
-  ;; this is going to be set it needs to be set when lsp-mode starts.
-  (lsp-rust-analyzer-server-display-inlay-hints t)
-
-  ;; Enable procedural macro support (apparently assists with auto-completion when procedural
-  ;; macros are involved; see https://news.ycombinator.com/item?id=28802428).
-  ;; (lsp-rust-analyzer-proc-macro-enable t)
 
   ;; Configure lsp-mode to use the official terraform-ls LSP server rather than terraform-lsp
   ;; which it uses by default and is more experimental (crashes constantly for me).
@@ -1324,7 +1373,7 @@ as there appears to be a bug in the current version."
 (use-package lsp-ui
   :bind
   (:map lsp-ui-mode-map
-        ("M-p"     . lsp-ui-doc-show)
+        ("M-p"     . lsp-ui-doc-toggle)
         ("C-c l i" . lsp-ui-imenu))
   :custom
   (lsp-ui-sideline-delay 0)
@@ -1339,19 +1388,31 @@ as there appears to be a bug in the current version."
   :custom
   (consult-lsp-marginalia-mode t))
 
-;; The following DAP configuration is optimised for debugging Rust using the LLVM
-;; lldb-vscode binary. The easiest way to get the latest version of this binary on MacOS
-;; is to install llvm as a brew package. The following configuration expects a launch.json
-;; file to exist at the root of the project. The launch.json file should have the format below.
-;; Each time a code change is made you'll need to rebuild the debug binary.
+;; The following DAP configuration is optimised for debugging Rust and Go. The same
+;; keybindings and UI is used across all languages. The Go debugging workflow follows
+;; the recommendations for Go here: https://emacs-lsp.github.io/dap-mode/page/configuration.
+;;
+;; The Rust debugging workflow does not follow the recommendations for Rust in the
+;; preceding docs as they recommend using rust-gdb which cannot be used on Apple silicon
+;; due to the fact that gdb does not currently support Apple silicon.
+;;
+;; To work around this and other issues, I've defined my own custom debug configuration
+;; (a DAP provider and a template) for debugging Rust. When `dap-debug' is run, a configuration
+;; named "Rust LLDB Default" will be shown. When selected, this configuration will prompt
+;; for the executable file to be debugged. Unlike with Go/Delve, the debuggable executable
+;; must be recompiled between code changes. This default configuration does not supply
+;; arguments or environment variables.
+;;
+;; For more advanced Rust debugging scenarios (e.g. args, vars, multiple binaries, etc),
+;; drop a launch.json file at the root of the Rust project with the following format:
 ;;
 ;; {
 ;;   "version": "0.2.0",
 ;;   "configurations": [{
-;;     "name": "lldb-vscode-launch",
-;;     "type": "lldb-vscode",
+;;     "name": "Rust LLDB Custom",
+;;     "type": "rust-lldb",
 ;;     "request": "launch",
-;;     "program": "${workspaceFolder}/target/debug/name_of_binary",
+;;     "program": "${workspaceFolder}/target/debug/axum-full-example",
 ;;     "args": [],
 ;;     "env": {},
 ;;     "cwd": "${workspaceFolder}",
@@ -1359,6 +1420,15 @@ as there appears to be a bug in the current version."
 ;;     "debuggerRoot": "${workspaceFolder}"
 ;;   }]
 ;; }
+;;
+;; In the example above, replace "axum-full-example" with the name of the executable.
+;; If there are multiple executables, multiple configuration blocks will be needed and
+;; each should have a unique name (e.g. "Rust LLDB Custom (axum-full-example)", etc).
+;;
+;; When a launch.json file is present, `dap-debug' will show the configurations that
+;; it defines in addition to the ones that are registered below. The launch.json configurations
+;; will be mixed in with the properties set by the `my/dap-rust-lldb-debug-provider' provider
+;; below as long as a type of "rust-lldb" is specified.
 ;;
 ;; Note: dap-mode uses `lsp-workspace-root' to determine the root project directory that should
 ;; contain the launch.json (or .vscode/launch.json) file. In projects with submodules where you
@@ -1368,14 +1438,82 @@ as there appears to be a bug in the current version."
 ;; find a way to hook into dap-mode/lsp-mode so the process is a bit smarter.
 (use-package dap-mode
   :hook
-  (dap-stopped . (lambda (arg) (call-interactively #'dap-hydra)))
+  (go-mode     . my/dap-mode)
+  (rustic-mode . my/dap-mode)
+  :bind
+  (:map dap-mode-map
+        ("C-c C-d d" . dap-debug)
+        ("C-c C-d l" . dap-debug-last)
+        ("C-c C-d m" . dap-hydra)
+        ("C-c C-d b" . dap-breakpoint-toggle)
+        ("C-c C-d c" . dap-breakpoint-condition)
+        ("C-c C-d k" . dap-breakpoint-delete-all)
+        ("C-c C-d q" . dap-disconnect)
+
+        ;; DAP UI (windows are managed by popper).
+        ("C-c C-d w a" . dap-ui-expressions-add)
+        ("C-c C-d w e" . dap-ui-expressions)
+        ("C-c C-d w l" . dap-ui-breakpoints-list)
+        ("C-c C-d w v" . dap-ui-locals)
+        ("C-c C-d w r" . dap-ui-repl)
+        ("C-c C-d w s" . dap-ui-sessions)
+
+        ;; Keys to be used during a debug session.
+        ("C-c C-d C-n" . dap-next)
+        ("C-c C-d C-i" . dap-step-in)
+        ("C-c C-d C-o" . dap-step-out)
+        ("C-c C-d C-c" . dap-continue))
+  :init
+  (require 'dap-dlv-go)
+  (require 'dap-ui)
+
+  ;; Override `dap-ui--show-buffer' to show buffers in a standard window rather than a
+  ;; side window allowing popper to control them.
+  (defun dap-ui--show-buffer (buf)
+    "Overidden version of `dap-ui--show-buffer' that doesn't use side windows."
+    (display-buffer buf))
+
+  (defun my/dap-mode ()
+    "Start `dap-mode' in an opinionated way."
+    (interactive)
+    (dap-mode 1)
+    (dap-ui-mode 1)
+    (dap-ui-controls-mode -1))
+
+  ;; Location of lldb-vscode on the host.
+  (defvar my/dap-rust-lldb-debug-program '("/opt/homebrew/opt/llvm/bin/lldb-vscode"))
+
+  ;; Custom DAP debug provider for Rust using LLDB. The provider allows the Rust binary
+  ;; that is to be debugged to be selected at the start of the debug session.
+  (defun my/dap-rust-lldb-debug-provider (conf)
+    "Populate CONF with the required arguments."
+    (-> conf
+        (dap--put-if-absent :dap-server-path my/dap-rust-lldb-debug-program)
+        (dap--put-if-absent :cwd (expand-file-name (my/project-current-root)))
+        (dap--put-if-absent :program
+                            (read-file-name
+                             "Select binary file to debug: "
+                             (my/project-current-root) nil t nil #'file-executable-p))))
+
   :config
-  (require 'dap-lldb)
-  (dap-ui-mode 1)
-  (dap-tooltip-mode 1)
+  ;; Register the custom DAP debug provider for Rust using LLDB.
+  (dap-register-debug-provider "rust-lldb" 'my/dap-rust-lldb-debug-provider)
+
+  ;; Register the custom DAP template for the custom provider.
+  (dap-register-debug-template "Rust LLDB Default"
+                               (list :type "rust-lldb"
+                                     :request "launch"
+                                     :name "rust-lldb-template"
+                                     :mode "auto"
+                                     :buildFlags nil
+                                     :args nil
+                                     :env nil))
+
   :custom
-  (dap-print-io t)
-  (dap-lldb-debug-program '("/opt/homebrew/opt/llvm/bin/lldb-vscode")))
+  (dap-auto-configure-features nil)
+  (dap-print-io nil)
+  (dap-auto-show-output nil)
+  (dap-ui-repl-history-dir my/emacs-data-dir))
 
 ;;;;;; Flycheck
 
@@ -1393,17 +1531,6 @@ as there appears to be a bug in the current version."
 
 ;;;;;; Rust
 
-(defun my/toggle-rust-inlay-hints ()
-  "Toggle whether Rust inlay type hints are shown."
-  (interactive)
-  (if lsp-rust-analyzer-server-display-inlay-hints
-    (progn
-      (setq lsp-rust-analyzer-server-display-inlay-hints nil)
-      (lsp-rust-analyzer-inlay-hints-mode 0))
-    (progn
-      (setq lsp-rust-analyzer-server-display-inlay-hints t)
-      (lsp-rust-analyzer-inlay-hints-mode 1))))
-
 (use-package rustic
   :config
   ;; The following function is used to ensure Rust keybindings are placed in both `rustic-mode-map'
@@ -1417,7 +1544,6 @@ as there appears to be a bug in the current version."
     (define-key base-map (kbd "C-c C-c c")   'rustic-cargo-clean)
     (define-key base-map (kbd "C-c C-c f")   'rustic-format-buffer)
     (define-key base-map (kbd "C-c C-c F")   'rustic-cargo-fmt)
-    (define-key base-map (kbd "C-c C-c i")   'my/toggle-rust-inlay-hints)
     (define-key base-map (kbd "C-c C-c l")   'rustic-cargo-clippy)
     (define-key base-map (kbd "C-c C-c o")   'rustic-cargo-outdated)
     (define-key base-map (kbd "C-c C-c r")   'rustic-cargo-run)
@@ -1425,10 +1551,6 @@ as there appears to be a bug in the current version."
     (define-key base-map (kbd "C-c C-c T")   'rustic-cargo-current-test)
     (define-key base-map (kbd "C-c C-c u")   'rustic-cargo-upgrade)
     (define-key base-map (kbd "C-c C-c C-o") 'lsp-rust-analyzer-open-external-docs)
-    (define-key base-map (kbd "C-c C-d")     nil)
-    (define-key base-map (kbd "C-c C-d d")   'dap-debug)
-    (define-key base-map (kbd "C-c C-d l")   'dap-debug-last)
-    (define-key base-map (kbd "C-c C-d m")   'dap-hydra)
     base-map)
   (setq rustic-mode-map (my/build-rust-keymap (make-sparse-keymap)))
   (setq rustic-compilation-mode-map (my/build-rust-keymap rustic-compilation-mode-map))
