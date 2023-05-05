@@ -59,8 +59,5 @@ export DOCKER_SCAN_SUGGEST="false"
 export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
 export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
 
-# Node Version Manager installation directory (see lib/nvm.zsh).
-export NVM_DIR="/opt/share/nvm"
-
 # Java (using latest https://docs.aws.amazon.com/corretto).
 export JAVA_HOME="$(/usr/libexec/java_home)"
