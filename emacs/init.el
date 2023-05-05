@@ -477,23 +477,33 @@
         ("C-'"   . popper-toggle-latest)
         ("M-'"   . popper-cycle)
         ("C-M-'" . popper-toggle-type))
+  (:map popper-mode-map
+        ("M-k"   . my/popper-kill-popup-stay-open))
   :init
   (defvar my/popper-ignore-modes '(grep-mode))
-  (setq popper-reference-buffers
-        '("\\*Messages\\*"
-          "\\*Breakpoints\\*"
-          "\\*Flycheck "
-          "\\*dap-ui-"
+  (defun my/popper-kill-popup-stay-open ()
+    "Kill the current popup but stay open if there are others."
+    (interactive)
+    (popper-kill-latest-popup)
+    (popper-open-latest))
+  :custom
+  (popper-reference-buffers
+   '("\\*Messages\\*"
+     "\\*Breakpoints\\*"
+     "\\*Flycheck "
+     "\\*dap-ui-"
 
-          ;; Match all modes that derive from compilation-mode but do not derive from
-          ;; a member of `my/popper-ignore-modes'.
-          (lambda (buf)
-            (with-current-buffer buf
-              (unless (derived-mode-p (car (member major-mode my/popper-ignore-modes)))
-                (derived-mode-p 'compilation-mode))))))
-  (setq popper-window-height 15)
-  ;; Hide modeline for pop-ups as it looks cleaner and extra space is good.
-  (setq popper-mode-line nil)
+     ;; Match all modes that derive from compilation-mode but do not derive from
+     ;; a member of `my/popper-ignore-modes'.
+     (lambda (buf)
+       (with-current-buffer buf
+         (unless (derived-mode-p (car (member major-mode my/popper-ignore-modes)))
+           (derived-mode-p 'compilation-mode))))))
+  (popper-window-height 15)
+  ;; Hide modeline and dispatch keys for cleaner look.
+  (popper-mode-line nil)
+  (popper-echo-dispatch-keys nil)
+  :config
   (popper-mode 1)
   (popper-echo-mode 1))
 
@@ -1890,6 +1900,7 @@ as there appears to be a bug in the current version."
         ("C-c o l" . org-store-link)
         ("C-c o a" . org-agenda)
         ("C-c o m" . org-capture)
+        ("C-c o S" . org-save-all-org-buffers)
         ("C-c o i" . (lambda () (interactive) (org-capture nil "i"))) ; Capture inbox item.
         ("C-c o b" . (lambda () (interactive) (org-capture nil "b"))) ; Capture bookmark.
         ("C-c o c" . (lambda () (interactive) (org-capture nil "c"))) ; Capture coffee log.
