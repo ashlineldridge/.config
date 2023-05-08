@@ -748,8 +748,8 @@
                  #'cape-dabbrev)))
 
   :custom
-  ;; Only show dabbrev completions of a decent length for performance.
-  (cape-dabbrev-min-length 3)
+  ;; Only show dabbrev candidates of a minimum length.
+  (cape-dabbrev-min-length 4)
   ;; Only show dabbrev completions for words in the current buffer for performance.
   ;; AE: Ignoring above and trying this out...
   ;; (cape-dabbrev-check-other-buffers t)
@@ -978,7 +978,7 @@
 
 (global-set-key (kbd "C-S-k") 'my/copy-to-eol)
 (global-set-key (kbd "C-M-k") 'my/delete-to-eol)
-(global-set-key (kbd "M-DEL") 'my/delete-to-bol)
+(global-set-key (kbd "C-M-DEL") 'my/delete-to-bol)
 
 ;;;;; Mark Ring
 
@@ -1058,6 +1058,16 @@
   (dired-rainbow-define partition "#e3342f" ("dmg" "iso" "bin" "nrg" "qcow" "toast" "vcd" "vmdk" "bak"))
   (dired-rainbow-define vc "#0074d9" ("git" "gitignore" "gitattributes" "gitmodules"))
   (dired-rainbow-define-chmod executable-unix "#38c172" "-.*x.*"))
+
+;;;;; File History
+
+(use-package recentf
+  :straight nil
+  :custom
+  (recentf-max-saved-items 200)
+  (recentf-save-file (expand-file-name "recentf" my/emacs-data-dir))
+  :config
+  (recentf-mode 1))
 
 ;;;;; Project Management
 
@@ -1810,34 +1820,6 @@ as there appears to be a bug in the current version."
             len (- len (1- (length (car components))))
             components (cdr components)))
     (concat str (cl-reduce (lambda (a b) (concat a "/" b)) components))))
-
-;; I have switched to eshell as my daily shell but keep vterm here for odd occasions.
-(use-package vterm
-  :bind
-  (:map vterm-mode-map
-        ;; Unbind C-s which sends a stop signal to the terminal which freezes
-        ;; output (and requires a C-q to unfreeze) as it's annoying.
-        ("C-s" . nil)
-        ;; Unbind C-SPC as otherwise it prevents pop-global-mark from working across
-        ;; vterm buffers.
-        ("C-SPC" . nil)
-        ;; Unbind M-s so we can use ripgrep, etc.
-        ("M-s" . nil)
-        ;; Unbind F11 as this is used to fullscreen the window.
-        ("<f11>" . nil)
-        ;; Unbind M-: so we can have eval-expression back.
-        ("M-:" . nil)
-        ;; Bind S-ESC to keyboard-escape-quit when in vterm-mode as ESC is used for
-        ;; shell signals (e.g., ESC + underscore for last word of the previous command).
-        ("S-<escape>" . keyboard-escape-quit))
-  :custom
-  ;; Don't prompt for permission to compile on first install.
-  (vterm-always-compile-module t)
-  (vterm-max-scrollback 10000)
-  ;; I can't seem to get a reliable way of clearing without losing buffer history.
-  ;; The below setting (which is already the default) should work but doesn't.
-  (vterm-clear-scrollback-when-clearing nil)
-  (vterm-buffer-name-string "vterm: %s"))
 
 ;;;; Org Mode
 
