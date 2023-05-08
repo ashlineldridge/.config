@@ -1256,7 +1256,7 @@ as there appears to be a bug in the current version."
         ("C-c l c s" . (lambda () (interactive) (consult-lsp-file-symbols t)))
         ;; Still trying to figure out the benefit of consult-lsp-symbols.
         ("C-c l c S" . consult-lsp-symbols)
-        ("C-c C-c i" . 'my/toggle-rust-inlay-hints))
+        ("C-c C-c i" . my/lsp-toggle-inlay-hints))
   :init
   (defun my/if-essential-advice (f &rest args)
     "Around advice that invokes F with ARGS if `non-essential' is non-nil."
@@ -1268,29 +1268,16 @@ as there appears to be a bug in the current version."
   (advice-add 'lsp :around #'my/if-essential-advice)
   (advice-add 'lsp-deferred :around #'my/if-essential-advice)
 
-  ;; TODO: Revert to rust-analyzer specific hints until
-  ;; https://github.com/emacs-lsp/lsp-mode/issues/4029 is fixed.
-  ;; (defun my/lsp-toggle-inlay-hints ()
-  ;;   "Toggle whether LSP inlay type hints are shown."
-  ;;   (interactive)
-  ;;   (if lsp-inlay-hint-enable
-  ;;       (progn
-  ;;         (setq lsp-inlay-hint-enable nil)
-  ;;         (lsp-inlay-hints-mode 0))
-  ;;     (progn
-  ;;       (setq lsp-inlay-hint-enable t)
-  ;;       (lsp-inlay-hints-mode 1))))
-
   (defun my/lsp-toggle-inlay-hints ()
-    "Toggle whether Rust inlay type hints are shown."
+    "Toggle whether LSP inlay type hints are shown."
     (interactive)
-    (if lsp-rust-analyzer-server-display-inlay-hints
+    (if lsp-inlay-hint-enable
         (progn
-          (setq lsp-rust-analyzer-server-display-inlay-hints nil)
-          (lsp-rust-analyzer-inlay-hints-mode 0))
+          (setq lsp-inlay-hint-enable nil)
+          (lsp-inlay-hints-mode 0))
       (progn
-        (setq lsp-rust-analyzer-server-display-inlay-hints t)
-        (lsp-rust-analyzer-inlay-hints-mode 1))))
+        (setq lsp-inlay-hint-enable t)
+        (lsp-inlay-hints-mode 1))))
 
   :custom
   (lsp-log-io nil)
@@ -1300,12 +1287,7 @@ as there appears to be a bug in the current version."
   (lsp-modeline-diagnostics-enable nil)        ;; The Flycheck modeline segment already displays this.
 
   ;; Display type hints by default (not supported by all language servers).
-  ;; (lsp-inlay-hint-enable t)
-  ;; TODO: Reverting to using rust-analyzer specific hints until
-  ;; https://github.com/emacs-lsp/lsp-mode/issues/4029 is fixed. I've pinned the lsp-mode
-  ;; package to 5c3ce8b795ca8a218b2301903395a629ae3523de (commit prior to regression) in
-  ;; ~/.config/emacs/straight/versions/default.el until the bug is resolved.
-  (lsp-rust-analyzer-server-display-inlay-hints t)
+  (lsp-inlay-hint-enable t)
 
   ;; Recommended setting as I'm using corfu instead of company for completion.
   ;; See: https://github.com/minad/corfu/issues/71#issuecomment-977693717

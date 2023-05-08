@@ -49,7 +49,7 @@
  ("kubernetes-el" . "b0fb60564e818c30d6fc8744e229c8ed0707ce7a")
  ("let-alist" . "021fc10df2e44faba4728d849ee767cf890aa51a")
  ("lsp-docker" . "1e25ba9cfd462d323865165b5f99880391abded2")
- ("lsp-mode" . "5c3ce8b795ca8a218b2301903395a629ae3523de")
+ ("lsp-mode" . "cf63d5f72aa49aa335d66cd2054f7529b84d3eea")
  ("lsp-treemacs" . "fbd08a54d232bbae350632e3789f70d68ddcbc15")
  ("lsp-ui" . "295d8984da06a745b0a36c56e28ce915bc389adb")
  ("magit" . "6067f92c0195616707b25e23c2d4c0dd81928fd8")
