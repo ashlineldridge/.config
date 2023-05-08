@@ -380,19 +380,18 @@
 (use-package avy
   :bind
   (:map global-map
-        ("M-j"     . avy-goto-char-timer)
-        ("M-s"     . nil)
-        ("M-s j"   . avy-goto-char-timer)
-        ("M-s l"   . avy-goto-line)
-        ("M-s M-l" . avy-goto-end-of-line)
-        ("M-s y"   . avy-copy-line)
-        ("M-s M-y" . avy-copy-region)
-        ("M-s k"   . avy-kill-whole-line)
-        ("M-s M-k" . avy-kill-region)
-        ("M-s w"   . avy-kill-ring-save-whole-line)
-        ("M-s M-w" . avy-kill-ring-save-region)
-        ("M-s m"   . avy-move-line)
-        ("M-s M-m" . avy-move-region))
+        ("M-j"     . nil)
+        ("M-j j"   . avy-goto-char-timer)
+        ("M-j l"   . avy-goto-line)
+        ("M-j M-l" . avy-goto-end-of-line)
+        ("M-j y"   . avy-copy-line)
+        ("M-j M-y" . avy-copy-region)
+        ("M-j k"   . avy-kill-whole-line)
+        ("M-j M-k" . avy-kill-region)
+        ("M-j w"   . avy-kill-ring-save-whole-line)
+        ("M-j M-w" . avy-kill-ring-save-region)
+        ("M-j m"   . avy-move-line)
+        ("M-j M-m" . avy-move-region))
 
   :init
   (defun my/avy-action-embark (pt)
@@ -433,8 +432,7 @@
       (ring-ref avy-ring 0))) t)
 
   :custom
-  ;; Don't jump for single candidates otherwise we won't be able to run an action.
-  (avy-single-candidate-jump nil)
+  (avy-single-candidate-jump t)
   (avy-timeout-seconds 0.4)
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?l ?v ?b))
   (avy-dispatch-alist
