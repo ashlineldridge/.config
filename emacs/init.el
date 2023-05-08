@@ -288,13 +288,7 @@
 
 (defvar my/themes
   '(modus-vivendi
-    modus-operandi
-    ;; doom-opera-light
-    ;; doom-tomorrow-night
-    ;; doom-one
-    ;; doom-nord-light
-    ;; zenburn
-    ))
+    modus-operandi))
 
 (defun my/disable-all-themes ()
   "Disable all active themes."
