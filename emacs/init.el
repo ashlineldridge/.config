@@ -64,13 +64,20 @@
 ;; Revert buffers when the underlying file has changed.
 (global-auto-revert-mode 1)
 
-;; Enable recentf-mode so that we can reopen recently opened files.
-(recentf-mode 1)
-
 ;; Enable Emacs functionality which is disabled by default.
 (put 'narrow-to-region 'disabled nil)
 (put 'upcase-region 'disabled nil)
 (put 'downcase-region 'disabled nil)
+
+;; Set the timezones to be displayed by `world-clock'.
+(setq world-clock-list
+      '(("Australia/Melbourne" "Melbourne")
+       ("America/Los_Angeles" "Seattle")
+       ("America/New_York" "New York")
+       ("Europe/London" "London")
+       ("Europe/Paris" "Paris")
+       ("Europe/Vilnius" "Lithuania")
+       ("Asia/Tokyo" "Tokyo")))
 
 ;; Prefer running Emacs in server mode and have Git and $EDITOR use emacsclient
 ;; to open files in a single Emacs instance.
