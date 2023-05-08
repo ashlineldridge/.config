@@ -1680,6 +1680,15 @@ as there appears to be a bug in the current version."
 
 ;;;;;; Lisp
 
+(use-package paredit
+  :hook
+  (emacs-lisp-mode                  . paredit-mode) ; Run in Elisp buffers.
+  (lisp-mode                        . paredit-mode) ; Run in Common Lisp buffers.
+  (lisp-interaction-mode            . paredit-mode) ; Run in scratch buffers.
+  (ielm-mode-hook                   . paredit-mode) ; Run in IELM buffers.
+  (eval-expression-minibuffer-setup . paredit-mode) ; Run in `eval-expression' minibuffers.
+  )
+
 (use-package rainbow-delimiters
   :init (add-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode))
 
