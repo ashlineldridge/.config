@@ -1,9 +1,9 @@
 ;;; init.el --- Emacs Init -*- lexical-binding: t -*-
 
-;; Author: Ashlin Eldridge <aeldridge@fastmail.com>
+;; Author: Ashlin Eldridge <ashlin.eldridge@gmail.com>
 ;; URL: https://github.com/ashlineldridge/.config
 ;; Version: 0.1.0
-;; Package-Requires: ((emacs "28.1"))
+;; Package-Requires: ((emacs "29.0"))
 
 ;;; Commentary:
 ;;
@@ -11,114 +11,22 @@
 
 ;;; Code:
 
-;;;; System Settings
+;;;; Bootstrap
 
-;; XDG directories.
-(defvar my/xdg-config-dir (expand-file-name "~/.config"))
-(defvar my/xdg-cache-dir  (expand-file-name "~/.cache"))
-(defvar my/xdg-data-dir   (expand-file-name "~/.local/share"))
-(defvar my/xdg-state-dir   (expand-file-name "~/.local/state"))
-
-;; Emacs directories.
-(defvar my/emacs-config-dir (expand-file-name "emacs" my/xdg-config-dir))
-(defvar my/emacs-cache-dir  (expand-file-name "emacs" my/xdg-cache-dir))
-(defvar my/emacs-data-dir   (expand-file-name "emacs" my/xdg-data-dir))
-
-;; Why would this be true? https://blog.sumtypeofway.com/posts/emacs-config.html
-(setq sentence-end-double-space nil)
-
-;; Accept 'y' in lieu of 'yes'.
-(defalias 'yes-or-no-p 'y-or-n-p)
-
-;; Make input characters overwrite the current region.
-(delete-selection-mode 1)
-
-;; Show echoed keystrokes quicker.
-(setq echo-keystrokes 0.01)
-
-;; Use CMD key for META.
-(setq mac-command-modifier 'meta)
-(setq mac-option-modifier nil)
-
-;; Store all backup files under XDG_CACHE_HOME.
-(setq backup-directory-alist `(("" . ,(expand-file-name "backup/" my/emacs-cache-dir))))
-(setq auto-save-file-name-transforms `((".*" ,(expand-file-name "saves/" my/emacs-cache-dir) t)))
-
-;; Save interrupted session records under XDG_DATA_HOME.
-(setq auto-save-list-file-prefix (expand-file-name "auto-save-list/" my/emacs-cache-dir))
-
-;; I don't want `custom-set-variables'-managed configuration as I want to do it properly
-;; within the structure of this file. So here we tell Emacs to save custom settings into
-;; a separate file which we then never load.
-(setq custom-file (expand-file-name "custom.el" my/emacs-config-dir))
-
-;; Don't ask when following symlinks to source code.
-(setq vc-follow-symlinks t)
-
-;; Automatically save unsaved files before compilation.
-(setq compilation-ask-about-save nil)
-
-;; Make query replaces case-sensitive.
-(setq case-fold-search nil)
-
-;; Revert buffers when the underlying file has changed.
-(global-auto-revert-mode 1)
-
-;; Enable Emacs functionality which is disabled by default.
-(put 'narrow-to-region 'disabled nil)
-(put 'upcase-region 'disabled nil)
-(put 'downcase-region 'disabled nil)
-
-;; Set the timezones to be displayed by `world-clock'.
-(setq world-clock-list
-      '(("Australia/Melbourne" "Melbourne")
-       ("America/Los_Angeles" "Seattle")
-       ("America/New_York" "New York")
-       ("Europe/London" "London")
-       ("Europe/Paris" "Paris")
-       ("Europe/Vilnius" "Lithuania")
-       ("Asia/Tokyo" "Tokyo")))
-
-;; Prefer running Emacs in server mode and have Git and $EDITOR use emacsclient
-;; to open files in a single Emacs instance.
-(server-start)
-
-;;;; Boot Performance
-
-;; If I need to run Emacs in the terminal I'll use `-nw -q`. Better than littering this file with
-;; unnecessary window system checks.
+;; For now, this config only supports window systems.
 (unless window-system
-  (error "Emacs init file is for window systems only"))
+    (error "This Emacs configuration is for window systems only"))
 
-;; Emacs performance settings. I'm following the general performance recommendations of lsp-mode
-;; here https://emacs-lsp.github.io/lsp-mode/page/performance. Some people recommend against
-;; modifying gc-cons-threshold but it does seem to speed things up for me.
-(setq gc-cons-threshold (* 100 1024 1024))
-(setq read-process-output-max (* 1 1024 1024))
-
-;; Keep track of start up time.
-(add-hook 'emacs-startup-hook
-	  (lambda ()
-            (message "Emacs ready in %s seconds with %d garbage collections."
-		     (emacs-init-time "%.2f")
-                     gcs-done)))
-
-;;;; Native Compilation
-
-;; Quieten Emacs 28+ down as otherwise it prints many warnings when compiling packages.
-;; See https://www.reddit.com/r/emacs/comments/l42oep/suppress_nativecomp_warnings_buffer.
-(setq native-comp-async-report-warnings-errors nil)
-
-;; Set the right directory to store the native comp cache
-(add-to-list 'native-comp-eln-load-path (expand-file-name "eln-cache/" my/xdg-cache-dir))
-
-;;;; Package Management
+;; Configure straight.el using `defvar' to make Flycheck happy.
+(defvar straight-base-dir (expand-file-name "var" user-emacs-directory))
+(defvar straight-use-package-by-default t)
 
 ;; Bootstrap straight.el.
 ;; See: https://github.com/raxod502/straight.el#bootstrapping-straightel
 (defvar bootstrap-version)
 (let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el" straight-base-dir))
       (bootstrap-version 6))
   (unless (file-exists-p bootstrap-file)
     (with-current-buffer
@@ -129,102 +37,241 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 
-;; Load straight helper package.
-(require 'straight-x)
+(require 'straight)
 
 ;; Install use-package.
 (straight-use-package 'use-package)
 
-;; Make use-package use straight for package installation.
-(setq straight-use-package-by-default t)
-
-;; Install org as early as possible after straight so that the built-in version of org doesn't
-;; get activated between here and where org is actually configured below.
+;; Install Org as early as possible after straight so that the built-in version
+;; of Org doesn't get loaded.
 (straight-use-package 'org)
+
+;; Install no-littering early so that it can manage config/data files.
+(straight-use-package 'no-littering)
+(require 'no-littering)
+
+;;;; Base Settings
+
+(use-package emacs
+  :straight nil
+  :hook
+  ;; Display line numbers in certain modes.
+  (prog-mode . display-line-numbers-mode)
+  (conf-mode . display-line-numbers-mode)
+  (text-mode . display-line-numbers-mode)
+
+  ;; Don't wrap long lines in programming modes.
+  (prog-mode . (lambda () (setq-local truncate-lines t)))
+  :bind
+  (:map global-map
+        ("<escape>". keyboard-escape-quit)
+        ("C-;"     . comment-line)
+        ("M-["     . previous-buffer)
+        ("M-]"     . next-buffer)
+        ("C-x 2"   . my/split-window-vertically)
+        ("C-x 3"   . my/split-window-horizontally)
+        ("C-x C-b" . ibuffer) ; Replace `list-buffers' with `ibuffer'.
+        ("C-x C-k" . kill-this-buffer)
+        ("C-x m"   . nil) ; Remove `compose-mail' binding.
+        ("C-x w w" . my/toggle-show-trailing-whitespace)
+        ("C-x w k" . delete-trailing-whitespace))
+  (:map prog-mode-map
+        ("C-c C-c |" . display-fill-column-indicator-mode))
+  (:map ibuffer-mode-map
+        ("M-o" . nil)) ; Keep M-o binding for ace-window.
+
+  :init
+  (require 'ibuffer)
+
+  (defun my/split-window-vertically ()
+    "Split window vertically and select the other window."
+    (interactive)
+    (split-window-vertically)
+    (other-window 1))
+
+  (defun my/split-window-horizontally ()
+    "Split window horizontally and select the other window."
+    (interactive)
+    (split-window-horizontally)
+    (other-window 1))
+
+  (defun my/toggle-show-trailing-whitespace ()
+    "Toggle visibility of trailing whitespace."
+    (interactive)
+    (setq show-trailing-whitespace (if show-trailing-whitespace nil t)))
+
+  ;; Do not show the startup screen.
+  (setq inhibit-startup-message t)
+
+  (tool-bar-mode 0)   ;; Disable the tool bar.
+  (tooltip-mode 0)    ;; Disable tooltips.
+  (menu-bar-mode 0)   ;; Disable the menu bar.
+  (scroll-bar-mode 0) ;; Disable visible scrollbar.
+  (set-fringe-mode 5) ;; Increase left/right margins slightly.
+
+  ;; Make frame size bigger.
+  (set-frame-size (selected-frame) 110 50)
+
+  ;; Flash the mode line rather than use an audible bell.
+  (setq visible-bell nil)
+  (setq ring-bell-function (lambda ()
+                             (invert-face 'mode-line)
+                             (run-with-timer 0.1 nil 'invert-face 'mode-line)))
+
+  ;; Make Emacs play nicer with window managers like Yabai.
+  (setq frame-resize-pixelwise t)
+
+  ;; End sentences with a single space after the period.
+  (setq sentence-end-double-space nil)
+
+  ;; Accept 'y' in lieu of 'yes'.
+  (defalias 'yes-or-no-p 'y-or-n-p)
+
+  ;; Make input characters overwrite the current region.
+  (delete-selection-mode 1)
+
+  ;; Show echoed keystrokes quicker.
+  (setq echo-keystrokes 0.01)
+
+  ;; Use CMD key for META.
+  (setq mac-command-modifier 'meta)
+  (setq mac-option-modifier nil)
+
+  ;; Enable indentation + completion using the TAB key. This is required for
+  ;; Corfu integration.
+  (setq tab-always-indent 'complete)
+
+  ;; Recommended no-littering settings for backup files.
+  ;; See https://github.com/emacscollective/no-littering#backup-files.
+  (setq backup-directory-alist
+        `(("\\`/tmp/" . nil)
+          ("\\`/dev/shm/" . nil)
+          ("." . ,(no-littering-expand-var-file-name "backup/"))))
+
+  ;; Recommended no-littering settings for auto-save files.
+  ;; See https://github.com/emacscollective/no-littering#auto-save-files.
+  (setq auto-save-file-name-transforms
+        `(("\\`/[^/]*:\\([^/]*/\\)*\\([^/]*\\)\\'"
+           ,(concat temporary-file-directory "\\2") t)
+          ("\\`\\(/tmp\\|/dev/shm\\)\\([^/]*/\\)*\\(.*\\)\\'" "\\3")
+          (".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
+
+  ;; Tell Emacs to save custom settings into a separate file which isn't loaded.
+  ;; See: https://github.com/emacscollective/no-littering#saved-customizations.
+  (setq custom-file (no-littering-expand-etc-file-name "custom.el"))
+
+  ;; Don't ask when following symlinks to source code.
+  (setq vc-follow-symlinks t)
+
+  ;; Automatically save unsaved files before compilation.
+  (setq compilation-ask-about-save nil)
+
+  ;; Make query replaces case-sensitive.
+  (setq-default case-fold-search nil)
+
+  ;; Make the default fill column wider (overidden for certain modes).
+  (setq-default fill-column 100)
+
+  ;; Revert buffers when the underlying file has changed.
+  (global-auto-revert-mode 1)
+
+  ;; Enable recursive editing to allow multiple minibuffers to be opened on top
+  ;; of each other. E.g., this allows starting a query-replace, then open a
+  ;; file to look at something, then go back to the query-replace minibuffer.
+  (setq enable-recursive-minibuffers t)
+
+  ;; Display a small "[n]" that shows the minibuffer recursive depth. Another
+  ;; option is to use https://github.com/minad/recursion-indicator.
+  (minibuffer-depth-indicate-mode 1)
+
+  ;; Enable Emacs functionality which is disabled by default.
+  (put 'narrow-to-region 'disabled nil)
+  (put 'upcase-region 'disabled nil)
+  (put 'downcase-region 'disabled nil)
+
+  ;; Take over Emacs' default buffer placement algorithm. Taken from here:
+  ;; https://github.com/daviwil/dotfiles/blob/master/Emacs.org#control-buffer-placement.
+  ;; See also: https://www.youtube.com/watch?v=-H2nU0rsUMY.
+  ;; Disabling for now as I'm using Popper.
+  ;; (setq display-buffer-base-action
+  ;;       '((display-buffer-reuse-mode-window
+  ;;          display-buffer-reuse-window
+  ;;          display-buffer-same-window)))
+
+  ;; If a popup does happen, don't resize windows to be equal-sized.
+  (setq even-window-sizes nil)
+
+  ;; Set the timezones to be displayed by `world-clock'.
+  (setq world-clock-list
+        '(("Australia/Melbourne" "Melbourne")
+          ("America/Los_Angeles" "Seattle")
+          ("America/New_York" "New York")
+          ("Europe/London" "London")
+          ("Europe/Paris" "Paris")
+          ("Europe/Vilnius" "Lithuania")
+          ("Asia/Tokyo" "Tokyo")))
+
+  ;; Prefer running Emacs in server mode and have Git and $EDITOR use
+  ;; emacsclient to open files in a single Emacs instance.
+  (server-start))
+
+;;;; Environment Variables
+
+;; XDG directories.
+(defvar my/xdg-config-dir (expand-file-name "~/.config"))
+(defvar my/xdg-cache-dir  (expand-file-name "~/.cache"))
+(defvar my/xdg-data-dir   (expand-file-name "~/.local/share"))
+(defvar my/xdg-state-dir  (expand-file-name "~/.local/state"))
+
+;; Export environment variables.
+(setenv "XDG_CONFIG_HOME" my/xdg-config-dir)
+(setenv "XDG_CACHE_HOME" my/xdg-cache-dir)
+(setenv "XDG_DATA_HOME" my/xdg-data-dir)
+(setenv "XDG_STATE_HOME" my/xdg-state-dir)
+(setenv "PAGER" "cat")
+(setenv "AWS_PAGER" "")
+(setenv "KUBECTX_IGNORE_FZF" "true")
+(setenv "GNUPGHOME" (concat my/xdg-data-dir "/gnupg"))
+(setenv "EDITOR" "emacsclient")
+(setenv "PASSWORD_STORE_DIR" (concat my/xdg-data-dir "/pass"))
+(setenv "DEVELOPER_DIR" "/Applications/Xcode.app/Contents/Developer")
+(setenv "SDKROOT" "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
+(setenv "GOPATH" (expand-file-name "~/dev/go"))
+(setenv "GOROOT" "/opt/homebrew/opt/go/libexec")
+(setenv "PATH" (concat
+                (concat (getenv "HOME") "/bin:")
+                "/opt/homebrew/bin:"
+                "/opt/homebrew/opt/curl/bin:"
+                "/opt/homebrew/opt/coreutils/libexec/gnubin:"
+                "/opt/homebrew/opt/findutils/libexec/gnubin:"
+                "/opt/homebrew/opt/gettext/bin:"
+                "/opt/homebrew/opt/llvm/bin:"
+                (concat (getenv "GOROOT") "/bin:")
+                (concat (getenv "GOPATH") "/bin:")
+                "/usr/local/bin:"
+                "/usr/bin:"
+                "/bin:"
+                "/opt/homebrew/sbin:"
+                "/usr/sbin:"
+                "/sbin:"
+                (concat (getenv "HOME") "/.cargo/bin:")
+                (concat (getenv "HOME") "/.krew/bin:")
+                (concat (getenv "HOME") "/.local/bin")))
 
 ;;;; Keyboard Bindings
 
 ;;;;; Stateful Keymaps
 
+;; TODO: Ditch Hydra. See: https://karthinks.com/software/it-bears-repeating
 (use-package hydra)
 
-;;;;; High-Level Keyboard Bindings
-
-;; ESC cancels all.
-(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-;; Use C-x C-k to kill the current buffer as C-x k prompts for which buffer to kill.
-(global-set-key (kbd "C-x C-k") 'kill-this-buffer)
-;; TODO: Use a use-package prog-mode to set this up and move it Programming section
-(global-set-key (kbd "C-;") 'comment-line)
-;; Replace list-buffers with the more advanced ibuffer.
-(global-set-key (kbd "C-x C-b") 'ibuffer)
-;; Remove M-o binding from so we can use ace-window.
-;; TODO: Move this into a use-package emacs block.
-(require 'ibuffer)
-(define-key ibuffer-mode-map (kbd "M-o") nil)
-
-;; Remove compose-mail binding.
-(global-set-key (kbd "C-x m") nil)
-
-;; Navigate buffer history.
-(global-set-key (kbd "M-[") 'previous-buffer)
-(global-set-key (kbd "M-]") 'next-buffer)
-
-;; Manage trailing whitespace.
-(global-set-key (kbd "C-x w w") 'my/toggle-show-trailing-whitespace)
-(global-set-key (kbd "C-x w k") 'delete-trailing-whitespace)
-
-(defun my/toggle-show-trailing-whitespace ()
-  "See or don't see all the whitespace."
-  (interactive)
-  (setq show-trailing-whitespace (if show-trailing-whitespace nil t)))
-
-(use-package ws-butler
-  :hook
-  ;; Do I want this on in text mode?
-  ;; (text-mode . ws-butler-mode)
-  (prog-mode . ws-butler-mode))
-
 ;;;; Appearance
-
-;;;;; General Appearance
-
-;; Do not show the startup screen.
-(setq inhibit-startup-message t)
-
-(tool-bar-mode 0)   ;; Disable the tool bar.
-(tooltip-mode 0)    ;; Disable tooltips.
-(menu-bar-mode 0)   ;; Disable the menu bar.
-(scroll-bar-mode 0) ;; Disable visible scrollbar.
-(set-fringe-mode 5) ;; Increase left/right margins slightly.
-
-;; Make frame size bigger.
-(set-frame-size (selected-frame) 110 50)
-
-;; Flash the mode line rather than use an audible bell.
-(setq visible-bell nil)
-(setq ring-bell-function (lambda ()
-  (invert-face 'mode-line)
-  (run-with-timer 0.1 nil 'invert-face 'mode-line)))
-
-;; This setting makes the Emacs window play nicer with window managers like yabai.
-(setq frame-resize-pixelwise t)
-
-;; Truncate long lines in programming modes.
-(add-hook 'prog-mode-hook (lambda () (setq truncate-lines t)))
-
-;; Programming-ish mode hooks.
-(dolist (mode '(text-mode-hook
-                prog-mode-hook
-                conf-mode-hook))
-  (add-hook mode (lambda ()
-                   (display-line-numbers-mode 1)))) ;; Enable line numbers.
 
 ;;;;; Fonts
 
 ;; Font-related variable definitions.
-(defvar my/fixed-font "Iosevka SS14") ;; "Jetbrains Mono" and "Cantarell"" are also good ones.
-(defvar my/variable-font "Iosevka Aile") ;; ETBembo is another good one.
+(defvar my/fixed-font "Iosevka SS14")
+(defvar my/variable-font "Iosevka Aile")
 (defvar my/fixed-font-size 140)
 (defvar my/variable-font-size 140)
 (defvar my/line-number-font-size 120)
@@ -253,12 +300,11 @@
 
 ;;;;; Icons
 
-(use-package all-the-icons
+(use-package nerd-icons
   :config
-  ;; Only install the fonts if they are not already installed. See:
-  ;; https://github.com/domtronn/all-the-icons.el/issues/120#issuecomment-480342779
-  (unless (member "all-the-icons" (font-family-list))
-      (all-the-icons-install-fonts t)))
+  ;; Install fonts if they are not already installed.
+  (unless (member "Symbols Nerd Font Mono" (font-family-list))
+    (nerd-icons-install-fonts t)))
 
 ;;;;; Themes
 
@@ -324,7 +370,6 @@
 (use-package doom-modeline
   :init
   (doom-modeline-mode 1)
-  (setq column-number-indicator-zero-based nil)
   (column-number-mode 1)
   :custom
   ;; Mode line height is determined by the smaller of doom-modeline-height and the mode line
@@ -345,21 +390,10 @@
   (doom-modeline-column-zero-based t))
 
 (use-package minions
-  :init (minions-mode 1))
-
-;; Enable recursive editing to allow multiple minibuffers to be opened on top of
-;; each other. E.g., this allows starting a query-replace, then open a file to look
-;; at something, then go back to the query-replace minibuffer.
-(setq enable-recursive-minibuffers t)
-;; Display a small "[n]" that shows the minibuffer recursive depth. Another option is to
-;; use the minad/recursion-indicator but I don't really use the feature enough.
-(minibuffer-depth-indicate-mode)
+  :init
+  (minions-mode 1))
 
 ;;;; Window Management
-
-;; Move focus to new windows.
-(global-set-key "\C-x2" (lambda () (interactive) (split-window-vertically) (other-window 1)))
-(global-set-key "\C-x3" (lambda () (interactive) (split-window-horizontally) (other-window 1)))
 
 ;;;;; Window Selection with Ace Window
 
@@ -412,7 +446,7 @@
      (cdr (ring-ref avy-ring 0))) t)
 
   (defun my/avy-action-kill-whole-line (pt)
-    "Avy action for running `kill-whole-line' on the line of the selected candidate."
+    "Avy action for running `kill-whole-line' on the line of the candidate."
     (save-excursion
       (goto-char pt)
       (kill-whole-line))
@@ -421,7 +455,7 @@
       (ring-ref avy-ring 0))) t)
 
   (defun my/avy-action-copy-whole-line (pt)
-    "Avy action for copying the whole line of the selected candidate to the kill ring."
+    "Avy action for copying the whole line of the candidate to the kill ring."
     (save-excursion
       (goto-char pt)
       (cl-destructuring-bind (start . end)
@@ -450,13 +484,12 @@
 ;;;;; Window History
 
 (use-package winner
-  :straight nil ;; Comes pre-installed.
-  :config (winner-mode 1))
+  :straight nil
+  :config
+  (winner-mode 1))
 
 ;;;;; Window Management Keybindings
 
-;; See roided out version here: https://github.com/jmercouris/configuration/blob/master/.emacs.d/hydra.el#L86
-;; See simpler version here: https://www.reddit.com/r/emacs/comments/b13n39/how_do_you_manage_window_sizes_in_emacs/eik6xzb
 (defhydra my/hydra-manage-windows (global-map "C-c w")
   ("h" shrink-window-horizontally)
   ("H" enlarge-window-horizontally)
@@ -478,6 +511,7 @@
         ("C-M-'" . popper-toggle-type))
   (:map popper-mode-map
         ("M-k"   . my/popper-kill-popup-stay-open))
+
   :init
   (defvar my/popper-ignore-modes '(grep-mode))
   (defun my/popper-kill-popup-stay-open ()
@@ -485,6 +519,7 @@
     (interactive)
     (popper-kill-latest-popup)
     (popper-open-latest))
+
   :custom
   (popper-reference-buffers
    '("\\*Messages\\*"
@@ -496,62 +531,17 @@
      ;; a member of `my/popper-ignore-modes'.
      (lambda (buf)
        (with-current-buffer buf
-         (unless (derived-mode-p (car (member major-mode my/popper-ignore-modes)))
+         (unless (derived-mode-p
+                  (car (member major-mode my/popper-ignore-modes)))
            (derived-mode-p 'compilation-mode))))))
   (popper-window-height 15)
   ;; Hide modeline and dispatch keys for cleaner look.
   (popper-mode-line nil)
   (popper-echo-dispatch-keys nil)
+
   :config
   (popper-mode 1)
   (popper-echo-mode 1))
-
-;; Take over Emacs' default buffer placement algorithm. Taken from here:
-;; https://github.com/daviwil/dotfiles/blob/master/Emacs.org#control-buffer-placement.
-;; See also: https://www.youtube.com/watch?v=-H2nU0rsUMY.
-(setq display-buffer-base-action
-      '((display-buffer-reuse-mode-window
-        display-buffer-reuse-window
-        display-buffer-same-window)))
-
-;; If a popup does happen, don't resize windows to be equal-sized.
-(setq even-window-sizes nil)
-
-;;;; Environment Variables
-
-(setenv "XDG_CONFIG_HOME" my/xdg-config-dir)
-(setenv "XDG_CACHE_HOME" my/xdg-cache-dir)
-(setenv "XDG_DATA_HOME" my/xdg-data-dir)
-(setenv "XDG_STATE_HOME" my/xdg-state-dir)
-(setenv "PAGER" "cat")
-(setenv "AWS_PAGER" "")
-(setenv "KUBECTX_IGNORE_FZF" "true")
-(setenv "GNUPGHOME" (concat my/xdg-data-dir "/gnupg"))
-(setenv "EDITOR" "emacsclient")
-(setenv "PASSWORD_STORE_DIR" (concat my/xdg-data-dir "/pass"))
-(setenv "DEVELOPER_DIR" "/Applications/Xcode.app/Contents/Developer")
-(setenv "SDKROOT" "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
-(setenv "GOPATH" (expand-file-name "~/dev/go"))
-(setenv "GOROOT" "/opt/homebrew/opt/go/libexec")
-(setenv "PATH" (concat
-                (concat (getenv "HOME") "/bin:")
-                "/opt/homebrew/bin:"
-                "/opt/homebrew/opt/curl/bin:"
-                "/opt/homebrew/opt/coreutils/libexec/gnubin:"
-                "/opt/homebrew/opt/findutils/libexec/gnubin:"
-                "/opt/homebrew/opt/gettext/bin:"
-                "/opt/homebrew/opt/llvm/bin:"
-                (concat (getenv "GOROOT") "/bin:")
-                (concat (getenv "GOPATH") "/bin:")
-                "/usr/local/bin:"
-                "/usr/bin:"
-                "/bin:"
-                "/opt/homebrew/sbin:"
-                "/usr/sbin:"
-                "/sbin:"
-                (concat (getenv "HOME") "/.cargo/bin:")
-                (concat (getenv "HOME") "/.krew/bin:")
-                (concat (getenv "HOME") "/.local/bin")))
 
 ;;;; Help System
 
@@ -564,7 +554,6 @@
   ([remap describe-key] . helpful-key))
 
 (use-package which-key
-  :init (which-key-mode)
   :custom
   ;; Use Embark which is searchable instead.
   ;; See: https://www.reddit.com/r/emacs/comments/otjn19/comment/h6vyx9q.
@@ -573,7 +562,9 @@
   (which-key-idle-delay 2)
   (which-key-idle-secondary-delay 0.05)
   (which-key-popup-type 'side-window)
-  (which-key-side-window-location '(bottom right)))
+  (which-key-side-window-location '(bottom right))
+  :config
+  (which-key-mode 1))
 
 ;;;; Completion System
 
@@ -612,6 +603,15 @@
             completion-cycle-threshold completion-cycling)
         (apply #'consult-completion-in-region completion-in-region--data))))
 
+  :config
+  ;; Completion UI icons (in our case for Corfu).
+  (use-package kind-icon
+    :after corfu
+    :custom
+    (kind-icon-default-face 'corfu-default)
+    :config
+    (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+
   :custom
   ;; Show the Corfu pop-up without requiring tab to be pressed (but after the delay
   ;; configured below).
@@ -632,9 +632,6 @@
      bazel-workspace-mode
      bazel-starlark-mode)))
 
-;; Enable indentation + completion using the TAB key. This is required for Corfu integration.
-(setq tab-always-indent 'complete)
-
 ;; Documentation shown alongside Corfu completion popups.
 (use-package corfu-popupinfo
   :after corfu
@@ -650,14 +647,6 @@
   ;; (corfu-popupinfo-delay nil)
   )
 
-;; Nice icons in the margin of corfu completion popups.
-(use-package kind-icon
-  :after corfu
-  :custom
-  (kind-icon-default-face 'corfu-default) ; To compute blended backgrounds correctly.
-  :config
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
-
 ;; Vertico provides the vertical completion minibuffer and Orderless provides the
 ;; "completion style". Some commands that make use of Vertico's selection list also
 ;; allow a new distinct value to be entered. E.g., `org-roam-node-insert' will create
@@ -667,7 +656,7 @@
 ;; completion and use the new value.
 (use-package vertico
   :straight '(vertico-mode :host github :repo "minad/vertico")
-  :init
+  :config
   (vertico-mode 1))
 
 ;; Persist history over Emacs restarts. Vertico sorts by history position.
@@ -978,7 +967,7 @@
 
 (global-set-key (kbd "C-S-k") 'my/copy-to-eol)
 (global-set-key (kbd "C-M-k") 'my/delete-to-eol)
-(global-set-key (kbd "C-M-DEL") 'my/delete-to-bol)
+(global-set-key (kbd "C-M-DEL") 'my/delete-to-bol) ; TODO: Better shortcut
 
 ;;;;; Mark Ring
 
@@ -992,12 +981,9 @@
 ;;;;; Undo/Redo
 
 (use-package undo-tree
-  :custom
-  ;; Disable history saving for now.
-  (undo-tree-auto-save-history nil)
-  ;; Save history in central location (no effect due to disabling above).
-  (undo-tree-history-directory-alist `(("." . ,(expand-file-name "undo-tree" my/emacs-data-dir))))
   :config
+  ;; Disable history saving for now.
+  (setq undo-tree-auto-save-history nil)
   (global-undo-tree-mode 1))
 
 ;;;;; Region Expansion
@@ -1008,6 +994,13 @@
   :custom
   (expand-region-fast-keys-enabled nil)
   (expand-region-autocopy-register "e"))
+
+;;;;; Whitespace
+
+(use-package ws-butler
+  :hook
+  (text-mode . ws-butler-mode)
+  (prog-mode . ws-butler-mode))
 
 ;;;; File System
 
@@ -1021,14 +1014,12 @@
         ("?" . which-key-show-major-mode)
         ("i" . dired-subtree-insert)
         (";" . dired-subtree-remove))
-  :hook
-  (dired-mode . all-the-icons-dired-mode)
-  (dired-mode . diredfl-mode)
   :config
-  ;; Show subtrees indented under the current directory.
   (use-package dired-subtree)
-  (use-package all-the-icons-dired)
-  (use-package diredfl)
+  (use-package nerd-icons-dired
+    :hook (dired-mode . nerd-icons-dired-mode))
+  (use-package diredfl
+    :hook (dired-mode . diredfl-mode))
 
   ;; See more settings here https://github.com/protesilaos/dotfiles/blob/master/emacs/.emacs.d/prot-emacs-modules/prot-emacs-dired.el
   (setq dired-recursive-copies 'always)
@@ -1065,8 +1056,13 @@
   :straight nil
   :custom
   (recentf-max-saved-items 200)
-  (recentf-save-file (expand-file-name "recentf" my/emacs-data-dir))
   :config
+  ;; Don't show files managed by no-littering in the recentf list.
+  ;; See https://github.com/emacscollective/no-littering#recent-files.
+  (add-to-list 'recentf-exclude
+               (recentf-expand-file-name no-littering-var-directory))
+  (add-to-list 'recentf-exclude
+               (recentf-expand-file-name no-littering-etc-directory))
   (recentf-mode 1))
 
 ;;;;; Project Management
@@ -1087,7 +1083,6 @@
         ("C-x p R" . project-query-replace-regexp)
         ("C-x p u" . my/project-refresh-list))
   :custom
-  (project-list-file (expand-file-name "projects" my/emacs-cache-dir))
   (project-switch-commands
    '((project-find-file    "File"    ?f)
      (project-dired        "Dired"   ?d)
@@ -1199,17 +1194,18 @@ as there appears to be a bug in the current version."
         ("C-c C-b"  . outline-backward-same-level)
         ("C-c C-a"  . outline-show-all)
         ("C-c C-h"  . outline-hide-other)
-        ("C-c C-u"  . outline-up-heading)
-        ("M-<down>" . outline-move-subtree-down)
-        ("M-<up>"   . outline-move-subtree-up))
+        ("C-c C-u"  . outline-up-heading))
+  ;; TODO: Find better keybindings as these are taken by Paredit.
+  ;; ("M-<down>" . outline-move-subtree-down)
+  ;; ("M-<up>"   . outline-move-subtree-up))
   :custom
   (outline-minor-mode-cycle t))
 
 ;;;;; Code Templating
 
 (use-package yasnippet
-  :hook ((text-mode . yas-minor-mode)
-         (prog-mode . yas-minor-mode)
+  :hook ((text-mode   . yas-minor-mode)
+         (prog-mode   . yas-minor-mode)
          (eshell-mode . yas-minor-mode))
   :init
   ;; Remove default key bindings which are crap.
@@ -1225,11 +1221,10 @@ as there appears to be a bug in the current version."
         ("C-c y f" . yas-visit-snippet-file))
   :config
   (use-package consult-yasnippet)
+  (use-package yasnippet-snippets)
   (setq yas-verbosity 1)
   (setq yas-wrap-around-region t)
   (yas-reload-all))
-
-(use-package yasnippet-snippets)
 
 ;;;;; Code Formatting and Linting
 
@@ -1237,7 +1232,7 @@ as there appears to be a bug in the current version."
   :config
   (apheleia-global-mode 1)
   ;; Use goimports rather than the gofmt so that imports get optimized.
-  (setf (alist-get 'go-mode apheleia-mode-alist) #'goimports))
+  (setf (alist-get 'go-mode apheleia-mode-alist) 'goimports))
 
 ;;;;; Language Support
 
@@ -1501,16 +1496,26 @@ as there appears to be a bug in the current version."
   (dap-auto-configure-features nil)
   (dap-print-io nil)
   (dap-auto-show-output nil)
-  (dap-ui-repl-history-dir my/emacs-data-dir))
+  (dap-ui-repl-history-dir no-littering-var-directory))
 
 ;;;;;; Flycheck
 
+;; TODO: Configure https://github.com/seagle0128/.emacs.d/blob/a4e1d0fcdb446408e96d20b7df476e905e3a7468/lisp/init-flycheck.el#L43
+;; Get it working nicely for Elisp, Rust, and Go.
 (use-package flycheck
+  ;; TODO: Why defer?
   :defer t
   :hook (prog-mode . flycheck-mode)
   :bind
   (:map flycheck-mode-map
-        ("C-c C-c l" . flycheck-list-errors)))
+        ("C-c C-c l" . flycheck-list-errors))
+  :init
+  ;; Tell Flycheck to use the load-path of the current Emacs session. Without this setting,
+  ;; Flycheck tends towards both false-negatives and false-positives.
+  (setq flycheck-emacs-lisp-load-path 'inherit)
+
+  ;; For performance, only perform checking when a file is saved or opened.
+  (setq flycheck-check-syntax-automatically '(save mode-enabled)))
 
 (use-package flycheck-clang-tidy
   :after flycheck
@@ -1520,6 +1525,8 @@ as there appears to be a bug in the current version."
 ;;;;;; Rust
 
 (use-package rustic
+  :hook
+  (rustic-mode . my/set-fill-column-100)
   :config
   ;; The following function is used to ensure Rust keybindings are placed in both `rustic-mode-map'
   ;; and `rustic-compilation-mode-map' (so they can also be used from within the compilation popup
@@ -1680,19 +1687,29 @@ as there appears to be a bug in the current version."
 
 ;;;;;; Lisp
 
+(use-package elisp-mode
+  :straight nil
+  :hook
+  (emacs-lisp-mode . my/init-emacs-lisp-mode)
+  :bind
+  (:map global-map
+        ("C-x C-r" . eval-region))
+  :init
+  (defun my/init-emacs-lisp-mode ()
+    "Initializes `emacs-lisp-mode'."
+    (setq-local fill-column 80)))
+
 (use-package paredit
   :hook
-  (emacs-lisp-mode                  . paredit-mode) ; Run in Elisp buffers.
-  (lisp-mode                        . paredit-mode) ; Run in Common Lisp buffers.
-  (lisp-interaction-mode            . paredit-mode) ; Run in scratch buffers.
-  (ielm-mode-hook                   . paredit-mode) ; Run in IELM buffers.
-  (eval-expression-minibuffer-setup . paredit-mode) ; Run in `eval-expression' minibuffers.
-  )
+  (emacs-lisp-mode                  . paredit-mode)  ; Run in Elisp buffers.
+  (lisp-mode                        . paredit-mode)  ; Run in Common Lisp buffers.
+  (lisp-interaction-mode            . paredit-mode)  ; Run in scratch buffers.
+  (ielm-mode-hook                   . paredit-mode)  ; Run in IELM buffers.
+  (eval-expression-minibuffer-setup . paredit-mode)) ; Run in `eval-expression' minibuffers.
 
 (use-package rainbow-delimiters
-  :init (add-hook 'emacs-lisp-mode-hook 'rainbow-delimiters-mode))
-
-(global-set-key (kbd "C-x C-r") 'eval-region)
+  :hook
+  (emacs-lisp-mode . rainbow-delimiters-mode))
 
 ;;;;;; SGML/HTML
 
@@ -2067,7 +2084,7 @@ _q_: Quit this menu
 ;; This approach to pulling the refloc out of the return value from `org-refile-get-targets'
 ;; is adapted from https://emacs.stackexchange.com/questions/54580/org-refile-under-a-given-heading.
 (defun my/org-agenda-refile (file heading)
-  "Refiles the current org agenda item to the refile target associated with FILE and HEADING."
+  "Refiles the current agenda item to the refile target for FILE and HEADING."
   (org-agenda-refile nil
                      (seq-find
                       (lambda (refloc)
@@ -2078,7 +2095,7 @@ _q_: Quit this menu
 
 (defun my/org-agenda-refile-archive (&optional category)
   "Refiles the current org agenda item into the appropriate archive.
-If CATEGORY is specified it must equal 'personal or 'work; if it is not
+If CATEGORY is specified it must equal \\='personal or \\='work; if it is not
 specified then a task category will be determined by the item's tags."
   (interactive)
   (let* ((hdm  (org-get-at-bol 'org-hd-marker))
@@ -2152,8 +2169,7 @@ specified then a task category will be determined by the item's tags."
   (require 'org-roam-dailies)
   (org-roam-db-autosync-mode 1)
   :custom
-  (org-roam-directory (concat my/pkm-dir "/notes"))
-  (org-roam-db-location (concat my/xdg-cache-dir "/emacs/org-roam.db"))
+  (org-roam-directory (expand-file-name "notes" my/pkm-dir))
   ;; Disable org-roam completion as it's a bit annoying.
   (org-roam-completion-everywhere nil)
   (org-roam-completion-functions nil)
@@ -2196,7 +2212,7 @@ specified then a task category will be determined by the item's tags."
 (use-package kubernetes
   :bind
   (:map global-map
-	("C-c k" . kubernetes-overview))
+        ("C-c k" . kubernetes-overview))
   ;; By default, '?' will call `kubernetes-dispatch' which shows most of the
   ;; available shortcuts but not all of them. Bind `which-key-show-major-mode'
   ;; so that we can easily see all available shortcuts.
@@ -2210,5 +2226,5 @@ specified then a task category will be determined by the item's tags."
 
 ;;; End:
 (provide 'init)
+
 ;;; init.el ends here
-(put 'magit-clean 'disabled nil)

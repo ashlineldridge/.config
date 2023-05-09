@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: bazel-graph-simple
-# key: bazel-graph-simple
-# --
-bazel query --notool_deps --noimplicit_deps "${0:deps(//:your_target)}" --output graph | dot -Tsvg > /tmp/out.svg && open /tmp/out.svg
