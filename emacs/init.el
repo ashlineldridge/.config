@@ -62,6 +62,7 @@
 
   ;; Don't wrap long lines in programming modes.
   (prog-mode . (lambda () (setq-local truncate-lines t)))
+
   :bind
   (:map global-map
         ("<escape>". keyboard-escape-quit)
@@ -74,7 +75,10 @@
         ("C-x C-k" . kill-this-buffer)
         ("C-x m"   . nil) ; Remove `compose-mail' binding.
         ("C-x w w" . my/toggle-show-trailing-whitespace)
-        ("C-x w k" . delete-trailing-whitespace))
+        ("C-x w k" . delete-trailing-whitespace)
+        ("C-S-k"   . my/copy-to-eol)
+        ("C-M-k"   . my/delete-to-eol)
+        ("C-M-DEL" . my/delete-to-bol)) ; TODO: Better shortcut
   (:map prog-mode-map
         ("C-c C-c |" . display-fill-column-indicator-mode))
   (:map ibuffer-mode-map
@@ -99,6 +103,27 @@
     "Toggle visibility of trailing whitespace."
     (interactive)
     (setq show-trailing-whitespace (if show-trailing-whitespace nil t)))
+
+  (defun my/copy-to-eol ()
+    "Copy the text from point to the end of the line."
+    (interactive)
+    (kill-ring-save (point) (line-end-position)))
+
+  (defun my/delete-to-eol ()
+    "Delete the text from point to the end of the line."
+    (interactive)
+    (let* ((point (point))
+           (end (line-end-position)))
+      ;; Mirror `kill-line' behaviour by deleting to the end of the line if we
+      ;; are positioned behind the end, otherwise delete the newline itself.
+      (if (eq point end)
+          (delete-char 1 nil)
+        (delete-region point end))))
+
+  (defun my/delete-to-bol ()
+    "Delete the text from point to the beginning of the line."
+    (interactive)
+    (delete-region (line-beginning-position) (point)))
 
   ;; Do not show the startup screen.
   (setq inhibit-startup-message t)
@@ -140,6 +165,14 @@
   ;; Enable indentation + completion using the TAB key. This is required for
   ;; Corfu integration.
   (setq tab-always-indent 'complete)
+
+  ;; When popping marks off the mark ring (C-u C-SPC for local or C-x C-SPC for
+  ;; global), allow repeated invocations of C-SPC to keeping popping.
+  (setq set-mark-command-repeat-pop t)
+
+  ;; Make the rings a bit shorter (default 16) to make cycling quicker.
+  (setq mark-ring-max 8)
+  (setq global-mark-ring-max 8)
 
   ;; Recommended no-littering settings for backup files.
   ;; See https://github.com/emacscollective/no-littering#backup-files.
@@ -215,53 +248,6 @@
   ;; emacsclient to open files in a single Emacs instance.
   (server-start))
 
-;;;; Environment Variables
-
-;; XDG directories.
-(defvar my/xdg-config-dir (expand-file-name "~/.config"))
-(defvar my/xdg-cache-dir  (expand-file-name "~/.cache"))
-(defvar my/xdg-data-dir   (expand-file-name "~/.local/share"))
-(defvar my/xdg-state-dir  (expand-file-name "~/.local/state"))
-
-;; Export environment variables.
-(setenv "XDG_CONFIG_HOME" my/xdg-config-dir)
-(setenv "XDG_CACHE_HOME" my/xdg-cache-dir)
-(setenv "XDG_DATA_HOME" my/xdg-data-dir)
-(setenv "XDG_STATE_HOME" my/xdg-state-dir)
-(setenv "PAGER" "cat")
-(setenv "AWS_PAGER" "")
-(setenv "KUBECTX_IGNORE_FZF" "true")
-(setenv "GNUPGHOME" (concat my/xdg-data-dir "/gnupg"))
-(setenv "EDITOR" "emacsclient")
-(setenv "PASSWORD_STORE_DIR" (concat my/xdg-data-dir "/pass"))
-(setenv "DEVELOPER_DIR" "/Applications/Xcode.app/Contents/Developer")
-(setenv "SDKROOT" "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
-(setenv "GOPATH" (expand-file-name "~/dev/go"))
-(setenv "GOROOT" "/opt/homebrew/opt/go/libexec")
-(setenv "PATH" (concat
-                (concat (getenv "HOME") "/bin:")
-                "/opt/homebrew/bin:"
-                "/opt/homebrew/opt/curl/bin:"
-                "/opt/homebrew/opt/coreutils/libexec/gnubin:"
-                "/opt/homebrew/opt/findutils/libexec/gnubin:"
-                "/opt/homebrew/opt/gettext/bin:"
-                "/opt/homebrew/opt/llvm/bin:"
-                (concat (getenv "GOROOT") "/bin:")
-                (concat (getenv "GOPATH") "/bin:")
-                "/usr/local/bin:"
-                "/usr/bin:"
-                "/bin:"
-                "/opt/homebrew/sbin:"
-                "/usr/sbin:"
-                "/sbin:"
-                (concat (getenv "HOME") "/.cargo/bin:")
-                (concat (getenv "HOME") "/.krew/bin:")
-                (concat (getenv "HOME") "/.local/bin")))
-
-;;;; Keyboard Bindings
-
-;;;;; Stateful Keymaps
-
 ;; TODO: Ditch Hydra. See: https://karthinks.com/software/it-bears-repeating
 (use-package hydra)
 
@@ -309,7 +295,7 @@
 ;;;;; Themes
 
 ;; Note: I'm going to push forward with the excellent and highly-customisable
-;; Modus themes and disable all the others for now. The Modus themes are already
+;; Modus themes and disable all others for now. The Modus themes are already
 ;; really good out-of-the-box (and the latest versions are better than the pre-
 ;; packaged versions, IMO). There should be a setting for anything I'd want to
 ;; configure. See https://systemcrafters.net/emacs-from-scratch/the-modus-themes
@@ -372,9 +358,10 @@
   (doom-modeline-mode 1)
   (column-number-mode 1)
   :custom
-  ;; Mode line height is determined by the smaller of doom-modeline-height and the mode line
-  ;; The function doom-modeline--font-height can be called to determine the actual font height
-  ;; that will be used when determining the minimum height of the mode line.
+  ;; Mode line height is determined by the smaller of `doom-modeline-height'
+  ;; and the mode line font. The function `doom-modeline--font-height' can be
+  ;; called to determine the font height that will be used to calculate the
+  ;; height of the mode line.
   (doom-modeline-height 1)
   (doom-modeline-bar-width 4)
   (doom-modeline-lsp t)
@@ -387,7 +374,7 @@
   (doom-modeline-major-mode-icon nil)
   (doom-modeline-buffer-encoding nil)
   (doom-modeline-buffer-state-icon t)
-  (doom-modeline-column-zero-based t))
+  (doom-modeline-column-zero-based nil))
 
 (use-package minions
   :init
@@ -409,8 +396,9 @@
 
 ;;;;; Jump Between Point Locations
 
-;; A lot of my Avy inspiration came from https://karthinks.com/software/avy-can-do-anything
-;; and https://github.com/karthink/.emacs.d/blob/master/lisp/setup-avy.el.
+;; A lot of my Avy inspiration came from the following:
+;; https://karthinks.com/software/avy-can-do-anything and
+;; https://github.com/karthink/.emacs.d/blob/master/lisp/setup-avy.el.
 (use-package avy
   :bind
   (:map global-map
@@ -527,8 +515,8 @@
      "\\*Flycheck "
      "\\*dap-ui-"
 
-     ;; Match all modes that derive from compilation-mode but do not derive from
-     ;; a member of `my/popper-ignore-modes'.
+     ;; Match all modes that derive from compilation-mode but do not derive
+     ;; from a member of `my/popper-ignore-modes'.
      (lambda (buf)
        (with-current-buffer buf
          (unless (derived-mode-p
@@ -572,9 +560,9 @@
   :straight '(corfu-mode :host github :repo "minad/corfu")
   :bind
   (:map corfu-map
-        ;; By default corfu-insert-separator is bound to M-SPC which on macOS is
-        ;; already taken by Spotlight. Instead, bind it to S-SPC - this allows us
-        ;; to enter a space character using S-SPC to keep the completion going.
+        ;; By default, `corfu-insert-separator' is bound to M-SPC which on
+        ;; macOS is already taken by Spotlight. Instead, bind it to S-SPC -
+        ;; this allows us to enter a space character using S-SPC to completing.
         ("S-SPC" . corfu-insert-separator)
         ("M-m"   . my/corfu-move-to-minibuffer))
 
@@ -582,10 +570,11 @@
   (minibuffer-setup . my/corfu-enable-in-minibuffer)
 
   :init
-  ;; Enable globally; exclusions are captured individually by `corfu-excluded-modes'.
+  ;; Enable Corfu mode globally by default. Exclusions are captured
+  ;; individually in `corfu-excluded-modes'.
   (global-corfu-mode)
 
-  ;; Taken from https://github.com/minad/corfu#completing-in-the-minibuffer.
+  ;; From: https://github.com/minad/corfu#completing-in-the-minibuffer.
   (defun my/corfu-enable-in-minibuffer ()
     "Enable Corfu in the minibuffer if `completion-at-point' is bound."
     (when (where-is-internal #'completion-at-point (list (current-local-map)))
@@ -594,7 +583,7 @@
                   corfu-popupinfo-delay nil)
       (corfu-mode 1)))
 
-  ;; Great idea - from https://github.com/minad/corfu#transfer-completion-to-the-minibuffer.
+  ;; From: https://github.com/minad/corfu#transfer-completion-to-the-minibuffer.
   (defun my/corfu-move-to-minibuffer ()
     "Transfer the Corfu completion session to the minibuffer."
     (interactive)
@@ -604,7 +593,7 @@
         (apply #'consult-completion-in-region completion-in-region--data))))
 
   :config
-  ;; Completion UI icons (in our case for Corfu).
+  ;; Completion UI icons (in this case Corfu).
   (use-package kind-icon
     :after corfu
     :custom
@@ -613,20 +602,20 @@
     (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
   :custom
-  ;; Show the Corfu pop-up without requiring tab to be pressed (but after the delay
-  ;; configured below).
+  ;; Show the Corfu pop-up without requiring tab to be pressed (but after the
+  ;; delay configured below).
   (corfu-auto t)
-  ;; Number of typed characters before Corfu will consider displaying its pop-up.
+  ;; Number of typed characters before Corfu will display its pop-up.
   (corfu-auto-prefix 1)
-  ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This setting
-  ;; only applies after the minimum number of prefix characters have been entered. This
-  ;; is really useful to keep so that short words that you don't want autocompleted don't
-  ;; trigger the Corfu pop-up (and subsequent completion which inserts a space after the
-  ;; completed word).
+  ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This
+  ;; setting only applies after the minimum number of prefix characters have
+  ;; been entered. This is really useful to keep so that short words that you
+  ;; don't want autocompleted don't trigger the Corfu pop-up (and subsequent
+  ;; completion which inserts a space after the completed word).
   (corfu-auto-delay 0.3)
-  ;; Modes which shouldn't use Corfu. The following modes have been added as the default
-  ;; completions were annoying. Realistically, I should just modify the CAPF functions so
-  ;; that at least dabbrev completion is used.
+  ;; Modes which shouldn't use Corfu. The following modes have been added as
+  ;; the default completions were annoying. Realistically, I should just modify
+  ;; the CAPF functions so that at least dabbrev completion is used.
   (corfu-excluded-modes
    '(bazel-build-mode
      bazel-workspace-mode
@@ -635,7 +624,8 @@
 ;; Documentation shown alongside Corfu completion popups.
 (use-package corfu-popupinfo
   :after corfu
-  :straight (:host github :repo "minad/corfu" :files ("extensions/corfu-popupinfo.el"))
+  :straight
+  (:host github :repo "minad/corfu" :files ("extensions/corfu-popupinfo.el"))
   :bind
   (:map corfu-map
         ("M-d"     . corfu-popupinfo-toggle)
@@ -647,15 +637,16 @@
   ;; (corfu-popupinfo-delay nil)
   )
 
-;; Vertico provides the vertical completion minibuffer and Orderless provides the
-;; "completion style". Some commands that make use of Vertico's selection list also
-;; allow a new distinct value to be entered. E.g., `org-roam-node-insert' will create
-;; a new note when given a new note name. However, if the new value matches part of
-;; an existing value in the selection list (which is more likely when using Orderless)
-;; then you will need to press M-RET which calls `vertico-exit-input' to cancel the
-;; completion and use the new value.
+;; Vertico provides the vertical completion minibuffer and Orderless provides
+;; the "completion style". Some commands that make use of Vertico's selection
+;; list also allow a new non-matched value to be entered. For example,
+;; `org-roam-node-insert' will create a new note when given a new note name.
+;; However, if the new value matches part of an existing value in the selection
+;; list (which is more likely when using Orderless) then you will need to press
+;; M-RET which calls `vertico-exit-input' to cancel the completion and use the
+;; new value.
 (use-package vertico
-  :straight '(vertico-mode :host github :repo "minad/vertico")
+  :straight (vertico-mode :host github :repo "minad/vertico")
   :config
   (vertico-mode 1))
 
@@ -701,11 +692,8 @@
     (let ((completion-at-point-functions (list #'cape-history)))
       (completion-at-point)))
 
-  ;; See https://github.com/minad/corfu/wiki#using-cape-to-tweak-and-combine-capfs.
-  ;; This pattern of creating separate setup functions for major modes is a work-in-progress.
-  ;; Note that `cape-super-capf' can also be used to combine multiple backends like dabbrev, LSP,
-  ;; etc but so far it seems unnecessary as different completions kick in for different contexts
-  ;; (e.g. when inside a comment vs outside, etc).
+  ;; These separate completion setup functions are a work-in-progress.
+  ;; See: https://github.com/minad/corfu/wiki#using-cape-to-tweak-and-combine-capfs.
   (defun my/capf-setup-elisp ()
     "Configure CAPFs to be used for `emacs-lisp-mode'."
     (setq-local completion-at-point-functions
@@ -728,7 +716,7 @@
 
   (defun my/capf-setup-lsp ()
     "Configure CAPFs to be used for `lsp-mode'."
-    ;; See https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
+    ;; See: https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
     (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
           '(orderless))
     (setq-local completion-at-point-functions
@@ -739,18 +727,17 @@
   :custom
   ;; Only show dabbrev candidates of a minimum length.
   (cape-dabbrev-min-length 4)
-  ;; Only show dabbrev completions for words in the current buffer for performance.
-  ;; AE: Ignoring above and trying this out...
-  ;; (cape-dabbrev-check-other-buffers t)
-  )
+  ;; Only show dabbrev completions for words in the current buffer.
+  (cape-dabbrev-check-other-buffers t))
 
-;; Orderless configuration taken from https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
+;; Orderless configuration mostly taken from:
+;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
 (use-package orderless
   :init
   (setq completion-styles '(orderless basic)
         completion-category-defaults nil
         completion-category-overrides nil
-        ;; Allow backslash to escape the space separator to search for literal spaces.
+        ;; Allow backslash to escape the space to search for literal spaces.
         orderless-component-separator #'orderless-escapable-split-on-space))
 
 (use-package marginalia
@@ -786,22 +773,20 @@
       (consult-line)))
 
   :config
-  ;; Show narrowing help in the minibuffer when ? is pressed.
-  ;; Narrowing by group requires pressing the group key (e.g., p for project) and then <spc>.
-  (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+  ;; Show narrowing help in the minibuffer when ? is pressed. Narrowing by
+  ;; group requires pressing the group key (e.g. p for project) and then <SPC>.
+  (define-key consult-narrow-map
+              (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
   (consult-customize
-   ;; Source name and narrow key customization. The consult-project-extra sources
-   ;; need to be patched with :state otherwise previewing will not work on them.
-   consult--source-buffer
-   :name "Open Buffer" :narrow ?b
-   consult--source-project-buffer
-   :name "Project Buffer" :narrow ?p
-   consult--source-recent-file
-   :name "Recent File" :narrow ?r
+   ;; Source name and narrow key customization.
+   consult--source-buffer         :name "Open Buffer"    :narrow ?b
+   consult--source-project-buffer :name "Project Buffer" :narrow ?p
+   consult--source-recent-file    :name "Recent File"    :narrow ?r
 
-   ;; By default, consult will automatically preview all commands and sources. Below
-   ;; we customize certain commands/sources so that the preview is shown on request.
+   ;; By default, consult will automatically preview all commands and sources.
+   ;; Below we customize certain commands/sources so that the preview is only
+   ;; shown on request.
    consult-ripgrep
    consult-git-grep
    consult-grep
@@ -814,8 +799,8 @@
    consult--source-bookmark
    consult--source-recent-file
    my/consult-source-eshell-buffer
-   ;; So that the consult-ripgrep project shortcut doesn't show previews (you need to customize
-   ;; the interactive function: https://github.com/minad/consult/issues/676#issuecomment-1286196998).
+   ;; So that the `consult-ripgrep' project shortcut doesn't show previews.
+   ;; See: https://github.com/minad/consult/issues/676#issuecomment-1286196998).
    project-switch-project
    :preview-key "M-.")
 
@@ -828,11 +813,12 @@
           consult--source-bookmark              ; Narrow: ?m
           ))
 
-  ;; Add `consult-imenu' groupings for Rust. These groupings originate from the LSP specification:
+  ;; Add `consult-imenu' groupings for Rust that originate from the LSP spec:
   ;; https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#symbolKind.
-  ;; The lsp-types crate defines the SymbolKind struct; rust-analyzer uses this crate to expose the set
-  ;; of symbols that it supports. lsp-mode, in turn, defines the `lsp-imenu-symbol-kinds' variable which
-  ;; maps each symbol's integer value to the group names (e.g., "Type Parameters") used below.
+  ;; The lsp-types crate defines the SymbolKind struct; rust-analyzer uses this
+  ;; crate to expose the set of symbols that it supports. lsp-mode, in turn,
+  ;; defines the `lsp-imenu-symbol-kinds' variable which maps each symbol's
+  ;; integer value to the group names (e.g., "Type Parameters") used below.
   (require 'consult-imenu)
   (add-to-list 'consult-imenu-config
                '(rustic-mode
@@ -894,26 +880,28 @@
   (:map global-map
         ("C-."   . embark-act)
         ("M-."   . embark-dwim)
-        ("C-h b" . embark-bindings)) ;; Replace `describe-bindings'.
+        ("C-h b" . embark-bindings)) ; Replace `describe-bindings'.
   :init
   ;; Run Embark after a prefix (e.g. C-x) is pressed and then C-h.
   (setq prefix-help-command #'embark-prefix-help-command)
 
   :config
-  ;; The following two settings tell Embark to just use the minibuffer and completing-read
-  ;; for displaying the Embark popup (rather than using a window).
+  ;; The following two settings tell Embark to just use the minibuffer and
+  ;; completing-read for displaying the Embark popup (rather than a window).
   (setq embark-prompter 'embark-completing-read-prompter)
   (setq embark-indicators '(embark-minimal-indicator))
 
-  ;; Org-roam nodes have their own Embark category and hence need their own keymap so that we
-  ;; can act on them. Here, we create a new Embark keymap and add it to `embark-keymap-alist'.
+  ;; Org-roam nodes have their own Embark category and hence need their own
+  ;; keymap so that we can act on them. Here, we create a new Embark keymap and
+  ;; add it to `embark-keymap-alist'.
   (defvar-keymap my/embark-org-roam-node-map
     :doc "Keymap for Embark org-roam-node actions"
     :parent embark-general-map)
   (add-to-list 'embark-keymap-alist '(org-roam-node . my/embark-org-roam-node-map))
 
-  ;; Macro for defining an Embark action that executes FN using an ace-window selected window.
-  ;; Taken from: https://github.com/karthink/.emacs.d/blob/f0514340039502b79a306a77624a604de8a1b546/lisp/setup-embark.el#L93
+  ;; Macro for defining an Embark action that executes FN using an ace-window
+  ;; selected window. Taken from:
+  ;; https://github.com/karthink/.emacs.d/blob/f0514340039502b79a306a77624a604de8a1b546/lisp/setup-embark.el#L93.
   (eval-when-compile
     (defmacro my/embark-ace-action (fn)
       `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
@@ -926,9 +914,9 @@
              (call-interactively (symbol-function ',fn)))))))
 
   ;; Create ace-window actions against relevant keymaps.
-  (define-key embark-file-map             (kbd "o") (my/embark-ace-action find-file))
-  (define-key embark-buffer-map           (kbd "o") (my/embark-ace-action switch-to-buffer))
-  (define-key embark-bookmark-map         (kbd "o") (my/embark-ace-action bookmark-jump))
+  (define-key embark-file-map (kbd "o") (my/embark-ace-action find-file))
+  (define-key embark-buffer-map (kbd "o") (my/embark-ace-action switch-to-buffer))
+  (define-key embark-bookmark-map (kbd "o") (my/embark-ace-action bookmark-jump))
   (define-key my/embark-org-roam-node-map (kbd "o") (my/embark-ace-action org-roam-node-find)))
 
 (use-package embark-consult
@@ -941,42 +929,6 @@
   (wgrep-auto-save-buffer t))
 
 ;;;; General Editing
-
-;;;;; Yanking and Deleting
-
-(defun my/copy-to-eol ()
-  "Copy the text from point to the end of the line to the kill ring."
-  (interactive)
-  (kill-ring-save (point) (line-end-position)))
-
-(defun my/delete-to-eol ()
-  "Delete the text from point to the end of the line without copying to the kill ring."
-  (interactive)
-  (let* ((point (point))
-         (end (line-end-position)))
-    ;; Mirror `kill-line' behaviour by deleting to the end of the line if we are positioned
-    ;; behind the end, otherwise delete the newline itself.
-    (if (eq point end)
-        (delete-char 1 nil)
-      (delete-region point end))))
-
-(defun my/delete-to-bol ()
-  "Delete the text from point to the beginning of the line without copying to the kill ring."
-  (interactive)
-  (delete-region (line-beginning-position) (point)))
-
-(global-set-key (kbd "C-S-k") 'my/copy-to-eol)
-(global-set-key (kbd "C-M-k") 'my/delete-to-eol)
-(global-set-key (kbd "C-M-DEL") 'my/delete-to-bol) ; TODO: Better shortcut
-
-;;;;; Mark Ring
-
-;; When popping marks off the mark ring (C-u C-SPC for local or C-x C-SPC for global),
-;; allow repeated invocations of C-SPC to keeping popping.
-(setq set-mark-command-repeat-pop t)
-;; Make the rings a bit shorter (default 16) to make rotating around the ring quicker.
-(setq mark-ring-max 8)
-(setq global-mark-ring-max 8)
 
 ;;;;; Undo/Redo
 
@@ -1007,7 +959,7 @@
 ;;;;; File Browsing
 
 (use-package dired
-  :straight nil ;; Built-in.
+  :straight nil
   :bind
   (:map dired-mode-map
         ("N" . dired-create-empty-file)
@@ -1029,25 +981,28 @@
 
 (use-package dired-rainbow
   :config
-  (dired-rainbow-define-chmod directory "#6cb2eb" "d.*")
-  (dired-rainbow-define html "#eb5286" ("css" "less" "sass" "scss" "htm" "html" "jhtm" "mht" "eml" "mustache" "xhtml"))
-  (dired-rainbow-define xml "#f2d024" ("xml" "xsd" "xsl" "xslt" "wsdl" "bib" "json" "msg" "pgn" "rss" "yaml" "yml" "rdata"))
-  (dired-rainbow-define document "#9561e2" ("docm" "doc" "docx" "odb" "odt" "pdb" "pdf" "ps" "rtf" "djvu" "epub" "odp" "ppt" "pptx"))
-  (dired-rainbow-define markdown "#ffed4a" ("org" "etx" "info" "markdown" "md" "mkd" "nfo" "pod" "rst" "tex" "textfile" "txt"))
-  (dired-rainbow-define database "#6574cd" ("xlsx" "xls" "csv" "accdb" "db" "mdb" "sqlite" "nc"))
-  (dired-rainbow-define media "#de751f" ("mp3" "mp4" "mkv" "MP3" "MP4" "avi" "mpeg" "mpg" "flv" "ogg" "mov" "mid" "midi" "wav" "aiff" "flac"))
-  (dired-rainbow-define image "#f66d9b" ("tiff" "tif" "cdr" "gif" "ico" "jpeg" "jpg" "png" "psd" "eps" "svg"))
-  (dired-rainbow-define log "#c17d11" ("log"))
-  (dired-rainbow-define shell "#f6993f" ("awk" "bash" "bat" "sed" "sh" "zsh" "vim"))
+  ;; Dired face highlighting by file extension.
+  (dired-rainbow-define html        "#eb5286" ("css" "less" "sass" "scss" "htm" "html" "jhtm" "mht" "eml" "mustache" "xhtml"))
+  (dired-rainbow-define xml         "#f2d024" ("xml" "xsd" "xsl" "xslt" "wsdl" "bib" "json" "msg" "pgn" "rss" "yaml" "yml" "rdata"))
+  (dired-rainbow-define document    "#9561e2" ("docm" "doc" "docx" "odb" "odt" "pdb" "pdf" "ps" "rtf" "djvu" "epub" "odp" "ppt" "pptx"))
+  (dired-rainbow-define markdown    "#ffed4a" ("org" "etx" "info" "markdown" "md" "mkd" "nfo" "pod" "rst" "tex" "textfile" "txt"))
+  (dired-rainbow-define database    "#6574cd" ("xlsx" "xls" "csv" "accdb" "db" "mdb" "sqlite" "nc"))
+  (dired-rainbow-define media       "#de751f" ("mp3" "mp4" "mkv" "MP3" "MP4" "avi" "mpeg" "mpg" "flv" "ogg" "mov" "mid" "midi" "wav" "aiff" "flac"))
+  (dired-rainbow-define image       "#f66d9b" ("tiff" "tif" "cdr" "gif" "ico" "jpeg" "jpg" "png" "psd" "eps" "svg"))
+  (dired-rainbow-define log         "#c17d11" ("log"))
+  (dired-rainbow-define shell       "#f6993f" ("awk" "bash" "bat" "sed" "sh" "zsh" "vim"))
   (dired-rainbow-define interpreted "#38c172" ("py" "ipynb" "rb" "pl" "t" "msql" "mysql" "pgsql" "sql" "r" "clj" "cljs" "scala" "js" "ts" "tf" "hcl" "bazel"))
-  (dired-rainbow-define compiled "#4dc0b5" ("asm" "cl" "lisp" "el" "c" "h" "c++" "h++" "hpp" "hxx" "m" "cc" "cs" "cp" "cpp" "go" "f" "for" "ftn" "f90" "f95" "f03" "f08" "s" "rs" "hi" "hs" "pyc" "java"))
-  (dired-rainbow-define executable "#8cc4ff" ("exe" "msi"))
-  (dired-rainbow-define compressed "#51d88a" ("7z" "zip" "bz2" "tgz" "txz" "gz" "xz" "z" "Z" "jar" "war" "ear" "rar" "sar" "xpi" "apk" "xz" "tar"))
-  (dired-rainbow-define packaged "#faad63" ("deb" "rpm" "apk" "jad" "jar" "cab" "pak" "pk3" "vdf" "vpk" "bsp"))
-  (dired-rainbow-define encrypted "#ffed4a" ("gpg" "pgp" "asc" "bfe" "enc" "signature" "sig" "p12" "pem"))
-  (dired-rainbow-define fonts "#6cb2eb" ("afm" "fon" "fnt" "pfb" "pfm" "ttf" "otf"))
-  (dired-rainbow-define partition "#e3342f" ("dmg" "iso" "bin" "nrg" "qcow" "toast" "vcd" "vmdk" "bak"))
-  (dired-rainbow-define vc "#0074d9" ("git" "gitignore" "gitattributes" "gitmodules"))
+  (dired-rainbow-define compiled    "#4dc0b5" ("asm" "cl" "lisp" "el" "c" "h" "c++" "h++" "hpp" "hxx" "m" "cc" "cs" "cp" "cpp" "go" "f" "for" "ftn" "f90" "f95" "f03" "f08" "s" "rs" "hi" "hs" "pyc" "java"))
+  (dired-rainbow-define executable  "#8cc4ff" ("exe" "msi"))
+  (dired-rainbow-define compressed  "#51d88a" ("7z" "zip" "bz2" "tgz" "txz" "gz" "xz" "z" "Z" "jar" "war" "ear" "rar" "sar" "xpi" "apk" "xz" "tar"))
+  (dired-rainbow-define packaged    "#faad63" ("deb" "rpm" "apk" "jad" "jar" "cab" "pak" "pk3" "vdf" "vpk" "bsp"))
+  (dired-rainbow-define encrypted   "#ffed4a" ("gpg" "pgp" "asc" "bfe" "enc" "signature" "sig" "p12" "pem"))
+  (dired-rainbow-define fonts       "#6cb2eb" ("afm" "fon" "fnt" "pfb" "pfm" "ttf" "otf"))
+  (dired-rainbow-define partition   "#e3342f" ("dmg" "iso" "bin" "nrg" "qcow" "toast" "vcd" "vmdk" "bak"))
+  (dired-rainbow-define vc          "#0074d9" ("git" "gitignore" "gitattributes" "gitmodules"))
+
+  ;; Dired face highlighting by file permissions.
+  (dired-rainbow-define-chmod directory       "#6cb2eb" "d.*")
   (dired-rainbow-define-chmod executable-unix "#38c172" "-.*x.*"))
 
 ;;;;; File History
@@ -1091,16 +1046,18 @@
      (project-eshell       "Eshell"  ?e)))
   :config
   ;; Override the way that project.el determines the project root.
-  ;; Disable below for now as my implementation results in .gitignore being ignored when running
-  ;; functions like `project-find-file` which results in target/, etc, showing up in the list.
+  ;; AE: Disable below for now as my implementation results in .gitignore being
+  ;; ignored when running functions like `project-find-file' which results in
+  ;; target/, etc, showing up in the list.
   ;; (setq project-find-functions '(my/project-find-root))
   )
 
-;; Customise project root identification (the default only searches for version control markers).
-;; See: https://andreyorst.gitlab.io/posts/2022-07-16-project-el-enhancements
-;; And: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/emacs.md#configuring-project-for-go-modules-in-emacs
-;; Note: Although it's sometimes handy to put files like go.mod and Cargo.toml in the list below, this
-;; is problematic when dealing with monorepos as you can get "stuck" in a subdirectory of the monorepo.
+;; Custom project root identification as the default only looks for VC markers.
+;; See: https://andreyorst.gitlab.io/posts/2022-07-16-project-el-enhancements.
+;; And: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/emacs.md#configuring-project-for-go-modules-in-emacs.
+;; Note: Although it's sometimes handy to put files like go.mod and Cargo.toml
+;; in the list below, this is problematic when dealing with monorepos as you
+;; can get "stuck" in a subdirectory of the monorepo.
 (defvar my/project-root-markers
   '(".git" ".project" ".projectile"))
 
@@ -1250,10 +1207,13 @@ as there appears to be a bug in the current version."
   (python-mode    . lsp-deferred)
   :bind
   (:map lsp-mode-map
-        ;; M-? is normally bound to xref-find-references but the way that this function exposes
-        ;; references is not particularly helpful so we override it with lsp-find-references.
-        ;; M-. (xref-find-definitions) and M-, (xref-pop-marker-stack) we'll leave in place since
-        ;; they work well.
+        ;; TODO: Verify that this is still the case. Doesn't Embark call
+        ;; `xref-find-references' as one of its actions?
+        ;; M-? is normally bound to `xref-find-references' but the way that
+        ;; this function exposes references is not particularly helpful so we
+        ;; override it with `lsp-find-references'. M-. (`xref-find-definitions')
+        ;; and M-, (`xref-pop-marker-stack') we'll leave in place since they
+        ;; work well.
         ("M-?"       . lsp-find-references)
         ("M-P"       . lsp-describe-thing-at-point)
         ("C-c l c d" . consult-lsp-diagnostics)
@@ -1267,8 +1227,8 @@ as there appears to be a bug in the current version."
     (unless non-essential
       (apply f args)))
 
-  ;; Advise lsp-deferred and lsp so that they only run if non-essential is non-nil.
-  ;; This prevents lsp-mode from starting during consult previews.
+  ;; Advise `lsp-deferred' and `lsp' so that they only run if non-essential is
+  ;; non-nil. This prevents lsp-mode from starting during Consult previews.
   (advice-add 'lsp :around #'my/if-essential-advice)
   (advice-add 'lsp-deferred :around #'my/if-essential-advice)
 
@@ -1286,57 +1246,65 @@ as there appears to be a bug in the current version."
   :custom
   (lsp-log-io nil)
   (lsp-keymap-prefix "C-c l")
-  (lsp-modeline-code-actions-segments '(icon)) ;; No need to also show the count.
-  (lsp-lens-enable nil)                        ;; Haven't found a great use for these.
-  (lsp-modeline-diagnostics-enable nil)        ;; The Flycheck modeline segment already displays this.
+
+  ;; No need to also show the count.
+  (lsp-modeline-code-actions-segments '(icon))
+
+  ;; Haven't found a great use for these.
+  (lsp-lens-enable nil)
+
+  ;; The Flycheck modeline segment already displays this.
+  (lsp-modeline-diagnostics-enable nil)
 
   ;; Display type hints by default (not supported by all language servers).
   (lsp-inlay-hint-enable t)
 
-  ;; Recommended setting as I'm using corfu instead of company for completion.
+  ;; Recommended setting as I'm using Corfu instead of Company for completion.
   ;; See: https://github.com/minad/corfu/issues/71#issuecomment-977693717
   (lsp-completion-provider :none)
 
-  ;; Categorise lsp-ui-imenu entries by their type (variable, function, etc).
+  ;; Categorise `lsp-ui-imenu' entries by their type (variable, function, etc).
   (lsp-imenu-index-function 'lsp-imenu-create-categorized-index)
 
-  ;; Close the language server buffer when the last file in the workspace/project is closed.
+  ;; Close the language server buffer when the last file in the workspace/
+  ;; project is closed.
   (lsp-keep-workspace-alive nil)
 
-  ;; When lsp-eldoc-render-all is set to nil, moving point to a function call should result
-  ;; in a one line function signature being displayed in the minibuffer. There is an issue
-  ;; with lsp-mode and rust-analyzer however where what gets displayed is not the function
-  ;; signature but (usually) the type of struct to which the function belongs. However,
-  ;; setting lsp-eldoc-render-all to non-nil is even worse as it often results in a huge block
-  ;; of text being displayed that contains too much information. Going to disable for now,
-  ;; and use lsp-ui mouse over or lsp-ui-doc-glance to view type information.
+  ;; When `lsp-eldoc-render-all' is set to nil, moving point to a function call
+  ;; should result in a one line function signature being displayed in the
+  ;; minibuffer. There is an issue with lsp-mode and rust-analyzer, however,
+  ;; where what gets displayed is not the function signature but (usually) the
+  ;; type of struct to which the function belongs. However, setting
+  ;; `lsp-eldoc-render-all' to non-nil is even worse as it often results in a
+  ;; huge block of text being displayed that contains too much information.
+  ;; I'm going to disable for now, and use lsp-ui mouse over or
+  ;; `lsp-ui-doc-glance' to view type information.
   ;; See: https://github.com/emacs-lsp/lsp-mode/issues/2613
   ;; Also: https://github.com/rust-analyzer/rust-analyzer/issues/3415
   (lsp-eldoc-render-all nil)
   (lsp-eldoc-enable-hover nil)
 
-  ;; Disable the displaying of signature help in the minibuffer as it makes the size of the minibuffer
-  ;; expand to show all the additional info which is distracting. Signature help can be obtained
-  ;; from lsp-ui via mouse hover or calling lsp-ui-doc-glance explicitly.
+  ;; Disable the displaying of signature help in the minibuffer as it makes the
+  ;; size of the minibuffer expand to show all the additional info which is
+  ;; distracting. Signature help can be obtained from lsp-ui via mouse hover or
+  ;; calling `lsp-ui-doc-glance' explicitly.
   (lsp-signature-auto-activate nil)
   (lsp-signature-render-documentation nil)
 
-  ;; The following --query-driver args allow clangd to be used with the compile_commands.json
-  ;; generated by bazel-compilation-database. This is due to the fact that, by default,
-  ;; clangd expects the driver to be a standard compiler executable (e.g., clang++).
-  ;; The log level can be changed to "debug" for additional information.
+  ;; The following --query-driver args allow clangd to be used with the
+  ;; compile_commands.json generated by bazel-compilation-database. This is
+  ;; due to the fact that, by default, clangd expects the driver to be a
+  ;; standard compiler executable (e.g. clang++). The log level can be changed
+  ;; to "debug" for additional information.
   (lsp-clients-clangd-args '("--query-driver=**/wrapped_clang"
 			     "--background-index"
-			     "--log=info"
-			     ;; "--clang-tidy"
-			     ;; "-j=1"
-			     ))
+			     "--log=info"))
 
   ;; Use "clippy" rather than "check" for additional lints.
   (lsp-rust-analyzer-cargo-watch-command "clippy")
 
-  ;; Configure lsp-mode to use the official terraform-ls LSP server rather than terraform-lsp
-  ;; which it uses by default and is more experimental (crashes constantly for me).
+  ;; Configure lsp-mode to use the official terraform-ls LSP server rather than
+  ;; terraform-lsp which it uses by default and is more experimental.
   (lsp-terraform-server '("terraform-ls" "serve"))
 
   :config
@@ -1347,8 +1315,8 @@ as there appears to be a bug in the current version."
   ;; For gpls:
   ;; See: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/emacs.md#configuring-gopls-via-lsp-mode
   ;; And available settings: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/settings.md
-  ;; Not all experimental settings appear to be documented. For the full list, see the code here:
-  ;; https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/internal/lsp/source/options.go
+  ;; Not all experimental settings appear to be documented. For the full list,
+  ;; see: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/internal/lsp/source/options.go
   (lsp-register-custom-settings
    '(("gopls.completeUnimported" t t)
      ("gopls.staticcheck" t t))))
@@ -1371,23 +1339,26 @@ as there appears to be a bug in the current version."
   :custom
   (consult-lsp-marginalia-mode t))
 
-;; The following DAP configuration is optimised for debugging Rust and Go. The same
-;; keybindings and UI is used across all languages. The Go debugging workflow follows
-;; the recommendations for Go here: https://emacs-lsp.github.io/dap-mode/page/configuration.
+;; The following DAP configuration is optimised for debugging Rust and Go.
+;; The same keybindings and UI is used across all languages. The Go debugging
+;; workflow follows the recommendations for Go here:
+;; https://emacs-lsp.github.io/dap-mode/page/configuration.
 ;;
-;; The Rust debugging workflow does not follow the recommendations for Rust in the
-;; preceding docs as they recommend using rust-gdb which cannot be used on Apple silicon
-;; due to the fact that gdb does not currently support Apple silicon.
+;; The Rust debugging workflow does not follow the recommendations for Rust in
+;; the docs linked above as they recommend using rust-gdb which cannot be used
+;; on Apple silicon as gdb doesn't support it yet.
 ;;
-;; To work around this and other issues, I've defined my own custom debug configuration
-;; (a DAP provider and a template) for debugging Rust. When `dap-debug' is run, a configuration
-;; named "Rust LLDB Default" will be shown. When selected, this configuration will prompt
-;; for the executable file to be debugged. Unlike with Go/Delve, the debuggable executable
-;; must be recompiled between code changes. This default configuration does not supply
-;; arguments or environment variables.
+;; To work around this and other issues, I've defined my own custom debug
+;; configuration (a DAP provider and a template) for debugging Rust. When
+;; `dap-debug' is run, a configuration named "Rust LLDB Default" will be shown.
+;; When selected, this configuration will prompt for the executable file to be
+;; debugged. Unlike with Go/Delve, the debuggable executable must be recompiled
+;; between code changes. This default configuration does not supply arguments
+;; or environment variables.
 ;;
-;; For more advanced Rust debugging scenarios (e.g. args, vars, multiple binaries, etc),
-;; drop a launch.json file at the root of the Rust project with the following format:
+;; For more advanced Rust debugging scenarios (e.g. args, vars, multiple
+;; binaries, etc), drop a launch.json file at the root of the Rust project
+;; with the following format:
 ;;
 ;; {
 ;;   "version": "0.2.0",
@@ -1404,21 +1375,25 @@ as there appears to be a bug in the current version."
 ;;   }]
 ;; }
 ;;
-;; In the example above, replace "axum-full-example" with the name of the executable.
-;; If there are multiple executables, multiple configuration blocks will be needed and
-;; each should have a unique name (e.g. "Rust LLDB Custom (axum-full-example)", etc).
+;; In the example above, replace "axum-full-example" with the name of the
+;; executable. If there are multiple executables, multiple configuration
+;; blocks will be needed and each should have a unique name (e.g.
+;; "Rust LLDB Custom (axum-full-example)", etc).
 ;;
-;; When a launch.json file is present, `dap-debug' will show the configurations that
-;; it defines in addition to the ones that are registered below. The launch.json configurations
-;; will be mixed in with the properties set by the `my/dap-rust-lldb-debug-provider' provider
-;; below as long as a type of "rust-lldb" is specified.
+;; When a launch.json file is present, `dap-debug' will show the configurations
+;; that it defines in addition to the ones that are registered below. The
+;; launch.json configurations will be mixed in with the properties set by the
+;; `my/dap-rust-lldb-debug-provider' provider below as long as a type of
+;; "rust-lldb" is specified.
 ;;
-;; Note: dap-mode uses `lsp-workspace-root' to determine the root project directory that should
-;; contain the launch.json (or .vscode/launch.json) file. In projects with submodules where you
-;; want to debug a submodule independently, this can cause problems if `lsp-workspace-root' says
-;; that the project root is higher up the directory tree than you want it to be. If you get stuck
-;; in this cycle you will probably want to delete or edit ~/.config/emacs/.lsp-session-v1 or
-;; find a way to hook into dap-mode/lsp-mode so the process is a bit smarter.
+;; Note: dap-mode uses `lsp-workspace-root' to determine the root project
+;; directory that should contain the launch.json (or .vscode/launch.json) file.
+;; In projects with submodules where you want to debug a submodule
+;; independently, this can cause problems if `lsp-workspace-root' says that the
+;; project root is higher up the directory tree than you want it to be. If you
+;; get stuck in this cycle you will probably want to delete or edit
+;; ~/.config/emacs/.lsp-session-v1 or find a way to hook into dap-mode/lsp-mode
+;; so the process is a bit smarter.
 (use-package dap-mode
   :hook
   (go-mode     . my/dap-mode)
@@ -1450,8 +1425,8 @@ as there appears to be a bug in the current version."
   (require 'dap-dlv-go)
   (require 'dap-ui)
 
-  ;; Override `dap-ui--show-buffer' to show buffers in a standard window rather than a
-  ;; side window allowing popper to control them.
+  ;; Override `dap-ui--show-buffer' to show buffers in a standard window rather
+  ;; than a side window allowing popper to control them.
   (defun dap-ui--show-buffer (buf)
     "Overidden version of `dap-ui--show-buffer' that doesn't use side windows."
     (display-buffer buf))
@@ -1464,9 +1439,10 @@ as there appears to be a bug in the current version."
     (dap-ui-controls-mode -1))
 
   ;; Location of lldb-vscode on the host.
-  (defvar my/dap-rust-lldb-debug-program '("/opt/homebrew/opt/llvm/bin/lldb-vscode"))
+  (defvar my/dap-rust-lldb-debug-program
+    '("/opt/homebrew/opt/llvm/bin/lldb-vscode"))
 
-  ;; Custom DAP debug provider for Rust using LLDB. The provider allows the Rust binary
+  ;; Custom DAP debug provider for Rust using LLDB. This allows the Rust binary
   ;; that is to be debugged to be selected at the start of the debug session.
   (defun my/dap-rust-lldb-debug-provider (conf)
     "Populate CONF with the required arguments."
@@ -1476,7 +1452,8 @@ as there appears to be a bug in the current version."
         (dap--put-if-absent :program
                             (read-file-name
                              "Select binary file to debug: "
-                             (my/project-current-root) nil t nil #'file-executable-p))))
+                             (my/project-current-root)
+                             nil t nil #'file-executable-p))))
 
   :config
   ;; Register the custom DAP debug provider for Rust using LLDB.
@@ -1510,8 +1487,8 @@ as there appears to be a bug in the current version."
   (:map flycheck-mode-map
         ("C-c C-c l" . flycheck-list-errors))
   :init
-  ;; Tell Flycheck to use the load-path of the current Emacs session. Without this setting,
-  ;; Flycheck tends towards both false-negatives and false-positives.
+  ;; Tell Flycheck to use the load-path of the current Emacs session. Without
+  ;; this, Flycheck tends towards both false negatives and false positives.
   (setq flycheck-emacs-lisp-load-path 'inherit)
 
   ;; For performance, only perform checking when a file is saved or opened.
@@ -1525,12 +1502,11 @@ as there appears to be a bug in the current version."
 ;;;;;; Rust
 
 (use-package rustic
-  :hook
-  (rustic-mode . my/set-fill-column-100)
   :config
-  ;; The following function is used to ensure Rust keybindings are placed in both `rustic-mode-map'
-  ;; and `rustic-compilation-mode-map' (so they can also be used from within the compilation popup
-  ;; window). I'm sure there is a more idiomatic way to do this but I haven't found it yet.
+  ;; The following function is used to ensure Rust keybindings are placed in
+  ;; both `rustic-mode-map' and `rustic-compilation-mode-map' (so they can also
+  ;; be used from within the compilation popup window). I'm sure there is a
+  ;; more idiomatic way to do this but I haven't found it yet.
   (defun my/build-rust-keymap (base-map)
     "Return custom Rust keymap built on top of BASE-MAP."
     (define-key base-map (kbd "C-c C-c")     nil)
@@ -1548,41 +1524,46 @@ as there appears to be a bug in the current version."
     (define-key base-map (kbd "C-c C-c C-o") 'lsp-rust-analyzer-open-external-docs)
     base-map)
   (setq rustic-mode-map (my/build-rust-keymap (make-sparse-keymap)))
-  (setq rustic-compilation-mode-map (my/build-rust-keymap rustic-compilation-mode-map)))
+  (setq rustic-compilation-mode-map
+        (my/build-rust-keymap rustic-compilation-mode-map)))
 
 ;;;;;; Terraform
 
 (use-package terraform-mode
   :hook
-  (hcl-mode . terraform-format-on-save-mode)
-  (hcl-mode . (lambda () (setq comment-start "//"))) ; I prefer the // syntax to the default # comments.
-  (hcl-mode . (lambda () (setq-local indent-line-function 'my/hcl-indent-line))))
+  (hcl-mode . my/init-terraform-mode)
+  :init
+  (defun my/init-terraform-mode ()
+    "Configures `terraform-mode' on start-up."
+    (setq-local comment-start "//")
+    (setq-local indent-line-function 'my/hcl-indent-line))
 
-;; This function is a modified version of hcl-indent-line in an attempt
-;; to fix https://github.com/purcell/emacs-hcl-mode/issues/7.
-(defun my/hcl-indent-line ()
-  "Indent current line as HCL configuration."
-  (interactive)
-  (let* ((curpoint (point))
-         (pos (- (point-max) curpoint)))
-    (back-to-indentation)
-    (if (hcl--in-string-or-comment-p)
-        (goto-char curpoint)
-      (let ((block-indentation (hcl--block-indentation)))
-        (if block-indentation
-            (if (looking-at "[]}]")
-                (my/hcl--maybe-indent-line block-indentation)
-              (my/hcl--maybe-indent-line (+ block-indentation hcl-indent-level)))
-          (my/hcl--maybe-indent-line (hcl--previous-indentation)))
-        (when (> (- (point-max) pos) (point))
-          (goto-char (- (point-max) pos)))))))
+  ;; This function is a modified version of hcl-indent-line in an attempt
+  ;; to fix https://github.com/purcell/emacs-hcl-mode/issues/7.
+  (defun my/hcl-indent-line ()
+    "Indent current line as HCL configuration."
+    (interactive)
+    (let* ((curpoint (point))
+           (pos (- (point-max) curpoint)))
+      (back-to-indentation)
+      (if (hcl--in-string-or-comment-p)
+          (goto-char curpoint)
+        (let ((block-indentation (hcl--block-indentation)))
+          (if block-indentation
+              (if (looking-at "[]}]")
+                  (my/hcl--maybe-indent-line block-indentation)
+                (my/hcl--maybe-indent-line
+                 (+ block-indentation hcl-indent-level)))
+            (my/hcl--maybe-indent-line (hcl--previous-indentation)))
+          (when (> (- (point-max) pos) (point))
+            (goto-char (- (point-max) pos)))))))
 
-(defun my/hcl--maybe-indent-line (column)
-  "Indent current line to COLUMN if required."
-  (let ((curcol (- (point) (line-beginning-position))))
-    (unless (= curcol column)
-      (delete-region (line-beginning-position) (point))
-      (indent-to column))))
+  (defun my/hcl--maybe-indent-line (column)
+    "Indent current line to COLUMN if required."
+    (let ((curcol (- (point) (line-beginning-position))))
+      (unless (= curcol column)
+        (delete-region (line-beginning-position) (point))
+        (indent-to column)))))
 
 ;;;;;; Python
 
@@ -1701,11 +1682,11 @@ as there appears to be a bug in the current version."
 
 (use-package paredit
   :hook
-  (emacs-lisp-mode                  . paredit-mode)  ; Run in Elisp buffers.
-  (lisp-mode                        . paredit-mode)  ; Run in Common Lisp buffers.
-  (lisp-interaction-mode            . paredit-mode)  ; Run in scratch buffers.
-  (ielm-mode-hook                   . paredit-mode)  ; Run in IELM buffers.
-  (eval-expression-minibuffer-setup . paredit-mode)) ; Run in `eval-expression' minibuffers.
+  (emacs-lisp-mode                  . paredit-mode)  ; Elisp buffers.
+  (lisp-mode                        . paredit-mode)  ; Common Lisp buffers.
+  (lisp-interaction-mode            . paredit-mode)  ; Scratch buffers.
+  (ielm-mode-hook                   . paredit-mode)  ; ELM buffers.
+  (eval-expression-minibuffer-setup . paredit-mode)) ; Eval minibuffers.
 
 (use-package rainbow-delimiters
   :hook
@@ -1713,10 +1694,10 @@ as there appears to be a bug in the current version."
 
 ;;;;;; SGML/HTML
 
-;; The following configuration needs to be done on the built-in sgml-mode rather than
-;; html-mode as the latter is not actually a package and use-package will complain.
+;; The following configuration needs to be done on the built-in `sgml-mode' as
+;; `html-mode' is not a package.
 (use-package sgml-mode
-  :straight nil ;; Built-in.
+  :straight nil
   :bind
   (:map html-mode-map
         ;; Unbind M-o as I want that for ace-window.
@@ -1794,8 +1775,9 @@ as there appears to be a bug in the current version."
   "Eshell pre-command hook function."
   ;; Save history more frequently.
   (eshell-save-some-history)
-  ;; Commands run interactively in eshell should use colors but this gets reverted in the
-  ;; post-command hook. From: https://github.com/daviwil/dotfiles/blob/master/Emacs.org#configuration.
+  ;; Interactive eshell commands should use colors but this gets reverted by
+  ;; the post-command hook.
+  ;; See: https://github.com/daviwil/dotfiles/blob/master/Emacs.org#configuration.
   (setenv "TERM" "xterm-256color"))
 
 (defun my/eshell-post-command ()
@@ -1852,10 +1834,12 @@ as there appears to be a bug in the current version."
 (defvar my/gtd-dir "~/dev/home/gtd")
 (defvar my/pkm-dir "~/dev/home/pkm")
 
+;; TODO: Fix naming - rename to my/init-org-mode and put inside
+;; :init block of org-mode use-package form.
 (defun my/org-mode-init ()
   "Org-mode init function that should be attached to `org-mode-hook`."
   (interactive)
-  ;;; Org-mode buffer local settings.
+;;; Org-mode buffer local settings.
   (org-indent-mode 1)
   (visual-line-mode 1)
   (display-line-numbers-mode 0))
@@ -1877,8 +1861,6 @@ as there appears to be a bug in the current version."
 (use-package org
   :hook
   (org-mode . my/org-mode-init)
-  ;; Override '?' key to show helpful which-key display.
-  (org-agenda-mode . (lambda () (define-key org-agenda-mode-map "?" 'which-key-show-major-mode)))
 
   :bind
   (:map global-map
@@ -1886,21 +1868,38 @@ as there appears to be a bug in the current version."
         ("C-c o a" . org-agenda)
         ("C-c o m" . org-capture)
         ("C-c o S" . org-save-all-org-buffers)
-        ("C-c o i" . (lambda () (interactive) (org-capture nil "i"))) ; Capture inbox item.
-        ("C-c o b" . (lambda () (interactive) (org-capture nil "b"))) ; Capture bookmark.
-        ("C-c o c" . (lambda () (interactive) (org-capture nil "c"))) ; Capture coffee log.
-        ("C-c C-o" . org-open-at-point-global)) ; Open links everywhere just like in org-mode.
+        ("C-c o i" . my/org-capture-inbox)
+        ("C-c o b" . my/org-capture-bookmark)
+        ("C-c o c" . my/org-capture-coffee)
+        ("C-c C-o" . org-open-at-point-global)) ; Open links everywhere.
   (:map org-mode-map
         ("C-c C-S-l" . org-cliplink)
         ;; Keep C-' keybinding for popper.
         ("C-'" . nil))
   (:map org-agenda-mode-map
         ("r" . my/hydra-org-agenda-refile/body)
-        ("k" . org-agenda-kill))
+        ("k" . org-agenda-kill)
+        ("?" . which-key-show-major-mode))
 
   :init
   (require 'org-agenda)
   (require 'org-tempo) ; Enables <s TAB style shortcuts.
+
+  (defun my/org-capture-inbox ()
+    "Capture an inbox item."
+    (interactive)
+    (org-capture nil "i"))
+
+  (defun my/org-capture-bookmark ()
+    "Capture a bookmark."
+    (interactive)
+    (org-capture nil "i"))
+
+  (defun my/org-capture-coffee ()
+    "Capture a coffee log entry."
+    (interactive)
+    (org-capture nil "i"))
+
   (defhydra my/hydra-org-agenda-refile ()
     "
 Refile this agenda item to:
@@ -1920,10 +1919,10 @@ _q_: Quit this menu
     ("q" nil))
 
   :config
-  ;; Always save all org buffers before quitting the agenda (press 's' to save immediately).
+  ;; Save all org buffers before quitting the agenda ('s' saves immediately).
   (advice-add 'org-agenda-quit :before 'org-save-all-org-buffers)
 
-  ;; Make it easier to create org-babel code blocks.
+  ;; Make it easier to create `org-babel' code blocks.
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 
   :custom
@@ -2016,26 +2015,27 @@ _q_: Quit this menu
   (org-auto-align-tags nil)
   (org-blank-before-new-entry '((heading . nil)
                                 (plain-list-item . nil)))
-  (org-capture-templates `(("i" "Inbox" entry
-                            (file+headline ,(concat my/gtd-dir "/inbox.org") "Inbox")
-			    "* TODO %i%?")
-			   ("b" "Bookmark" entry
-			    (file+olp+datetree ,(concat my/gtd-dir "/bookmarks.org") "Bookmarks")
-			    "* %(org-cliplink-capture)%?\n")
-                           ("c" "Coffee Journal" entry
-			    (file+olp+datetree ,(concat my/gtd-dir "/coffee.org") "Coffee Journal" "Log")
-                            ,(concat
-			      "* 6%?:00 AM\n"
-                              "- Beans: Use org-store-link (C-c o l) then org-insert-link (C-c C-l)\n"
-                              "- Grind: KM47C+PO @ 3.0.0\n"
-                              "- Water: Brisbane tap @ 95°C\n"
-                              "- Brew method: V60 4:6\n"
-                              "- Brew notes:\n"
-                              "  - Coffee / water: 20g coffee / 300g water\n"
-                              "  - Breakdown: 50g/70g/60g/60g/60g on 45s with no extra agitation\n"
-                              "  - Next time: Grind a bit finer\n"
-                              "- Taste notes:\n"
-                              "  - Yum yum\n") :jump-to-captured t)))
+  (org-capture-templates
+   `(("i" "Inbox" entry
+      (file+headline ,(concat my/gtd-dir "/inbox.org") "Inbox")
+      "* TODO %i%?")
+     ("b" "Bookmark" entry
+      (file+olp+datetree ,(concat my/gtd-dir "/bookmarks.org") "Bookmarks")
+      "* %(org-cliplink-capture)%?\n")
+     ("c" "Coffee Journal" entry
+      (file+olp+datetree ,(concat my/gtd-dir "/coffee.org") "Coffee Journal" "Log")
+      ,(concat
+	"* 6%?:00 AM\n"
+        "- Beans: Use org-store-link (C-c o l) then org-insert-link (C-c C-l)\n"
+        "- Grind: KM47C+PO @ 3.0.0\n"
+        "- Water: Brisbane tap @ 95°C\n"
+        "- Brew method: V60 4:6\n"
+        "- Brew notes:\n"
+        "  - Coffee / water: 20g coffee / 300g water\n"
+        "  - Breakdown: 50g/70g/60g/60g/60g on 45s with no extra agitation\n"
+        "  - Next time: Grind a bit finer\n"
+        "- Taste notes:\n"
+        "  - Yum yum\n") :jump-to-captured t)))
   (org-catch-invisible-edits 'show-and-error)
   (org-confirm-babel-evaluate nil)
   (org-default-notes-file (concat my/gtd-dir "/inbox.org"))
@@ -2045,9 +2045,9 @@ _q_: Quit this menu
   (org-fontify-quote-and-verse-blocks t)
   (org-hide-emphasis-markers t)
   (org-log-done 'time)
-  ;; Leaving drawer logging disabled for now as I don't like the format of the log items,
-  ;; and I want to know when a task was created which doesn't happen without what apears
-  ;; to be quite a bit of custom code.
+  ;; Leaving drawer logging disabled for now as I don't like the format of the
+  ;; log items and I want to know when a task was created which doesn't happen
+  ;; without what apears to be quite a bit of custom code.
   (org-log-into-drawer nil)
   (org-log-states-order-reversed nil) ; Make newest last
   (org-outline-path-complete-in-steps nil)
@@ -2060,14 +2060,13 @@ _q_: Quit this menu
      (,(concat my/gtd-dir "/work.org") :regexp . "Tasks")
      (,(concat my/gtd-dir "/someday.org") :tag . "refile")
      (,(concat my/gtd-dir "/recurring.org") :level . 2)))
-  ;; The following two settings are required to make org-refile show the full heading path
-  ;; to subheading refile candidates. Took a while to get this working properly.
+  ;; Show refile headlines as nested paths.
   (org-refile-use-outline-path t)
   (org-special-ctrl-a/e t)
   (org-tags-column 0)
   (org-todo-keywords
    `((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "HOLD(h)" "|" "DONE(d)")))
-  ;; See colours here: https://alexschroeder.ch/geocities/kensanata/colors.html
+  ;; See colours here: https://alexschroeder.ch/geocities/kensanata/colors.html.
   (org-todo-keyword-faces
    `(("TODO" . (:foreground "DodgerBlue2" :weight bold))
      ("NEXT" . (:foreground "hot pink" :weight bold))
@@ -2079,10 +2078,11 @@ _q_: Quit this menu
 
 ;; TODO: Pull all of the blah.org file names out into vars.
 
-;; Function for refiling the current agent item under point to the specified file and heading.
-;; `org-agenda-refile' requires a destination refloc list that is difficult to compose manually.
-;; This approach to pulling the refloc out of the return value from `org-refile-get-targets'
-;; is adapted from https://emacs.stackexchange.com/questions/54580/org-refile-under-a-given-heading.
+;; Function for refiling the current agent item under point to the specified
+;; file and heading. `org-agenda-refile' requires a destination refloc list
+;; that is difficult to compose manually. This approach to pulling the refloc
+;; out of the return value from `org-refile-get-targets' is adapted from:
+;; https://emacs.stackexchange.com/questions/54580/org-refile-under-a-given-heading.
 (defun my/org-agenda-refile (file heading)
   "Refiles the current agenda item to the refile target for FILE and HEADING."
   (org-agenda-refile nil
