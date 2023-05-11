@@ -1,6 +1,6 @@
 # Ignore everything under emacs/var except emacs/var/straight/versions/default.el
 # which contains the pinned Emacs package versions.
-# See: https://theapache64.github.io/git-do-not-ignore
+# See: https://theapache64.github.io/git-do-not-ignore.
 !emacs/var/
 emacs/var/*
 !emacs/var/straight/

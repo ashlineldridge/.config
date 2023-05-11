@@ -511,6 +511,7 @@
     (popper-open-latest))
 
   :custom
+  (popper-window-height 15)
   (popper-reference-buffers
    '("\\*Messages\\*"
      "\\*Warnings\\*"
@@ -530,7 +531,7 @@
          (unless (derived-mode-p
                   (car (member major-mode my/popper-ignore-modes)))
            (derived-mode-p 'compilation-mode))))))
-  (popper-window-height 15)
+
   ;; Hide modeline and dispatch keys for cleaner look.
   (popper-mode-line nil)
   (popper-echo-dispatch-keys nil)
@@ -1532,19 +1533,17 @@ as there appears to be a bug in the current version."
 ;;;;;; Flycheck
 
 (use-package flycheck
-  ;; TODO: Why defer?
   :defer t
   :hook (prog-mode . flycheck-mode)
   :bind
   (:map flycheck-mode-map
         ("C-c C-c l" . flycheck-list-errors))
-  :init
+  :custom
   ;; Tell Flycheck to use the load-path of the current Emacs session. Without
   ;; this, Flycheck tends towards both false negatives and false positives.
-  (setq flycheck-emacs-lisp-load-path 'inherit)
-
+  (flycheck-emacs-lisp-load-path 'inherit)
   ;; For performance, only perform checking when a file is saved or opened.
-  (setq flycheck-check-syntax-automatically '(save mode-enabled)))
+  (flycheck-check-syntax-automatically '(save mode-enabled)))
 
 (use-package flycheck-clang-tidy
   :after flycheck
@@ -1620,7 +1619,7 @@ as there appears to be a bug in the current version."
 ;;;;;; Python
 
 (use-package python
-  :straight (:type built-in)
+  :straight nil
   :init
   (setq python-shell-interpreter "python3"))
 
@@ -1734,11 +1733,21 @@ as there appears to be a bug in the current version."
 
 (use-package paredit
   :hook
-  (emacs-lisp-mode                  . paredit-mode)  ; Elisp buffers.
-  (lisp-mode                        . paredit-mode)  ; Common Lisp buffers.
-  (lisp-interaction-mode            . paredit-mode)  ; Scratch buffers.
-  (ielm-mode-hook                   . paredit-mode)  ; ELM buffers.
-  (eval-expression-minibuffer-setup . paredit-mode)) ; Eval minibuffers.
+  (emacs-lisp-mode                  . paredit-mode) ; Elisp buffers.
+  (lisp-mode                        . paredit-mode) ; Common Lisp buffers.
+  (lisp-interaction-mode            . paredit-mode) ; Scratch buffers.
+  (ielm-mode-hook                   . paredit-mode) ; ELM buffers.
+  (eval-expression-minibuffer-setup . paredit-mode) ; Eval minibuffers.
+  :bind
+  (:map paredit-mode-map
+        ("<return>" . my/paredit-RET))
+  :config
+  (defun my/paredit-RET ()
+    "Wraps `paredit-RET' to provide a sensible minibuffer experience."
+    (interactive)
+    (if (minibufferp)
+        (read--expression-try-read)
+      (paredit-RET))))
 
 (use-package rainbow-delimiters
   :hook
