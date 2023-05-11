@@ -55,7 +55,7 @@
  ("lsp-ui" . "295d8984da06a745b0a36c56e28ce915bc389adb")
  ("magit" . "6067f92c0195616707b25e23c2d4c0dd81928fd8")
  ("magit-popup" . "d8585fa39f88956963d877b921322530257ba9f5")
- ("marginalia" . "3ddd2b7fa09e1e84112749ffbdcb6bd8900bfc26")
+ ("marginalia" . "b570c3912b37698f0fb6a2920c675b9a1fa472dd")
  ("markdown-mode" . "5d98592fe516748034d8baf92d7c0ba045e1f87a")
  ("melpa" . "b8b1519b843320207f9402f2b9ba26d64e9f0e6f")
  ("minions" . "d982380bb1d7f20228eeee59c692a1d100392b2a")

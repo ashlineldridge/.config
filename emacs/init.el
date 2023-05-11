@@ -543,16 +543,14 @@
 
 (use-package helpful
   :bind
-  ;; Don't override the standard `describe-*' commands as is standard as I am
-  ;; not yet able to display symbol values for Helpful via Marginalia. Until
-  ;; I can, I'll maintain bindings for both.
-  ;; See: https://github.com/minad/marginalia/issues/160.
-  ("C-h C-c" . helpful-callable)
-  ("C-h C-f" . helpful-function)
-  ("C-h C-m" . helpful-macro)
-  ("C-h C-k" . helpful-key)
-  ("C-h C-v" . helpful-variable)
-  ("C-h C-." . helpful-at-point))
+  ("C-h c" . helpful-callable)
+  ("C-h ." . helpful-at-point)
+  ;; Replace `describe-*' bindings with Helpful.
+  ([remap describe-function] . helpful-function)
+  ([remap describe-symbol]   . helpful-symbol)
+  ([remap describe-variable] . helpful-variable)
+  ([remap describe-command]  . helpful-command)
+  ([remap describe-key]      . helpful-key))
 
 (use-package which-key
   :custom
