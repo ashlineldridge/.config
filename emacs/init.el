@@ -17,7 +17,7 @@
 (unless window-system
     (error "This Emacs configuration is for window systems only"))
 
-;; Configure straight.el using `defvar' to make Flycheck happy.
+;; Configure straight.el (use `defvar' to make Flycheck happy).
 (defvar straight-base-dir (expand-file-name "var" user-emacs-directory))
 (defvar straight-use-package-by-default t)
 
@@ -39,9 +39,6 @@
 
 (require 'straight)
 
-;; Install use-package.
-(straight-use-package 'use-package)
-
 ;; Install Org as early as possible after straight so that the built-in version
 ;; of Org doesn't get loaded.
 (straight-use-package 'org)
@@ -49,6 +46,10 @@
 ;; Install no-littering early so that it can manage config/data files.
 (straight-use-package 'no-littering)
 (require 'no-littering)
+
+;; Install use-package (with imenu support).
+(defvar use-package-enable-imenu-support t)
+(straight-use-package 'use-package)
 
 ;;;; Base Settings
 
@@ -65,15 +66,15 @@
 
   :bind
   (:map global-map
+        ("C-x m"   . nil) ; Remove `compose-mail' binding.
+        ("C-h C-h" . nil) ; Remove `help-for-help' binding.
         ("<escape>". keyboard-escape-quit)
         ("C-;"     . comment-line)
         ("M-["     . previous-buffer)
         ("M-]"     . next-buffer)
         ("C-x 2"   . my/split-window-vertically)
         ("C-x 3"   . my/split-window-horizontally)
-        ("C-x C-b" . ibuffer) ; Replace `list-buffers' with `ibuffer'.
         ("C-x C-k" . kill-this-buffer)
-        ("C-x m"   . nil) ; Remove `compose-mail' binding.
         ("C-x w w" . my/toggle-show-trailing-whitespace)
         ("C-x w k" . delete-trailing-whitespace)
         ("C-S-k"   . my/copy-to-eol)
@@ -81,12 +82,8 @@
         ("C-M-DEL" . my/delete-to-bol)) ; TODO: Better shortcut
   (:map prog-mode-map
         ("C-c C-c |" . display-fill-column-indicator-mode))
-  (:map ibuffer-mode-map
-        ("M-o" . nil)) ; Keep M-o binding for ace-window.
 
   :init
-  (require 'ibuffer)
-
   (defun my/split-window-vertically ()
     "Split window vertically and select the other window."
     (interactive)
@@ -165,6 +162,9 @@
   ;; Enable indentation + completion using the TAB key. This is required for
   ;; Corfu integration.
   (setq tab-always-indent 'complete)
+
+  ;; Indent with spaces by default.
+  (setq-default indent-tabs-mode nil)
 
   ;; When popping marks off the mark ring (C-u C-SPC for local or C-x C-SPC for
   ;; global), allow repeated invocations of C-SPC to keeping popping.
@@ -387,7 +387,9 @@
 (use-package ace-window
   :bind
   (:map global-map
-        ("M-o" . ace-window))
+        ("M-o" . ace-window)
+        ("M-O" . previous-window-any-frame))
+  :init
   :custom
   (aw-display-mode-overlay t)
   (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
@@ -500,7 +502,7 @@
   (:map popper-mode-map
         ("M-k"   . my/popper-kill-popup-stay-open))
 
-  :init
+  :config
   (defvar my/popper-ignore-modes '(grep-mode))
   (defun my/popper-kill-popup-stay-open ()
     "Kill the current popup but stay open if there are others."
@@ -511,9 +513,15 @@
   :custom
   (popper-reference-buffers
    '("\\*Messages\\*"
+     "\\*Warnings\\*"
+     "\\*Backtrace\\*"
      "\\*Breakpoints\\*"
+     "\\*Pp Macroexpand Output\\*"
      "\\*Flycheck "
      "\\*dap-ui-"
+     "\\*Help\\*"
+     "\\*helpful "
+     "\\*eldoc for "
 
      ;; Match all modes that derive from compilation-mode but do not derive
      ;; from a member of `my/popper-ignore-modes'.
@@ -535,11 +543,16 @@
 
 (use-package helpful
   :bind
-  ([remap describe-function] . helpful-function)
-  ([remap describe-symbol] . helpful-symbol)
-  ([remap describe-variable] . helpful-variable)
-  ([remap describe-command] . helpful-command)
-  ([remap describe-key] . helpful-key))
+  ;; Don't override the standard `describe-*' commands as is standard as I am
+  ;; not yet able to display symbol values for Helpful via Marginalia. Until
+  ;; I can, I'll maintain bindings for both.
+  ;; See: https://github.com/minad/marginalia/issues/160.
+  ("C-h C-c" . helpful-callable)
+  ("C-h C-f" . helpful-function)
+  ("C-h C-m" . helpful-macro)
+  ("C-h C-k" . helpful-key)
+  ("C-h C-v" . helpful-variable)
+  ("C-h C-." . helpful-at-point))
 
 (use-package which-key
   :custom
@@ -741,7 +754,11 @@
         orderless-component-separator #'orderless-escapable-split-on-space))
 
 (use-package marginalia
+  :bind
+  (:map minibuffer-local-map
+        ("M-A" . marginalia-cycle))
   :init
+  ;; Enabling Marginalia must occur in :init.
   (marginalia-mode 1))
 
 (use-package consult
@@ -953,6 +970,31 @@
   :hook
   (text-mode . ws-butler-mode)
   (prog-mode . ws-butler-mode))
+
+
+;;;; Buffer Management
+
+(use-package ibuffer
+  :straight nil
+  :defer t
+  :bind
+  (:map global-map
+        ;; Replace `list-buffers' with `ibuffer'.
+        ("C-x C-b" . ibuffer))
+  (:map ibuffer-mode-map
+        ;; Keep M-o binding for ace-window.
+        ("M-o" . nil))
+  :init
+  (message "ibuffer init")
+  :config
+  (message "ibuffer config"))
+
+(use-package nerd-icons-ibuffer
+  :hook
+  (ibuffer-mode . nerd-icons-ibuffer-mode))
+
+;; TODO: Configure.
+(use-package ibuffer-vc)
 
 ;;;; File System
 
@@ -1475,10 +1517,22 @@ as there appears to be a bug in the current version."
   (dap-auto-show-output nil)
   (dap-ui-repl-history-dir no-littering-var-directory))
 
+;;;;;; Eldoc
+
+(use-package eldoc
+  :straight nil
+  :bind
+  (:map global-map
+        ("C-c C-c e" . eldoc-doc-buffer))
+  :custom
+  (eldoc-idle-delay 0)
+  :config
+  ;; Ensure Eldoc is triggered by Paredit functions.
+  (eldoc-add-command-completions "paredit-")
+  (global-eldoc-mode 1))
+
 ;;;;;; Flycheck
 
-;; TODO: Configure https://github.com/seagle0128/.emacs.d/blob/a4e1d0fcdb446408e96d20b7df476e905e3a7468/lisp/init-flycheck.el#L43
-;; Get it working nicely for Elisp, Rust, and Go.
 (use-package flycheck
   ;; TODO: Why defer?
   :defer t
@@ -1592,10 +1646,10 @@ as there appears to be a bug in the current version."
 
 ;;;;;; Shell
 
-;; Shell scripting indentation
-(setq sh-basic-offset 2
-      sh-indentation 2)
-(setq-default indent-tabs-mode nil)
+(use-package sh-script
+  :straight nil
+  :custom
+  (sh-basic-offset 2))
 
 ;;;;;; Go
 
@@ -1839,7 +1893,6 @@ as there appears to be a bug in the current version."
 (defun my/org-mode-init ()
   "Org-mode init function that should be attached to `org-mode-hook`."
   (interactive)
-;;; Org-mode buffer local settings.
   (org-indent-mode 1)
   (visual-line-mode 1)
   (display-line-numbers-mode 0))
@@ -1893,12 +1946,12 @@ as there appears to be a bug in the current version."
   (defun my/org-capture-bookmark ()
     "Capture a bookmark."
     (interactive)
-    (org-capture nil "i"))
+    (org-capture nil "b"))
 
   (defun my/org-capture-coffee ()
     "Capture a coffee log entry."
     (interactive)
-    (org-capture nil "i"))
+    (org-capture nil "c"))
 
   (defhydra my/hydra-org-agenda-refile ()
     "

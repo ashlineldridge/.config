@@ -50,7 +50,7 @@
            "/opt/homebrew/opt/gcc/lib/gcc/12/gcc/aarch64-apple-darwin21/12")
          ":"))
 
-;; Variables for Eshell and external processes.
+;; Variables for external processes.
 (setenv "XDG_CONFIG_HOME" (expand-file-name "~/.config"))
 (setenv "XDG_CACHE_HOME" (expand-file-name "~/.cache"))
 (setenv "XDG_DATA_HOME" (expand-file-name "~/.local/share"))
@@ -84,4 +84,5 @@
                             "~/.cargo/bin"
                             "~/.krew/bin"
                             "~/.local/bin") ":"))
+
 ;;; early-init.el ends here
