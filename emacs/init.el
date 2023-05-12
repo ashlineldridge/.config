@@ -66,8 +66,8 @@
 
   :bind
   (:map global-map
-        ("C-x m"   . nil) ; Remove `compose-mail' binding.
-        ("C-h C-h" . nil) ; Remove `help-for-help' binding.
+        ("C-x m"   . nil)               ; Remove `compose-mail' binding.
+        ("C-h C-h" . nil)               ; Remove `help-for-help' binding.
         ("<escape>". keyboard-escape-quit)
         ("C-;"     . comment-line)
         ("M-["     . previous-buffer)
@@ -121,6 +121,32 @@
     "Delete the text from point to the beginning of the line."
     (interactive)
     (delete-region (line-beginning-position) (point)))
+
+  (defun my/query-replace-case-sensitive ()
+    "Calls `query-replace' in a case-sensitive way."
+    (interactive)
+    (let (case-fold-search)
+      (call-interactively #'query-replace)))
+
+  (defun my/query-replace-regexp-case-sensitive ()
+    "Calls `query-replace-regexp' in a case-sensitive way."
+    (interactive)
+    (let (case-fold-search)
+      (call-interactively #'query-replace-regexp)))
+
+  ;; TODO: Go in this direction.
+  ;; See: https://github.com/oantolin/emacs-config/blob/master/init.el
+  ;; :custom
+  ;; (inhibit-startup-message t)
+  ;; (tool-bar-mode nil)
+  ;; (tooltip-mode nil)
+  ;; (menu-bar-mode nil)
+  ;; (scroll-bar-mode nil)
+
+  ;; :init
+  ;; (set-fringe-mode 5)                      ; Increase margins slightly.
+  ;; (set-frame-size (selected-frame) 110 50) ; Make initial frame size bigger.
+  ;; (defalias 'yes-or-no-p 'y-or-n-p)        ; Accept y/n.
 
   ;; Do not show the startup screen.
   (setq inhibit-startup-message t)
@@ -198,9 +224,6 @@
 
   ;; Automatically save unsaved files before compilation.
   (setq compilation-ask-about-save nil)
-
-  ;; Make query replaces case-sensitive.
-  (setq-default case-fold-search nil)
 
   ;; Make the default fill column wider (overidden for certain modes).
   (setq-default fill-column 100)
@@ -291,6 +314,21 @@
   ;; Install fonts if they are not already installed.
   (unless (member "Symbols Nerd Font Mono" (font-family-list))
     (nerd-icons-install-fonts t)))
+
+;; TODO: Still can't really get this to work.
+(use-package nerd-icons-completion
+  :disabled
+  :config
+  (nerd-icons-completion-mode 1))
+
+;; Icons for the completion UI (i.e. Corfu).
+;; TODO: Should this be moved into Corfu's use-package form?
+(use-package kind-icon
+  :after corfu
+  :custom
+  (kind-icon-default-face 'corfu-default)
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
 ;;;;; Themes
 
@@ -502,13 +540,16 @@
   (:map popper-mode-map
         ("M-k"   . my/popper-kill-popup-stay-open))
 
-  :config
+  :init
   (defvar my/popper-ignore-modes '(grep-mode))
   (defun my/popper-kill-popup-stay-open ()
     "Kill the current popup but stay open if there are others."
     (interactive)
     (popper-kill-latest-popup)
     (popper-open-latest))
+
+  (popper-mode 1)
+  (popper-echo-mode 1)
 
   :custom
   (popper-window-height 15)
@@ -534,11 +575,7 @@
 
   ;; Hide modeline and dispatch keys for cleaner look.
   (popper-mode-line nil)
-  (popper-echo-dispatch-keys nil)
-
-  :config
-  (popper-mode 1)
-  (popper-echo-mode 1))
+  (popper-echo-dispatch-keys nil))
 
 ;;;; Help System
 
@@ -604,15 +641,6 @@
             completion-cycle-threshold completion-cycling)
         (apply #'consult-completion-in-region completion-in-region--data))))
 
-  :config
-  ;; Completion UI icons (in this case Corfu).
-  (use-package kind-icon
-    :after corfu
-    :custom
-    (kind-icon-default-face 'corfu-default)
-    :config
-    (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
-
   :custom
   ;; Show the Corfu pop-up without requiring tab to be pressed (but after the
   ;; delay configured below).
@@ -625,9 +653,7 @@
   ;; don't want autocompleted don't trigger the Corfu pop-up (and subsequent
   ;; completion which inserts a space after the completed word).
   (corfu-auto-delay 0.3)
-  ;; Modes which shouldn't use Corfu. The following modes have been added as
-  ;; the default completions were annoying. Realistically, I should just modify
-  ;; the CAPF functions so that at least dabbrev completion is used.
+  ;; Modes which shouldn't use Corfu as I found the completions annoying.
   (corfu-excluded-modes
    '(bazel-build-mode
      bazel-workspace-mode
@@ -709,9 +735,7 @@
   (defun my/capf-setup-elisp ()
     "Configure CAPFs to be used for `emacs-lisp-mode'."
     (setq-local completion-at-point-functions
-                (list #'elisp-completion-at-point
-                      #'cape-file
-                      #'cape-dabbrev)))
+                (list #'elisp-completion-at-point #'cape-file)))
 
   (defun my/capf-setup-eshell ()
     "Configure CAPFs to be used for `eshell-mode'."
@@ -737,10 +761,10 @@
                  #'cape-dabbrev)))
 
   :custom
-  ;; Only show dabbrev candidates of a minimum length.
-  (cape-dabbrev-min-length 4)
+  ;; Only show dabbrev candidates of a minimum length to avoid being annoying.
+  (cape-dabbrev-min-length 5)
   ;; Only show dabbrev completions for words in the current buffer.
-  (cape-dabbrev-check-other-buffers t))
+  (cape-dabbrev-check-other-buffers nil))
 
 ;; Orderless configuration mostly taken from:
 ;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
@@ -1733,25 +1757,22 @@ as there appears to be a bug in the current version."
 
 (use-package paredit
   :hook
-  (emacs-lisp-mode                  . paredit-mode) ; Elisp buffers.
-  (lisp-mode                        . paredit-mode) ; Common Lisp buffers.
-  (lisp-interaction-mode            . paredit-mode) ; Scratch buffers.
-  (ielm-mode-hook                   . paredit-mode) ; ELM buffers.
-  (eval-expression-minibuffer-setup . paredit-mode) ; Eval minibuffers.
-  :bind
-  (:map paredit-mode-map
-        ("<return>" . my/paredit-RET))
-  :config
-  (defun my/paredit-RET ()
-    "Wraps `paredit-RET' to provide a sensible minibuffer experience."
-    (interactive)
-    (if (minibufferp)
-        (read--expression-try-read)
-      (paredit-RET))))
+  ;; Note that we specifically don't enable Paredit in minibuffers as it
+  ;; causes issues with RET keybindings.
+  (emacs-lisp-mode . paredit-mode)       ; Elisp buffers.
+  (lisp-mode . paredit-mode)             ; Common Lisp buffers.
+  (lisp-interaction-mode . paredit-mode) ; Scratch buffers.
+  (ielm-mode-hook . paredit-mode))       ; IELM buffers.
 
 (use-package rainbow-delimiters
   :hook
   (emacs-lisp-mode . rainbow-delimiters-mode))
+
+(use-package pp
+  :straight nil
+  :bind
+  (:map global-map
+   ("C-x C-p" . pp-macroexpand-last-sexp)))
 
 ;;;;;; SGML/HTML
 
