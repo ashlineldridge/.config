@@ -892,13 +892,16 @@
         ("?" . which-key-show-major-mode)
         ("i" . dired-subtree-insert)
         (";" . dired-subtree-remove))
-  :config
+  :hook
+  (dired-mode . auto-revert-mode)
+  :custom
   ;; See more settings here:
   ;; https://github.com/protesilaos/dotfiles/blob/master/emacs/.emacs.d/prot-emacs-modules/prot-emacs-dired.el
-  (setq dired-recursive-copies 'always)
-  (setq dired-recursive-deletes 'always)
-  (setq delete-by-moving-to-trash t)
-  (setq dired-kill-when-opening-new-dired-buffer t))
+  (dired-recursive-copies 'always)
+  (dired-recursive-deletes 'always)
+  (delete-by-moving-to-trash t)
+  (dired-kill-when-opening-new-dired-buffer t)
+  (dired-use-ls-dired nil))
 
 (use-package dired-subtree)
 
