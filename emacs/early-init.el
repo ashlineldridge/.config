@@ -85,4 +85,36 @@
                             "~/.krew/bin"
                             "~/.local/bin") ":"))
 
+;; Configure straight.el (use `defvar' to make Flycheck happy).
+(defvar straight-base-dir (expand-file-name "var" user-emacs-directory))
+(defvar straight-use-package-by-default t)
+
+;; Bootstrap straight.el.
+;; See: https://github.com/raxod502/straight.el#bootstrapping-straightel
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el" straight-base-dir))
+      (bootstrap-version 6))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+
+;; Install Org as early as possible after straight so that the built-in version
+;; of Org doesn't get loaded.
+(straight-use-package 'org)
+
+;; Install no-littering early so that it can manage config/data files.
+(straight-use-package 'no-littering)
+(require 'no-littering)
+
+;; Install use-package (with imenu support).
+(defvar use-package-enable-imenu-support t)
+(straight-use-package 'use-package)
+
 ;;; early-init.el ends here
