@@ -107,7 +107,7 @@
 
   :init
   ;; Use y/n rather than yes/no.
-  (defalias 'yes-or-no-p 'y-or-n-p)
+  (defalias 'yes-or-no-p #'y-or-n-p)
 
   ;; Enable Emacs functions that are disabled by default.
   (put 'narrow-to-region 'disabled nil)
@@ -592,7 +592,7 @@
   :bind
   (:map global-map
         ("C-s" . consult-line)
-        ("C-S-s" . my/consult-line-strict)
+        ("C-c C-s" . my/consult-line-strict)
         ("C-x i" . consult-imenu)       ; Local buffer imenu
         ("C-x I" . consult-imenu-multi) ; Open buffers imenu
         ("C-x b" . consult-buffer)
@@ -603,6 +603,8 @@
         ("C-x r l" . consult-register-load)
         ("C-x r s" . consult-register-store)
         ("C-c o s" . consult-org-agenda))
+  (:map minibuffer-local-map
+        ("C-r" . consult-history))
 
   :custom
   ;; Use consult to select xref locations with preview.
@@ -652,6 +654,7 @@
    consult-recent-file
    consult-org-agenda
    consult-xref
+
    consult--source-buffer
    consult--source-project-buffer
    consult--source-bookmark
@@ -694,29 +697,32 @@
         ("C-x C-d" . consult-dir)
         ("C-x C-j" . consult-dir-jump-file))
   :custom
-  (consult-dir-default-command 'consult-dir-dired))
+  (consult-dir-default-command #'consult-dir-dired))
+
+(use-package consult-lsp
+  :custom
+  (consult-lsp-marginalia-mode t))
+
+(use-package consult-yasnippet)
 
 ;; See more advanced configuration here:
 ;; https://github.com/karthink/.emacs.d/blob/42875586daa23d69c581be01bdc1e12718aef083/lisp/setup-embark.el.
 (use-package embark
   ;; Load after xref so that the overidden keybinding below takes effect.
   :after xref
-  :commands embark-prefix-help-command
   :bind
   (:map global-map
         ("C-." . embark-act)
         ("M-." . embark-dwim)
-        ("C-h b" . embark-bindings)) ; Replace `describe-bindings'.
+        ("C-h b" . embark-bindings))
 
   :custom
   ;; The following two settings tell Embark to just use the minibuffer and
   ;; completing-read for displaying the Embark popup (rather than a window).
   (embark-prompter #'embark-completing-read-prompter)
   (embark-indicators (list #'embark-minimal-indicator))
-
-  :init
   ;; Run Embark after a prefix (e.g. C-x) is pressed and then C-h.
-  (setq prefix-help-command #'embark-prefix-help-command)
+  (prefix-help-command #'embark-prefix-help-command)
 
   :config
   ;; Org-roam nodes have their own Embark category and hence need their own
@@ -863,6 +869,19 @@
      (?Y . avy-action-yank-line)
      (?z . avy-action-zap-to-char)
      (?. . my/avy-action-embark))))
+
+(use-package isearch
+  :straight nil
+  :bind
+  ;; C-s is already taken by `consult-line' so create different bindings for
+  ;; isearch. `isearch-forward-regexp' and `isearch-backward-regexp' are more
+  ;; generally useful
+  (:map global-map
+        ("C-S-s" . isearch-forward)
+        ("C-S-r" . isearch-backward))
+  (:map isearch-mode-map
+        ("C-S-s" . isearch-repeat-forward)
+        ("C-S-r" . isearch-repeat-backward)))
 
 ;;;; Buffer Management
 
@@ -1093,12 +1112,8 @@ as there appears to be a bug in the current version."
 
 ;;;;; Code Templating
 
-(use-package consult-yasnippet)
-
-(use-package yasnippet-snippets)
-
 (use-package yasnippet
-  :after (yasnippet-snippets consult-yasnippet)
+  :after consult-yasnippet
   :hook ((text-mode prog-mode eshell-mode) . yas-minor-mode)
   :bind
   (:map global-map
@@ -1118,6 +1133,8 @@ as there appears to be a bug in the current version."
   (setq yas-verbosity 1)
   (setq yas-wrap-around-region t))
 
+(use-package yasnippet-snippets)
+
 ;;;;; Code Formatting and Linting
 
 (use-package apheleia
@@ -1135,7 +1152,6 @@ as there appears to be a bug in the current version."
 (use-package lsp-mode
   ;; Shouldn't be necessary but gets ride of Flycheck warnings.
   :functions my/if-essential-advice
-  ;; :after consult-lsp
   :commands
   (lsp
    lsp-deferred
@@ -1186,7 +1202,7 @@ as there appears to be a bug in the current version."
   (lsp-completion-provider :none)
 
   ;; Categorise `lsp-ui-imenu' entries by their type (variable, function, etc).
-  (lsp-imenu-index-function 'lsp-imenu-create-categorized-index)
+  (lsp-imenu-index-function #'lsp-imenu-create-categorized-index)
 
   ;; Close the language server buffer when the last file in the workspace/
   ;; project is closed.
@@ -1267,10 +1283,6 @@ as there appears to be a bug in the current version."
   (lsp-ui-doc-position 'at-point)
   (lsp-ui-doc-max-width 150)
   (lsp-ui-doc-max-height 30))
-
-(use-package consult-lsp
-  :custom
-  (consult-lsp-marginalia-mode t))
 
 ;; The following DAP configuration is optimised for debugging Rust and Go.
 ;; The same keybindings and UI is used across all languages. The Go debugging
@@ -1455,7 +1467,20 @@ as there appears to be a bug in the current version."
 (use-package rustic
   :functions my/build-rust-keymap
   :defines consult-imenu-config
-  :init
+  :commands
+  (rustic-cargo-add
+   rustic-cargo-build
+   rustic-cargo-clean
+   rustic-format-buffer
+   rustic-cargo-fmt
+   rustic-cargo-clippy
+   rustic-cargo-outdated
+   rustic-cargo-run
+   rustic-cargo-test
+   rustic-cargo-current-test
+   rustic-cargo-upgrade
+   lsp-rust-analyzer-open-external-docs)
+  :config
   ;; The following function is used to ensure Rust keybindings are placed in
   ;; both `rustic-mode-map' and `rustic-compilation-mode-map' (so they can also
   ;; be used from within the compilation popup window). I'm sure there is a
@@ -1463,21 +1488,20 @@ as there appears to be a bug in the current version."
   (defun my/build-rust-keymap (base-map)
     "Return custom Rust keymap built on top of BASE-MAP."
     (define-key base-map (kbd "C-c C-c") nil)
-    (define-key base-map (kbd "C-c C-c a") 'rustic-cargo-add)
-    (define-key base-map (kbd "C-c C-c b") 'rustic-cargo-build)
-    (define-key base-map (kbd "C-c C-c c") 'rustic-cargo-clean)
-    (define-key base-map (kbd "C-c C-c f") 'rustic-format-buffer)
-    (define-key base-map (kbd "C-c C-c F") 'rustic-cargo-fmt)
-    (define-key base-map (kbd "C-c C-c l") 'rustic-cargo-clippy)
-    (define-key base-map (kbd "C-c C-c o") 'rustic-cargo-outdated)
-    (define-key base-map (kbd "C-c C-c r") 'rustic-cargo-run)
-    (define-key base-map (kbd "C-c C-c t") 'rustic-cargo-test)
-    (define-key base-map (kbd "C-c C-c T") 'rustic-cargo-current-test)
-    (define-key base-map (kbd "C-c C-c u") 'rustic-cargo-upgrade)
-    (define-key base-map (kbd "C-c C-c C-o") 'lsp-rust-analyzer-open-external-docs)
+    (define-key base-map (kbd "C-c C-c a") #'rustic-cargo-add)
+    (define-key base-map (kbd "C-c C-c b") #'rustic-cargo-build)
+    (define-key base-map (kbd "C-c C-c c") #'rustic-cargo-clean)
+    (define-key base-map (kbd "C-c C-c f") #'rustic-format-buffer)
+    (define-key base-map (kbd "C-c C-c F") #'rustic-cargo-fmt)
+    (define-key base-map (kbd "C-c C-c L") #'rustic-cargo-clippy)
+    (define-key base-map (kbd "C-c C-c o") #'rustic-cargo-outdated)
+    (define-key base-map (kbd "C-c C-c r") #'rustic-cargo-run)
+    (define-key base-map (kbd "C-c C-c t") #'rustic-cargo-test)
+    (define-key base-map (kbd "C-c C-c T") #'rustic-cargo-current-test)
+    (define-key base-map (kbd "C-c C-c u") #'rustic-cargo-upgrade)
+    (define-key base-map (kbd "C-c C-c C-o") #'lsp-rust-analyzer-open-external-docs)
     base-map)
 
-  :config
   (setq rustic-mode-map (my/build-rust-keymap (make-sparse-keymap)))
   (setq rustic-compilation-mode-map
         (my/build-rust-keymap rustic-compilation-mode-map))
@@ -1680,7 +1704,7 @@ as there appears to be a bug in the current version."
   (eshell-history-size 10000)
   (eshell-buffer-maximum-lines 10000)
   (eshell-hist-ignoredups t)
-  (eshell-prompt-function 'my/eshell-prompt)
+  (eshell-prompt-function #'my/eshell-prompt)
   (eshell-prompt-regexp "^[^λ\n]* λ ")
   (eshell-visual-commands '("vi" "vim" "htop" "ktop"))
 
@@ -2172,8 +2196,6 @@ specified then a task category will be determined by the item's tags."
   (kubernetes-poll-frequency 3600)
   (kubernetes-redraw-frequency 3600))
 
-;;--- Local Variables:
-;;--- byte-compile-warnings: (not free-vars)
 ;;; End:
 (provide 'init)
 
