@@ -181,7 +181,7 @@
 
 ;;;;; Theme
 
-;; The Modus themes are pre-installed into Emacs 28+ but we pull latest.
+;; The Modus themes are pre-installed into Emacs 28+ but I pull latest.
 (use-package modus-themes
   :custom
   (modus-themes-italic-constructs t)
@@ -645,7 +645,7 @@
    consult--source-recent-file :name "Recent File" :narrow ?r
 
    ;; By default, consult will automatically preview all commands and sources.
-   ;; Below we customize certain commands/sources so that the preview is only
+   ;; Below I customize certain commands/sources so that the preview is only
    ;; shown on request.
    consult-ripgrep
    consult-git-grep
@@ -715,6 +715,8 @@
         ("C-." . embark-act)
         ("M-." . embark-dwim)
         ("C-h b" . embark-bindings))
+  (:map minibuffer-local-map
+        ("C-S-b" . embark-become))
 
   :custom
   ;; The following two settings tell Embark to just use the minibuffer and
@@ -726,7 +728,7 @@
 
   :config
   ;; Org-roam nodes have their own Embark category and hence need their own
-  ;; keymap so that we can act on them. Here, we create a new Embark keymap and
+  ;; keymap so that I can act on them. Here, I create a new Embark keymap and
   ;; add it to `embark-keymap-alist'.
   (defvar-keymap my/embark-org-roam-node-map
     :doc "Keymap for Embark org-roam-node actions"
@@ -1635,8 +1637,8 @@ as there appears to be a bug in the current version."
 
 (use-package paredit
   :hook
-  ;; Note that we specifically don't enable Paredit in minibuffers as it
-  ;; causes issues with RET keybindings.
+  ;; Note that I specifically don't enable Paredit in minibuffers as it causes
+  ;; issues with RET keybindings.
   (emacs-lisp-mode . paredit-mode)       ; Elisp buffers.
   (lisp-mode . paredit-mode)             ; Common Lisp buffers.
   (lisp-interaction-mode . paredit-mode) ; Scratch buffers.
@@ -2187,7 +2189,7 @@ specified then a task category will be determined by the item's tags."
         ("C-c k" . kubernetes-overview))
   ;; By default, '?' will call `kubernetes-dispatch' which shows most of the
   ;; available shortcuts but not all of them. Bind `which-key-show-major-mode'
-  ;; so that we can easily see all available shortcuts.
+  ;; so that I can easily see all available shortcuts.
   (:map kubernetes-mode-map
         ("M-?" . which-key-show-major-mode))
   :custom
