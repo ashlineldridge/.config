@@ -70,6 +70,7 @@
   (fill-column 100)
   (column-number-mode t)
   (global-auto-revert-mode t)
+  (async-shell-command-buffer 'new-buffer)
   (savehist-mode t)
   (fringe-mode 5) ; Increase margins slightly.
   (even-window-sizes 'height-only)
@@ -174,7 +175,8 @@
   ;; Prefer running a single instance of Emacs in server mode.
   (server-start))
 
-;; TODO: Ditch Hydra. See: https://karthinks.com/software/it-bears-repeating
+;;;; Keybindings
+
 (use-package hydra)
 
 ;;;; Appearance
@@ -343,7 +345,9 @@
      "\\*helpful "
      "\\*eldoc for "
      "CAPTURE-.*\\.org"
-
+     ;; TODO: Switch above to modes where possible.
+     shell-mode
+     godoc-mode
      ;; Match all modes that derive from compilation-mode but do not derive
      ;; from a member of `my/popper-ignore-modes'.
      (lambda (buf)
@@ -398,6 +402,7 @@
   :straight (corfu-mode :host github :repo "minad/corfu")
   :commands (corfu-mode global-corfu-mode)
   :functions consult-completion-in-region
+
   :bind
   (:map corfu-map
         ;; By default, `corfu-insert-separator' is bound to M-SPC which on
@@ -1716,12 +1721,6 @@ as there appears to be a bug in the current version."
 
   (defun my/init-eshell-mode ()
     "Hook function executed when `eshell-mode' is run."
-
-    ;; I could disable `corfu-auto' to make eshell behave more like a normal
-    ;; shell that requires pressing tab. But I'm preferring going the other way:
-    ;; make eshell behave more like a standard Emacs buffer.
-    ;; (setq-local corfu-auto nil)
-
     ;; Don't scroll the buffer around after it has been recentered (using C-l).
     ;; This seems to need to be done as a mode hook rather than in `:config' as
     ;; the latter results in `eshell-output-filter-functions' being set to nil.
