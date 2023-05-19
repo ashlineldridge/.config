@@ -2182,20 +2182,19 @@ specified then a task category will be determined by the item's tags."
   (auth-source-pass-enable))
 
 ;;;; Kubernetes
-(use-package kubernetes
-  :bind
-  (:map global-map
-        ("C-c k" . kubernetes-overview))
-  ;; By default, '?' will call `kubernetes-dispatch' which shows most of the
-  ;; available shortcuts but not all of them. Bind `which-key-show-major-mode'
-  ;; so that I can easily see all available shortcuts.
-  (:map kubernetes-mode-map
-        ("M-?" . which-key-show-major-mode))
-  :custom
-  ;; The following frequency settings effectively disables auto-refresh which
-  ;; can improve performance. Just press 'g' to refresh instead.
-  (kubernetes-poll-frequency 3600)
-  (kubernetes-redraw-frequency 3600))
+
+(use-package kele
+  :commands kele-mode
+  :init
+  (defun my/start-kelete-mode ()
+    "Starts `kele-mode'."
+    (interactive)
+    (kele-mode 1))
+
+  (defun my/stop-kelete-mode ()
+    "Stops `kele-mode'."
+    (interactive)
+    (kele-mode -1)))
 
 ;;; End:
 (provide 'init)
