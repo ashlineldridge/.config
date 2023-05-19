@@ -894,17 +894,17 @@
 
 (use-package ibuffer
   :straight nil
-  :defer t
   :bind
   (:map global-map
         ;; Replace `list-buffers' with `ibuffer'.
         ("C-x C-b" . ibuffer))
   (:map ibuffer-mode-map
         ;; Keep M-o binding for ace-window.
-        ("M-o" . nil)))
-
-;; TODO: Configure.
-(use-package ibuffer-vc)
+        ("M-o" . nil)
+        ;; Group buffers by VC project.
+        ("/ p" . ibuffer-vc-set-filter-groups-by-vc-root))
+  :init
+  (use-package ibuffer-vc))
 
 ;;;; File System
 
