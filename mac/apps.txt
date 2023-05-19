@@ -1,62 +1,42 @@
 1Password.app
-AWS VPN Client
 Alacritty.app
 Alfred 4.app
-Amazon Chime.app
-CarbonBlack
-Confer.app
-Discord.app
+Cloudflare WARP.app
+CodeSignSummary-3099be50-a9fd-4ca0-8369-22eed3f12e4e.md
+CodeSignSummary-90b634d8-f373-4baf-9399-e0baf310b066.md
+Company Portal.app
+DisplayLink Manager.app
 Docker.app
 Dropbox.app
-Emacs.app
-Firefox.app
+Emacs
+Falcon.app
 Flux.app
-GlobalProtect.app
+GoLand.app
 Google Chrome.app
 Hidden Bar.app
-Keynote.app
 Kindle.app
 LastPass.app
 Lens.app
 MacDown.app
+Microsoft Defender.app
+Microsoft Edge.app
 Microsoft Excel.app
 Microsoft OneNote.app
 Microsoft Outlook.app
 Microsoft PowerPoint.app
 Microsoft Teams.app
 Microsoft Word.app
-Minecraft.app
-MountSEEKFS.app
-Netskope Client.app
-NoMAD.app
-Notion.app
-Numbers.app
 OneDrive.app
-OpenEmu.app
-OpenVPN Connect
-OpenVPN Connect.app
-Pages.app
-PyCharm CE.app
-PyCharm.app
-Rancher Desktop.app
 Rectangle.app
-Remove Netskope Client.app
 Safari.app
-Self Service.app
-Skype for Business.app
 Slack.app
-Spectacle.app
 Spotify.app
-Time Out.app
-Tunnelblick.app
+Steam.app
+Tailscale.app
+UTM.app
 Utilities
-VLC.app
-VMware Carbon Black Cloud
-VirtualBox.app
-Viscosity.app
+VMware Fusion.app
 WhatsApp.app
+Wireshark.app
 Xcode.app
-eul.app
-iTerm.app
-minecraftpe.app
 zoom.us.app
