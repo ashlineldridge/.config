@@ -173,7 +173,9 @@
     (run-with-timer 0.1 nil 'invert-face 'mode-line))
 
   ;; Prefer running a single instance of Emacs in server mode.
-  (server-start))
+  (require 'server)
+  (unless (server-running-p)
+    (server-start)))
 
 ;;;; Keybindings
 
@@ -728,6 +730,8 @@
   ;; completing-read for displaying the Embark popup (rather than a window).
   (embark-prompter #'embark-completing-read-prompter)
   (embark-indicators (list #'embark-minimal-indicator))
+  ;; Use this key to switch Embark to the keymap prompter.
+  (embark-keymap-prompter-key ",")
   ;; Run Embark after a prefix (e.g. C-x) is pressed and then C-h.
   (prefix-help-command #'embark-prefix-help-command)
 
@@ -1791,8 +1795,8 @@ as there appears to be a bug in the current version."
 (use-package org
   :preface
   ;; GTD (Getting Things Done) paths.
-  (defvar my/gtd-dir (expand-file-name "~/dev/home/gtd"))
-  (defvar my/pkm-dir (expand-file-name "~/dev/home/pkm"))
+  (defvar my/gtd-dir (expand-file-name "~/dev/home/gtd/"))
+  (defvar my/pkm-dir (expand-file-name "~/dev/home/pkm/"))
   (defvar my/gtd-inbox-file (expand-file-name "inbox.org" my/gtd-dir))
   (defvar my/gtd-personal-file (expand-file-name "personal.org" my/gtd-dir))
   (defvar my/gtd-work-file (expand-file-name "work.org" my/gtd-dir))
@@ -2136,7 +2140,7 @@ specified then a task category will be determined by the item's tags."
    ("C-c j D" . org-roam-dailies-goto-date))
 
   :custom
-  (org-roam-directory (expand-file-name "notes" my/pkm-dir))
+  (org-roam-directory (expand-file-name "notes/" my/pkm-dir))
   ;; Disable `org-roam' completion as it's a bit annoying.
   (org-roam-completion-everywhere nil)
   (org-roam-completion-functions nil)
