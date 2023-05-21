@@ -1,3 +1,11 @@
+# Default to using my personal Git user profile.
+[include]
+	path = ~/.config/git/config-home
+
+# Override my default profile with my work profile if I'm under my work dir.
+[includeIf "gitdir:~/dev/work/"]
+	path = ~/.config/git/config-work
+
 [alias]
 	# View abbreviated SHA, description, and history graph of the latest 20 commits
 	l = log --pretty=oneline -n 20 --graph --abbrev-commit
@@ -117,11 +125,6 @@
 	# installations. To use `simple` instead, add this to your `~/.extra` file:
 	# `git config --global push.default simple`. See http://git.io/mMah-w.
 	default = matching
-
-[user]
-	name = Ashlin Eldridge
-	email = 363071+ashlineldridge@users.noreply.github.com
-        signingkey = 1E60A6E738B58058
 
 [credential]
 	helper = osxkeychain
