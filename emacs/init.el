@@ -347,9 +347,8 @@
      "\\*helpful "
      "\\*eldoc for "
      "CAPTURE-.*\\.org"
-     ;; TODO: Switch above to modes where possible.
-     shell-mode
-     godoc-mode
+     "\\*Shell Command Output\\*"
+     "\\*Async Shell Command\\*"
      ;; Match all modes that derive from compilation-mode but do not derive
      ;; from a member of `my/popper-ignore-modes'.
      (lambda (buf)
@@ -1045,7 +1044,6 @@
     (interactive)
     (project-forget-zombie-projects)
     (my/project-index-under "~/dev/home")
-    (my/project-index-under "~/dev/home/00rg")
     (my/project-index-under "~/dev/work"))
 
   (defun my/project-index-under (dir)
@@ -1717,6 +1715,7 @@ as there appears to be a bug in the current version."
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-prompt-regexp "^[^λ\n]* λ ")
+  ;; The following commands will be started in `term-mode'.
   (eshell-visual-commands '("vi" "vim" "htop" "ktop"))
 
   :init

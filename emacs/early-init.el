@@ -40,17 +40,7 @@
             (message "Emacs ready in %s seconds with %d garbage collections."
 		     (emacs-init-time "%.2f") gcs-done)))
 
-;; This is a workaround for a bunch of warnings that get displayed by
-;; the d12frosted/homebrew-emacs-plus distribution of Emacs on MacOS.
-;; See https://github.com/d12frosted/homebrew-emacs-plus/issues/323 for details.
-(setenv "LIBRARY_PATH"
-	(mapconcat #'identity
-         '("/opt/homebrew/opt/gcc/lib/gcc/12"
-           "/opt/homebrew/opt/libgccjit/lib/gcc/12"
-           "/opt/homebrew/opt/gcc/lib/gcc/12/gcc/aarch64-apple-darwin21/12")
-         ":"))
-
-;; Variables for external processes.
+;; Configure environment variables here.
 (setenv "XDG_CONFIG_HOME" (expand-file-name "~/.config"))
 (setenv "XDG_CACHE_HOME" (expand-file-name "~/.cache"))
 (setenv "XDG_DATA_HOME" (expand-file-name "~/.local/share"))
@@ -65,25 +55,39 @@
 (setenv "AWS_PAGER" "")
 (setenv "KUBECTX_IGNORE_FZF" "true")
 (setenv "EDITOR" "emacsclient")
-(setenv "PATH" (mapconcat #'expand-file-name
-                          '("~/bin"
-                            "/opt/homebrew/bin"
-                            "/opt/homebrew/opt/curl/bin"
-                            "/opt/homebrew/opt/coreutils/libexec/gnubin"
-                            "/opt/homebrew/opt/findutils/libexec/gnubin"
-                            "/opt/homebrew/opt/gettext/bin"
-                            "/opt/homebrew/opt/llvm/bin"
-                            "/opt/homebrew/opt/go/libexec/bin"
-                            "~/dev/go/bin"
-                            "/usr/local/bin"
-                            "/usr/bin"
-                            "/bin"
-                            "/opt/homebrew/sbin"
-                            "/usr/sbin"
-                            "/sbin"
-                            "~/.cargo/bin"
-                            "~/.krew/bin"
-                            "~/.local/bin") ":"))
+
+;; Set `exec-path' and PATH explicitly so that they mirror each other.
+;; TODO: Why is the last dir below not path of $PATH in eshell?
+(setq exec-path (mapcar #'expand-file-name
+                        '("~/bin"
+                          "/opt/homebrew/bin"
+                          "/opt/homebrew/opt/curl/bin"
+                          "/opt/homebrew/opt/coreutils/libexec/gnubin"
+                          "/opt/homebrew/opt/findutils/libexec/gnubin"
+                          "/opt/homebrew/opt/gettext/bin"
+                          "/opt/homebrew/opt/llvm/bin"
+                          "/opt/homebrew/opt/go/libexec/bin"
+                          "~/dev/go/bin"
+                          "/usr/local/bin"
+                          "/usr/bin"
+                          "/bin"
+                          "/opt/homebrew/sbin"
+                          "/usr/sbin"
+                          "/sbin"
+                          "~/.cargo/bin"
+                          "~/.krew/bin"
+                          "~/.local/bin")))
+(setenv "PATH" (mapconcat #'identity exec-path ":"))
+
+;; This is a workaround for a bunch of warnings that get displayed by the
+;; d12frosted/homebrew-emacs-plus distribution of Emacs on MacOS.
+;; See https://github.com/d12frosted/homebrew-emacs-plus/issues/323 for details.
+(setenv "LIBRARY_PATH"
+	(mapconcat #'identity
+                   '("/opt/homebrew/opt/gcc/lib/gcc/13"
+                     "/opt/homebrew/opt/libgccjit/lib/gcc/13"
+                     "/opt/homebrew/opt/gcc/lib/gcc/13/gcc/aarch64-apple-darwin22/13")
+                   ":"))
 
 ;; Configure straight.el (use `defvar' to make Flycheck happy).
 (defvar straight-base-dir (expand-file-name "var" user-emacs-directory))
