@@ -49,6 +49,7 @@
 (setenv "PASSWORD_STORE_DIR" (concat (getenv "XDG_DATA_HOME") "/pass"))
 (setenv "GOPATH" (expand-file-name "~/dev/go"))
 (setenv "GOROOT" "/opt/homebrew/opt/go/libexec")
+(setenv "JAVA_HOME" "/Library/Java/JavaVirtualMachines/amazon-corretto-17.jdk/Contents/Home")
 (setenv "DEVELOPER_DIR" "/Applications/Xcode.app/Contents/Developer")
 (setenv "SDKROOT" "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
 (setenv "PAGER" "cat")
@@ -59,7 +60,7 @@
 ;; Set `exec-path' and PATH explicitly so that they mirror each other.
 ;; TODO: Why is the last dir below not path of $PATH in eshell?
 (setq exec-path (mapcar #'expand-file-name
-                        '("~/bin"
+                        `("~/bin"
                           "/opt/homebrew/bin"
                           "/opt/homebrew/opt/curl/bin"
                           "/opt/homebrew/opt/coreutils/libexec/gnubin"
@@ -67,7 +68,8 @@
                           "/opt/homebrew/opt/gettext/bin"
                           "/opt/homebrew/opt/llvm/bin"
                           "/opt/homebrew/opt/go/libexec/bin"
-                          "~/dev/go/bin"
+                          ,(expand-file-name "bin" (getenv "GOPATH"))
+                          ,(expand-file-name "bin" (getenv "JAVA_HOME"))
                           "/usr/local/bin"
                           "/usr/bin"
                           "/bin"

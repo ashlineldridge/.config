@@ -46,9 +46,6 @@ export DEVELOPMENT_HOME="${HOME}/dev"
 export GOPATH="${DEVELOPMENT_HOME}/go"
 export GOROOT="/opt/homebrew/opt/go/libexec"
 
-# Path
-export PATH="${HOME}/bin:/opt/homebrew/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/opt/coreutils/libexec/gnubin:/opt/homebrew/opt/findutils/libexec/gnubin:/opt/homebrew/opt/gettext/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.rd/bin:${HOME}/.krew/bin:${HOME}/.local/bin"
-
 # Kubernetes
 export KUBECONFIG="${HOME}/.kube/config"
 
@@ -61,3 +58,6 @@ export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.plat
 
 # Java (using latest https://docs.aws.amazon.com/corretto).
 export JAVA_HOME="$(/usr/libexec/java_home)"
+
+# Path
+export PATH="${HOME}/bin:/opt/homebrew/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/opt/coreutils/libexec/gnubin:/opt/homebrew/opt/findutils/libexec/gnubin:/opt/homebrew/opt/gettext/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:${JAVA_HOME}/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.rd/bin:${HOME}/.krew/bin:${HOME}/.local/bin"
