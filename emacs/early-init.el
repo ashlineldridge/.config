@@ -20,19 +20,17 @@
 ;;   (startup-redirect-eln-cache
 ;;    (expand-file-name "var/eln-cache/" user-emacs-directory)))
 
-;; Quieten Emacs 29+ down as otherwise it prints many warnings when compiling
-;; packages. Set the variable to 'silent to log the warnings but not open the
-;; *Warnings* buffer.
-(setq native-comp-async-report-warnings-errors nil)
+(custom-set-variables
+ ;; Quieten Emacs 29+ compilation warnings.
+ '(native-comp-async-report-warnings-errors nil)
 
-;; Prevent package.el from making packages available as we'll use straight.el to
-;; manage packages. This variable must be disabled in this file to take effect.
-(setq package-enable-at-startup nil)
+ ;; Disable package.el as we'll use straight.el for package management.
+ '(package-enable-at-startup nil)
 
-;; Emacs performance settings that follow the recommendations of lsp-mode here:
-;; https://emacs-lsp.github.io/lsp-mode/page/performance.
-(setq gc-cons-threshold (* 100 1024 1024))
-(setq read-process-output-max (* 1 1024 1024))
+ ;; Follow recommended lsp-mode performance settings.
+ ;; See: https://emacs-lsp.github.io/lsp-mode/page/performance.
+ `(gc-cons-threshold ,(* 100 1024 1024))
+ `(read-process-output-max ,(* 1 1024 1024)))
 
 ;; Keep track of start up time.
 (add-hook 'emacs-startup-hook
@@ -58,7 +56,7 @@
 (setenv "EDITOR" "emacsclient")
 
 ;; Set `exec-path' and PATH explicitly so that they mirror each other.
-;; TODO: Why is the last dir below not path of $PATH in eshell?
+;; TODO: Why is the last dir below not part of $PATH in eshell?
 (setq exec-path (mapcar #'expand-file-name
                         `("~/bin"
                           "/opt/homebrew/bin"
@@ -110,6 +108,9 @@
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
+
+;; Declare `straight-use-package' to make Flycheck happy.
+(declare-function straight-use-package nil)
 
 ;; Install Org as early as possible after straight so that the built-in version
 ;; of Org doesn't get loaded.
