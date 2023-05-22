@@ -39,6 +39,7 @@ tramp
 ngrok/
 nvim/bundle/*/doc/tags
 gcloud/logs/
+git/gpg.inc
 gh/
 AWSVPNClient/
 iterm2/AppSupport

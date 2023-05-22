@@ -1,10 +1,10 @@
-# Default to using my personal Git user profile.
-[include]
-	path = ~/.config/git/config-home
+[user]
+	name = Ashlin Eldridge
+	email = 363071+ashlineldridge@users.noreply.github.com
 
-# Override my default profile with my work profile if I'm under my work dir.
-[includeIf "gitdir:~/dev/work/"]
-	path = ~/.config/git/config-work
+[include]
+        # Allow a different GPG key per machine.
+	path = gpg.inc
 
 [alias]
 	# View abbreviated SHA, description, and history graph of the latest 20 commits
