@@ -208,15 +208,17 @@
   (defvar my/font-configs
         '((:name "Laptop"
                  :fixed-font "Iosevka SS14"
-                 :variable-font "Iosevka Aile"
                  :fixed-font-size 140
+                 :fixed-font-weight normal
+                 :variable-font "Iosevka Aile"
                  :variable-font-size 140
                  :line-number-font-size 120
                  :mode-line-font-size 130)
           (:name "Desktop"
                  :fixed-font "Iosevka SS14"
-                 :variable-font "Iosevka Aile"
                  :fixed-font-size 148
+                 :fixed-font-weight light
+                 :variable-font "Iosevka Aile"
                  :variable-font-size 148
                  :line-number-font-size 124
                  :mode-line-font-size 136)))
@@ -227,13 +229,15 @@
            (name (plist-get config :name))
            (fixed-font (plist-get config :fixed-font))
            (fixed-font-size (plist-get config :fixed-font-size))
+           (fixed-font-weight (plist-get config :fixed-font-weight))
            (variable-font (plist-get config :variable-font))
            (variable-font-size (plist-get config :variable-font-size))
            (line-number-font-size (plist-get config :line-number-font-size))
            (mode-line-font-size (plist-get config :mode-line-font-size)))
       (set-face-attribute 'default nil
                           :font fixed-font
-                          :height fixed-font-size)
+                          :height fixed-font-size
+                          :weight fixed-font-weight)
       (set-face-attribute 'variable-pitch nil
                           :font variable-font
                           :height variable-font-size)
