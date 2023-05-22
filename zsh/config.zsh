@@ -15,7 +15,6 @@ libs=(
   vterm.zsh
   completion.zsh
   shortcuts.zsh
-  secrets.zsh
 )
 
 # Load zsh configuration files. Note: this intentionally sources lib/env.zsh
@@ -29,3 +28,7 @@ for f in "${libs[@]}"; do
   fi
   source "${lib}"
 done
+
+if [[ -f "${XDG_CONFIG_HOME}/zsh/lib/secrets.zsh" ]]; then
+    source "${XDG_CONFIG_HOME}/zsh/lib/secrets.zsh"
+fi

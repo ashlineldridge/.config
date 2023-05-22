@@ -57,7 +57,7 @@ export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
 export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
 
 # Java (using latest https://docs.aws.amazon.com/corretto).
-export JAVA_HOME="$(/usr/libexec/java_home)"
+export JAVA_HOME="$(/usr/libexec/java_home 2> /dev/null|| true)"
 
 # Path
 export PATH="${HOME}/bin:/opt/homebrew/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/opt/coreutils/libexec/gnubin:/opt/homebrew/opt/findutils/libexec/gnubin:/opt/homebrew/opt/gettext/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:${JAVA_HOME}/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.rd/bin:${HOME}/.krew/bin:${HOME}/.local/bin"

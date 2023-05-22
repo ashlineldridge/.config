@@ -7,4 +7,4 @@ autoload -U promptinit; promptinit
 # Show Git stash status.
 zstyle :prompt:pure:git:stash show yes
 
-prompt pure
+prompt pure > /dev/null

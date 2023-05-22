@@ -10,5 +10,7 @@ autoload -U +X compinit; compinit
 # Configure fzf. These commands are taken from the changes fzf makes when you
 # run `$(brew --prefix)/opt/fzf/install` as per the installation instructions
 # here: https://github.com/junegunn/fzf#installation.
-[[ $- == *i* ]] && source "/opt/homebrew/opt/fzf/shell/completion.zsh" 2> /dev/null
-source "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
+if [[ -f /opt/homebrew/opt/fzf/shell/completion.zsh ]]; then
+    [[ $- == *i* ]] && source "/opt/homebrew/opt/fzf/shell/completion.zsh" 2> /dev/null
+    source "/opt/homebrew/opt/fzf/shell/key-bindings.zsh"
+fi
