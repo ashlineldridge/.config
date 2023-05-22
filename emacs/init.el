@@ -187,6 +187,7 @@
 
 ;; The Modus themes are pre-installed into Emacs 28+ but I pull latest.
 (use-package modus-themes
+  :functions my/apply-font-config
   :custom
   (modus-themes-italic-constructs t)
   (modus-themes-region '(no-extend accented)) ; Play with bg-only as well.
@@ -204,32 +205,59 @@
   :init
   (load-theme 'modus-vivendi t)
 
-  (defvar my/fixed-font "Iosevka SS14")
-  (defvar my/variable-font "Iosevka Aile")
-  (defvar my/fixed-font-size 140)
-  (defvar my/variable-font-size 140)
-  (defvar my/line-number-font-size 120)
-  (defvar my/mode-line-font-size 130)
+  (defvar my/font-configs
+        '((:name "Laptop"
+                 :fixed-font "Iosevka SS14"
+                 :variable-font "Iosevka Aile"
+                 :fixed-font-size 140
+                 :variable-font-size 140
+                 :line-number-font-size 120
+                 :mode-line-font-size 130)
+          (:name "Desktop"
+                 :fixed-font "Iosevka SS14"
+                 :variable-font "Iosevka Aile"
+                 :fixed-font-size 148
+                 :variable-font-size 148
+                 :line-number-font-size 124
+                 :mode-line-font-size 136)))
 
-  (set-face-attribute 'default nil
-                      :font my/fixed-font
-                      :height my/fixed-font-size
-                      :width 'normal
-                      :weight 'normal)
-  (set-face-attribute 'variable-pitch nil
-                      :font my/variable-font
-                      :height my/variable-font-size
-                      :width 'normal
-                      :weight 'normal)
-  (set-face-attribute 'line-number nil
-                      :font my/fixed-font
-                      :height my/line-number-font-size
-                      :width 'normal
-                      :weight 'ultra-light)
-  (set-face-attribute 'mode-line nil
-                      :height my/mode-line-font-size)
-  (set-face-attribute 'mode-line-inactive nil
-                      :height my/mode-line-font-size))
+  (defun my/apply-font-config (index)
+    "Apply the INDEX'th font configuration from `my/font-configs'."
+    (let* ((config (nth index my/font-configs))
+           (name (plist-get config :name))
+           (fixed-font (plist-get config :fixed-font))
+           (fixed-font-size (plist-get config :fixed-font-size))
+           (variable-font (plist-get config :variable-font))
+           (variable-font-size (plist-get config :variable-font-size))
+           (line-number-font-size (plist-get config :line-number-font-size))
+           (mode-line-font-size (plist-get config :mode-line-font-size)))
+      (set-face-attribute 'default nil
+                          :font fixed-font
+                          :height fixed-font-size)
+      (set-face-attribute 'variable-pitch nil
+                          :font variable-font
+                          :height variable-font-size)
+      (set-face-attribute 'line-number nil
+                          :font fixed-font
+                          :height line-number-font-size
+                          :weight 'ultra-light)
+      (set-face-attribute 'mode-line nil
+                          :height mode-line-font-size)
+      (set-face-attribute 'mode-line-inactive nil
+                          :height mode-line-font-size)
+      (message "Applied font configuration: %s" name)))
+
+  (defvar my/font-config-index 0)
+
+  (defun my/cycle-font-config ()
+    "Cycle to the next font configuration."
+    (interactive)
+    (setq my/font-config-index (mod (+ my/font-config-index 1)
+                                    (length my/font-configs)))
+    (my/apply-font-config my/font-config-index))
+
+  ;; Apply the initial font configuration.
+  (my/apply-font-config my/font-config-index))
 
 ;;;;; Icons
 
