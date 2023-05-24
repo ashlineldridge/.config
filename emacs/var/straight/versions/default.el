@@ -92,6 +92,7 @@
  ("svg-lib" . "31085bbf247f0467e2f6af948085610248fce6c5")
  ("terraform-mode" . "56f19abae95afb7e13e48ec3e6aeba3820d31307")
  ("transient" . "b4127842f200848817103e8d4c45c36bc8fdf3b8")
+ ("transpose-frame" . "94c87794d53883a2358d13da264ad8dab9a52daa")
  ("treemacs" . "a7a877ae173c92ae3c9586be1c593805d931185c")
  ("typescript.el" . "4fcb4594819caf472ae42ea068a1c7795cf07f46")
  ("undo-tree" . "16f4121032d09ef44b3d7d02c4d02c3c2f18041f")

@@ -217,7 +217,7 @@
           (:name "Desktop"
                  :fixed-font "Iosevka SS14"
                  :fixed-font-size 148
-                 :fixed-font-weight light
+                 :fixed-font-weight normal
                  :variable-font "Iosevka Aile"
                  :variable-font-size 148
                  :line-number-font-size 124
@@ -316,37 +316,72 @@
 
 ;;;; Window Management
 
-;;;;; Window Selection with Ace Window
+;;;;; Window Manipulation and Selection
 
-;; TODO: Learn general.el and repeat-key and get rid of hydra
-;; and sort out window keybindings.
 (use-package ace-window
+  :after consult
+  :commands (aw-switch-to-window aw-delete-window)
   :bind
   (:map global-map
-        ("M-o" . ace-window)
-        ("M-O" . previous-window-any-frame))
+        ("M-o" . ace-window))
   :custom
   (aw-display-mode-overlay t)
-  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (aw-keys '(?a ?d ?f ?g ?h ?j ?k ?l ?r ?t ?y ?u ?i ?o))
   (aw-dispatch-always t)
-  (aw-background t))
+  (aw-background t)
+  :config
+  (defun my/ace-open-buffer (window)
+    "Opens a buffer in WINDOW using `consult-buffer'."
+    (aw-switch-to-window window)
+    (consult-buffer))
+
+  (defun my/ace-delete-window-buffer (window)
+    "Ace Window dispatch action for deleting WINDOW and killing its buffer."
+    (aw-delete-window window t))
+
+  (setq aw-dispatch-alist
+        '((?0 aw-delete-window "Delete Window")
+          (?9 my/ace-delete-window-buffer "Delete Window and Kill Buffer")
+          (?1 delete-other-windows "Delete Other Windows")
+          (?s aw-swap-window "Swap Windows")
+          (?m aw-move-window "Move Window")
+          (?c aw-copy-window "Copy Window")
+          (?b my/ace-open-buffer "Open Buffer")
+          (?2 aw-split-window-vert "Split Vertical")
+          (?3 aw-split-window-horz "Split Horizontal")
+          (?? aw-show-dispatch-help))))
+
+;; Brings in useful functions such as `transpose-frame', `flip-frame', etc.
+;; See: https://www.emacswiki.org/emacs/TransposeFrame.
+(use-package transpose-frame)
 
 ;;;;; Window History
 
 (use-package winner
   :straight nil
   :init
-  (winner-mode 1)
+  (winner-mode 1))
+
+;;;;; General Window Keybindings
+
+(use-package window
+  :straight nil
+  :after (ace-window transpose-frame winner)
   :config
-  (defhydra my/hydra-manage-windows (global-map "C-c w")
-    ("h" shrink-window-horizontally)
-    ("H" enlarge-window-horizontally)
-    ("v" shrink-window)
-    ("V" enlarge-window)
-    ("=" balance-windows)
+  (defhydra my/hydra-manage-windows (global-map "C-o")
+    ("a" ace-window :exit t)
+    ("p" previous-window-any-frame :exit t)
+    ("<left>" shrink-window-horizontally)
+    ("<right>" enlarge-window-horizontally)
+    ("<down>" shrink-window)
+    ("<up>" enlarge-window)
+    ("=" balance-windows :exit t)
+    ("]" rotate-frame-clockwise)
+    ("[" rotate-frame-anticlockwise)
+    ("x" flip-frame :exit t) ; Flip about x-axis.
+    ("y" flop-frame :exit t) ; Flip about y-axis.
     ("u" winner-undo :exit t)
     ("r" winner-redo :exit t)
-    ("w" window-toggle-side-windows :exit t)
     ("q" nil)))
 
 ;;;;; Window Placement
@@ -379,6 +414,7 @@
      "\\*helpful "
      "\\*eldoc for "
      "CAPTURE-.*\\.org"
+     ;; "\\*Agenda Commands\\*"
      "\\*Shell Command Output\\*"
      "\\*Async Shell Command\\*"
      ;; Match all modes that derive from compilation-mode but do not derive
@@ -442,7 +478,8 @@
         ;; macOS is already taken by Spotlight. Instead, bind it to S-SPC -
         ;; this allows us to enter a space character using S-SPC to completing.
         ("S-SPC" . corfu-insert-separator)
-        ("M-m"   . my/corfu-move-to-minibuffer))
+        ;; Move the completion session to the minibuffer.
+        ("M-m" . my/corfu-move-to-minibuffer))
 
   :hook
   (minibuffer-setup . my/corfu-enable-in-minibuffer)
@@ -459,6 +496,8 @@
   ;; don't want autocompleted don't trigger the Corfu pop-up (and subsequent
   ;; completion which inserts a space after the completed word).
   (corfu-auto-delay 0.3)
+  ;; Automatically select the first candidate.
+  (corfu-preselect 'first)
   ;; Modes which shouldn't use Corfu as I found the completions annoying.
   (corfu-excluded-modes
    '(bazel-build-mode
@@ -949,6 +988,7 @@
   :straight nil
   :bind
   (:map dired-mode-map
+        ("C-o" . nil)
         ("N" . dired-create-empty-file)
         ("?" . which-key-show-major-mode)
         ("i" . dired-subtree-insert)
@@ -1866,7 +1906,7 @@ as there appears to be a bug in the current version."
         ("C-c o c" . my/org-capture-coffee)
         ("C-c C-o" . org-open-at-point-global)) ; Open links everywhere.
   (:map org-mode-map
-        ("C-'" . nil)                   ; Used for Popper.
+        ("C-'" . nil) ; Used for Popper.
         ("C-c C-S-l" . org-cliplink))
   (:map org-agenda-mode-map
         ("r" . my/hydra-org-agenda-refile/body)
@@ -2028,12 +2068,13 @@ as there appears to be a bug in the current version."
   (org-use-fast-todo-selection 'expert)
   (org-use-sub-superscripts nil)
 
-  :config
-  ;; Use `use-package' rather than `require' to prevent Flycheck warnings about
-  ;; docstrings that > 80 chars.
-  (use-package org-agenda :straight nil)
-  (use-package org-tempo :straight nil) ; Enables <s TAB style shortcuts.
+  :init
+  ;; Require the `org-agenda' package so that its keymap can be customized
+  ;; above and `org-tempo' to enable <s + TAB shortcuts in org docs.
+  (require 'org-agenda)
+  (require 'org-tempo)
 
+  :config
   (defun my/init-org-mode ()
     "Org-mode init function that should be attached to `org-mode-hook`."
     (interactive)
@@ -2086,7 +2127,7 @@ _q_: Quit this menu
     ("i" my/org-agenda-refile-inbox :exit t)
     ("q" nil))
 
-  ;; Function for refiling the current agent item under point to the specified
+  ;; Function for refiling the current agenda item under point to the specified
   ;; file and heading. `org-agenda-refile' requires a destination refloc list
   ;; that is difficult to compose manually. This approach to pulling the refloc
   ;; out of the return value from `org-refile-get-targets' is adapted from:
@@ -2139,7 +2180,6 @@ specified then a task category will be determined by the item's tags."
     (interactive)
     (my/org-agenda-refile my/gtd-inbox-file "Inbox"))
 
-  ;; :config
   ;; Save all org buffers before quitting the agenda ('s' saves immediately).
   (advice-add #'org-agenda-quit :before #'org-save-all-org-buffers)
 

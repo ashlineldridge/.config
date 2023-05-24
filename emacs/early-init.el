@@ -47,7 +47,7 @@
 (setenv "PASSWORD_STORE_DIR" (concat (getenv "XDG_DATA_HOME") "/pass"))
 (setenv "GOPATH" (expand-file-name "~/dev/go"))
 (setenv "GOROOT" "/opt/homebrew/opt/go/libexec")
-(setenv "JAVA_HOME" "/Library/Java/JavaVirtualMachines/amazon-corretto-17.jdk/Contents/Home")
+(setenv "JAVA_HOME" "/Library/Java/JavaVirtualMachines/current/Contents/Home")
 (setenv "DEVELOPER_DIR" "/Applications/Xcode.app/Contents/Developer")
 (setenv "SDKROOT" "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk")
 (setenv "PAGER" "cat")
