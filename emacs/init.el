@@ -2274,12 +2274,12 @@ specified then a task category will be determined by the item's tags."
 (use-package kele
   :commands kele-mode
   :init
-  (defun my/start-kelete-mode ()
+  (defun my/start-kele-mode ()
     "Starts `kele-mode'."
     (interactive)
     (kele-mode 1))
 
-  (defun my/stop-kelete-mode ()
+  (defun my/stop-kele-mode ()
     "Stops `kele-mode'."
     (interactive)
     (kele-mode -1)))
