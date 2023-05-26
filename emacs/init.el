@@ -1820,9 +1820,14 @@ as there appears to be a bug in the current version."
     (interactive)
     (eshell-read-aliases-list))
 
-  ;; Leverages Fish Shell to provide autocompletion for eshell.
-  (use-package fish-completion
-    :hook (eshell-mode . fish-completion-mode))
+  (defun my/sink (&optional name)
+    "Return a reference to a buffer for sinking eshell command output.
+If NAME is specified, a reference to that buffer will be returned, creating the
+buffer if necessary. If NAME is not specified, a buffer name will be generated."
+    (let* ((name (or name (generate-new-buffer-name "*eshell-output*")))
+           (buf (get-buffer-create name)))
+      (display-buffer buf)
+      buf))
 
   (defun my/eshell-prompt ()
     "Custom eshell prompt function."
@@ -1854,6 +1859,10 @@ as there appears to be a bug in the current version."
               len (- len (1- (length (car components))))
               components (cdr components)))
       (concat str (cl-reduce (lambda (a b) (concat a "/" b)) components)))))
+
+;; Use Fish Shell to provide autocompletion for eshell.
+(use-package fish-completion
+  :hook (eshell-mode . fish-completion-mode))
 
 ;;;; Org Mode
 
