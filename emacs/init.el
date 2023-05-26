@@ -1729,12 +1729,6 @@ as there appears to be a bug in the current version."
   :hook
   (emacs-lisp-mode . rainbow-delimiters-mode))
 
-(use-package pp
-  :straight nil
-  :bind
-  (:map global-map
-        ("C-x C-p" . pp-macroexpand-last-sexp)))
-
 ;;;;;; SGML/HTML
 
 (use-package sgml-mode
@@ -1790,7 +1784,7 @@ as there appears to be a bug in the current version."
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-prompt-regexp "^[^λ\n]* λ ")
   ;; The following commands will be started in `term-mode'.
-  (eshell-visual-commands '("vi" "vim" "htop" "ktop"))
+  (eshell-visual-commands '("vi" "vim" "htop" "ktop" "watch"))
 
   :init
   ;; Needed so that `eshell-mode-map' is available above.
@@ -1807,8 +1801,6 @@ as there appears to be a bug in the current version."
 
   (defun my/eshell-pre-command ()
     "Eshell pre-command hook function."
-    ;; Save history more frequently.
-    (eshell-save-some-history)
     ;; Interactive eshell commands should use colors but this gets reverted by
     ;; the post-command hook.
     ;; See: https://github.com/daviwil/dotfiles/blob/master/Emacs.org#configuration.
@@ -2246,6 +2238,16 @@ specified then a task category will be determined by the item's tags."
   (require 'org-roam-protocol)
   (require 'org-roam-dailies)
   (org-roam-db-autosync-mode 1))
+
+;;;; Process Management
+
+(use-package proced
+  :straight nil
+  :bind
+  (:map global-map
+        ("C-x C-p" . proced))
+  :custom
+  (proced-enable-color-flag t))
 
 ;;;; Credential Management
 
