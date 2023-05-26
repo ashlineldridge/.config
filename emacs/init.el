@@ -207,7 +207,7 @@
 
   (defvar my/font-configs
         '((:name "Laptop"
-                 :fixed-font "Iosevka SS14"
+                 :fixed-font "Iosevka Fixed SS14"
                  :fixed-font-size 140
                  :fixed-font-weight normal
                  :variable-font "Iosevka Aile"
@@ -215,7 +215,7 @@
                  :line-number-font-size 120
                  :mode-line-font-size 130)
           (:name "Desktop"
-                 :fixed-font "Iosevka SS14"
+                 :fixed-font "Iosevka Fixed SS14"
                  :fixed-font-size 148
                  :fixed-font-weight normal
                  :variable-font "Iosevka Aile"
