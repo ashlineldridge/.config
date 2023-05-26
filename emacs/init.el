@@ -326,7 +326,7 @@
         ("M-o" . ace-window))
   :custom
   (aw-display-mode-overlay t)
-  (aw-keys '(?a ?d ?f ?g ?h ?j ?k ?l ?r ?t ?y ?u ?i ?o))
+  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l ?r ?t ?y ?u ?i ?o))
   (aw-dispatch-always t)
   (aw-background t)
   :config
@@ -339,11 +339,13 @@
     "Ace Window dispatch action for deleting WINDOW and killing its buffer."
     (aw-delete-window window t))
 
+  ;; Personalize Ace Window's dispatch menu (doesn't work when customized via
+  ;; the :custom block so need to do via `setq' here).
   (setq aw-dispatch-alist
         '((?0 aw-delete-window "Delete Window")
           (?9 my/ace-delete-window-buffer "Delete Window and Kill Buffer")
           (?1 delete-other-windows "Delete Other Windows")
-          (?s aw-swap-window "Swap Windows")
+          (?w aw-swap-window "Swap Windows")
           (?m aw-move-window "Move Window")
           (?c aw-copy-window "Copy Window")
           (?b my/ace-open-buffer "Open Buffer")
@@ -366,8 +368,7 @@
 
 (use-package window
   :straight nil
-  :after (ace-window transpose-frame winner)
-  :config
+  :init
   (defhydra my/hydra-manage-windows (global-map "C-o")
     ("a" ace-window :exit t)
     ("p" previous-window-any-frame :exit t)
@@ -413,8 +414,9 @@
      "\\*Help\\*"
      "\\*helpful "
      "\\*eldoc for "
+     "\\*eshell-output\\*"
      "CAPTURE-.*\\.org"
-     ;; "\\*Agenda Commands\\*"
+
      "\\*Shell Command Output\\*"
      "\\*Async Shell Command\\*"
      ;; Match all modes that derive from compilation-mode but do not derive
