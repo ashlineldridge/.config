@@ -1245,17 +1245,14 @@ as there appears to be a bug in the current version."
         ("C-c y u" . yas-reload-all)
         ("C-c y d" . yas-describe-tables))
   (:map yas-minor-mode-map
+        ("C-c &" . nil)
         ("C-c y y" . yas-expand)
         ("C-c y i" . consult-yasnippet)
         ("C-c y f" . yas-visit-snippet-file))
 
-  :init
-  ;; Remove default key bindings which are crap.
-  (setq yas-minor-mode-map (make-sparse-keymap))
-
-  :config
-  (setq yas-verbosity 1)
-  (setq yas-wrap-around-region t))
+  :custom
+  (yas-verbosity 1)
+  (yas-wrap-around-region t))
 
 (use-package yasnippet-snippets)
 
