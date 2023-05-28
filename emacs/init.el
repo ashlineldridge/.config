@@ -1269,9 +1269,7 @@ as there appears to be a bug in the current version."
   ;; Use goimports rather than the gofmt so that imports get optimized.
   (setf (alist-get 'go-mode apheleia-mode-alist) 'goimports))
 
-;;;;; Language Support
-
-;;;;;; Language Server Support
+;;;;;; LSP (Language Server Protocol)
 
 (use-package lsp-mode
   ;; Shouldn't be necessary but gets ride of Flycheck warnings.
@@ -1279,7 +1277,6 @@ as there appears to be a bug in the current version."
   :commands
   (lsp
    lsp-deferred
-   lsp-enable-which-key-integration
    lsp-register-custom-settings)
   :hook
   ((c-mode
@@ -1289,25 +1286,16 @@ as there appears to be a bug in the current version."
     sh-mode
     terraform-mode
     python-mode) . lsp-deferred)
+  :bind-keymap ("C-c l" . lsp-command-map)
   :bind
   (:map lsp-mode-map
-        ;; TODO: Verify that this is still the case. Doesn't Embark call
-        ;; `xref-find-references' as one of its actions?
-        ;; M-? is normally bound to `xref-find-references' but the way that
-        ;; this function exposes references is not particularly helpful so we
-        ;; override it with `lsp-find-references'. M-. (`xref-find-definitions')
-        ;; and M-, (`xref-pop-marker-stack') we'll leave in place since they
-        ;; work well.
-        ("M-?" . lsp-find-references)
         ("M-P" . lsp-describe-thing-at-point)
-        ("C-c l c d" . consult-lsp-diagnostics)
-        ("C-c l c s" . consult-lsp-file-symbols)
-        ("C-c l c S" . consult-lsp-symbols)
-        ("C-c C-c i" . lsp-inlay-hints-mode))
+        ("C-c C-c f s" . consult-lsp-file-symbols)
+        ("C-c C-c f S" . consult-lsp-symbols)
+        ("C-c C-c I" . lsp-inlay-hints-mode))
 
   :custom
   (lsp-log-io nil)
-  (lsp-keymap-prefix "C-c l")
 
   ;; No need to also show the count.
   (lsp-modeline-code-actions-segments '(icon))
@@ -1381,8 +1369,6 @@ as there appears to be a bug in the current version."
   (advice-add 'lsp-deferred :around #'my/if-essential-advice)
 
   :config
-  (lsp-enable-which-key-integration t)
-
   ;; Configure custom LSP server settings.
   ;;
   ;; For gpls:
@@ -1398,7 +1384,7 @@ as there appears to be a bug in the current version."
   :bind
   (:map lsp-ui-mode-map
         ("M-p" . lsp-ui-doc-toggle)
-        ("C-c l i" . lsp-ui-imenu))
+        ("C-c C-c i" . lsp-ui-imenu))
   :custom
   (lsp-ui-sideline-delay 0)
   (lsp-ui-doc-delay 0)
@@ -1407,6 +1393,8 @@ as there appears to be a bug in the current version."
   (lsp-ui-doc-position 'at-point)
   (lsp-ui-doc-max-width 150)
   (lsp-ui-doc-max-height 30))
+
+;;;;;; DAP (Debug Adapter Protocol)
 
 ;; The following DAP configuration is optimised for debugging Rust and Go.
 ;; The same keybindings and UI is used across all languages. The Go debugging
@@ -1552,6 +1540,17 @@ as there appears to be a bug in the current version."
                                      :buildFlags nil
                                      :args nil
                                      :env nil)))
+
+;;;;;; Xref
+
+(use-package xref
+  :straight nil
+  :custom
+  ;; Don't prompt by default (invoke with prefix arg to prompt).
+  (xref-prompt-for-identifier nil)
+  ;; Use consult to select xref locations with preview.
+  (xref-show-xrefs-function #'consult-xref)
+  (xref-show-definitions-function #'consult-xref))
 
 ;;;;;; Eldoc
 
