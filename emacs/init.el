@@ -73,7 +73,6 @@
   (async-shell-command-buffer 'new-buffer)
   (savehist-mode t)
   (fringe-mode 5) ; Increase margins slightly.
-  (even-window-sizes 'height-only)
   ;; Ignore any changes made via the customization UI.
   (custom-file (make-temp-file "emacs-custom-"))
   ;; Recommended no-littering settings for backup files.
@@ -368,6 +367,14 @@
 
 (use-package window
   :straight nil
+  :custom
+  ;; The following customizations result in Emacs not trying to be clever with
+  ;; my windows. Generally, when I open a buffer I want it to occupy the same
+  ;; window unless a more appropriate window for that buffer already exists.
+  (display-buffer-base-action '((display-buffer-reuse-mode-window
+                                 display-buffer-reuse-window
+                                 display-buffer-same-window)))
+  (even-window-sizes nil)
   :init
   (defhydra my/hydra-manage-windows (global-map "C-o")
     ("a" ace-window :exit t)
