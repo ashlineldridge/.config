@@ -693,9 +693,67 @@
         ("C-r" . consult-history))
 
   :custom
-  ;; Use consult to select xref locations with preview.
-  (xref-show-xrefs-function #'consult-xref)
-  (xref-show-definitions-function #'consult-xref)
+  ;; Customise the list of sources shown by consult-buffer.
+  (consult-buffer-sources
+   '(consult--source-buffer          ; Narrow: ?b
+     consult--source-project-buffer  ; Narrow: ?p
+     my/consult-source-eshell-buffer ; Narrow: ?e
+     consult--source-recent-file     ; Narrow: ?r
+     consult--source-bookmark        ; Narrow: ?m
+     ))
+
+  ;; Tell ripgrep to search hidden directories/files but ignore .git/.
+  (consult-ripgrep-args
+   '("rg"
+     "--null"
+     "--hidden"
+     "--glob=!.git/"
+     "--line-buffered"
+     "--color=never"
+     "--max-columns=1000"
+     "--path-separator=/"
+     "--smart-case"
+     "--no-heading"
+     "--line-number"
+     "."))
+
+  ;; Customize `consult-imenu' groupings for languages I regularly use. The
+  ;; imenu backend for each language will return the symbol category strings
+  ;; used below. For Rust and Go, the imenu backend is implemented by their
+  ;; respective LSP servers.  If a symbol category is missing from the alists
+  ;; below the symbols for that category will be displayed in an ungrouped
+  ;; way and the line will be prefixed with the category name - it can then
+  ;; be added below. See the `lsp-imenu-symbol-kinds' variable and also:
+  ;; https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#symbolKind.
+  (consult-imenu-config
+   '((emacs-lisp-mode
+      :toplevel "Functions"
+      :types ((?f "Functions" font-lock-function-name-face)
+              (?m "Macros"    font-lock-function-name-face)
+              (?p "Packages"  font-lock-constant-face)
+              (?t "Types"     font-lock-type-face)
+              (?v "Variables" font-lock-variable-name-face)))
+     (rustic-mode
+      :toplevel "Functions"
+      :types ((?f "Functions" font-lock-function-name-face)
+              (?F "Fields" font-lock-variable-name-face)
+              (?s "Structs" font-lock-type-face)
+              (?i "Interfaces" font-lock-type-face)
+              (?c "Constants" font-lock-constant-face)
+              (?m "Modules" font-lock-type-face)
+              (?o "Objects" font-lock-type-face)
+              (?e "Enums" font-lock-type-face)
+              (?E "Enum Members" font-lock-variable-name-face)
+              (?t "Type Parameters" font-lock-type-face)))
+     (go-mode
+      :toplevel "Functions"
+      :types ((?f "Functions" font-lock-function-name-face)
+              (?m "Methods" font-lock-function-name-face)
+              (?F "Fields" font-lock-variable-name-face)
+              (?s "Structs" font-lock-type-face)
+              (?i "Interfaces" font-lock-type-face)
+              (?v "Variables" font-lock-variable-name-face)
+              (?c "Constants" font-lock-constant-face)))))
 
   :config
   (defun my/consult-line-strict ()
@@ -749,31 +807,7 @@
    ;; So that the `consult-ripgrep' project shortcut doesn't show previews.
    ;; See: https://github.com/minad/consult/issues/676#issuecomment-1286196998).
    project-switch-project
-   :preview-key "M-.")
-
-  ;; Customise the list of sources shown by consult-buffer.
-  (setq consult-buffer-sources
-        '(consult--source-buffer          ; Narrow: ?b
-          consult--source-project-buffer  ; Narrow: ?p
-          my/consult-source-eshell-buffer ; Narrow: ?e
-          consult--source-recent-file     ; Narrow: ?r
-          consult--source-bookmark        ; Narrow: ?m
-          ))
-
-  ;; Tell ripgrep to search hidden directories/files but ignore .git/.
-  (setq consult-ripgrep-args
-        '("rg"
-          "--null"
-          "--hidden"
-          "--glob=!.git/"
-          "--line-buffered"
-          "--color=never"
-          "--max-columns=1000"
-          "--path-separator=/"
-          "--smart-case"
-          "--no-heading"
-          "--line-number"
-          ".")))
+   :preview-key "M-."))
 
 (use-package consult-dir
   :bind
@@ -1547,16 +1581,12 @@ as there appears to be a bug in the current version."
   ;; For performance, only perform checking when a file is saved or opened.
   (flycheck-check-syntax-automatically '(save mode-enabled)))
 
-(use-package flycheck-clang-tidy
-  :after flycheck
-  :hook
-  (flycheck-mode . flycheck-clang-tidy-setup))
+;;;;; Programming Languages
 
 ;;;;;; Rust
 
 (use-package rustic
   :functions my/build-rust-keymap
-  :defines consult-imenu-config
   :commands
   (rustic-cargo-add
    rustic-cargo-build
@@ -1581,7 +1611,7 @@ as there appears to be a bug in the current version."
     (define-key base-map (kbd "C-c C-c a") #'rustic-cargo-add)
     (define-key base-map (kbd "C-c C-c b") #'rustic-cargo-build)
     (define-key base-map (kbd "C-c C-c c") #'rustic-cargo-clean)
-    (define-key base-map (kbd "C-c C-c f") #'rustic-format-buffer)
+    (define-key base-map (kbd "C-c C-c f") #'rustic-format-buffer) ;; TODO: Sort out programming keymaps
     (define-key base-map (kbd "C-c C-c F") #'rustic-cargo-fmt)
     (define-key base-map (kbd "C-c C-c L") #'rustic-cargo-clippy)
     (define-key base-map (kbd "C-c C-c o") #'rustic-cargo-outdated)
@@ -1594,26 +1624,7 @@ as there appears to be a bug in the current version."
 
   (setq rustic-mode-map (my/build-rust-keymap (make-sparse-keymap)))
   (setq rustic-compilation-mode-map
-        (my/build-rust-keymap rustic-compilation-mode-map))
-
-  ;; Add `consult-imenu' groupings for Rust that originate from the LSP spec:
-  ;; https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#symbolKind.
-  ;; The lsp-types crate defines the SymbolKind struct; rust-analyzer uses this
-  ;; crate to expose the set of symbols that it supports. lsp-mode, in turn,
-  ;; defines the `lsp-imenu-symbol-kinds' variable which maps each symbol's
-  ;; integer value to the group names (e.g., "Type Parameters") used below.
-  (require 'consult-imenu)
-  (add-to-list 'consult-imenu-config
-               '(rustic-mode
-                 :types ((?f "Functions")
-                         (?o "Objects")
-                         (?e "Enums")
-                         (?E "Enum Members")
-                         (?s "Structs")
-                         (?S "Fields")
-                         (?m "Modules")
-                         (?t "Type Parameters")
-                         (?c "Constants")))))
+        (my/build-rust-keymap rustic-compilation-mode-map)))
 
 ;;;;;; Terraform
 
