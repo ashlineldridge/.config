@@ -1087,20 +1087,57 @@
   (dired-rainbow-define-chmod directory "#6cb2eb" "d.*")
   (dired-rainbow-define-chmod executable-unix "#38c172" "-.*x.*"))
 
+;; I generally prefer to not use a tree viewer and rely more on dired and the
+;; various file jumping commands, but we've got some huge repos at work where
+;; I find it useful to have a tree viewer so that I can mentally situate myself
+;; within the directory tree. I use treemacs for visualization only and stick
+;; to dired and eshell for manipulation. This treemacs config was inspired by:
+;; https://github.com/seagle0128/.emacs.d/blob/8cbec0c132cd6de06a8c293598a720d377f3f5b9/lisp/init-treemacs.el.
+(use-package treemacs
+  :bind
+  (:map global-map
+        ("C-c C-t" . treemacs)
+        ("M-0" . treemacs-select-window))
+  (:map treemacs-mode-map
+        ;; Otherwise it takes two clicks to open a directory.
+        ([mouse-1] . treemacs-single-click-expand-action))
+
+  :custom
+  (treemacs-follow-mode 1)
+  (treemacs-project-follow-mode 1)
+  (treemacs-filewatch-mode 1)
+  (treemacs-width 40)
+  (treemacs-no-png-images nil)
+
+  :config
+  (use-package treemacs-nerd-icons
+    :functions treemacs-load-theme
+    :custom-face
+    (treemacs-nerd-icons-root-face ((t (:inherit nerd-icons-green :height 1.3))))
+    (treemacs-nerd-icons-file-face ((t (:inherit nerd-icons-dsilver))))
+    :config
+    (treemacs-load-theme "nerd-icons"))
+
+  ;; By default, treemacs-mode will add itself to `aw-ignored-buffers' which
+  ;; prevents jumping to its window using ace-window. Personally, I prefer
+  ;; being able to treat it just like any other window.
+  (require 'ace-window)
+  (setq aw-ignored-buffers (delq 'treemacs-mode aw-ignored-buffers)))
+
 ;;;;; File History
 
-(use-package recentf
-  :straight nil
-  :custom
-  (recentf-max-saved-items 200)
-  :config
-  ;; Don't show files managed by no-littering in the recentf list.
-  ;; See https://github.com/emacscollective/no-littering#recent-files.
-  (add-to-list 'recentf-exclude
-               (recentf-expand-file-name no-littering-var-directory))
-  (add-to-list 'recentf-exclude
-               (recentf-expand-file-name no-littering-etc-directory))
-  (recentf-mode 1))
+  (use-package recentf
+    :straight nil
+    :custom
+    (recentf-max-saved-items 200)
+    :config
+    ;; Don't show files managed by no-littering in the recentf list.
+    ;; See https://github.com/emacscollective/no-littering#recent-files.
+    (add-to-list 'recentf-exclude
+                 (recentf-expand-file-name no-littering-var-directory))
+    (add-to-list 'recentf-exclude
+                 (recentf-expand-file-name no-littering-etc-directory))
+    (recentf-mode 1))
 
 ;;;;; Project Management
 
