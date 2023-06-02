@@ -10,6 +10,7 @@ emacs/var/straight/versions/*
 !emacs/var/straight/versions/default.el
 
 emacs/eln-cache/
+emacs/early-init-private.el
 
 **/*secret*
 **/*token*
@@ -32,14 +33,18 @@ zsh/.zcompdump
 zsh/.zsh_history
 zsh/.zcompcache
 zsh/.zsh_sessions/
+zsh/lib/private.zsh
 configstore/
+droidcli/
+envconfig/
 exercism/
 target/
 tramp
 ngrok/
 nvim/bundle/*/doc/tags
-gcloud/logs/
+gcloud/
 git/gpg.inc
+git/hooks/
 gh/
 AWSVPNClient/
 iterm2/AppSupport

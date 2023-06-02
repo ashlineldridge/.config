@@ -505,8 +505,9 @@
   ;; don't want autocompleted don't trigger the Corfu pop-up (and subsequent
   ;; completion which inserts a space after the completed word).
   (corfu-auto-delay 0.3)
-  ;; Automatically select the first candidate.
-  (corfu-preselect 'first)
+  ;; Automatically select the first candidate if it does not reference a
+  ;; directory. This makes the eshell experience a little more natural.
+  (corfu-preselect 'directory)
   ;; Modes which shouldn't use Corfu as I found the completions annoying.
   (corfu-excluded-modes
    '(bazel-build-mode
@@ -896,6 +897,8 @@
   :custom
   ;; Disable history saving for now.
   (undo-tree-auto-save-history nil)
+  (undo-tree-visualizer-timestamps t)
+  (undo-tree-visualizer-diff t)
   :init
   (global-undo-tree-mode 1))
 
@@ -1287,9 +1290,9 @@ as there appears to be a bug in the current version."
   :bind
   (:map lsp-mode-map
         ("M-P" . lsp-describe-thing-at-point)
-        ("C-c C-c f s" . consult-lsp-file-symbols)
-        ("C-c C-c f S" . consult-lsp-symbols)
-        ("C-c C-c I" . lsp-inlay-hints-mode))
+        ("C-c C-c s f" . consult-lsp-file-symbols)
+        ("C-c C-c s w" . consult-lsp-symbols)
+        ("C-c C-c h" . lsp-inlay-hints-mode))
 
   :custom
   (lsp-log-io nil)
@@ -1553,15 +1556,12 @@ as there appears to be a bug in the current version."
 
 (use-package eldoc
   :straight nil
-  :bind
-  (:map global-map
-        ("C-c C-c e" . eldoc-doc-buffer))
+  :hook (emacs-lisp-mode . eldoc-mode)
   :custom
   (eldoc-idle-delay 0)
   :init
   ;; Ensure Eldoc is triggered by Paredit functions.
-  (eldoc-add-command-completions "paredit-")
-  (global-eldoc-mode 1))
+  (eldoc-add-command-completions "paredit-"))
 
 ;;;;;; Flycheck
 
@@ -1604,17 +1604,17 @@ as there appears to be a bug in the current version."
   (defun my/build-rust-keymap (base-map)
     "Return custom Rust keymap built on top of BASE-MAP."
     (define-key base-map (kbd "C-c C-c") nil)
-    (define-key base-map (kbd "C-c C-c a") #'rustic-cargo-add)
     (define-key base-map (kbd "C-c C-c b") #'rustic-cargo-build)
-    (define-key base-map (kbd "C-c C-c c") #'rustic-cargo-clean)
-    (define-key base-map (kbd "C-c C-c f") #'rustic-format-buffer) ;; TODO: Sort out programming keymaps
-    (define-key base-map (kbd "C-c C-c F") #'rustic-cargo-fmt)
-    (define-key base-map (kbd "C-c C-c L") #'rustic-cargo-clippy)
-    (define-key base-map (kbd "C-c C-c o") #'rustic-cargo-outdated)
-    (define-key base-map (kbd "C-c C-c r") #'rustic-cargo-run)
-    (define-key base-map (kbd "C-c C-c t") #'rustic-cargo-test)
-    (define-key base-map (kbd "C-c C-c T") #'rustic-cargo-current-test)
-    (define-key base-map (kbd "C-c C-c u") #'rustic-cargo-upgrade)
+    (define-key base-map (kbd "C-c C-c c a") #'rustic-cargo-add)
+    (define-key base-map (kbd "C-c C-c c b") #'rustic-cargo-build)
+    (define-key base-map (kbd "C-c C-c c c") #'rustic-cargo-clean)
+    (define-key base-map (kbd "C-c C-c c f") #'rustic-cargo-fmt)
+    (define-key base-map (kbd "C-c C-c c l") #'rustic-cargo-clippy)
+    (define-key base-map (kbd "C-c C-c c o") #'rustic-cargo-outdated)
+    (define-key base-map (kbd "C-c C-c c r") #'rustic-cargo-run)
+    (define-key base-map (kbd "C-c C-c c t") #'rustic-cargo-test)
+    (define-key base-map (kbd "C-c C-c c T") #'rustic-cargo-current-test)
+    (define-key base-map (kbd "C-c C-c c u") #'rustic-cargo-upgrade)
     (define-key base-map (kbd "C-c C-c C-o") #'lsp-rust-analyzer-open-external-docs)
     base-map)
 
@@ -1662,14 +1662,20 @@ as there appears to be a bug in the current version."
 (use-package go-mode
   :bind
   (:map go-mode-map
-        ("C-c C-c p" . go-play-buffer)
-        ("C-c C-c P" . go-play-region)
-        ("C-c C-c c" . compile))
+        ("C-c C-c p b" . go-play-buffer)
+        ("C-c C-c p r" . go-play-region)
+        ("C-c C-c b" . compile)
+        ("C-c C-c r" . recompile))
   :hook
   (go-mode . (lambda () (setq-local tab-width 4)))
   :init
   ;; Remove the default `go-mode' keybindings.
   (setq go-mode-map (make-sparse-keymap)))
+
+;;;;;; Protobuf
+
+(use-package protobuf-mode
+  :mode "\\.proto\\'")
 
 ;;;;;; Bazel
 
@@ -1782,6 +1788,8 @@ as there appears to be a bug in the current version."
   (eshell-mode . my/init-eshell-mode)
   (eshell-pre-command . my/eshell-pre-command)
   (eshell-post-command . my/eshell-post-command)
+  ;; Don't wrap long lines in eshell.
+  (eshell-mode . (lambda () (setq-local truncate-lines t)))
 
   :bind
   (:map global-map
@@ -1798,7 +1806,7 @@ as there appears to be a bug in the current version."
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-prompt-regexp "^[^λ\n]* λ ")
   ;; The following commands will be started in `term-mode'.
-  (eshell-visual-commands '("vi" "vim" "htop" "ktop" "watch"))
+  (eshell-visual-commands '("vi" "vim" "htop" "ktop" "watch" "gcloud"))
 
   :init
   ;; Needed so that `eshell-mode-map' is available above.

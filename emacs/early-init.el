@@ -56,27 +56,25 @@
 (setenv "EDITOR" "emacsclient")
 
 ;; Set `exec-path' and PATH explicitly so that they mirror each other.
-;; TODO: Why is the last dir below not part of $PATH in eshell?
-(setq exec-path (mapcar #'expand-file-name
-                        `("~/bin"
-                          "/opt/homebrew/bin"
-                          "/opt/homebrew/opt/curl/bin"
-                          "/opt/homebrew/opt/coreutils/libexec/gnubin"
-                          "/opt/homebrew/opt/findutils/libexec/gnubin"
-                          "/opt/homebrew/opt/gettext/bin"
-                          "/opt/homebrew/opt/llvm/bin"
-                          "/opt/homebrew/opt/go/libexec/bin"
-                          ,(expand-file-name "bin" (getenv "GOPATH"))
-                          ,(expand-file-name "bin" (getenv "JAVA_HOME"))
-                          "/usr/local/bin"
-                          "/usr/bin"
-                          "/bin"
-                          "/opt/homebrew/sbin"
-                          "/usr/sbin"
-                          "/sbin"
-                          "~/.cargo/bin"
-                          "~/.krew/bin"
-                          "~/.local/bin")))
+(setq exec-path
+      (mapcar #'expand-file-name
+              `("~/bin"
+                "/opt/homebrew/bin"
+                "/opt/homebrew/opt/llvm/bin"
+                ,(expand-file-name "bin" (getenv "GOROOT"))
+                ,(expand-file-name "bin" (getenv "GOPATH"))
+                ,(expand-file-name "bin" (getenv "JAVA_HOME"))
+                "/usr/local/bin"
+                "/usr/bin"
+                "/bin"
+                "/opt/homebrew/sbin"
+                "/usr/sbin"
+                "/sbin"
+                "~/.cargo/bin"
+                "~/.krew/bin"
+                "~/.local/bin"
+                ;; Emacs expects the last value of `exec-path' to be `exec-directory'.
+                ,exec-directory)))
 (setenv "PATH" (mapconcat #'identity exec-path ":"))
 
 ;; This is a workaround for a bunch of warnings that get displayed by the
@@ -123,5 +121,12 @@
 ;; Install use-package (with imenu support).
 (defvar use-package-enable-imenu-support t)
 (straight-use-package 'use-package)
+
+;; If an early-init-private.el file exists, load it. I use this file to manage
+;; configuration I don't want to make public. Typically, it's just environment
+;; variables and `exec-path' entries that are work-specific.
+(let ((pfile (expand-file-name "early-init-private.el" user-emacs-directory)))
+  (when (file-readable-p pfile)
+    (load pfile)))
 
 ;;; early-init.el ends here

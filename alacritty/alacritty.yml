@@ -12,7 +12,7 @@
 #  - /path/to/alacritty.yml
 
 import:
-- ~/.config/alacritty/themes/night_owlish_light.yml
+- ~/.config/alacritty/themes/solarized_light.yml
 
 # Any items in the `env` entry below will be added as
 # environment variables. Some entries may override variables
@@ -108,7 +108,7 @@ window:
 font:
   # Normal font face
   normal:
-    family: Iosevka SS14 #Inconsolata
+    family: Iosevka Fixed SS14
     style: Medium
 
   # Bold font face
@@ -768,6 +768,9 @@ key_bindings:
   # - { key: B,              mods: Command, mode: ~Search,     action: SearchBackward   }
 
   # Trying to replicate my current Emacs keybindings as much as possible.
+  # See: https://stackoverflow.com/questions/72857879/correct-keybindings-configuration-for-zsh-in-alacritty
+  - { key: N, mods: Command, chars: "\x1bn"                         } # Eshell: next command
+  - { key: P, mods: Command, chars: "\x1bp"                         } # Eshell: previous command
   - { key: F, mods: Command, chars: "\x1bf"                         } # Emacs: backward-word
   - { key: B, mods: Command, chars: "\x1bb"                         } # Emacs: forward-word
   - { key: S, mods: Control, mode: ~Search, action: SearchForward   } # Emacs: isearch/swiper

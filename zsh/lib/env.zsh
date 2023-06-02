@@ -40,10 +40,10 @@ export LC_ALL="en_AU.UTF-8"
 export GREP_OPTIONS="--color=auto"
 
 # Home directories
-export DEVELOPMENT_HOME="${HOME}/dev"
+export DEV_HOME="${HOME}/dev"
 
 # Golang variables
-export GOPATH="${DEVELOPMENT_HOME}/go"
+export GOPATH="${DEV_HOME}/go"
 export GOROOT="/opt/homebrew/opt/go/libexec"
 
 # Kubernetes
@@ -57,7 +57,7 @@ export DEVELOPER_DIR="/Applications/Xcode.app/Contents/Developer"
 export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk"
 
 # Java (using latest https://docs.aws.amazon.com/corretto).
-export JAVA_HOME="$(/usr/libexec/java_home 2> /dev/null|| true)"
+export JAVA_HOME="$(/usr/libexec/java_home 2> /dev/null || true)"
 
-# Path
-export PATH="${HOME}/bin:/opt/homebrew/bin:/opt/homebrew/opt/curl/bin:/opt/homebrew/opt/coreutils/libexec/gnubin:/opt/homebrew/opt/findutils/libexec/gnubin:/opt/homebrew/opt/gettext/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:${JAVA_HOME}/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.rd/bin:${HOME}/.krew/bin:${HOME}/.local/bin"
+# Path.
+export PATH="${HOME}/bin:/opt/homebrew/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:${JAVA_HOME}/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.krew/bin:${HOME}/.local/bin"

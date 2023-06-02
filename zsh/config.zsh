@@ -9,12 +9,10 @@ setopt share_history
 libs=(
   env.zsh
   aliases.zsh
-  colors.zsh
   functions.zsh
-  prompt.zsh
-  vterm.zsh
   completion.zsh
-  shortcuts.zsh
+  colors.zsh
+  prompt.zsh
 )
 
 # Load zsh configuration files. Note: this intentionally sources lib/env.zsh
@@ -29,6 +27,9 @@ for f in "${libs[@]}"; do
   source "${lib}"
 done
 
-if [[ -f "${XDG_CONFIG_HOME}/zsh/lib/secrets.zsh" ]]; then
-    source "${XDG_CONFIG_HOME}/zsh/lib/secrets.zsh"
+# If a private.zsh file exists, load it. I use this file to manage configuration
+# I don't want to make public. Typically, it's just environment variables that
+# are work-specific.
+if [[ -f "${XDG_CONFIG_HOME}/zsh/lib/private.zsh" ]]; then
+  source "${XDG_CONFIG_HOME}/zsh/lib/private.zsh"
 fi

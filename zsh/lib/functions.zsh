@@ -75,7 +75,7 @@ function open_ports() {
 }
 
 # Enable tre editor aliasing. See: https://github.com/dduan/tre#editor-aliasing.
-tre() {
+function tre() {
   command tre "$@" -e 'emacsclient --no-wait'
   source "/tmp/tre_aliases_${USER}" 2> /dev/null
 }
