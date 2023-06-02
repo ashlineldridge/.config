@@ -721,21 +721,23 @@
   ;; Customize `consult-imenu' groupings for languages I regularly use. The
   ;; imenu backend for each language will return the symbol category strings
   ;; used below. For Rust and Go, the imenu backend is implemented by their
-  ;; respective LSP servers.  If a symbol category is missing from the alists
-  ;; below the symbols for that category will be displayed in an ungrouped
-  ;; way and the line will be prefixed with the category name - it can then
-  ;; be added below. See the `lsp-imenu-symbol-kinds' variable and also:
+  ;; respective LSP servers. The font faces are chosen for aesthetics only.
+  ;; If a symbol category is missing from the alists below the symbols for
+  ;; that category will be displayed in an ungrouped way and the line will be
+  ;; prefixed with the category name - it can then; be added below. See the
+  ;; `lsp-imenu-symbol-kinds' variable and also:
   ;; https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#symbolKind.
   (consult-imenu-config
    '((emacs-lisp-mode
+      ;; This configuration is copied directly from consult-imenu.el as I'd
+      ;; prefer to set `consult-imenu-config' idempotently within :custom.
       :toplevel "Functions"
       :types ((?f "Functions" font-lock-function-name-face)
-              (?m "Macros"    font-lock-function-name-face)
-              (?p "Packages"  font-lock-constant-face)
-              (?t "Types"     font-lock-type-face)
+              (?m "Macros" font-lock-function-name-face)
+              (?p "Packages" font-lock-constant-face)
+              (?t "Types" font-lock-type-face)
               (?v "Variables" font-lock-variable-name-face)))
      (rustic-mode
-      :toplevel "Functions"
       :types ((?f "Functions" font-lock-function-name-face)
               (?F "Fields" font-lock-variable-name-face)
               (?s "Structs" font-lock-type-face)
@@ -743,18 +745,22 @@
               (?c "Constants" font-lock-constant-face)
               (?m "Modules" font-lock-type-face)
               (?o "Objects" font-lock-type-face)
-              (?e "Enums" font-lock-type-face)
+              (?e "Enums" font-lock-constant-face)
               (?E "Enum Members" font-lock-variable-name-face)
               (?t "Type Parameters" font-lock-type-face)))
      (go-mode
-      :toplevel "Functions"
       :types ((?f "Functions" font-lock-function-name-face)
               (?m "Methods" font-lock-function-name-face)
               (?F "Fields" font-lock-variable-name-face)
               (?s "Structs" font-lock-type-face)
               (?i "Interfaces" font-lock-type-face)
               (?v "Variables" font-lock-variable-name-face)
-              (?c "Constants" font-lock-constant-face)))))
+              (?c "Constants" font-lock-constant-face)))
+     (protobuf-mode
+      ;; The imenu symbols in `protobuf-mode' aren't pluralized.
+      :types ((?s "Service" font-lock-function-name-face)
+              (?m "Message" font-lock-variable-name-face)
+              (?e "Enum" font-lock-constant-face)))))
 
   :config
   (defun my/consult-line-strict ()
