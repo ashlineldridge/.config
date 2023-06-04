@@ -9,8 +9,14 @@ emacs/var/straight/*
 emacs/var/straight/versions/*
 !emacs/var/straight/versions/default.el
 
+# Although I'm using the no-littering Emacs package, it doesn't yet
+# completely work for the eln-cache directory.
+# See: https://github.com/emacscollective/no-littering/discussions/206.
 emacs/eln-cache/
+# This file maintains work-specific config I don't want public.
 emacs/early-init-private.el
+# This file mostly appears temporarily but can sometimes hang around.
+emacs/flycheck_init.el
 
 **/*secret*
 **/*token*
