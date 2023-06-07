@@ -40,11 +40,10 @@
         ("C-x C-k" . kill-this-buffer)
         ("C-x w w" . my/toggle-show-trailing-whitespace)
         ("C-x w k" . delete-trailing-whitespace)
+        ("C-c C-c |" . display-fill-column-indicator-mode)
         ("C-S-k" . my/copy-to-eol)
         ("C-M-k" . my/delete-to-eol)
         ("M-<backspace>" . my/delete-to-bol))
-  (:map prog-mode-map
-        ("C-c C-c |" . display-fill-column-indicator-mode))
 
   :custom
   (inhibit-startup-message t)
@@ -423,9 +422,10 @@
      "\\*eldoc for "
      "\\*eshell-output\\*"
      "CAPTURE-.*\\.org"
-
      "\\*Shell Command Output\\*"
      "\\*Async Shell Command\\*"
+     "\\*Call Hierarchy\\*"
+
      ;; Match all modes that derive from compilation-mode but do not derive
      ;; from a member of `my/popper-ignore-modes'.
      (lambda (buf)
@@ -1102,6 +1102,10 @@
         ;; Otherwise it takes two clicks to open a directory.
         ([mouse-1] . treemacs-single-click-expand-action))
 
+  :hook
+  ;; Don't wrap long lines in Treemacs.
+  (treemacs-mode . (lambda () (setq-local truncate-lines t)))
+
   :custom
   (treemacs-follow-mode 1)
   (treemacs-project-follow-mode 1)
@@ -1111,6 +1115,7 @@
 
   :config
   (use-package treemacs-nerd-icons
+    :after (treemacs nerd-icons)
     :functions treemacs-load-theme
     :custom-face
     (treemacs-nerd-icons-root-face ((t (:inherit nerd-icons-green :height 1.3))))
