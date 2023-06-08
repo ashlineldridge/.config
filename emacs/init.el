@@ -882,10 +882,23 @@
   (define-key embark-file-map (kbd "o") (my/embark-ace-action find-file))
   (define-key embark-buffer-map (kbd "o") (my/embark-ace-action switch-to-buffer))
   (define-key embark-bookmark-map (kbd "o") (my/embark-ace-action bookmark-jump))
-  (define-key my/embark-org-roam-node-map (kbd "o") (my/embark-ace-action org-roam-node-find)))
+  (define-key my/embark-org-roam-node-map (kbd "o") (my/embark-ace-action org-roam-node-find))
+
+  (defun my/embark-ripgrep-action-file (target)
+    "Use `rg' to search within the directory of the TARGET file."
+    (consult-ripgrep (file-name-directory target)))
+
+  (defun my/embark-ripgrep-action-buffer (target)
+    "Use `rg' to search within the directory of the TARGET buffer."
+    (consult-ripgrep (buffer-local-value 'default-directory (get-buffer target))))
+
+  (define-key embark-file-map (kbd "r") #'my/embark-ripgrep-action-file)
+  (define-key embark-buffer-map (kbd "r") #'my/embark-ripgrep-action-buffer))
 
 (use-package embark-consult
-  :after (embark consult))
+  :hook
+  ;; TODO: How does this actually work?
+  (embark-collect-mode . consult-preview-at-point-mode))
 
 (use-package wgrep
   :bind
@@ -1164,7 +1177,7 @@
 
   :custom
   (project-switch-commands
-   '((project-find-file "File" ?f)
+   `((project-find-file "File" ?f)
      (project-dired "Dired" ?d)
      (consult-ripgrep "Ripgrep" ?r)
      (magit-project-status "Magit" ?m)
