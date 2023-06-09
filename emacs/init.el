@@ -678,19 +678,29 @@
   :bind
   (:map global-map
         ("C-s" . consult-line)
-        ("C-c C-s" . my/consult-line-strict)
-        ("C-x i" . consult-imenu)       ; Local buffer imenu
-        ("C-x I" . consult-imenu-multi) ; Open buffers imenu
         ("C-x b" . consult-buffer)
-        ("C-x o" . consult-outline)
-        ("M-g M-g" . consult-goto-line)
         ("M-y" . consult-yank-pop)
-        ("C-x f" . consult-find)
         ("C-x r r" . consult-register)
         ("C-x r l" . consult-register-load)
         ("C-x r s" . consult-register-store)
-        ("C-c o s" . consult-org-agenda))
+        ("C-c o s" . consult-org-agenda)
+
+        ;; Consult M-s search commands.
+        ("M-s d" . consult-dir)
+        ("M-s f" . consult-find)
+        ("M-s l" . consult-line)
+        ("M-s L" . my/consult-line-strict)
+        ("M-s r" . consult-ripgrep)
+
+        ;; Consult M-g goto commands.
+        ("M-g i" . consult-imenu)
+        ("M-g I" . consult-imenu-multi)
+        ("M-g m" . consult-mark)
+        ("M-g M" . consult-global-mark)
+        ("M-g M-g" . consult-goto-line)
+        ("M-g o" . consult-outline))
   (:map minibuffer-local-map
+        ("M-s" . nil)
         ("C-r" . consult-history))
   (:map consult-narrow-map
         ("C-<" . consult-narrow-help))
@@ -711,7 +721,7 @@
      consult--source-bookmark        ; Narrow: ?m
      ))
 
-  ;; Tell ripgrep to search hidden directories/files but ignore .git/.
+  ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
   (consult-ripgrep-args
    '("rg"
      "--null"
@@ -725,6 +735,9 @@
      "--no-heading"
      "--line-number"
      "."))
+
+  ;; Tell `consult-find' to search hidden dirs/files but ignore .git/.
+  (consult-find-args "find . -not ( -name .git -type d -prune )")
 
   ;; Customize `consult-imenu' groupings for languages I regularly use. The
   ;; imenu backend for each language will return the symbol category strings
@@ -820,13 +833,9 @@
    :preview-key "M-."))
 
 (use-package consult-dir
-  :bind
-  (:map global-map
-        ("C-x C-d" . consult-dir))
-  (:map vertico-map
-        ("C-x C-d" . consult-dir)
-        ("C-x C-j" . consult-dir-jump-file))
+  :commands consult-dir
   :custom
+  (consult-dir-shadow-filenames nil)
   (consult-dir-default-command #'consult-dir-dired))
 
 (use-package consult-lsp
@@ -835,18 +844,9 @@
 
 (use-package consult-yasnippet)
 
-;; See more advanced configuration here:
-;; https://github.com/karthink/.emacs.d/blob/42875586daa23d69c581be01bdc1e12718aef083/lisp/setup-embark.el.
 (use-package embark
   ;; Load after xref so that the overidden keybinding below takes effect.
   :after xref
-  :functions
-  (consult-ripgrep
-   bookmark-location
-   my/embark-ripgrep-action-file
-   my/embark-ripgrep-action-buffer
-   my/embark-ripgrep-action-bookmark)
-
   :bind
   (:map global-map
         ("C-." . embark-act)
@@ -878,8 +878,8 @@
   ;; selected window. Taken from:
   ;; https://github.com/karthink/.emacs.d/blob/f0514340039502b79a306a77624a604de8a1b546/lisp/setup-embark.el#L93.
   (eval-when-compile
-    (defmacro my/embark-ace-action (fn)
-      `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
+    (defmacro my/embark-ace-window-action (fn)
+      `(defun ,(intern (concat "my/ace-window-" (symbol-name fn))) ()
          "Execute Embark action in conjunction with Ace window."
          (interactive)
          (with-demoted-errors "%s"
@@ -889,32 +889,68 @@
              (call-interactively (symbol-function ',fn)))))))
 
   ;; Create ace-window actions against relevant keymaps.
-  (define-key embark-file-map (kbd "o") (my/embark-ace-action find-file))
-  (define-key embark-buffer-map (kbd "o") (my/embark-ace-action switch-to-buffer))
-  (define-key embark-bookmark-map (kbd "o") (my/embark-ace-action bookmark-jump))
-  (define-key my/embark-org-roam-node-map (kbd "o") (my/embark-ace-action org-roam-node-find))
+  (define-key embark-file-map (kbd "o") (my/embark-ace-window-action find-file))
+  (define-key embark-buffer-map (kbd "o") (my/embark-ace-window-action switch-to-buffer))
+  (define-key embark-bookmark-map (kbd "o") (my/embark-ace-window-action bookmark-jump))
+  (define-key my/embark-org-roam-node-map (kbd "o") (my/embark-ace-window-action org-roam-node-find)))
 
-  (defun my/embark-ripgrep-action-file (target)
+(use-package embark-consult
+  :after embark
+  :functions
+  (bookmark-location
+   my/consult-ripgrep-file
+   my/consult-ripgrep-buffer
+   my/consult-ripgrep-bookmark
+   my/consult-find-file
+   my/consult-find-buffer
+   my/consult-find-bookmark)
+
+  :hook
+  ;; TODO: Understand how this actually works.
+  (embark-collect-mode . consult-preview-at-point-mode)
+
+  :config
+  ;; TODO: Below I define my own consult-ripgrep-* and consult-find-* functions
+  ;; for acting on files, buffers, and bookmarks because AFAICT the existing
+  ;; implementations provided by embark-consult always act on the corresponding
+  ;; project directory as long as `consult-project-function' is not nil (and I
+  ;; don't want to set this globally as otherwise calls to `consult-ripgrep'
+  ;; don't default to the current project.
+  ;; See: https://github.com/oantolin/embark/issues/641.
+
+  (defun my/consult-ripgrep-file (target)
     "Use `rg' to search within the directory of the TARGET file."
     (consult-ripgrep (file-name-directory target)))
 
-  (defun my/embark-ripgrep-action-buffer (target)
+  (defun my/consult-ripgrep-buffer (target)
     "Use `rg' to search within the directory of the TARGET buffer."
     (consult-ripgrep (buffer-local-value 'default-directory (get-buffer target))))
 
-  (defun my/embark-ripgrep-action-bookmark (target)
+  (defun my/consult-ripgrep-bookmark (target)
     "Use `rg' to search within the directory of the TARGET bookmark."
     (consult-ripgrep (file-name-directory (bookmark-location target))))
 
   ;; Create ripgrep actions against relevant keymaps.
-  (define-key embark-file-map (kbd "r") #'my/embark-ripgrep-action-file)
-  (define-key embark-buffer-map (kbd "r") #'my/embark-ripgrep-action-buffer)
-  (define-key embark-bookmark-map (kbd "r") #'my/embark-ripgrep-action-bookmark))
+  (define-key embark-file-map (kbd "r") #'my/consult-ripgrep-file)
+  (define-key embark-buffer-map (kbd "r") #'my/consult-ripgrep-buffer)
+  (define-key embark-bookmark-map (kbd "r") #'my/consult-ripgrep-bookmark)
 
-(use-package embark-consult
-  :hook
-  ;; TODO: How does this actually work?
-  (embark-collect-mode . consult-preview-at-point-mode))
+  (defun my/consult-find-file (target)
+    "Use `find' to search within the directory of the TARGET file."
+    (consult-find (file-name-directory target)))
+
+  (defun my/consult-find-buffer (target)
+    "Use `find' to search within the directory of the TARGET buffer."
+    (consult-find (buffer-local-value 'default-directory (get-buffer target))))
+
+  (defun my/consult-find-bookmark (target)
+    "Use `find' to search within the directory of the TARGET bookmark."
+    (consult-find (file-name-directory (bookmark-location target))))
+
+  ;; Create find actions against relevant keymaps.
+  (define-key embark-file-map (kbd "f") #'my/consult-find-file)
+  (define-key embark-buffer-map (kbd "f") #'my/consult-find-buffer)
+  (define-key embark-bookmark-map (kbd "f") #'my/consult-find-bookmark))
 
 (use-package wgrep
   :bind
@@ -1639,7 +1675,8 @@ as there appears to be a bug in the current version."
   (eldoc-idle-delay 0)
   :init
   ;; Ensure Eldoc is triggered by Paredit functions.
-  (eldoc-add-command-completions "paredit-"))
+  ;; (eldoc-add-command-completions "paredit-")
+  )
 
 ;;;;;; Flycheck
 
@@ -1815,6 +1852,7 @@ as there appears to be a bug in the current version."
     (setq-local fill-column 80)))
 
 (use-package paredit
+  :disabled
   :hook
   ;; Note that I specifically don't enable Paredit in minibuffers as it causes
   ;; issues with RET keybindings.
