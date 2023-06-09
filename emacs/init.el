@@ -671,8 +671,7 @@
 
 (use-package consult
   :commands
-  (consult-narrow-help
-   consult--buffer-state
+  (consult--buffer-state
    consult--buffer-action
    consult--buffer-query)
 
@@ -686,14 +685,23 @@
         ("C-x o" . consult-outline)
         ("M-g M-g" . consult-goto-line)
         ("M-y" . consult-yank-pop)
+        ("C-x f" . consult-find)
         ("C-x r r" . consult-register)
         ("C-x r l" . consult-register-load)
         ("C-x r s" . consult-register-store)
         ("C-c o s" . consult-org-agenda))
   (:map minibuffer-local-map
         ("C-r" . consult-history))
+  (:map consult-narrow-map
+        ("C-<" . consult-narrow-help))
 
   :custom
+  ;; Type < followed by a prefix key to narrow the available candidates.
+  ;; Type C-< (defined above) to display prefix help. Alternatively, type
+  ;; < followed by C-h (or ?) to make `embark-prefix-help-command' kick in
+  ;; and display a completing prefix help.
+  (consult-narrow-key "<")
+
   ;; Customise the list of sources shown by consult-buffer.
   (consult-buffer-sources
    '(consult--source-buffer          ; Narrow: ?b
@@ -784,11 +792,6 @@
                        :as #'buffer-name
                        :mode 'eshell-mode))))
 
-  ;; Show narrowing help in the minibuffer when ? is pressed. Narrowing by
-  ;; group requires pressing the group key (e.g. p for project) and then <SPC>.
-  (define-key consult-narrow-map
-              (vconcat consult-narrow-key "?") #'consult-narrow-help)
-
   (consult-customize
    ;; Source name and narrow key customization.
    consult--source-buffer :name "Open Buffer" :narrow ?b
@@ -837,6 +840,13 @@
 (use-package embark
   ;; Load after xref so that the overidden keybinding below takes effect.
   :after xref
+  :functions
+  (consult-ripgrep
+   bookmark-location
+   my/embark-ripgrep-action-file
+   my/embark-ripgrep-action-buffer
+   my/embark-ripgrep-action-bookmark)
+
   :bind
   (:map global-map
         ("C-." . embark-act)
@@ -892,8 +902,14 @@
     "Use `rg' to search within the directory of the TARGET buffer."
     (consult-ripgrep (buffer-local-value 'default-directory (get-buffer target))))
 
+  (defun my/embark-ripgrep-action-bookmark (target)
+    "Use `rg' to search within the directory of the TARGET bookmark."
+    (consult-ripgrep (file-name-directory (bookmark-location target))))
+
+  ;; Create ripgrep actions against relevant keymaps.
   (define-key embark-file-map (kbd "r") #'my/embark-ripgrep-action-file)
-  (define-key embark-buffer-map (kbd "r") #'my/embark-ripgrep-action-buffer))
+  (define-key embark-buffer-map (kbd "r") #'my/embark-ripgrep-action-buffer)
+  (define-key embark-bookmark-map (kbd "r") #'my/embark-ripgrep-action-bookmark))
 
 (use-package embark-consult
   :hook
@@ -1124,7 +1140,8 @@
   (treemacs-project-follow-mode 1)
   (treemacs-filewatch-mode 1)
   (treemacs-width 40)
-  (treemacs-no-png-images nil)
+  ;; TODO: Until https://github.com/Alexander-Miller/treemacs/issues/1018 is resolved.
+  (treemacs-no-png-images t)
 
   :config
   (use-package treemacs-nerd-icons
@@ -1163,7 +1180,7 @@
   :straight nil
   :bind
   (:map global-map
-        ("C-x p"   . nil) ; Remove previous bindings
+        ("C-x p" . nil) ; Remove previous bindings
         ("C-x p b" . consult-project-buffer)
         ("C-x p d" . project-dired)
         ("C-x p c" . project-compile)
