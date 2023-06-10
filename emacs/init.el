@@ -1852,14 +1852,21 @@ as there appears to be a bug in the current version."
     (setq-local fill-column 80)))
 
 (use-package paredit
-  :disabled
+  :bind
+  (:map paredit-mode-map
+        ;; Unbind Paredit keybindings I don't use that can cause collisions.
+        ("C-<left>" . nil)
+        ("C-<right>" . nil)
+        ("C-M-<left>" . nil)
+        ("C-M-<right>" . nil)
+        ("M-s" . nil))
   :hook
   ;; Note that I specifically don't enable Paredit in minibuffers as it causes
   ;; issues with RET keybindings.
-  (emacs-lisp-mode . paredit-mode)       ; Elisp buffers.
-  (lisp-mode . paredit-mode)             ; Common Lisp buffers.
-  (lisp-interaction-mode . paredit-mode) ; Scratch buffers.
-  (ielm-mode-hook . paredit-mode))       ; IELM buffers.
+  (emacs-lisp-mode . paredit-mode)       ;; Elisp buffers.
+  (lisp-mode . paredit-mode)             ;; Common Lisp buffers.
+  (lisp-interaction-mode . paredit-mode) ;; Scratch buffers.
+  (ielm-mode-hook . paredit-mode))       ;; IELM buffers.
 
 (use-package rainbow-delimiters
   :hook
