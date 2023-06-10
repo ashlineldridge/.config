@@ -396,6 +396,8 @@
 
 ;;;;; Window Placement
 
+;; For more advanced configuration, see:
+;; https://github.com/seagle0128/.emacs.d/blob/8cbec0c132cd6de06a8c293598a720d377f3f5b9/lisp/init-window.el#L148.
 (use-package popper
   :commands
   (popper-mode popper-echo-mode popper-kill-latest-popup popper-open-latest)
@@ -405,7 +407,8 @@
         ("M-'" . popper-cycle)
         ("C-M-'" . popper-toggle-type))
   (:map popper-mode-map
-        ("M-k" . my/popper-kill-popup-stay-open))
+        ("M-k" . my/popper-kill-popup-stay-open)
+        ("M-K" . popper-kill-latest-popup))
 
   :preface
   (defvar my/popper-ignore-modes '(grep-mode))
@@ -437,9 +440,12 @@
                   (car (member major-mode my/popper-ignore-modes)))
            (derived-mode-p 'compilation-mode))))))
 
-  ;; Hide modeline and dispatch keys for cleaner look.
-  (popper-mode-line nil)
-  (popper-echo-dispatch-keys nil)
+  (popper-echo-dispatch-keys '(?0 ?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9))
+  (popper-mode-line
+   '(:eval (let ((face (if (doom-modeline--active)
+                           'mode-line-emphasis
+                         'mode-line-inactive)))
+             (format " %s " (nerd-icons-octicon "nf-oct-pin" :face face)))))
 
   :init
   (popper-mode 1)
