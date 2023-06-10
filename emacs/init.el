@@ -29,8 +29,8 @@
 
   :bind
   (:map global-map
-        ("C-x m" . nil) ; Remove `compose-mail' binding.
-        ("C-h C-h" . nil) ; Remove `help-for-help' binding.
+        ("C-x m" . nil)   ;; Remove `compose-mail' binding.
+        ("C-h C-h" . nil) ;; Remove `help-for-help' binding.
         ("<escape>". keyboard-escape-quit)
         ("C-;" . comment-line)
         ("M-[" . previous-buffer)
@@ -51,15 +51,17 @@
   (tooltip-mode nil)
   (menu-bar-mode nil)
   (scroll-bar-mode nil)
-  (visible-bell nil) ; Flash the modeline rather than the frame.
+  ;; Flash the modeline rather than the frame.
+  (visible-bell nil)
   (ring-bell-function #'my/flash-mode-line)
-  (frame-resize-pixelwise t) ; Play nice with window managers like Yabai.
+  ;; Play nice with window managers like Yabai.
+  (frame-resize-pixelwise t)
   (sentence-end-double-space nil)
   (delete-selection-mode t)
   (echo-keystrokes 0.01)
   (mac-command-modifier 'meta)
   (mac-option-modifier nil)
-  (tab-always-indent 'complete) ; Tab integration with Corfu.
+  (tab-always-indent 'complete)
   (indent-tabs-mode nil)
   (set-mark-command-repeat-pop t)
   (mark-ring-max 10)
@@ -71,7 +73,8 @@
   (global-auto-revert-mode t)
   (async-shell-command-buffer 'new-buffer)
   (savehist-mode t)
-  (fringe-mode 5) ; Increase margins slightly.
+  ;; Increase margins slightly.
+  (fringe-mode 5)
   ;; Ignore any changes made via the customization UI.
   (custom-file (make-temp-file "emacs-custom-"))
   ;; Recommended no-littering settings for backup files.
@@ -188,7 +191,7 @@
   :functions my/apply-font-config
   :custom
   (modus-themes-italic-constructs t)
-  (modus-themes-region '(no-extend accented)) ; Play with bg-only as well.
+  (modus-themes-region '(no-extend accented))
   (modus-themes-mode-line '(borderless))
   (modus-themes-paren-match '(intense underline))
   (modus-themes-prompts '(bold intense))
@@ -385,8 +388,8 @@
     ("=" balance-windows :exit t)
     ("]" rotate-frame-clockwise)
     ("[" rotate-frame-anticlockwise)
-    ("x" flip-frame :exit t) ; Flip about x-axis.
-    ("y" flop-frame :exit t) ; Flip about y-axis.
+    ("x" flip-frame :exit t) ;; Flip about x-axis.
+    ("y" flop-frame :exit t) ;; Flip about y-axis.
     ("u" winner-undo :exit t)
     ("r" winner-redo :exit t)
     ("q" nil)))
@@ -714,11 +717,11 @@
 
   ;; Customise the list of sources shown by consult-buffer.
   (consult-buffer-sources
-   '(consult--source-buffer          ; Narrow: ?b
-     consult--source-project-buffer  ; Narrow: ?p
-     my/consult-source-eshell-buffer ; Narrow: ?e
-     consult--source-recent-file     ; Narrow: ?r
-     consult--source-bookmark        ; Narrow: ?m
+   '(consult--source-buffer          ;; Narrow: ?b
+     consult--source-project-buffer  ;; Narrow: ?p
+     my/consult-source-eshell-buffer ;; Narrow: ?e
+     consult--source-recent-file     ;; Narrow: ?r
+     consult--source-bookmark        ;; Narrow: ?m
      ))
 
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
@@ -1216,7 +1219,8 @@
   :straight nil
   :bind
   (:map global-map
-        ("C-x p" . nil) ; Remove previous bindings
+        ;; Remove previous bindings and set new ones.
+        ("C-x p" . nil)
         ("C-x p b" . consult-project-buffer)
         ("C-x p d" . project-dired)
         ("C-x p c" . project-compile)
@@ -1674,9 +1678,8 @@ as there appears to be a bug in the current version."
   :custom
   (eldoc-idle-delay 0)
   :init
-  ;; Ensure Eldoc is triggered by Paredit functions.
-  ;; (eldoc-add-command-completions "paredit-")
-  )
+  ;; Print Eldoc documentation in echo area when Paredit commands are run.
+  (eldoc-add-command-completions "paredit-"))
 
 ;;;;;; Flycheck
 
@@ -1879,7 +1882,7 @@ as there appears to be a bug in the current version."
   :bind
   (:map html-mode-map
         ;; Unbind M-o as I want that for ace-window.
-        (("M-o" . nil))))
+        ("M-o" . nil)))
 
 ;;;;;; Markdown
 
@@ -1920,7 +1923,7 @@ as there appears to be a bug in the current version."
         ("C-c e n" . my/eshell-new)
         ("C-c e p" . project-eshell))
   (:map eshell-mode-map
-        ("C-c C-o" . nil)) ; Needed for `org-open-at-point-global'.
+        ("C-c C-o" . nil)) ;; Needed for `org-open-at-point-global'.
 
   :custom
   (eshell-history-size 10000)
@@ -2052,9 +2055,9 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
         ("C-c o i" . my/org-capture-inbox)
         ("C-c o b" . my/org-capture-bookmark)
         ("C-c o c" . my/org-capture-coffee)
-        ("C-c C-o" . org-open-at-point-global)) ; Open links everywhere.
+        ("C-c C-o" . org-open-at-point-global)) ;; Open links everywhere.
   (:map org-mode-map
-        ("C-'" . nil) ; Used for Popper.
+        ("C-'" . nil) ;; Used for Popper.
         ("C-c C-S-l" . org-cliplink))
   (:map org-agenda-mode-map
         ("r" . my/hydra-org-agenda-refile/body)
