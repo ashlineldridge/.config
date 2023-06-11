@@ -854,8 +854,8 @@
 (use-package consult-yasnippet)
 
 (use-package embark
-  ;; Load after xref so that the overidden keybinding below takes effect.
-  :after xref
+  :commands embark-prefix-help-command
+
   :bind
   (:map global-map
         ("C-." . embark-act)
@@ -871,8 +871,12 @@
   (embark-indicators (list #'embark-minimal-indicator))
   ;; Use this key to switch Embark to the keymap prompter.
   (embark-keymap-prompter-key ",")
-  ;; Run Embark after a prefix (e.g. C-x) is pressed and then C-h.
-  (prefix-help-command #'embark-prefix-help-command)
+
+  :init
+  ;; Use Embark to prompt for and run commands under a specified prefix
+  ;; when C-h is pressed (e.g. C-x C-h) rather than `describe-prefix-bindings'.
+  ;; Needs to be set in :init rather than :custom otherwise it gets overridden.
+  (setq prefix-help-command #'embark-prefix-help-command)
 
   :config
   ;; Org-roam nodes have their own Embark category and hence need their own
