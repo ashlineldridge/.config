@@ -1250,27 +1250,6 @@
      (project-eshell "Eshell" ?e)))
 
   :config
-  ;; Custom project root identification as the default only looks for VC markers.
-  ;; See: https://andreyorst.gitlab.io/posts/2022-07-16-project-el-enhancements.
-  ;; And: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/emacs.md#configuring-project-for-go-modules-in-emacs.
-  ;; Note: Although it's sometimes handy to put files like go.mod and Cargo.toml
-  ;; in the list below, this is problematic when dealing with monorepos as you
-  ;; can get "stuck" in a subdirectory of the monorepo.
-  (defvar my/project-root-markers
-    '(".git" ".project" ".projectile"))
-
-  (defun my/project-root-p (dir)
-    "Check whether DIR is a project root."
-    (catch 'found
-      (dolist (marker my/project-root-markers)
-        (when (file-exists-p (expand-file-name marker dir))
-          (throw 'found marker)))))
-
-  (defun my/project-find-root (dir)
-    "Search up the directory tree from DIR to find the project root."
-    (when-let ((root (locate-dominating-file dir #'my/project-root-p)))
-      `(transient . ,(expand-file-name root))))
-
   (defun my/project-current-root ()
     "Return the root directory of the current or nil."
     (if-let* ((proj (project-current)))
@@ -1315,14 +1294,7 @@ as there appears to be a bug in the current version."
           (message "No projects were found")
         (project--write-project-list)
         (message "%d project%s were found"
-                 count (if (= count 1) "" "s")))))
-
-  ;; Override the way that project.el determines the project root.
-  ;; AE: Disable below for now as my implementation results in .gitignore being
-  ;; ignored when running functions like `project-find-file' which results in
-  ;; target/, etc, showing up in the list.
-  ;; (setq project-find-functions '(my/project-find-root))
-  )
+                 count (if (= count 1) "" "s"))))))
 
 ;;;;; Auto-Save
 
