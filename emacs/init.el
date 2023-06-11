@@ -688,26 +688,25 @@
   (:map global-map
         ("C-s" . consult-line)
         ("C-x b" . consult-buffer)
+        ("M-g M-g" . consult-goto-line)
         ("M-y" . consult-yank-pop)
         ("C-x r r" . consult-register)
         ("C-x r l" . consult-register-load)
         ("C-x r s" . consult-register-store)
         ("C-c o s" . consult-org-agenda)
 
-        ;; Consult M-s search commands.
+        ;; Put all search/goto commands under M-s for simplicity.
         ("M-s d" . consult-dir)
         ("M-s f" . consult-find)
         ("M-s l" . consult-line)
         ("M-s L" . my/consult-line-strict)
         ("M-s r" . consult-ripgrep)
-
-        ;; Consult M-g goto commands.
-        ("M-g i" . consult-imenu)
-        ("M-g I" . consult-imenu-multi)
-        ("M-g m" . consult-mark)
-        ("M-g M" . consult-global-mark)
-        ("M-g M-g" . consult-goto-line)
-        ("M-g o" . consult-outline))
+        ("M-s i" . consult-imenu)
+        ("M-s I" . consult-imenu-multi)
+        ("M-s m" . consult-mark)
+        ("M-s M" . consult-global-mark)
+        ("M-s g" . consult-goto-line)
+        ("M-s o" . consult-outline))
   (:map minibuffer-local-map
         ("M-s" . nil)
         ("C-r" . consult-history))
@@ -793,11 +792,11 @@
               (?e "Enum" font-lock-constant-face)))))
 
   :config
-  (defun my/consult-line-strict ()
+  (defun my/consult-line-strict (&optional initial start)
     "Version of `consult-line' that uses a strict substring completion style."
-    (interactive)
+    (interactive (list nil (not (not current-prefix-arg))))
     (let ((completion-styles '(substring)))
-      (consult-line)))
+      (consult-line initial start)))
 
   (defvar my/consult-source-eshell-buffer
     `(:name "Eshell Buffer"
@@ -1836,7 +1835,8 @@ as there appears to be a bug in the current version."
 	      ("C-c C-c c" . compile)))
 
 (use-package clang-format
-  :commands clang-format clang-format-buffer clang-format-region
+  :commands
+  (clang-format clang-format-buffer clang-format-region)
   :config
   (setq clang-format-fallback-style "llvm")) ;; Where is this defined?
 
