@@ -720,14 +720,16 @@
   ;; and display a completing prefix help.
   (consult-narrow-key "<")
 
+  ;; By default, only show previews when M-. is pressed.
+  (consult-preview-key "M-.")
+
   ;; Customise the list of sources shown by consult-buffer.
   (consult-buffer-sources
    '(consult--source-buffer          ;; Narrow: ?b
      consult--source-project-buffer  ;; Narrow: ?p
      my/consult-source-eshell-buffer ;; Narrow: ?e
      consult--source-recent-file     ;; Narrow: ?r
-     consult--source-bookmark        ;; Narrow: ?m
-     ))
+     consult--source-bookmark))      ;; Narrow: ?m
 
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
   (consult-ripgrep-args
@@ -813,32 +815,18 @@
                        :as #'buffer-name
                        :mode 'eshell-mode))))
 
+
   (consult-customize
    ;; Source name and narrow key customization.
    consult--source-buffer :name "Open Buffer" :narrow ?b
    consult--source-project-buffer :name "Project Buffer" :narrow ?p
    consult--source-recent-file :name "Recent File" :narrow ?r
 
-   ;; By default, consult will automatically preview all commands and sources.
-   ;; Below I customize certain commands/sources so that the preview is only
-   ;; shown on request.
-   consult-ripgrep
-   consult-git-grep
-   consult-grep
-   consult-bookmark
-   consult-recent-file
-   consult-org-agenda
-   consult-xref
-
-   consult--source-buffer
-   consult--source-project-buffer
-   consult--source-bookmark
-   consult--source-recent-file
-   my/consult-source-eshell-buffer
-   ;; So that the `consult-ripgrep' project shortcut doesn't show previews.
-   ;; See: https://github.com/minad/consult/issues/676#issuecomment-1286196998).
-   project-switch-project
-   :preview-key "M-."))
+   ;; Show preview immediately for the following commands.
+   consult-line
+   consult-imenu
+   consult-imenu-multi
+   :preview-key 'any))
 
 (use-package consult-dir
   :commands consult-dir
@@ -907,7 +895,7 @@
   (define-key my/embark-org-roam-node-map (kbd "o") (my/embark-ace-window-action org-roam-node-find)))
 
 (use-package embark-consult
-  :after embark
+  :commands embark-act
   :functions
   (bookmark-location
    my/consult-ripgrep-file
@@ -1188,6 +1176,8 @@
   (treemacs-project-follow-mode 1)
   (treemacs-filewatch-mode 1)
   (treemacs-width 40)
+  (treemacs-missing-project-action 'remove)
+  (treemacs-follow-after-init t)
   ;; TODO: Until https://github.com/Alexander-Miller/treemacs/issues/1018 is resolved.
   (treemacs-no-png-images t)
 
@@ -1227,24 +1217,15 @@
 (use-package project
   :straight nil
   :bind
-  (:map global-map
-        ;; Remove previous bindings and set new ones.
-        ("C-x p" . nil)
-        ("C-x p b" . consult-project-buffer)
-        ("C-x p d" . project-dired)
-        ("C-x p c" . project-compile)
-        ("C-x p f" . project-find-file)
-        ("C-x p F" . my/project-find-file-relative)
-        ("C-x p k" . project-kill-buffers)
-        ("C-x p p" . project-switch-project)
-        ("C-x p r" . consult-ripgrep)
-        ("C-x p R" . project-query-replace-regexp)
-        ("C-x p u" . my/project-refresh-list))
+  (:map project-prefix-map
+        ("F" . my/project-find-file-relative)
+        ("u" . my/project-refresh-list))
 
   :custom
   (project-switch-commands
-   `((project-find-file "File" ?f)
-     (project-dired "Dired" ?d)
+   '((project-find-file "Find file" ?f)
+     (project-find-dir "Find directory" ?d)
+     (project-dired "Dired" ?D)
      (consult-ripgrep "Ripgrep" ?r)
      (magit-project-status "Magit" ?m)
      (project-eshell "Eshell" ?e)))
@@ -1906,6 +1887,8 @@ as there appears to be a bug in the current version."
         ("C-c e p" . project-eshell))
   (:map eshell-mode-map
         ("C-c C-o" . nil)) ;; Needed for `org-open-at-point-global'.
+  (:map eshell-hist-mode-map
+        ("M-s" . nil))     ;; Needed for consult commands.
 
   :custom
   (eshell-history-size 10000)
