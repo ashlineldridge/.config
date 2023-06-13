@@ -895,62 +895,9 @@
   (define-key my/embark-org-roam-node-map (kbd "o") (my/embark-ace-window-action org-roam-node-find)))
 
 (use-package embark-consult
-  :commands embark-act
-  :functions
-  (bookmark-location
-   my/consult-ripgrep-file
-   my/consult-ripgrep-buffer
-   my/consult-ripgrep-bookmark
-   my/consult-find-file
-   my/consult-find-buffer
-   my/consult-find-bookmark)
-
   :hook
   ;; TODO: Understand how this actually works.
-  (embark-collect-mode . consult-preview-at-point-mode)
-
-  :config
-  ;; TODO: Below I define my own consult-ripgrep-* and consult-find-* functions
-  ;; for acting on files, buffers, and bookmarks because AFAICT the existing
-  ;; implementations provided by embark-consult always act on the corresponding
-  ;; project directory as long as `consult-project-function' is not nil (and I
-  ;; don't want to set this globally as otherwise calls to `consult-ripgrep'
-  ;; don't default to the current project.
-  ;; See: https://github.com/oantolin/embark/issues/641.
-
-  (defun my/consult-ripgrep-file (target)
-    "Use `rg' to search within the directory of the TARGET file."
-    (consult-ripgrep (file-name-directory target)))
-
-  (defun my/consult-ripgrep-buffer (target)
-    "Use `rg' to search within the directory of the TARGET buffer."
-    (consult-ripgrep (buffer-local-value 'default-directory (get-buffer target))))
-
-  (defun my/consult-ripgrep-bookmark (target)
-    "Use `rg' to search within the directory of the TARGET bookmark."
-    (consult-ripgrep (file-name-directory (bookmark-location target))))
-
-  ;; Create ripgrep actions against relevant keymaps.
-  (define-key embark-file-map (kbd "r") #'my/consult-ripgrep-file)
-  (define-key embark-buffer-map (kbd "r") #'my/consult-ripgrep-buffer)
-  (define-key embark-bookmark-map (kbd "r") #'my/consult-ripgrep-bookmark)
-
-  (defun my/consult-find-file (target)
-    "Use `find' to search within the directory of the TARGET file."
-    (consult-find (file-name-directory target)))
-
-  (defun my/consult-find-buffer (target)
-    "Use `find' to search within the directory of the TARGET buffer."
-    (consult-find (buffer-local-value 'default-directory (get-buffer target))))
-
-  (defun my/consult-find-bookmark (target)
-    "Use `find' to search within the directory of the TARGET bookmark."
-    (consult-find (file-name-directory (bookmark-location target))))
-
-  ;; Create find actions against relevant keymaps.
-  (define-key embark-file-map (kbd "f") #'my/consult-find-file)
-  (define-key embark-buffer-map (kbd "f") #'my/consult-find-buffer)
-  (define-key embark-bookmark-map (kbd "f") #'my/consult-find-bookmark))
+  (embark-collect-mode . consult-preview-at-point-mode))
 
 (use-package wgrep
   :bind
@@ -1877,8 +1824,6 @@ as there appears to be a bug in the current version."
   (eshell-mode . my/init-eshell-mode)
   (eshell-pre-command . my/eshell-pre-command)
   (eshell-post-command . my/eshell-post-command)
-  ;; Don't wrap long lines in eshell.
-  (eshell-mode . (lambda () (setq-local truncate-lines t)))
 
   :bind
   (:map global-map
@@ -1887,8 +1832,6 @@ as there appears to be a bug in the current version."
         ("C-c e p" . project-eshell))
   (:map eshell-mode-map
         ("C-c C-o" . nil)) ;; Needed for `org-open-at-point-global'.
-  (:map eshell-hist-mode-map
-        ("M-s" . nil))     ;; Needed for consult commands.
 
   :custom
   (eshell-history-size 10000)
@@ -1905,12 +1848,17 @@ as there appears to be a bug in the current version."
 
   (defun my/init-eshell-mode ()
     "Hook function executed when `eshell-mode' is run."
+    ;; Don't wrap long lines in eshell.
+    (setq-local truncate-lines t)
     ;; Don't scroll the buffer around after it has been recentered (using C-l).
     ;; This seems to need to be done as a mode hook rather than in `:config' as
     ;; the latter results in `eshell-output-filter-functions' being set to nil.
     ;; See: https://emacs.stackexchange.com/a/45281
     (remove-hook 'eshell-output-filter-functions
-                 'eshell-postoutput-scroll-to-bottom))
+                 'eshell-postoutput-scroll-to-bottom)
+    ;; Unbind M-s as that's used for consult commands. This needs to happen
+    ;; here as `eshell-hist-mode-map' isn't loaded in time for `:bind' above.
+    (define-key eshell-hist-mode-map (kbd "M-s") nil))
 
   (defun my/eshell-pre-command ()
     "Eshell pre-command hook function."
