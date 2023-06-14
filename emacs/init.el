@@ -899,6 +899,14 @@
   ;; TODO: Understand how this actually works.
   (embark-collect-mode . consult-preview-at-point-mode))
 
+(use-package rg
+  :commands rg-enable-default-bindings
+  :custom
+  (rg-keymap-prefix (kbd "C-c r"))
+  :init
+  ;; TODO: Need a way to hide popper when the side window is shown.
+  (rg-enable-default-bindings))
+
 (use-package wgrep
   :bind
   (:map global-map

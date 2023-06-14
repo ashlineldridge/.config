@@ -82,6 +82,7 @@
  ("queue" . "130c2d656cd5d7376552272fab9e50a7c37d0c4a")
  ("rainbow-delimiters" . "a32b39bdfe6c61c322c37226d66e1b6d4f107ed0")
  ("rego-mode" . "be110e6cef5d34eef0529a8739c68e619cf15310")
+ ("rg.el" . "e9dc4ed342e0212d08fb82554dfd3c57fdfa5b1a")
  ("rust-mode" . "e443ccf2884028d3b6cc550ff20e7c92dadccb68")
  ("rustic" . "39423d1cf4fa054c36bf9577356451f4c06ee148")
  ("s.el" . "dda84d38fffdaf0c9b12837b504b402af910d01d")
