@@ -880,7 +880,7 @@
   (eval-when-compile
     (defmacro my/embark-ace-window-action (fn)
       `(defun ,(intern (concat "my/ace-window-" (symbol-name fn))) ()
-         "Execute Embark action in conjunction with Ace window."
+         "Execute Embark action in conjunction with Ace Window."
          (interactive)
          (with-demoted-errors "%s"
            (require 'ace-window)
@@ -1117,7 +1117,7 @@
 (use-package treemacs
   :bind
   (:map global-map
-        ("C-c t" . treemacs)
+        ("M-t" . treemacs)
         ("M-0" . treemacs-select-window))
   (:map treemacs-mode-map
         ;; Otherwise it takes two clicks to open a directory.
@@ -1134,6 +1134,9 @@
   (treemacs-width 40)
   (treemacs-missing-project-action 'remove)
   (treemacs-follow-after-init t)
+  ;; TODO: Until https://github.com/Alexander-Miller/treemacs/issues/1018 is
+  ;; resolved, without this setting ugly png images are used for special dirs.
+  (treemacs-no-png-images t)
 
   :config
   (use-package treemacs-nerd-icons
