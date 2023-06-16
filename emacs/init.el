@@ -640,10 +640,9 @@
   (defun my/init-eshell-capfs ()
     "Configure CAPFs to be used for `eshell-mode'."
     (setq-local completion-at-point-functions (list
-                                               #'cape-file
                                                #'pcomplete-completions-at-point
-                                               #'cape-dabbrev
-                                               #'cape-yasnippet)))
+                                               #'cape-file
+                                               #'cape-dabbrev)))
 
   (defun my/init-org-capfs ()
     "Configure CAPFs to be used for `org-mode'."
@@ -863,6 +862,7 @@
   ;; Use Embark to prompt for and run commands under a specified prefix
   ;; when C-h is pressed (e.g. C-x C-h) rather than `describe-prefix-bindings'.
   ;; Needs to be set in :init rather than :custom otherwise it gets overridden.
+  (require 'help)
   (setq prefix-help-command #'embark-prefix-help-command)
 
   :config
@@ -905,6 +905,7 @@
   (rg-keymap-prefix (kbd "C-c r"))
   :init
   ;; TODO: Need a way to hide popper when the side window is shown.
+  ;; See also: https://github.com/seagle0128/.emacs.d/blob/00f25c86d2efc9067364e2173d102a4bf1b460ad/lisp/init-utils.el#L163.
   (rg-enable-default-bindings))
 
 (use-package wgrep
@@ -1116,7 +1117,7 @@
 (use-package treemacs
   :bind
   (:map global-map
-        ("C-c C-t" . treemacs)
+        ("C-c t" . treemacs)
         ("M-0" . treemacs-select-window))
   (:map treemacs-mode-map
         ;; Otherwise it takes two clicks to open a directory.
@@ -1133,8 +1134,6 @@
   (treemacs-width 40)
   (treemacs-missing-project-action 'remove)
   (treemacs-follow-after-init t)
-  ;; TODO: Until https://github.com/Alexander-Miller/treemacs/issues/1018 is resolved.
-  (treemacs-no-png-images t)
 
   :config
   (use-package treemacs-nerd-icons
@@ -1814,15 +1813,22 @@ as there appears to be a bug in the current version."
 
 (use-package magit
   :bind
-  (("C-c g s" . magit-status)
-   ("C-c g d" . magit-dispatch)
-   ("C-c g f" . magit-file-dispatch))
+  (:map global-map
+        ("C-c g s" . magit-status)
+        ("C-c g d" . magit-dispatch)
+        ("C-c g f" . magit-file-dispatch))
   :custom
   ;; Tell Magit not to add the C-x bindings as we'll use the ones above.
   (magit-define-global-key-bindings nil)
   ;; Otherwise Magit shows a read-only diff screen when you press C-c C-c and
   ;; you've already had a chance to look at the diff when you stage the files.
   (magit-commit-show-diff nil))
+
+(use-package browse-at-remote
+  :bind
+  (:map global-map
+        ("C-c g o" . browse-at-remote)
+        ("C-c g k" . browse-at-remote-kill)))
 
 ;;;; Shell/Terminal
 
@@ -1845,8 +1851,6 @@ as there appears to be a bug in the current version."
   (eshell-history-size 10000)
   (eshell-buffer-maximum-lines 10000)
   (eshell-hist-ignoredups t)
-  (eshell-prompt-function #'my/eshell-prompt)
-  (eshell-prompt-regexp "^[^λ\n]* λ ")
   ;; The following commands will be started in `term-mode'.
   (eshell-visual-commands '("vi" "vim" "htop" "ktop" "watch" "gcloud"))
 
@@ -1896,42 +1900,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     (let* ((name (or name (generate-new-buffer-name "*eshell-output*")))
            (buf (get-buffer-create name)))
       (display-buffer buf)
-      buf))
-
-  (defun my/eshell-prompt ()
-    "Custom eshell prompt function."
-    (string-join
-     `(,(propertize (my/eshell-prompt-path) 'face '(:foreground "#ff80bf"))
-       ,(propertize "λ" 'face '(:foreground "#ff3333")) "") " "))
-
-  ;; Adapted from https://justin.abrah.ms/dotfiles/emacs.html.
-  (defun my/eshell-prompt-path ()
-    "Return a shortened current directory path for use in the eshell prompt."
-    (let* ((path (eshell/pwd))
-           (max-len 40)
-           (components (split-string (abbreviate-file-name path) "/"))
-           (len (+ (1- (length components))
-                   (cl-reduce '+ components :key 'length)))
-           (str ""))
-      (while (and (> len max-len)
-                  (cdr components))
-        (setq str (concat str
-                          (cond ((= 0 (length (car components))) "/")
-                                ((= 1 (length (car components)))
-                                 (concat (car components) "/"))
-                                (t
-                                 (if (string= "."
-                                              (string (elt (car components) 0)))
-                                     (concat (substring (car components) 0 2)
-                                             "/")
-                                   (string (elt (car components) 0) ?/)))))
-              len (- len (1- (length (car components))))
-              components (cdr components)))
-      (concat str (cl-reduce (lambda (a b) (concat a "/" b)) components)))))
-
-;; Use Fish Shell to provide autocompletion for eshell.
-(use-package fish-completion
-  :hook (eshell-mode . fish-completion-mode))
+      buf)))
 
 ;;;; Org Mode
 
@@ -2337,21 +2306,6 @@ specified then a task category will be determined by the item's tags."
   (auth-source-do-cache nil)
   :init
   (auth-source-pass-enable))
-
-;;;; Kubernetes
-
-(use-package kele
-  :commands kele-mode
-  :init
-  (defun my/start-kele-mode ()
-    "Starts `kele-mode'."
-    (interactive)
-    (kele-mode 1))
-
-  (defun my/stop-kele-mode ()
-    "Stops `kele-mode'."
-    (interactive)
-    (kele-mode -1)))
 
 ;;; End:
 (provide 'init)
