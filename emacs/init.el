@@ -870,17 +870,43 @@
   ;; keymap so that I can act on them. Here, I create a new Embark keymap and
   ;; add it to `embark-keymap-alist'.
   (defvar-keymap my/embark-org-roam-node-map
-    :doc "Keymap for Embark org-roam-node actions"
+    :doc "Keymap for Embark `org-roam-node' actions"
     :parent embark-general-map)
-  (add-to-list 'embark-keymap-alist '(org-roam-node . my/embark-org-roam-node-map))
 
-  ;; Macro for defining an Embark action that executes FN using an ace-window
+  (defvar-keymap my/embark-consult-xref-map
+    :doc "Keymap for Embark `consult-xref' actions"
+    :parent embark-general-map)
+
+  (add-to-list 'embark-keymap-alist '(org-roam-node . my/embark-org-roam-node-map))
+  (add-to-list 'embark-keymap-alist '(consult-xref . my/embark-consult-xref-map))
+  (add-to-list 'embark-keymap-alist '(xref . my/embark-consult-xref-map))
+
+  ;; This function is used as the argument to `my/embark-ace-window-action' for
+  ;; opening a `consult-xref' candidate in an `ace-window' selected window.
+  ;; TODO: There must be a more idiomatic way to do this (may need to lean
+  ;; on `consult-xref' private functions) rather than string splitting. This
+  ;; way is flawed as it only navigates to the line rather than where the
+  ;; symbol is on the line.
+  (defun my/goto-consult-xref ()
+    "Embark action function for opening a `consult-xref' candidate."
+    (interactive)
+    (let ((location (read-from-minibuffer "")))
+      (let* ((parts (string-split location ":"))
+             (file (nth 0 parts))
+             (line (nth 1 parts)))
+        (find-file file)
+        (goto-char (point-min))
+        (forward-line (1- (string-to-number line))))))
+
+  ;; Macro for defining an Embark action that executes FN using an `ace-window'
   ;; selected window. Taken from:
   ;; https://github.com/karthink/.emacs.d/blob/f0514340039502b79a306a77624a604de8a1b546/lisp/setup-embark.el#L93.
   (eval-when-compile
     (defmacro my/embark-ace-window-action (fn)
-      `(defun ,(intern (concat "my/ace-window-" (symbol-name fn))) ()
-         "Execute Embark action in conjunction with Ace Window."
+      `(defun ,(intern (concat
+                        "my/ace-window-"
+                        (string-remove-prefix "my/" (symbol-name fn)))) ()
+         "Execute Embark action after jumping with `ace-window'."
          (interactive)
          (with-demoted-errors "%s"
            (require 'ace-window)
@@ -892,7 +918,8 @@
   (define-key embark-file-map (kbd "o") (my/embark-ace-window-action find-file))
   (define-key embark-buffer-map (kbd "o") (my/embark-ace-window-action switch-to-buffer))
   (define-key embark-bookmark-map (kbd "o") (my/embark-ace-window-action bookmark-jump))
-  (define-key my/embark-org-roam-node-map (kbd "o") (my/embark-ace-window-action org-roam-node-find)))
+  (define-key my/embark-org-roam-node-map (kbd "o") (my/embark-ace-window-action org-roam-node-find))
+  (define-key my/embark-consult-xref-map (kbd "o") (my/embark-ace-window-action my/goto-consult-xref)))
 
 (use-package embark-consult
   :hook
