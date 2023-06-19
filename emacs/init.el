@@ -1809,7 +1809,8 @@ as there appears to be a bug in the current version."
         ("C-<right>" . nil)
         ("C-M-<left>" . nil)
         ("C-M-<right>" . nil)
-        ("M-s" . nil))
+        ("M-s" . nil)
+        ("M-?" . nil))
   :hook
   ;; Note that I specifically don't enable Paredit in minibuffers as it causes
   ;; issues with RET keybindings.
@@ -1881,6 +1882,7 @@ as there appears to be a bug in the current version."
   (eshell-history-size 10000)
   (eshell-buffer-maximum-lines 10000)
   (eshell-hist-ignoredups t)
+  (eshell-prompt-function #'my/eshell-prompt)
   ;; The following commands will be started in `term-mode'.
   (eshell-visual-commands '("vi" "vim" "htop" "ktop" "watch" "gcloud"))
 
@@ -1918,10 +1920,39 @@ as there appears to be a bug in the current version."
     (interactive)
     (eshell t))
 
-  (defun my/eshell-refresh-aliases ()
-    "Refresh eshell aliases."
-    (interactive)
-    (eshell-read-aliases-list))
+  (defun my/eshell-prompt ()
+    "Custom eshell prompt function."
+    ;; This is compatible with the default `eshell-prompt-regexp'.
+    (concat (my/abbreviate-file-name (eshell/pwd) 30)
+            (if (= (user-uid) 0) " # " " $ ")))
+
+  ;; Adapted from https://github.com/zwild/eshell-prompt-extras/blob/c2078093323206b91a1b1f5786d79faa00b76be7/eshell-prompt-extras.el#L213.
+  (defun my/abbreviate-file-name (path max-len)
+    "Return an abbreviated version of PATH aiming for <= MAX-LEN characters."
+    (let* ((components (split-string (abbreviate-file-name path) "/"))
+           (len (+ (1- (length components))
+                   (cl-reduce '+ components :key 'length)))
+           (str ""))
+      (while (and (> len max-len)
+                  (cdr components))
+        (setq str (concat str
+                          (cond ((= 0 (length (car components))) "/")
+                                ((= 1 (length (car components)))
+                                 (concat (car components) "/"))
+                                (t
+                                 (if (string= "."
+                                              (string (elt (car components) 0)))
+                                     (concat (substring (car components) 0 2)
+                                             "/")
+                                   (string (elt (car components) 0) ?/)))))
+              len (- len (1- (length (car components))))
+              components (cdr components)))
+      (concat str (cl-reduce (lambda (a b) (concat a "/" b)) components))))
+
+(defun my/eshell-refresh-aliases ()
+  "Refresh eshell aliases."
+  (interactive)
+  (eshell-read-aliases-list))
 
   (defun my/sink (&optional name)
     "Return a reference to a buffer for sinking eshell command output.
