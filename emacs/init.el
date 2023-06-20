@@ -822,9 +822,10 @@
    consult--source-recent-file :name "Recent File" :narrow ?r
 
    ;; Show preview immediately for the following commands.
-   consult-line
+   consult-goto-line
    consult-imenu
    consult-imenu-multi
+   consult-line
    :preview-key 'any))
 
 (use-package consult-dir
