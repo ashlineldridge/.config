@@ -1162,13 +1162,15 @@
   (treemacs-width 40)
   (treemacs-missing-project-action 'remove)
   (treemacs-follow-after-init t)
-  ;; TODO: Until https://github.com/Alexander-Miller/treemacs/issues/1018 is
-  ;; resolved, without this setting ugly png images are used for special dirs.
-  (treemacs-no-png-images t)
 
   :config
+  ;; Override `treemacs--propagate-new-icons' so that janky image icons from
+  ;; the default treemacs package don't get mixed in with the nerd icons.
+  ;; See: https://github.com/Alexander-Miller/treemacs/issues/1018#issuecomment-1599599392.
+  (defun treemacs--propagate-new-icons (_theme))
+
+  ;; Style the treemacs viewer with nerd icons.
   (use-package treemacs-nerd-icons
-    :after (treemacs nerd-icons)
     :functions treemacs-load-theme
     :custom-face
     (treemacs-nerd-icons-root-face ((t (:inherit nerd-icons-green :height 1.3))))
