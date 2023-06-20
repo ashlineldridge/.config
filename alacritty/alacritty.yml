@@ -769,8 +769,8 @@ key_bindings:
 
   # Trying to replicate my current Emacs keybindings as much as possible.
   # See: https://stackoverflow.com/questions/72857879/correct-keybindings-configuration-for-zsh-in-alacritty
-  - { key: N, mods: Command, chars: "\x1bn"                         } # Eshell: next command
-  - { key: P, mods: Command, chars: "\x1bp"                         } # Eshell: previous command
+  # - { key: N, mods: Command, chars: "\x1bn"                         } # Eshell: next command
+  # - { key: P, mods: Command, chars: "\x1bp"                         } # Eshell: previous command
   - { key: F, mods: Command, chars: "\x1bf"                         } # Emacs: backward-word
   - { key: B, mods: Command, chars: "\x1bb"                         } # Emacs: forward-word
   - { key: S, mods: Control, mode: ~Search, action: SearchForward   } # Emacs: isearch/swiper
