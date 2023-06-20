@@ -1146,6 +1146,7 @@
   :bind
   (:map global-map
         ("M-t" . treemacs)
+        ("M-T" . my/treemacs-stay)
         ("M-0" . treemacs-select-window))
   (:map treemacs-mode-map
         ;; Otherwise it takes two clicks to open a directory.
@@ -1156,12 +1157,19 @@
   (treemacs-mode . (lambda () (setq-local truncate-lines t)))
 
   :custom
-  (treemacs-follow-mode 1)
-  (treemacs-project-follow-mode 1)
-  (treemacs-filewatch-mode 1)
+  (treemacs-follow-mode t)
+  (treemacs-project-follow-mode t)
+  (treemacs-filewatch-mode t)
   (treemacs-width 40)
   (treemacs-missing-project-action 'remove)
   (treemacs-follow-after-init t)
+
+  :init
+  (defun my/treemacs-stay ()
+    "Open the Treemacs viewer but don't shift focus to it."
+    (interactive)
+    (treemacs)
+    (treemacs-select-window))
 
   :config
   ;; Override `treemacs--propagate-new-icons' so that janky image icons from
