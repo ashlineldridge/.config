@@ -1183,18 +1183,12 @@
 
 ;;;;; File History
 
-  (use-package recentf
-    :straight nil
-    :custom
-    (recentf-max-saved-items 200)
-    :config
-    ;; Don't show files managed by no-littering in the recentf list.
-    ;; See https://github.com/emacscollective/no-littering#recent-files.
-    (add-to-list 'recentf-exclude
-                 (recentf-expand-file-name no-littering-var-directory))
-    (add-to-list 'recentf-exclude
-                 (recentf-expand-file-name no-littering-etc-directory))
-    (recentf-mode 1))
+(use-package recentf
+  :straight nil
+  :custom
+  (recentf-max-saved-items 300)
+  :config
+  (recentf-mode 1))
 
 ;;;;; Project Management
 
