@@ -656,8 +656,7 @@
           '(orderless))
     (setq-local completion-at-point-functions
                 (list
-                 (cape-super-capf #'lsp-completion-at-point #'cape-yasnippet)
-                 #'cape-dabbrev))))
+                 (cape-super-capf #'lsp-completion-at-point #'cape-yasnippet)))))
 
 ;; Orderless configuration mostly taken from:
 ;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
