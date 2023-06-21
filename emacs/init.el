@@ -1749,7 +1749,10 @@ as there appears to be a bug in the current version."
 
 (use-package bazel-mode
   :straight (bazel-mode :host github :repo "bazelbuild/emacs-bazel-mode")
-  :mode "\\.BUILD\\'"
+  :mode
+  ("\\.BUILD\\'" . bazel-mode)
+  ("\\.bazel\\'" . bazel-mode)
+  ("\\.star\\'" . bazel-starlark-mode)
   :bind
   (:map bazel-mode-map
         ("C-c C-c b" . bazel-build)
