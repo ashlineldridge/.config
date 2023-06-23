@@ -189,6 +189,9 @@
 ;; The Modus themes are pre-installed into Emacs 28+ but I pull latest.
 (use-package modus-themes
   :functions my/apply-font-config
+  :bind
+  (:map global-map
+        ("<f12>" . my/cycle-font-config))
   :custom
   (modus-themes-italic-constructs t)
   (modus-themes-region '(no-extend accented))
@@ -1216,7 +1219,9 @@
      (project-dired "Dired" ?D)
      (consult-ripgrep "Ripgrep" ?r)
      (magit-project-status "Magit" ?m)
-     (project-eshell "Eshell" ?e)))
+     (project-eshell "Eshell" ?e)
+     (project-shell-command "Shell" ?!)
+     (project-async-shell-command "Async shell" ?&)))
 
   :config
   (defun my/project-current-root ()
