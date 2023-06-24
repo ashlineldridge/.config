@@ -864,9 +864,12 @@
   :init
   ;; Use Embark to prompt for and run commands under a specified prefix
   ;; when C-h is pressed (e.g. C-x C-h) rather than `describe-prefix-bindings'.
-  ;; Needs to be set in :init rather than :custom otherwise it gets overridden.
-  (require 'help)
-  (setq prefix-help-command #'embark-prefix-help-command)
+  ;; This needs to be set after the help package has been loaded which appears
+  ;; to sometimes be loaded more than once. The `with-eval-after-load' ensures
+  ;; that `prefix-help-command' always references `embark-prefix-help-command'.
+  (with-eval-after-load 'help
+    (message "Setting prefix-help-command")
+    (setq prefix-help-command #'embark-prefix-help-command))
 
   :config
   ;; Org-roam nodes have their own Embark category and hence need their own
