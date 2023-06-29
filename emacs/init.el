@@ -1534,64 +1534,77 @@ as there appears to be a bug in the current version."
 ;; ~/.config/emacs/.lsp-session-v1 or find a way to hook into dap-mode/lsp-mode
 ;; so the process is a bit smarter.
 (use-package dap-mode
-  :functions (my/project-current-root my/dap-rust-lldb-debug-provider)
+  :functions
+  (my/project-current-root
+   my/dap-rust-lldb-debug-provider
+   dap-ui-hide-many-windows)
   :commands
   (dap-mode
    dap-ui-mode
-   dap-ui-controls-mode
    dap-register-debug-provider
    dap-register-debug-template)
 
   :hook
-  (go-mode . my/dap-mode)
-  (rustic-mode . my/dap-mode)
+  (go-mode . dap-mode)
+  (rustic-mode . dap-mode)
 
   :bind
   (:map dap-mode-map
+        ;; Start/stop commands.
         ("C-c C-d d" . dap-debug)
-        ("C-c C-d l" . dap-debug-last)
+        ("C-c C-d C-d" . dap-debug-last)
+        ("C-c C-d q" . my/dap-quit)
+        ;; Hydra menu.
         ("C-c C-d m" . dap-hydra)
+        ;; UI window commands.
+        ("C-c C-d r" . dap-ui-repl)
+        ("C-c C-d l" . dap-ui-locals)
+        ("C-c C-d e" . dap-ui-expressions)
+        ;; Breakpoint commands.
         ("C-c C-d b" . dap-breakpoint-toggle)
-        ("C-c C-d c" . dap-breakpoint-condition)
         ("C-c C-d k" . dap-breakpoint-delete-all)
-        ("C-c C-d q" . dap-disconnect)
-
-        ;; DAP UI (windows are managed by popper).
-        ("C-c C-d w a" . dap-ui-expressions-add)
-        ("C-c C-d w e" . dap-ui-expressions)
-        ("C-c C-d w l" . dap-ui-breakpoints-list)
-        ("C-c C-d w v" . dap-ui-locals)
-        ("C-c C-d w r" . dap-ui-repl)
-        ("C-c C-d w s" . dap-ui-sessions)
-
-        ;; Keys to be used during a debug session.
-        ("C-c C-d C-n" . dap-next)
-        ("C-c C-d C-i" . dap-step-in)
-        ("C-c C-d C-o" . dap-step-out)
-        ("C-c C-d C-c" . dap-continue))
+        ;; Stepping commands.
+        ("C-c C-d n" . dap-next)
+        ("C-c C-d i" . dap-step-in)
+        ("C-c C-d o" . dap-step-out)
+        ("C-c C-d c" . dap-continue)
+        ;; Stack frame commands.
+        ("C-c C-d f" . dap-switch-stack-frame)
+        ("C-c C-d <up>" . dap-up-stack-frame)
+        ("C-c C-d <down>" . dap-down-stack-frame)
+        ;; Expression commands.
+        ("C-c C-d +" . dap-ui-expressions-add)
+        ("C-c C-d -" . dap-ui-expressions-remove)
+        ;; Evaluation commands.
+        ("C-c C-d :" . dap-eval)
+        ("C-c C-d ." . dap-eval-thing-at-point))
 
   :custom
-  (dap-auto-configure-features nil)
+  (dap-auto-configure-features '(locals breakpoints expressions repl))
   (dap-print-io nil)
-  (dap-auto-show-output nil)
   (dap-ui-repl-history-dir no-littering-var-directory)
+  ;; TODO: Unfortunately locals doesn't work that great. It doesn't auto-expand
+  ;; or refresh after each step/breakpoint and it often doesn't stay up to
+  ;; date with the current frame. For now, I'll just stick to using the REPL.
+  (dap-ui-locals-expand-depth 3)
+
+  :init
+  ;; Override the placement of DAP UI windows so things are less cluttered.
+  ;; The locals window and the expressions window will overlay the REPL window
+  ;; when they are displayed. The below configuration is shown by default.
+  (defvar dap-ui-buffer-configurations
+    `(("*dap-ui-repl*" . ((side . right) (slot . 1) (window-width . 0.25)))
+      ("*dap-ui-breakpoints*" . ((side . right) (slot . 2) (window-width . 0.25) (window-height . 0.3)))))
 
   :config
   (require 'dap-dlv-go)
   (require 'dap-ui)
 
-  ;; Override `dap-ui--show-buffer' to show buffers in a standard window rather
-  ;; than a side window allowing popper to control them.
-  (defun dap-ui--show-buffer (buf)
-    "Overidden version of `dap-ui--show-buffer' that doesn't use side windows."
-    (display-buffer buf))
-
-  (defun my/dap-mode ()
-    "Start `dap-mode' in an opinionated way."
+  (defun my/dap-quit ()
+    "Disconnect from the DAP session and hide all the DAP UI windows."
     (interactive)
-    (dap-mode 1)
-    (dap-ui-mode 1)
-    (dap-ui-controls-mode -1))
+    (call-interactively 'dap-disconnect)
+    (dap-ui-hide-many-windows))
 
   ;; Location of lldb-vscode on the host.
   (defvar my/dap-rust-lldb-debug-program
