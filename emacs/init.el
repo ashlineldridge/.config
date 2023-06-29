@@ -73,6 +73,7 @@
   (global-auto-revert-mode t)
   (async-shell-command-buffer 'new-buffer)
   (savehist-mode t)
+  (electric-pair-mode t)
   ;; Increase margins slightly.
   (fringe-mode 5)
   ;; Ignore any changes made via the customization UI.
@@ -425,7 +426,6 @@
      "\\*Breakpoints\\*"
      "\\*Pp Macroexpand Output\\*"
      "\\*Flycheck "
-     "\\*dap-ui-"
      "\\*Help\\*"
      "\\*helpful "
      "\\*eldoc for "
