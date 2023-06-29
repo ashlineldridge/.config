@@ -1615,8 +1615,15 @@ as there appears to be a bug in the current version."
   ;; The locals window and the expressions window will overlay the REPL window
   ;; when they are displayed. The below configuration is shown by default.
   (defvar dap-ui-buffer-configurations
-    `(("*dap-ui-repl*" . ((side . right) (slot . 1) (window-width . 0.25)))
-      ("*dap-ui-breakpoints*" . ((side . right) (slot . 2) (window-width . 0.25) (window-height . 0.3)))))
+    '(("*dap-ui-repl*" .
+       ((side . right)
+        (slot . 1)
+        (window-width . 0.25)))
+      ("*dap-ui-breakpoints*" .
+       ((side . right)
+        (slot . 2)
+        (window-width . 0.25)
+        (window-height . 0.3)))))
 
   :config
   (require 'dap-dlv-go)
