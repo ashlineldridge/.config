@@ -583,9 +583,29 @@
 ;; M-RET which calls `vertico-exit-input' to cancel the completion and use the
 ;; new value.
 (use-package vertico
+  :straight (:files (:defaults "extensions/*.el"))
   :commands vertico-mode
   :init
   (vertico-mode 1))
+
+(use-package vertico-directory
+  :after vertico
+  :straight nil
+  ;; More convenient directory navigation commands.
+  :bind
+  (:map vertico-map
+        ("RET" . vertico-directory-enter)
+        ("DEL" . vertico-directory-delete-char))
+  ;; Tidy shadowed file names.
+  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+
+;; TODO: Configure `vertico-multiform'.
+;; See: https://github.com/minad/vertico#configure-vertico-per-command-or-completion-category
+;; See: https://github.com/karthink/.emacs.d/blob/57d394e40548c8cfa414db4c6665d377834659c1/lisp/setup-vertico.el
+(use-package vertico-multiform
+  :disabled
+  :after vertico
+  :straight nil)
 
 ;; Dedicated completion commands.
 (use-package cape
