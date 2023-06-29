@@ -1930,7 +1930,10 @@ as there appears to be a bug in the current version."
     ;; Interactive eshell commands should use colors but this gets reverted by
     ;; the post-command hook.
     ;; See: https://github.com/daviwil/dotfiles/blob/master/Emacs.org#configuration.
-    (setenv "TERM" "xterm-256color"))
+    (setenv "TERM" "xterm-256color")
+    ;; Save history after command is entered but before it is invoked.
+    ;; Otherwise, history is not saved until the eshell buffer is quit.
+    (eshell-save-some-history))
 
   (defun my/eshell-post-command ()
     "Eshell post-command hook function."
