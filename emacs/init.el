@@ -1372,6 +1372,8 @@ as there appears to be a bug in the current version."
   :bind
   (:map lsp-mode-map
         ("M-P" . lsp-describe-thing-at-point)
+        ("C-M-b" . lsp-find-implementation)
+        ;; TODO: Sort out below
         ("C-c C-c s f" . consult-lsp-file-symbols)
         ("C-c C-c s w" . consult-lsp-symbols)
         ("C-c C-c h" . lsp-inlay-hints-mode))
