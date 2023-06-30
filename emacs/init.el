@@ -1971,9 +1971,7 @@ as there appears to be a bug in the current version."
 
   :bind
   (:map global-map
-	("C-c e e" . eshell)
-        ("C-c e n" . my/eshell-new)
-        ("C-c e p" . project-eshell))
+	("C-c e" . eshell))
   (:map eshell-mode-map
         ("C-c C-o" . nil)) ;; Needed for `org-open-at-point-global'.
 
@@ -2016,11 +2014,6 @@ as there appears to be a bug in the current version."
   (defun my/eshell-post-command ()
     "Eshell post-command hook function."
     (setenv "TERM" "dumb"))
-
-  (defun my/eshell-new ()
-    "Create a new eshell buffer."
-    (interactive)
-    (eshell t))
 
   (defun my/eshell-prompt ()
     "Custom eshell prompt function."
