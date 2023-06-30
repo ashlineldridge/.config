@@ -1574,7 +1574,7 @@ as there appears to be a bug in the current version."
   (:map dap-mode-map
         ;; Start/stop commands.
         ("C-c C-d d" . dap-debug)
-        ("C-c C-d C-d" . dap-debug-last)
+        ("C-c C-d D" . dap-debug-last)
         ("C-c C-d q" . my/dap-quit)
         ;; Hydra menu.
         ("C-c C-d m" . dap-hydra)
@@ -1584,7 +1584,8 @@ as there appears to be a bug in the current version."
         ("C-c C-d e" . dap-ui-expressions)
         ;; Breakpoint commands.
         ("C-c C-d b" . dap-breakpoint-toggle)
-        ("C-c C-d k" . dap-breakpoint-delete-all)
+        ("C-c C-d k" . dap-ui-breakpoint-delete)
+        ("C-c C-d K" . dap-breakpoint-delete-all)
         ;; Stepping commands.
         ("C-c C-d n" . dap-next)
         ("C-c C-d i" . dap-step-in)
