@@ -614,7 +614,7 @@
   (pcomplete-completions-at-point lsp-completion-at-point)
   :bind
   (:map global-map
-        ("C-r"     . my/cape-history)
+        ("C-r" . my/cape-history)
         ("C-c p p" . completion-at-point)
         ("C-c p t" . complete-tag)
         ("C-c p d" . cape-dabbrev)
@@ -873,10 +873,19 @@
   (:map minibuffer-local-map
         ("C-S-b" . embark-become))
 
+  ;; Shorter keybindings for frequently used actions.
+  (:map embark-file-map
+        ("r" . consult-ripgrep))
+  (:map embark-buffer-map
+        ("r" . consult-ripgrep))
+  (:map embark-bookmark-map
+        ("r" . consult-ripgrep))
+
   :custom
-  ;; The following two settings tell Embark to just use the minibuffer and
-  ;; completing-read for displaying the Embark popup (rather than a window).
-  (embark-prompter #'embark-completing-read-prompter)
+  ;; Just show the minimal "Act" prompt (the default starts with minimal
+  ;; and then `embark-mixed-indicator-delay' kicks in and the verbose screen
+  ;; is shown). Shortcut keys can immediately be used. C-h can be pressed to
+  ;; bring up the completing read prompter.
   (embark-indicators (list #'embark-minimal-indicator))
   ;; Use this key to switch Embark to the keymap prompter.
   (embark-keymap-prompter-key ",")
