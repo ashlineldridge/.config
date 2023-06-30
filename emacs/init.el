@@ -599,13 +599,39 @@
   ;; Tidy shadowed file names.
   :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
-;; TODO: Configure `vertico-multiform'.
-;; See: https://github.com/minad/vertico#configure-vertico-per-command-or-completion-category
-;; See: https://github.com/karthink/.emacs.d/blob/57d394e40548c8cfa414db4c6665d377834659c1/lisp/setup-vertico.el
 (use-package vertico-multiform
-  :disabled
   :after vertico
-  :straight nil)
+  :straight nil
+  :commands vertico-multiform-mode
+  :custom
+  (vertico-multiform-categories
+   '((consult-grep buffer)
+     (imenu buffer)))
+  ;; Some things work better via commands than categories.
+  (vertico-multiform-commands
+   '((xref-find-references buffer)
+     (consult-outline buffer)))
+  :init
+  (vertico-multiform-mode 1))
+
+;; I don't enable `vertico-buffer-mode' directly since this makes Vertico
+;; always run in a buffer. Instead, `vertico-multiform' is used to toggle
+;; buffer display on a per-category or per-command basis. The configuration
+;; of `vertico-buffer-display-action' below changes the default way that
+;; Vertico buffers are shown (otherwise they reuse the current window).
+(use-package vertico-buffer
+  :after vertico
+  :straight nil
+  :custom
+  (vertico-buffer-display-action
+   '(display-buffer-in-direction
+     ;; Below results in the search buffer being displayed to the right of the
+     ;; current window with both the windows being shown at 50% width. Trying
+     ;; to control the % via (window-width . 0.3) seems to set the width based
+     ;; on the frame width rather than the current window which makes the
+     ;; search window too large when the frame is split vertically into
+     ;; multiple windows. So 50% is fine for now.
+     (direction . right))))
 
 ;; Dedicated completion commands.
 (use-package cape
