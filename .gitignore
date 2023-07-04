@@ -39,7 +39,7 @@ zsh/.zcompdump
 zsh/.zsh_history
 zsh/.zcompcache
 zsh/.zsh_sessions/
-zsh/lib/private.zsh
+zsh/lib/private-*.zsh
 configstore/
 droidcli/
 envconfig/

@@ -1,5 +1,13 @@
 # This file must be symlinked to ~/.zshenv to bootstrap zsh to follow XDG conventions.
 
+# If zsh is being launched from Emacs then likely it's non-interactive shell for
+# async-shell-command or detached.el. In the past, I've had issues with variables
+# like PATH being set by both Emacs and this file so to keep things simple I exit
+# early if the process is started by Emacs.
+if [[ -v INSIDE_EMACS ]]; then
+  return
+fi
+
 # XDG base directories.
 export XDG_CONFIG_HOME="${HOME}/.config"
 export XDG_CACHE_HOME="${HOME}/.cache"
@@ -61,3 +69,8 @@ export JAVA_HOME="$(/usr/libexec/java_home 2> /dev/null || true)"
 
 # Path.
 export PATH="${HOME}/bin:/opt/homebrew/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:${JAVA_HOME}/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.krew/bin:${HOME}/.local/bin"
+
+# If a private-env.zsh file exists, load it.
+if [[ -f "${XDG_CONFIG_HOME}/zsh/lib/private-env.zsh" ]]; then
+  source "${XDG_CONFIG_HOME}/zsh/lib/private-env.zsh"
+fi

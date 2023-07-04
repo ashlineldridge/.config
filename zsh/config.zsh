@@ -27,9 +27,9 @@ for f in "${libs[@]}"; do
   source "${lib}"
 done
 
-# If a private.zsh file exists, load it. I use this file to manage configuration
-# I don't want to make public. Typically, it's just environment variables that
-# are work-specific.
-if [[ -f "${XDG_CONFIG_HOME}/zsh/lib/private.zsh" ]]; then
-  source "${XDG_CONFIG_HOME}/zsh/lib/private.zsh"
+# If a private-other.zsh file exists, load it. The private-env.zsh is separate from
+# private-other.zsh as the former is loaded from ~/.zshenv because this file is not
+# loaded by non-interactive shells (e.g. some processes started by Emacs).
+if [[ -f "${XDG_CONFIG_HOME}/zsh/lib/private-other.zsh" ]]; then
+  source "${XDG_CONFIG_HOME}/zsh/lib/private-other.zsh"
 fi

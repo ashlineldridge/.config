@@ -72,12 +72,6 @@
   (column-number-mode t)
   (global-auto-revert-mode t)
   (async-shell-command-buffer 'new-buffer)
-  ;; Add -i so that  `shell-command' and `async-shell-command' use an
-  ;; interactive shell (and load the zsh dotfiles). For some reason, my
-  ;; `exec-path' configuration via early-init.el isn't reflected on the
-  ;; PATH of these commands. By adding -i the shell commands pick up the
-  ;; PATH settings from my zsh dotfiles as well aliases, etc.
-  (shell-command-switch "-ic")
   (savehist-mode t)
   (electric-pair-mode t)
   ;; Increase margins slightly.
@@ -437,9 +431,11 @@
      "\\*eldoc for "
      "\\*eshell-output\\*"
      "CAPTURE-.*\\.org"
+     "\\*Call Hierarchy\\*"
      "\\*Shell Command Output\\*"
      "\\*Async Shell Command\\*"
-     "\\*Call Hierarchy\\*"
+     "\\*detached-list\\*"
+     "\\*Detached Shell Command\\*"
 
      ;; Match all modes that derive from compilation-mode but do not derive
      ;; from a member of `my/popper-ignore-modes'.
@@ -756,10 +752,11 @@
         ("M-s r" . consult-ripgrep)
         ("M-s i" . consult-imenu)
         ("M-s I" . consult-imenu-multi)
-        ("M-s m" . consult-mark)
-        ("M-s M" . consult-global-mark)
+        ("M-s m" . consult-bookmark)
         ("M-s g" . consult-goto-line)
-        ("M-s o" . consult-outline))
+        ("M-s o" . consult-outline)
+        ("M-s SPC" . consult-mark)
+        ("M-S SPC" . consult-global-mark))
   (:map minibuffer-local-map
         ("M-s" . nil)
         ("C-r" . consult-history))
@@ -880,6 +877,8 @@
    consult-imenu
    consult-imenu-multi
    consult-line
+   consult-mark
+   consult-global-mark
    :preview-key 'any))
 
 (use-package consult-dir
@@ -1409,7 +1408,7 @@ as there appears to be a bug in the current version."
   :init
   (apheleia-global-mode 1)
   :config
-  ;; Use goimports rather than the gofmt so that imports get optimized.
+  ;; Use goimports rather than gofmt so that imports get optimized.
   (setf (alist-get 'go-mode apheleia-mode-alist) 'goimports))
 
 ;;;;;; LSP (Language Server Protocol)
@@ -1825,6 +1824,8 @@ as there appears to be a bug in the current version."
 
 ;;;;;; Go
 
+;; See more comprehensive configuration here:
+;; https://github.com/seagle0128/.emacs.d/blob/1d85bf72f86317a3a11890661ca06ff8caac0974/lisp/init-go.el.
 (use-package go-mode
   :bind
   (:map go-mode-map
@@ -1914,6 +1915,7 @@ as there appears to be a bug in the current version."
         ("C-<right>" . nil)
         ("C-M-<left>" . nil)
         ("C-M-<right>" . nil)
+        ("M-S" . nil)
         ("M-s" . nil)
         ("M-?" . nil))
   :hook
@@ -2050,10 +2052,10 @@ as there appears to be a bug in the current version."
               components (cdr components)))
       (concat str (cl-reduce (lambda (a b) (concat a "/" b)) components))))
 
-(defun my/eshell-refresh-aliases ()
-  "Refresh eshell aliases."
-  (interactive)
-  (eshell-read-aliases-list))
+  (defun my/eshell-refresh-aliases ()
+    "Refresh eshell aliases."
+    (interactive)
+    (eshell-read-aliases-list))
 
   (defun my/sink (&optional name)
     "Return a reference to a buffer for sinking eshell command output.
@@ -2063,6 +2065,30 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
            (buf (get-buffer-create name)))
       (display-buffer buf)
       buf)))
+
+(use-package sh-script
+  :straight nil
+  :bind
+  (:map sh-mode-map
+        ("C-c C-o" . nil)))
+
+(use-package detached
+  :commands detached-init
+  :bind
+  (:map global-map
+        ([remap async-shell-command] . detached-shell-command)
+        ([remap compile] . detached-compile)
+        ([remap recompile] . detached-compile-recompile)
+        ;; Disable consult integration until the following issue is resolved:
+        ;; https://lists.sr.ht/~niklaseklund/detached.el/%3CCAM-j%3Dqsnjw4%3D9kYbYGGR1oqC7BGxmZphN5Jq2gHdO3p8nQYdTw%40mail.gmail.com%3E.
+        ;; ([remap detached-open-session] . detached-consult-session)
+        ("C-c d d" . detached-open-session)
+        ("C-c d l" . detached-list-sessions))
+  :custom
+  (detached-terminal-data-command system-type)
+  (detached-notification-function #'detached-state-transitionion-echo-message)
+  :init
+  (detached-init))
 
 ;;;; Org Mode
 
