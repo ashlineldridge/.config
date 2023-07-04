@@ -72,6 +72,12 @@
   (column-number-mode t)
   (global-auto-revert-mode t)
   (async-shell-command-buffer 'new-buffer)
+  ;; Add -i so that  `shell-command' and `async-shell-command' use an
+  ;; interactive shell (and load the zsh dotfiles). For some reason, my
+  ;; `exec-path' configuration via early-init.el isn't reflected on the
+  ;; PATH of these commands. By adding -i the shell commands pick up the
+  ;; PATH settings from my zsh dotfiles as well aliases, etc.
+  (shell-command-switch "-ic")
   (savehist-mode t)
   (electric-pair-mode t)
   ;; Increase margins slightly.
