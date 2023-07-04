@@ -2089,10 +2089,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   ;; TODO: Would prefer to use D-Bus or `alert' but haven't been able to
   ;; to get either working properly on macOS.
   (detached-notification-function #'detached-state-transitionion-echo-message)
-  ;; Display git branch information in `detached-list-sessions'.
-  (detached-metadata-annotators-alist '((branch . detached--metadata-git-branch)))
   :init
-  (detached-init))
+  (detached-init)
+  :config
+  ;; Display git branch information in `detached-list-sessions'.
+  (setq detached-metadata-annotators-alist '((branch . detached--metadata-git-branch))))
 
 ;;;; Org Mode
 
