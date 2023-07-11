@@ -478,17 +478,32 @@
   ([remap describe-key] . helpful-key))
 
 (use-package which-key
-  :commands which-key-mode
+  :commands (which-key-mode which-key-add-key-based-replacements)
   :custom
   ;; Use Embark for `prefix-help-command' as it is searchable.
   (which-key-show-early-on-C-h nil)
   (which-key-use-C-h-commands nil)
-  (which-key-idle-delay 2)
+  (which-key-idle-delay 0.75)
   (which-key-idle-secondary-delay 0.05)
   (which-key-popup-type 'side-window)
   (which-key-side-window-location '(bottom right))
   :init
-  (which-key-mode 1))
+  (which-key-mode 1)
+  :config
+  ;; TODO: I'd like to keep related keybindings (e.g. 'M-i' for programming)
+  ;; together in one place rather than define them in separate maps in separate
+  ;; `use-package' forms and then define prefix descriptions here. Could
+  ;; `bind-key' (from the `use-package' package) help with this? How about
+  ;; general.el?
+  (which-key-add-key-based-replacements
+    "M-i a" "actions"
+    "M-i b" "build"
+    "M-i d" "debug"
+    "M-i g" "goto"
+    "M-i p" "peek"
+    "M-i t" "testing"
+    "M-i v" "toggles"
+    "M-i w" "workspaces"))
 
 ;;;; Completion System
 
@@ -757,8 +772,10 @@
         ("M-s m" . consult-bookmark)
         ("M-s g" . consult-goto-line)
         ("M-s o" . consult-outline)
+        ("M-s s" . consult-lsp-file-symbols)
+        ("M-s S" . consult-lsp-symbols)
         ("M-s SPC" . consult-mark)
-        ("M-S SPC" . consult-global-mark))
+        ("M-s S-SPC" . consult-global-mark))
   (:map minibuffer-local-map
         ("M-s" . nil)
         ("C-r" . consult-history))
@@ -1417,12 +1434,13 @@ as there appears to be a bug in the current version."
 ;;;;;; LSP (Language Server Protocol)
 
 (use-package lsp-mode
-  ;; Shouldn't be necessary but gets ride of Flycheck warnings.
   :functions my/if-essential-advice
+
   :commands
   (lsp
    lsp-deferred
    lsp-register-custom-settings)
+
   :hook
   ((c-mode
     c++-mode
@@ -1431,14 +1449,34 @@ as there appears to be a bug in the current version."
     sh-mode
     terraform-mode
     python-mode) . lsp-deferred)
-  :bind-keymap ("C-c l" . lsp-command-map)
+
   :bind
   (:map lsp-mode-map
+        ;; Documentation.
+        ("M-p" . lsp-ui-doc-toggle)
         ("M-P" . lsp-describe-thing-at-point)
-        ("M-i ^" . lsp-find-implementation)
-        ("M-i h" . lsp-inlay-hints-mode)
-        ("M-s s" . consult-lsp-file-symbols)
-        ("M-s S" . consult-lsp-symbols))
+        ;; Imenu.
+        ("M-i i" . lsp-ui-imenu)
+        ;; Workspaces.
+        ("M-i w q" . lsp-workspace-shutdown)
+        ("M-i w r" . lsp-workspace-restart)
+        ;; Toggles.
+        ("M-i v l" . lsp-toggle-trace-io)
+        ("M-i v i" . lsp-inlay-hints-mode)
+        ;; Goto.
+        ("M-i g h" . lsp-treemacs-call-hierarchy)
+        ("M-i g i" . lsp-find-implementation)
+        ("M-i g r" . lsp-find-references)
+        ("M-i g d" . lsp-find-type-definition)
+        ;; Actions.
+        ("M-i a a" . lsp-execute-code-action)
+        ("M-i a o" . lsp-organize-imports)
+        ("M-i a r" . lsp-rename)
+        ;; Peeks (TODO: remove bindings that aren't useful).
+        ("M-i p g" . lsp-ui-peek-find-definitions)
+        ("M-i p i" . lsp-ui-peek-find-implementation)
+        ("M-i p r" . lsp-ui-peek-find-references)
+        ("M-i p s" . lsp-ui-peek-find-workspace-symbol))
 
   :custom
   (lsp-log-io nil)
@@ -1506,6 +1544,7 @@ as there appears to be a bug in the current version."
   :init
   (defun my/if-essential-advice (f &rest args)
     "Around advice that invokes F with ARGS if `non-essential' is non-nil."
+    (message "Checking essential advice: %s" non-essential)
     (unless non-essential
       (apply f args)))
 
@@ -1527,18 +1566,15 @@ as there appears to be a bug in the current version."
      ("gopls.staticcheck" t t))))
 
 (use-package lsp-ui
-  :bind
-  (:map lsp-ui-mode-map
-        ("M-p" . lsp-ui-doc-toggle)
-        ("M-i i" . lsp-ui-imenu))
+  :after lsp-mode
   :custom
-  (lsp-ui-sideline-delay 0)
-  (lsp-ui-doc-delay 0)
-  (lsp-ui-imenu-auto-refresh t)
-  (lsp-ui-doc-show-with-mouse nil)
-  (lsp-ui-doc-position 'at-point)
-  (lsp-ui-doc-max-width 150)
-  (lsp-ui-doc-max-height 30))
+    (lsp-ui-sideline-delay 0)
+    (lsp-ui-doc-delay 0)
+    (lsp-ui-imenu-auto-refresh t)
+    (lsp-ui-doc-show-with-mouse nil)
+    (lsp-ui-doc-position 'at-point)
+    (lsp-ui-doc-max-width 150)
+    (lsp-ui-doc-max-height 30))
 
 ;;;;;; DAP (Debug Adapter Protocol)
 
@@ -1860,18 +1896,18 @@ as there appears to be a bug in the current version."
   (setq go-mode-map (make-sparse-keymap))
 
   :config
-  (use-package gotest)
-  (use-package go-tag)
-  (use-package go-gen-test)
-  ;; TODO: Need fix for https://github.com/emacsorphanage/go-impl/issues/11.
-  (use-package go-impl)
-
   (defun my/go-play-dwim ()
     "Opens Go Playground for the buffer or region (if active)."
     (interactive)
     (if (region-active-p)
         (go-play-region (region-beginning) (region-end))
       (go-play-buffer))))
+
+(use-package gotest)
+(use-package go-tag)
+(use-package go-gen-test)
+;; TODO: Want fix for https://github.com/emacsorphanage/go-impl/issues/11.
+(use-package go-impl)
 
 ;;;;;; Protobuf
 
