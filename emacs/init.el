@@ -31,6 +31,9 @@
   (:map global-map
         ("C-x m" . nil)   ;; Remove `compose-mail' binding.
         ("C-h C-h" . nil) ;; Remove `help-for-help' binding.
+        ;; Take over 'M-i' as the "code" keybinding prefix.
+        ("M-i" . nil)
+        ("M-i |" . display-fill-column-indicator-mode)
         ("<escape>". keyboard-escape-quit)
         ("C-;" . comment-line)
         ("M-[" . previous-buffer)
@@ -40,7 +43,6 @@
         ("C-x C-k" . kill-this-buffer)
         ("C-x w w" . my/toggle-show-trailing-whitespace)
         ("C-x w k" . delete-trailing-whitespace)
-        ("C-c C-c |" . display-fill-column-indicator-mode)
         ("C-S-k" . my/copy-to-eol)
         ("C-M-k" . my/delete-to-eol)
         ("M-<backspace>" . my/delete-to-bol))
@@ -698,7 +700,7 @@
   (defun my/init-org-capfs ()
     "Configure CAPFs to be used for `org-mode'."
     (setq-local completion-at-point-functions
-                (list (cape-super-capf #'cape-dabbrev #'cape-yasnippet))))
+                (list #'cape-file)))
 
   (defun my/init-lsp-capfs ()
     "Configure CAPFs to be used for `lsp-mode'."
@@ -879,6 +881,7 @@
    consult-line
    consult-mark
    consult-global-mark
+   consult-lsp-file-symbols
    :preview-key 'any))
 
 (use-package consult-dir
@@ -1432,11 +1435,10 @@ as there appears to be a bug in the current version."
   :bind
   (:map lsp-mode-map
         ("M-P" . lsp-describe-thing-at-point)
-        ("C-M-b" . lsp-find-implementation)
-        ;; TODO: Sort out below
-        ("C-c C-c s f" . consult-lsp-file-symbols)
-        ("C-c C-c s w" . consult-lsp-symbols)
-        ("C-c C-c h" . lsp-inlay-hints-mode))
+        ("M-i ^" . lsp-find-implementation)
+        ("M-i h" . lsp-inlay-hints-mode)
+        ("M-s s" . consult-lsp-file-symbols)
+        ("M-s S" . consult-lsp-symbols))
 
   :custom
   (lsp-log-io nil)
@@ -1528,7 +1530,7 @@ as there appears to be a bug in the current version."
   :bind
   (:map lsp-ui-mode-map
         ("M-p" . lsp-ui-doc-toggle)
-        ("C-c C-c i" . lsp-ui-imenu))
+        ("M-i i" . lsp-ui-imenu))
   :custom
   (lsp-ui-sideline-delay 0)
   (lsp-ui-doc-delay 0)
@@ -1613,34 +1615,34 @@ as there appears to be a bug in the current version."
   :bind
   (:map dap-mode-map
         ;; Start/stop commands.
-        ("C-c C-d d" . dap-debug)
-        ("C-c C-d D" . dap-debug-last)
-        ("C-c C-d q" . my/dap-quit)
+        ("M-i d d" . dap-debug)
+        ("M-i d D" . dap-debug-last)
+        ("M-i d q" . my/dap-quit)
         ;; Hydra menu.
-        ("C-c C-d m" . dap-hydra)
+        ("M-i d m" . dap-hydra)
         ;; UI window commands.
-        ("C-c C-d r" . dap-ui-repl)
-        ("C-c C-d l" . dap-ui-locals)
-        ("C-c C-d e" . dap-ui-expressions)
+        ("M-i d r" . dap-ui-repl)
+        ("M-i d l" . dap-ui-locals)
+        ("M-i d e" . dap-ui-expressions)
         ;; Breakpoint commands.
-        ("C-c C-d b" . dap-breakpoint-toggle)
-        ("C-c C-d k" . dap-ui-breakpoint-delete)
-        ("C-c C-d K" . dap-breakpoint-delete-all)
+        ("M-i d b" . dap-breakpoint-toggle)
+        ("M-i d k" . dap-ui-breakpoint-delete)
+        ("M-i d K" . dap-breakpoint-delete-all)
         ;; Stepping commands.
-        ("C-c C-d n" . dap-next)
-        ("C-c C-d i" . dap-step-in)
-        ("C-c C-d o" . dap-step-out)
-        ("C-c C-d c" . dap-continue)
+        ("M-i d n" . dap-next)
+        ("M-i d i" . dap-step-in)
+        ("M-i d o" . dap-step-out)
+        ("M-i d c" . dap-continue)
         ;; Stack frame commands.
-        ("C-c C-d f" . dap-switch-stack-frame)
-        ("C-c C-d <up>" . dap-up-stack-frame)
-        ("C-c C-d <down>" . dap-down-stack-frame)
+        ("M-i d f" . dap-switch-stack-frame)
+        ("M-i d <up>" . dap-up-stack-frame)
+        ("M-i d <down>" . dap-down-stack-frame)
         ;; Expression commands.
-        ("C-c C-d +" . dap-ui-expressions-add)
-        ("C-c C-d -" . dap-ui-expressions-remove)
+        ("M-i d +" . dap-ui-expressions-add)
+        ("M-i d -" . dap-ui-expressions-remove)
         ;; Evaluation commands.
-        ("C-c C-d :" . dap-eval)
-        ("C-c C-d ." . dap-eval-thing-at-point))
+        ("M-i d :" . dap-eval)
+        ("M-i d ." . dap-eval-thing-at-point))
 
   :custom
   (dap-auto-configure-features '(locals breakpoints expressions repl))
@@ -1734,7 +1736,7 @@ as there appears to be a bug in the current version."
   :hook (prog-mode . flycheck-mode)
   :bind
   (:map flycheck-mode-map
-        ("C-c C-c l" . flycheck-list-errors))
+        ("M-i l" . flycheck-list-errors))
   :custom
   ;; Tell Flycheck to use the load-path of the current Emacs session. Without
   ;; this, Flycheck tends towards both false negatives and false positives.
@@ -1768,19 +1770,20 @@ as there appears to be a bug in the current version."
   ;; more idiomatic way to do this but I haven't found it yet.
   (defun my/build-rust-keymap (base-map)
     "Return custom Rust keymap built on top of BASE-MAP."
-    (define-key base-map (kbd "C-c C-c") nil)
-    (define-key base-map (kbd "C-c C-c b") #'rustic-cargo-build)
-    (define-key base-map (kbd "C-c C-c c a") #'rustic-cargo-add)
-    (define-key base-map (kbd "C-c C-c c b") #'rustic-cargo-build)
-    (define-key base-map (kbd "C-c C-c c c") #'rustic-cargo-clean)
-    (define-key base-map (kbd "C-c C-c c f") #'rustic-cargo-fmt)
-    (define-key base-map (kbd "C-c C-c c l") #'rustic-cargo-clippy)
-    (define-key base-map (kbd "C-c C-c c o") #'rustic-cargo-outdated)
-    (define-key base-map (kbd "C-c C-c c r") #'rustic-cargo-run)
-    (define-key base-map (kbd "C-c C-c c t") #'rustic-cargo-test)
-    (define-key base-map (kbd "C-c C-c c T") #'rustic-cargo-current-test)
-    (define-key base-map (kbd "C-c C-c c u") #'rustic-cargo-upgrade)
-    (define-key base-map (kbd "C-c C-c C-o") #'lsp-rust-analyzer-open-external-docs)
+    ;; Build keybindings.
+    (define-key base-map (kbd "M-i b b") #'rustic-cargo-build)
+    (define-key base-map (kbd "M-i b a") #'rustic-cargo-add)
+    (define-key base-map (kbd "M-i b c") #'rustic-cargo-clean)
+    (define-key base-map (kbd "M-i b f") #'rustic-cargo-fmt)
+    (define-key base-map (kbd "M-i b l") #'rustic-cargo-clippy)
+    (define-key base-map (kbd "M-i b o") #'rustic-cargo-outdated)
+    (define-key base-map (kbd "M-i b u") #'rustic-cargo-upgrade)
+    (define-key base-map (kbd "M-i b r") #'rustic-cargo-run)
+    ;; Test keybindings.
+    (define-key base-map (kbd "M-i t p") #'rustic-cargo-test)
+    (define-key base-map (kbd "M-i t t") #'rustic-cargo-current-test)
+    ;; Goto keybindings.
+    (define-key base-map (kbd "M-i g d") #'lsp-rust-analyzer-open-external-docs)
     base-map)
 
   (setq rustic-mode-map (my/build-rust-keymap (make-sparse-keymap)))
@@ -1824,20 +1827,51 @@ as there appears to be a bug in the current version."
 
 ;;;;;; Go
 
-;; See more comprehensive configuration here:
-;; https://github.com/seagle0128/.emacs.d/blob/1d85bf72f86317a3a11890661ca06ff8caac0974/lisp/init-go.el.
 (use-package go-mode
+  :commands (go-play-buffer go-play-region)
   :bind
   (:map go-mode-map
-        ("C-c C-c p b" . go-play-buffer)
-        ("C-c C-c p r" . go-play-region)
-        ("C-c C-c b" . compile)
-        ("C-c C-c r" . recompile))
+        ;; Build keybindings.
+        ("M-i b r" . go-run)
+        ("M-i b b" . compile)
+        ("M-i b B" . recompile)
+        ;; Goto keybindings.
+        ("M-i g p" . my/go-play-dwim)
+        ;; Test keybindings.
+        ("M-i t f" . go-test-current-file)
+        ("M-i t t" . go-test-current-test)
+        ("M-i t p" . go-test-current-project)
+        ("M-i t b" . go-test-current-benchmark)
+        ("M-i t c" . go-test-current-coverage)
+        ;; Action keybindings.
+        ("M-i a t" . go-tag-add)
+        ("M-i a T" . go-tag-remove)
+        ("M-i a g" . go-gen-test-dwim)
+        ("M-i a i" . go-impl))
+
   :hook
   (go-mode . (lambda () (setq-local tab-width 4)))
+
+  :custom
+  (go-play-browse-function #'browse-url)
+
   :init
   ;; Remove the default `go-mode' keybindings.
-  (setq go-mode-map (make-sparse-keymap)))
+  (setq go-mode-map (make-sparse-keymap))
+
+  :config
+  (use-package gotest)
+  (use-package go-tag)
+  (use-package go-gen-test)
+  ;; TODO: Need fix for https://github.com/emacsorphanage/go-impl/issues/11.
+  (use-package go-impl)
+
+  (defun my/go-play-dwim ()
+    "Opens Go Playground for the buffer or region (if active)."
+    (interactive)
+    (if (region-active-p)
+        (go-play-region (region-beginning) (region-end))
+      (go-play-buffer))))
 
 ;;;;;; Protobuf
 
@@ -1854,11 +1888,15 @@ as there appears to be a bug in the current version."
   ("\\.star\\'" . bazel-starlark-mode)
   :bind
   (:map bazel-mode-map
-        ("C-c C-c b" . bazel-build)
-        ("C-c C-c f" . bazel-buildifier)
-        ("C-c C-c r" . bazel-run)
-        ("C-c C-c t" . bazel-test)
-        ("C-c C-c T" . bazel-coverage))
+        ;; Keep Bazel under its own prefix rather than reusing the standard
+        ;; build prefix (i.e. 'M-i b') as sometimes both `bazel-mode' and
+        ;; programming modes such as `rustic-mode' are run simultaneously
+        ;; which can cause collisions.
+        ("M-i z b" . bazel-build)
+        ("M-i z f" . bazel-buildifier)
+        ("M-i z r" . bazel-run)
+        ("M-i z t" . bazel-test)
+        ("M-i z c" . bazel-coverage))
   :custom
   (bazel-buildifier-before-save t)
   :init
@@ -1871,17 +1909,11 @@ as there appears to be a bug in the current version."
 
 ;;;;;; C/C++
 
-(use-package cc-mode
-  :bind (:map c++-mode-map
-	      ("C-c C-c f" . clang-format-buffer)
-	      ("C-c C-c F" . clang-format-region)
-	      ("C-c C-c c" . compile)))
+(use-package cc-mode)
 
 (use-package clang-format
-  :commands
-  (clang-format clang-format-buffer clang-format-region)
-  :config
-  (setq clang-format-fallback-style "llvm")) ;; Where is this defined?
+  :custom
+  (clang-format-fallback-style "llvm"))
 
 ;;;;;; YAML
 
@@ -1902,6 +1934,8 @@ as there appears to be a bug in the current version."
   :bind
   (:map global-map
         ("C-x C-r" . eval-region))
+  (:map emacs-lisp-mode-map
+        ("M-p" . eldoc-print-current-symbol-info))
   :init
   (defun my/init-emacs-lisp-mode ()
     "Initializes `emacs-lisp-mode'."
