@@ -32,8 +32,8 @@
         ("C-x m" . nil)   ;; Remove `compose-mail' binding.
         ("C-h C-h" . nil) ;; Remove `help-for-help' binding.
         ;; Take over 'M-i' as the "code" keybinding prefix.
-        ("M-i" . nil)
-        ("M-i |" . display-fill-column-indicator-mode)
+        ;; ("M-i" . nil)
+        ;; ("M-i |" . display-fill-column-indicator-mode)
         ("<escape>". keyboard-escape-quit)
         ("C-;" . comment-line)
         ("M-[" . previous-buffer)
@@ -181,8 +181,7 @@
   (unless (server-running-p)
     (server-start)))
 
-;;;; Keybindings
-
+;; TODO: Move under Keybindings heading at the bottom.
 (use-package hydra)
 
 ;;;; Appearance
@@ -483,27 +482,12 @@
   ;; Use Embark for `prefix-help-command' as it is searchable.
   (which-key-show-early-on-C-h nil)
   (which-key-use-C-h-commands nil)
-  (which-key-idle-delay 0.75)
+  (which-key-idle-delay 0.5)
   (which-key-idle-secondary-delay 0.05)
   (which-key-popup-type 'side-window)
   (which-key-side-window-location '(bottom right))
   :init
-  (which-key-mode 1)
-  :config
-  ;; TODO: I'd like to keep related keybindings (e.g. 'M-i' for programming)
-  ;; together in one place rather than define them in separate maps in separate
-  ;; `use-package' forms and then define prefix descriptions here. Could
-  ;; `bind-key' (from the `use-package' package) help with this? How about
-  ;; general.el?
-  (which-key-add-key-based-replacements
-    "M-i a" "actions"
-    "M-i b" "build"
-    "M-i d" "debug"
-    "M-i g" "goto"
-    "M-i p" "peek"
-    "M-i t" "testing"
-    "M-i v" "toggles"
-    "M-i w" "workspaces"))
+  (which-key-mode 1))
 
 ;;;; Completion System
 
@@ -762,20 +746,21 @@
         ("C-c o s" . consult-org-agenda)
 
         ;; Put all search/goto commands under M-s for simplicity.
-        ("M-s d" . consult-dir)
-        ("M-s f" . consult-find)
-        ("M-s l" . consult-line)
-        ("M-s L" . my/consult-line-strict)
-        ("M-s r" . consult-ripgrep)
-        ("M-s i" . consult-imenu)
-        ("M-s I" . consult-imenu-multi)
-        ("M-s m" . consult-bookmark)
-        ("M-s g" . consult-goto-line)
-        ("M-s o" . consult-outline)
-        ("M-s s" . consult-lsp-file-symbols)
-        ("M-s S" . consult-lsp-symbols)
-        ("M-s SPC" . consult-mark)
-        ("M-s S-SPC" . consult-global-mark))
+        ;; ("M-s d" . consult-dir)
+        ;; ("M-s f" . consult-find)
+        ;; ("M-s l" . consult-line)
+        ;; ("M-s L" . my/consult-line-strict)
+        ;; ("M-s r" . consult-ripgrep)
+        ;; ("M-s i" . consult-imenu)
+        ;; ("M-s I" . consult-imenu-multi)
+        ;; ("M-s m" . consult-bookmark)
+        ;; ("M-s g" . consult-goto-line)
+        ;; ("M-s o" . consult-outline)
+        ;; ("M-s s" . consult-lsp-file-symbols)
+        ;; ("M-s S" . consult-lsp-symbols)
+        ;; ("M-s SPC" . consult-mark)
+        ;; ("M-s S-SPC" . consult-global-mark)
+        )
   (:map minibuffer-local-map
         ("M-s" . nil)
         ("C-r" . consult-history))
@@ -908,6 +893,8 @@
   (consult-dir-default-command #'consult-dir-dired))
 
 (use-package consult-lsp
+  :commands
+  (consult-lsp-symbols consult-lsp-file-symbols)
   :custom
   (consult-lsp-marginalia-mode t))
 
@@ -1450,33 +1437,33 @@ as there appears to be a bug in the current version."
     terraform-mode
     python-mode) . lsp-deferred)
 
-  :bind
-  (:map lsp-mode-map
-        ;; Documentation.
-        ("M-p" . lsp-ui-doc-toggle)
-        ("M-P" . lsp-describe-thing-at-point)
-        ;; Imenu.
-        ("M-i i" . lsp-ui-imenu)
-        ;; Workspaces.
-        ("M-i w q" . lsp-workspace-shutdown)
-        ("M-i w r" . lsp-workspace-restart)
-        ;; Toggles.
-        ("M-i v l" . lsp-toggle-trace-io)
-        ("M-i v i" . lsp-inlay-hints-mode)
-        ;; Goto.
-        ("M-i g h" . lsp-treemacs-call-hierarchy)
-        ("M-i g i" . lsp-find-implementation)
-        ("M-i g r" . lsp-find-references)
-        ("M-i g d" . lsp-find-type-definition)
-        ;; Actions.
-        ("M-i a a" . lsp-execute-code-action)
-        ("M-i a o" . lsp-organize-imports)
-        ("M-i a r" . lsp-rename)
-        ;; Peeks (TODO: remove bindings that aren't useful).
-        ("M-i p g" . lsp-ui-peek-find-definitions)
-        ("M-i p i" . lsp-ui-peek-find-implementation)
-        ("M-i p r" . lsp-ui-peek-find-references)
-        ("M-i p s" . lsp-ui-peek-find-workspace-symbol))
+  ;; :bind
+  ;; (:map lsp-mode-map
+  ;;       ;; Documentation.
+  ;;       ("M-p" . lsp-ui-doc-toggle)
+  ;;       ("M-P" . lsp-describe-thing-at-point)
+  ;;       ;; Imenu.
+  ;;       ("M-i i" . lsp-ui-imenu)
+  ;;       ;; Workspaces.
+  ;;       ("M-i w q" . lsp-workspace-shutdown)
+  ;;       ("M-i w r" . lsp-workspace-restart)
+  ;;       ;; Toggles.
+  ;;       ("M-i v l" . lsp-toggle-trace-io)
+  ;;       ("M-i v i" . lsp-inlay-hints-mode)
+  ;;       ;; Goto.
+  ;;       ("M-i g h" . lsp-treemacs-call-hierarchy)
+  ;;       ("M-i g i" . lsp-find-implementation)
+  ;;       ("M-i g r" . lsp-find-references)
+  ;;       ("M-i g d" . lsp-find-type-definition)
+  ;;       ;; Actions.
+  ;;       ("M-i a a" . lsp-execute-code-action)
+  ;;       ("M-i a o" . lsp-organize-imports)
+  ;;       ("M-i a r" . lsp-rename)
+  ;;       ;; Peeks (TODO: remove bindings that aren't useful).
+  ;;       ("M-i p g" . lsp-ui-peek-find-definitions)
+  ;;       ("M-i p i" . lsp-ui-peek-find-implementation)
+  ;;       ("M-i p r" . lsp-ui-peek-find-references)
+  ;;       ("M-i p s" . lsp-ui-peek-find-workspace-symbol))
 
   :custom
   (lsp-log-io nil)
@@ -1567,6 +1554,13 @@ as there appears to be a bug in the current version."
 
 (use-package lsp-ui
   :after lsp-mode
+  :commands
+  ;; Prevents Flycheck warnings in general.el below.
+  (lsp-ui-imenu
+   lsp-ui-peek-find-definitions
+   lsp-ui-peek-find-implementation
+   lsp-ui-peek-find-references
+   lsp-ui-peek-find-workspace-symbol)
   :custom
     (lsp-ui-sideline-delay 0)
     (lsp-ui-doc-delay 0)
@@ -1648,37 +1642,37 @@ as there appears to be a bug in the current version."
   (go-mode . dap-mode)
   (rustic-mode . dap-mode)
 
-  :bind
-  (:map dap-mode-map
-        ;; Start/stop commands.
-        ("M-i d d" . dap-debug)
-        ("M-i d D" . dap-debug-last)
-        ("M-i d q" . my/dap-quit)
-        ;; Hydra menu.
-        ("M-i d m" . dap-hydra)
-        ;; UI window commands.
-        ("M-i d r" . dap-ui-repl)
-        ("M-i d l" . dap-ui-locals)
-        ("M-i d e" . dap-ui-expressions)
-        ;; Breakpoint commands.
-        ("M-i d b" . dap-breakpoint-toggle)
-        ("M-i d k" . dap-ui-breakpoint-delete)
-        ("M-i d K" . dap-breakpoint-delete-all)
-        ;; Stepping commands.
-        ("M-i d n" . dap-next)
-        ("M-i d i" . dap-step-in)
-        ("M-i d o" . dap-step-out)
-        ("M-i d c" . dap-continue)
-        ;; Stack frame commands.
-        ("M-i d f" . dap-switch-stack-frame)
-        ("M-i d <up>" . dap-up-stack-frame)
-        ("M-i d <down>" . dap-down-stack-frame)
-        ;; Expression commands.
-        ("M-i d +" . dap-ui-expressions-add)
-        ("M-i d -" . dap-ui-expressions-remove)
-        ;; Evaluation commands.
-        ("M-i d :" . dap-eval)
-        ("M-i d ." . dap-eval-thing-at-point))
+  ;; :bind
+  ;; (:map dap-mode-map
+  ;;       ;; Start/stop commands.
+  ;;       ("M-i d d" . dap-debug)
+  ;;       ("M-i d D" . dap-debug-last)
+  ;;       ("M-i d q" . my/dap-quit)
+  ;;       ;; Hydra menu.
+  ;;       ("M-i d m" . dap-hydra)
+  ;;       ;; UI window commands.
+  ;;       ("M-i d r" . dap-ui-repl)
+  ;;       ("M-i d l" . dap-ui-locals)
+  ;;       ("M-i d e" . dap-ui-expressions)
+  ;;       ;; Breakpoint commands.
+  ;;       ("M-i d b" . dap-breakpoint-toggle)
+  ;;       ("M-i d k" . dap-ui-breakpoint-delete)
+  ;;       ("M-i d K" . dap-breakpoint-delete-all)
+  ;;       ;; Stepping commands.
+  ;;       ("M-i d n" . dap-next)
+  ;;       ("M-i d i" . dap-step-in)
+  ;;       ("M-i d o" . dap-step-out)
+  ;;       ("M-i d c" . dap-continue)
+  ;;       ;; Stack frame commands.
+  ;;       ("M-i d f" . dap-switch-stack-frame)
+  ;;       ("M-i d <up>" . dap-up-stack-frame)
+  ;;       ("M-i d <down>" . dap-down-stack-frame)
+  ;;       ;; Expression commands.
+  ;;       ("M-i d +" . dap-ui-expressions-add)
+  ;;       ("M-i d -" . dap-ui-expressions-remove)
+  ;;       ;; Evaluation commands.
+  ;;       ("M-i d :" . dap-eval)
+  ;;       ("M-i d ." . dap-eval-thing-at-point))
 
   :custom
   (dap-auto-configure-features '(locals breakpoints expressions repl))
@@ -1770,9 +1764,9 @@ as there appears to be a bug in the current version."
 
 (use-package flycheck
   :hook (prog-mode . flycheck-mode)
-  :bind
-  (:map flycheck-mode-map
-        ("M-i l" . flycheck-list-errors))
+  ;; :bind
+  ;; (:map flycheck-mode-map
+  ;;       ("M-i l" . flycheck-list-errors))
   :custom
   ;; Tell Flycheck to use the load-path of the current Emacs session. Without
   ;; this, Flycheck tends towards both false negatives and false positives.
@@ -1785,46 +1779,47 @@ as there appears to be a bug in the current version."
 ;;;;;; Rust
 
 (use-package rustic
-  :functions my/build-rust-keymap
-  :commands
-  (rustic-cargo-add
-   rustic-cargo-build
-   rustic-cargo-clean
-   rustic-format-buffer
-   rustic-cargo-fmt
-   rustic-cargo-clippy
-   rustic-cargo-outdated
-   rustic-cargo-run
-   rustic-cargo-test
-   rustic-cargo-current-test
-   rustic-cargo-upgrade
-   lsp-rust-analyzer-open-external-docs)
-  :config
-  ;; The following function is used to ensure Rust keybindings are placed in
-  ;; both `rustic-mode-map' and `rustic-compilation-mode-map' (so they can also
-  ;; be used from within the compilation popup window). I'm sure there is a
-  ;; more idiomatic way to do this but I haven't found it yet.
-  (defun my/build-rust-keymap (base-map)
-    "Return custom Rust keymap built on top of BASE-MAP."
-    ;; Build keybindings.
-    (define-key base-map (kbd "M-i b b") #'rustic-cargo-build)
-    (define-key base-map (kbd "M-i b a") #'rustic-cargo-add)
-    (define-key base-map (kbd "M-i b c") #'rustic-cargo-clean)
-    (define-key base-map (kbd "M-i b f") #'rustic-cargo-fmt)
-    (define-key base-map (kbd "M-i b l") #'rustic-cargo-clippy)
-    (define-key base-map (kbd "M-i b o") #'rustic-cargo-outdated)
-    (define-key base-map (kbd "M-i b u") #'rustic-cargo-upgrade)
-    (define-key base-map (kbd "M-i b r") #'rustic-cargo-run)
-    ;; Test keybindings.
-    (define-key base-map (kbd "M-i t p") #'rustic-cargo-test)
-    (define-key base-map (kbd "M-i t t") #'rustic-cargo-current-test)
-    ;; Goto keybindings.
-    (define-key base-map (kbd "M-i g d") #'lsp-rust-analyzer-open-external-docs)
-    base-map)
+  ;; :functions my/build-rust-keymap
+  ;; :commands
+  ;; (rustic-cargo-add
+  ;;  rustic-cargo-build
+  ;;  rustic-cargo-clean
+  ;;  rustic-format-buffer
+  ;;  rustic-cargo-fmt
+  ;;  rustic-cargo-clippy
+  ;;  rustic-cargo-outdated
+  ;;  rustic-cargo-run
+  ;;  rustic-cargo-test
+  ;;  rustic-cargo-current-test
+  ;;  rustic-cargo-upgrade
+  ;;  lsp-rust-analyzer-open-external-docs)
+  ;; :config
+  ;; ;; The following function is used to ensure Rust keybindings are placed in
+  ;; ;; both `rustic-mode-map' and `rustic-compilation-mode-map' (so they can also
+  ;; ;; be used from within the compilation popup window). I'm sure there is a
+  ;; ;; more idiomatic way to do this but I haven't found it yet.
+  ;; (defun my/build-rust-keymap (base-map)
+  ;;   "Return custom Rust keymap built on top of BASE-MAP."
+  ;;   ;; Build keybindings.
+  ;;   (define-key base-map (kbd "M-i b b") #'rustic-cargo-build)
+  ;;   (define-key base-map (kbd "M-i b a") #'rustic-cargo-add)
+  ;;   (define-key base-map (kbd "M-i b c") #'rustic-cargo-clean)
+  ;;   (define-key base-map (kbd "M-i b f") #'rustic-cargo-fmt)
+  ;;   (define-key base-map (kbd "M-i b l") #'rustic-cargo-clippy)
+  ;;   (define-key base-map (kbd "M-i b o") #'rustic-cargo-outdated)
+  ;;   (define-key base-map (kbd "M-i b u") #'rustic-cargo-upgrade)
+  ;;   (define-key base-map (kbd "M-i b r") #'rustic-cargo-run)
+  ;;   ;; Test keybindings.
+  ;;   (define-key base-map (kbd "M-i t p") #'rustic-cargo-test)
+  ;;   (define-key base-map (kbd "M-i t t") #'rustic-cargo-current-test)
+  ;;   ;; Goto keybindings.
+  ;;   (define-key base-map (kbd "M-i g d") #'lsp-rust-analyzer-open-external-docs)
+  ;;   base-map)
 
-  (setq rustic-mode-map (my/build-rust-keymap (make-sparse-keymap)))
-  (setq rustic-compilation-mode-map
-        (my/build-rust-keymap rustic-compilation-mode-map)))
+  ;; (setq rustic-mode-map (my/build-rust-keymap (make-sparse-keymap)))
+  ;; (setq rustic-compilation-mode-map
+  ;;       (my/build-rust-keymap rustic-compilation-mode-map))
+  )
 
 ;;;;;; Terraform
 
@@ -1865,25 +1860,25 @@ as there appears to be a bug in the current version."
 
 (use-package go-mode
   :commands (go-play-buffer go-play-region)
-  :bind
-  (:map go-mode-map
-        ;; Build keybindings.
-        ("M-i b r" . go-run)
-        ("M-i b b" . compile)
-        ("M-i b B" . recompile)
-        ;; Goto keybindings.
-        ("M-i g p" . my/go-play-dwim)
-        ;; Test keybindings.
-        ("M-i t f" . go-test-current-file)
-        ("M-i t t" . go-test-current-test)
-        ("M-i t p" . go-test-current-project)
-        ("M-i t b" . go-test-current-benchmark)
-        ("M-i t c" . go-test-current-coverage)
-        ;; Action keybindings.
-        ("M-i a t" . go-tag-add)
-        ("M-i a T" . go-tag-remove)
-        ("M-i a g" . go-gen-test-dwim)
-        ("M-i a i" . go-impl))
+  ;; :bind
+  ;; (:map go-mode-map
+  ;;       ;; Build keybindings.
+  ;;       ("M-i b r" . go-run)
+  ;;       ("M-i b b" . compile)
+  ;;       ("M-i b B" . recompile)
+  ;;       ;; Goto keybindings.
+  ;;       ("M-i g p" . my/go-play-dwim)
+  ;;       ;; Test keybindings.
+  ;;       ("M-i t f" . go-test-current-file)
+  ;;       ("M-i t t" . go-test-current-test)
+  ;;       ("M-i t p" . go-test-current-project)
+  ;;       ("M-i t b" . go-test-current-benchmark)
+  ;;       ("M-i t c" . go-test-current-coverage)
+  ;;       ;; Action keybindings.
+  ;;       ("M-i a t" . go-tag-add)
+  ;;       ("M-i a T" . go-tag-remove)
+  ;;       ("M-i a g" . go-gen-test-dwim)
+  ;;       ("M-i a i" . go-impl))
 
   :hook
   (go-mode . (lambda () (setq-local tab-width 4)))
@@ -1906,7 +1901,6 @@ as there appears to be a bug in the current version."
 (use-package gotest)
 (use-package go-tag)
 (use-package go-gen-test)
-;; TODO: Want fix for https://github.com/emacsorphanage/go-impl/issues/11.
 (use-package go-impl)
 
 ;;;;;; Protobuf
@@ -1922,17 +1916,17 @@ as there appears to be a bug in the current version."
   ("\\.BUILD\\'" . bazel-mode)
   ("\\.bazel\\'" . bazel-mode)
   ("\\.star\\'" . bazel-starlark-mode)
-  :bind
-  (:map bazel-mode-map
-        ;; Keep Bazel under its own prefix rather than reusing the standard
-        ;; build prefix (i.e. 'M-i b') as sometimes both `bazel-mode' and
-        ;; programming modes such as `rustic-mode' are run simultaneously
-        ;; which can cause collisions.
-        ("M-i z b" . bazel-build)
-        ("M-i z f" . bazel-buildifier)
-        ("M-i z r" . bazel-run)
-        ("M-i z t" . bazel-test)
-        ("M-i z c" . bazel-coverage))
+  ;; :bind
+  ;; (:map bazel-mode-map
+  ;;       ;; Keep Bazel under its own prefix rather than reusing the standard
+  ;;       ;; build prefix (i.e. 'M-i b') as sometimes both `bazel-mode' and
+  ;;       ;; programming modes such as `rustic-mode' are run simultaneously
+  ;;       ;; which can cause collisions.
+  ;;       ("M-i z b" . bazel-build)
+  ;;       ("M-i z f" . bazel-buildifier)
+  ;;       ("M-i z r" . bazel-run)
+  ;;       ("M-i z t" . bazel-test)
+  ;;       ("M-i z c" . bazel-coverage))
   :custom
   (bazel-buildifier-before-save t)
   :init
@@ -2569,6 +2563,184 @@ specified then a task category will be determined by the item's tags."
   (auth-source-do-cache nil)
   :init
   (auth-source-pass-enable))
+
+;;;; Keybindings
+
+(use-package general
+  :functions (my/ide-keys my/search-keys)
+  :config
+  ;; TODO: How to unbind things (e.g. M-o) from ALL keymaps?
+  ;; Apparently possible to unbind multiple maps and keys with:
+  ;; (general-unbind :keymaps '(foo bar) "a" "b")
+  ;; See: https://github.com/kisaragi-hiu/kisaragi-hiu.com/blob/609aebce8efdad0b3d0729962d31f4dcfe25988d/content/2021-06-02-insert-key-double-key.org#L58
+  (general-unbind "M-i")
+  ;; Search keybindings: one stop shop for finding things.
+  (general-create-definer my/search-keys :prefix "M-s")
+  ;; IDE keybindings: one stop shop for all things programming.
+  (general-create-definer my/ide-keys :prefix "M-i"))
+
+;;;;; IDE Keybindings (M-i)
+
+;;;;;; IDE: Global Keybindings
+
+(my/ide-keys
+  ;; Misc.
+  "|" 'display-fill-column-indicator-mode
+  ;; Build.
+  "b" '(:ignore t :which-key "build")
+  "b1" 'compile
+  "b2" 'recompile
+  ;; Flycheck.
+  "l" 'flycheck-list-errors
+  ;; Search.
+  "i" 'consult-imenu
+  "I" 'consult-imenu-multi
+  "r" 'consult-ripgrep
+  "o" 'consult-outline)
+
+;;;;;; IDE: LSP Keybindings
+
+(my/ide-keys
+  :keymaps 'lsp-mode-map
+  ;; Workspaces.
+  "w" '(:ignore t :which-key "workspaces")
+  "wq" 'lsp-workspace-shutdown
+  "wr" 'lsp-workspace-restart
+  ;; Toggles.
+  "v" '(:ignore t :which-key "toggles")
+  "vl" 'lsp-toggle-trace-io
+  "vi" 'lsp-inlay-hints-mode
+  ;; Goto.
+  "g" '(:ignore t :which-key "goto")
+  "gh" 'lsp-treemacs-call-hierarchy
+  "gi" 'lsp-find-implementation
+  "gr" 'lsp-find-references
+  "gd" 'lsp-find-type-definition
+  "gI" 'lsp-ui-imenu
+  ;; Actions.
+  "a" '(:ignore t :which-key "actions")
+  "aa" 'lsp-execute-code-action
+  "ao" 'lsp-organize-imports
+  "ar" 'lsp-rename
+  ;; Search
+  "s" '(:ignore t :which-key "search")
+  "ss" 'consult-lsp-file-symbols
+  "sS" 'consult-lsp-symbols
+  ;; Peeks (TODO: remove bindings that aren't useful).
+  "p" '(:ignore t :which-key "peek")
+  "pg" 'lsp-ui-peek-find-definitions
+  "pi" 'lsp-ui-peek-find-implementation
+  "pr" 'lsp-ui-peek-find-references
+  "ps" 'lsp-ui-peek-find-workspace-symbol)
+
+;;;;;; IDE: DAP Keybindings
+
+(my/ide-keys
+  :keymaps 'dap-mode-map
+  "d" '(:ignore t :which-key "debug")
+  ;; Start/stop commands.
+  "dd" 'dap-debug
+  "dD" 'dap-debug-last
+  "dq" 'my/dap-quit
+  ;; Hydra menu.
+  "dm" 'dap-hydra
+  ;; UI window commands.
+  "dr" 'dap-ui-repl
+  "dl" 'dap-ui-locals
+  "de" 'dap-ui-expressions
+  ;; Breakpoint commands.
+  "db" 'dap-breakpoint-toggle
+  "dk" 'dap-ui-breakpoint-delete
+  "dK" 'dap-breakpoint-delete-all
+  ;; Stepping commands.
+  "dn" 'dap-next
+  "di" 'dap-step-in
+  "do" 'dap-step-out
+  "dc" 'dap-continue
+  ;; Stack frame commands.
+  "df" 'dap-switch-stack-frame
+  "d <up>" 'dap-up-stack-frame
+  "d <down>" 'dap-down-stack-frame
+  ;; Expression commands.
+  "d +" 'dap-ui-expressions-add
+  "d -" 'dap-ui-expressions-remove
+  ;; Evaluation commands.
+  "d :" 'dap-eval
+  "d ." 'dap-eval-thing-at-point)
+
+;;;;;; IDE: Rust Keybindings
+
+(my/ide-keys
+  :keymaps '(rustic-mode-map rustic-compilation-mode-map)
+  ;; Build.
+  "b" '(:ignore t :which-key "build")
+  "bb" 'rustic-cargo-build
+  "ba" 'rustic-cargo-add
+  "bc" 'rustic-cargo-clean
+  "bf" 'rustic-cargo-fmt
+  "bl" 'rustic-cargo-clippy
+  "bo" 'rustic-cargo-outdated
+  "bu" 'rustic-cargo-upgrade
+  "br" 'rustic-cargo-run
+  ;; Test.
+  "t" '(:ignore t :which-key "test")
+  "tp" 'rustic-cargo-test
+  "tt" 'rustic-cargo-current-test
+  ;; Goto.
+  "g" '(:ignore t :which-key "goto")
+  "gd" 'lsp-rust-analyzer-open-external-docs)
+
+;;;;;; IDE: Go Keybindings
+
+(my/ide-keys
+  :keymaps 'go-mode-map
+  ;; Build.
+  "br" 'go-run
+  ;; Goto.
+  "gp" 'my/go-play-dwim
+  ;; Test.
+  "tf" 'go-test-current-file
+  "tt" 'go-test-current-test
+  "tp" 'go-test-current-project
+  "tb" 'go-test-current-benchmark
+  "tc" 'go-test-current-coverage
+  ;; Action.
+  "at" 'go-tag-add
+  "aT" 'go-tag-remove
+  "ag" 'go-gen-test-dwim
+  "ai" 'go-impl)
+
+;;;;;; IDE: Bazel Keybindings
+
+(my/ide-keys
+  :keymaps 'bazel-mode-map
+  "zb" 'bazel-build
+  "zf" 'bazel-buildifier
+  "zr" 'bazel-run
+  "zt" 'bazel-test
+  "zc" 'bazel-coverage)
+
+;;;;; Search Keybindings (M-s)
+
+;;;;;; Search: Global Keybindings
+
+(my/search-keys
+  ;; TODO: Delete old M-s keybindings and add Isearch into here.
+  ;; Especially 'M-s .'. Watch https://www.youtube.com/watch?v=f2mQXNnChwc.
+  "d" 'consult-dir
+  "f" 'consult-find
+  "l" 'consult-line
+  "L" 'my/consult-line-strict
+  "r" 'consult-ripgrep
+  "i" 'consult-imenu
+  "I" 'consult-imenu-multi
+  "m" 'consult-bookmark
+  "g" 'consult-goto-line
+  "o" 'consult-outline
+  "s" 'consult-lsp-file-symbols
+  "S" 'consult-lsp-symbols
+  "SPC" 'consult-mark
+  "S-SPC" 'consult-global-mark)
 
 ;;; End:
 (provide 'init)
