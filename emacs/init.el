@@ -17,6 +17,23 @@
 (unless window-system
   (error "This Emacs configuration is for window systems only"))
 
+;;;; Keybinding Management
+
+(use-package general
+  :commands general-auto-unbind-keys
+  :config
+  ;; Automatically unbind non-prefix keys when used.
+  (general-auto-unbind-keys)
+  ;; Search prefix: one-stop shop for finding things.
+  (general-create-definer my/search-keys :prefix "M-s")
+  ;; IDE prefix: one-stop shop for all things programming.
+  (general-create-definer my/ide-keys :prefix "M-i")
+  ;; C-c and C-x prefix helpers.
+  (general-create-definer my/c-c-keys :prefix "C-c")
+  (general-create-definer my/c-x-keys :prefix "C-x"))
+
+(use-package hydra)
+
 ;;;; Base Settings
 
 (use-package emacs
@@ -27,25 +44,40 @@
   ;; Don't wrap long lines in programming modes.
   (prog-mode . (lambda () (setq-local truncate-lines t)))
 
-  :bind
-  (:map global-map
-        ("C-x m" . nil)   ;; Remove `compose-mail' binding.
-        ("C-h C-h" . nil) ;; Remove `help-for-help' binding.
-        ;; Take over 'M-i' as the "code" keybinding prefix.
-        ;; ("M-i" . nil)
-        ;; ("M-i |" . display-fill-column-indicator-mode)
-        ("<escape>". keyboard-escape-quit)
-        ("C-;" . comment-line)
-        ("M-[" . previous-buffer)
-        ("M-]" . next-buffer)
-        ("C-x 2" . my/split-window-vertically)
-        ("C-x 3" . my/split-window-horizontally)
-        ("C-x C-k" . kill-this-buffer)
-        ("C-x w w" . my/toggle-show-trailing-whitespace)
-        ("C-x w k" . delete-trailing-whitespace)
-        ("C-S-k" . my/copy-to-eol)
-        ("C-M-k" . my/delete-to-eol)
-        ("M-<backspace>" . my/delete-to-bol))
+  :general
+  ("C-h C-h" nil
+   "<escape>" #'keyboard-escape-quit
+   "C-;" #'comment-line
+   "M-[" #'previous-buffer
+   "M-]" #'next-buffer
+   "C-S-k" #'my/copy-to-eol
+   "C-M-k" #'my/delete-to-eol
+   "M-<backspace>" #'my/delete-to-bol)
+
+  (my/c-x-keys
+   "m" nil
+   "2" #'my/split-window-vertically
+   "3" #'my/split-window-horizontally
+   "C-k" #'kill-this-buffer
+   "ww" #'my/toggle-show-trailing-whitespace
+   "wk" #'delete-trailing-whitespace)
+
+  (my/search-keys
+    ;; Add search prefix descriptions.
+    "h" '(:ignore t :which-key "highlight"))
+
+  (my/ide-keys
+    ;; Add IDE prefix descriptions.
+    "a" '(:ignore t :which-key "actions")
+    "b" '(:ignore t :which-key "build")
+    "d" '(:ignore t :which-key "debug")
+    "g" '(:ignore t :which-key "goto")
+    "p" '(:ignore t :which-key "peek")
+    "v" '(:ignore t :which-key "toggles")
+    "w" '(:ignore t :which-key "workspaces")
+    "|" #'display-fill-column-indicator-mode
+    "b1" #'compile
+    "b2" #'recompile)
 
   :custom
   (inhibit-startup-message t)
@@ -181,9 +213,6 @@
   (unless (server-running-p)
     (server-start)))
 
-;; TODO: Move under Keybindings heading at the bottom.
-(use-package hydra)
-
 ;;;; Appearance
 
 ;;;;; Theme
@@ -191,9 +220,8 @@
 ;; The Modus themes are pre-installed into Emacs 28+ but I pull latest.
 (use-package modus-themes
   :functions my/apply-font-config
-  :bind
-  (:map global-map
-        ("<f12>" . my/cycle-font-config))
+  :general
+  ("<f12>" #'my/cycle-font-config)
   :custom
   (modus-themes-italic-constructs t)
   (modus-themes-region '(no-extend accented))
@@ -212,22 +240,22 @@
   (load-theme 'modus-vivendi t)
 
   (defvar my/font-configs
-        '((:name "Laptop"
-                 :fixed-font "Iosevka Fixed SS14"
-                 :fixed-font-size 140
-                 :fixed-font-weight normal
-                 :variable-font "Iosevka Aile"
-                 :variable-font-size 140
-                 :line-number-font-size 120
-                 :mode-line-font-size 130)
-          (:name "Desktop"
-                 :fixed-font "Iosevka Fixed SS14"
-                 :fixed-font-size 148
-                 :fixed-font-weight normal
-                 :variable-font "Iosevka Aile"
-                 :variable-font-size 148
-                 :line-number-font-size 124
-                 :mode-line-font-size 136)))
+    '((:name "Laptop"
+             :fixed-font "Iosevka Fixed SS14"
+             :fixed-font-size 140
+             :fixed-font-weight normal
+             :variable-font "Iosevka Aile"
+             :variable-font-size 140
+             :line-number-font-size 120
+             :mode-line-font-size 130)
+      (:name "Desktop"
+             :fixed-font "Iosevka Fixed SS14"
+             :fixed-font-size 148
+             :fixed-font-weight normal
+             :variable-font "Iosevka Aile"
+             :variable-font-size 148
+             :line-number-font-size 124
+             :mode-line-font-size 136)))
 
   (defun my/apply-font-config (index)
     "Apply the INDEX'th font configuration from `my/font-configs'."
@@ -327,9 +355,8 @@
 (use-package ace-window
   :after consult
   :commands (aw-switch-to-window aw-delete-window)
-  :bind
-  (:map global-map
-        ("M-o" . ace-window))
+  :general
+  ("M-o" #'ace-window)
   :custom
   (aw-display-mode-overlay t)
   (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l ?r ?t ?y ?u ?i ?o))
@@ -406,14 +433,13 @@
 (use-package popper
   :commands
   (popper-mode popper-echo-mode popper-kill-latest-popup popper-open-latest)
-  :bind
-  (:map global-map
-        ("C-'" . popper-toggle-latest)
-        ("M-'" . popper-cycle)
-        ("C-M-'" . popper-toggle-type))
-  (:map popper-mode-map
-        ("M-k" . my/popper-kill-popup-stay-open)
-        ("M-K" . popper-kill-latest-popup))
+  :general
+  ("C-'" #'popper-toggle-latest
+   "M-'" #'popper-cycle
+   "C-M-'" #'popper-toggle-type)
+  (popper-mode-map
+   "M-k" #'my/popper-kill-popup-stay-open
+   "M-K" #'popper-kill-latest-popup)
 
   :preface
   (defvar my/popper-ignore-modes '(grep-mode))
@@ -466,15 +492,15 @@
 ;;;; Help System
 
 (use-package helpful
-  :bind
-  ("C-h c" . helpful-callable)
-  ("C-h ." . helpful-at-point)
-  ;; Replace `describe-*' bindings with Helpful.
-  ([remap describe-function] . helpful-function)
-  ([remap describe-symbol] . helpful-symbol)
-  ([remap describe-variable] . helpful-variable)
-  ([remap describe-command] . helpful-command)
-  ([remap describe-key] . helpful-key))
+  :general
+  ("C-h c" #'helpful-callable
+   "C-h ." #'helpful-at-point
+   ;; Replace `describe-*' bindings with Helpful.
+   [remap describe-function] #'helpful-function
+   [remap describe-symbol] #'helpful-symbol
+   [remap describe-variable] #'helpful-variable
+   [remap describe-command] #'helpful-command
+   [remap describe-key] #'helpful-key))
 
 (use-package which-key
   :commands (which-key-mode which-key-add-key-based-replacements)
@@ -496,14 +522,14 @@
   :commands (corfu-mode global-corfu-mode)
   :functions consult-completion-in-region
 
-  :bind
-  (:map corfu-map
-        ;; By default, `corfu-insert-separator' is bound to M-SPC which on
-        ;; macOS is already taken by Spotlight. Instead, bind it to S-SPC -
-        ;; this allows us to enter a space character using S-SPC to completing.
-        ("S-SPC" . corfu-insert-separator)
-        ;; Move the completion session to the minibuffer.
-        ("M-m" . my/corfu-move-to-minibuffer))
+  :general
+  (corfu-map
+   ;; By default, `corfu-insert-separator' is bound to M-SPC which on
+   ;; macOS is already taken by Spotlight. Instead, bind it to S-SPC -
+   ;; this allows us to enter a space character using S-SPC to completing.
+   "S-SPC" #'corfu-insert-separator
+   ;; Move the completion session to the minibuffer.
+   "M-m" #'my/corfu-move-to-minibuffer)
 
   :hook
   (minibuffer-setup . my/corfu-enable-in-minibuffer)
@@ -558,11 +584,11 @@
     :after corfu
     :straight
     (:host github :repo "minad/corfu" :files ("extensions/corfu-popupinfo.el"))
-    :bind
-    (:map corfu-map
-          ("M-d" . corfu-popupinfo-toggle)
-          ("M-p" . corfu-popupinfo-scroll-down)
-          ("M-n" . corfu-popupinfo-scroll-up))
+    :general
+    (corfu-map
+     "M-d" #'corfu-popupinfo-toggle
+     "M-p" #'corfu-popupinfo-scroll-down
+     "M-n" #'corfu-popupinfo-scroll-up)
     :hook
     (corfu-mode . corfu-popupinfo-mode)
     :custom
@@ -594,11 +620,11 @@
 (use-package vertico-directory
   :after vertico
   :straight nil
-  ;; More convenient directory navigation commands.
-  :bind
-  (:map vertico-map
-        ("RET" . vertico-directory-enter)
-        ("DEL" . vertico-directory-delete-char))
+  :general
+  (vertico-map
+   ;; More convenient directory navigation commands.
+   "RET" #'vertico-directory-enter
+   "DEL" #'vertico-directory-delete-char)
   ;; Tidy shadowed file names.
   :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
@@ -641,20 +667,21 @@
   :commands cape-super-capf
   :functions
   (pcomplete-completions-at-point lsp-completion-at-point)
-  :bind
-  (:map global-map
-        ("C-r" . my/cape-history)
-        ("C-c p p" . completion-at-point)
-        ("C-c p t" . complete-tag)
-        ("C-c p d" . cape-dabbrev)
-        ("C-c p h" . cape-history)
-        ("C-c p f" . cape-file)
-        ("C-c p k" . cape-keyword)
-        ("C-c p s" . cape-symbol)
-        ("C-c p a" . cape-abbrev)
-        ("C-c p l" . cape-line)
-        ("C-c p y" . cape-yasnippet)
-        ("C-c p w" . cape-dict))
+  :general
+  ("C-r" #'my/cape-history)
+  (my/c-c-keys
+   "pp" #'completion-at-point
+   "pt" #'complete-tag
+   "pd" #'cape-dabbrev
+   "ph" #'cape-history
+   "pf" #'cape-file
+   "pk" #'cape-keyword
+   "ps" #'cape-symbol
+   "pa" #'cape-abbrev
+   "pl" #'cape-line
+   "py" #'cape-yasnippet
+   "pw" #'cape-dict)
+
   :hook
   (emacs-lisp-mode . my/init-elisp-capfs)
   (eshell-mode . my/init-eshell-capfs)
@@ -722,9 +749,9 @@
 
 (use-package marginalia
   :commands marginalia-mode
-  :bind
-  (:map minibuffer-local-map
-        ("M-A" . marginalia-cycle))
+  :general
+  (minibuffer-local-map
+   "M-A" #'marginalia-cycle)
   :init
   (marginalia-mode 1))
 
@@ -734,38 +761,48 @@
    consult--buffer-action
    consult--buffer-query)
 
-  :bind
-  (:map global-map
-        ("C-s" . consult-line)
-        ("C-x b" . consult-buffer)
-        ("M-g M-g" . consult-goto-line)
-        ("M-y" . consult-yank-pop)
-        ("C-x r r" . consult-register)
-        ("C-x r l" . consult-register-load)
-        ("C-x r s" . consult-register-store)
-        ("C-c o s" . consult-org-agenda)
+  :general
+  ("C-s" #'consult-line
+   "M-g M-g" #'consult-goto-line
+   "M-y" #'consult-yank-pop)
 
-        ;; Put all search/goto commands under M-s for simplicity.
-        ;; ("M-s d" . consult-dir)
-        ;; ("M-s f" . consult-find)
-        ;; ("M-s l" . consult-line)
-        ;; ("M-s L" . my/consult-line-strict)
-        ;; ("M-s r" . consult-ripgrep)
-        ;; ("M-s i" . consult-imenu)
-        ;; ("M-s I" . consult-imenu-multi)
-        ;; ("M-s m" . consult-bookmark)
-        ;; ("M-s g" . consult-goto-line)
-        ;; ("M-s o" . consult-outline)
-        ;; ("M-s s" . consult-lsp-file-symbols)
-        ;; ("M-s S" . consult-lsp-symbols)
-        ;; ("M-s SPC" . consult-mark)
-        ;; ("M-s S-SPC" . consult-global-mark)
-        )
-  (:map minibuffer-local-map
-        ("M-s" . nil)
-        ("C-r" . consult-history))
-  (:map consult-narrow-map
-        ("C-<" . consult-narrow-help))
+  (minibuffer-local-map
+   "M-s" nil
+   "C-r" #'consult-history)
+
+  (consult-narrow-map
+   "C-<" #'consult-narrow-help)
+
+  (my/c-c-keys
+   "os" #'consult-org-agenda)
+
+  (my/c-x-keys
+   "b" #'consult-buffer
+   "rr" #'consult-register
+   "rl" #'consult-register-load
+   "rs" #'consult-register-store)
+
+  (my/search-keys
+    "d" #'consult-dir
+    "f" #'consult-find
+    "l" #'consult-line
+    "L" #'my/consult-line-strict
+    "r" #'consult-ripgrep
+    "i" #'consult-imenu
+    "I" #'consult-imenu-multi
+    "m" #'consult-bookmark
+    "g" #'consult-goto-line
+    "o" #'consult-outline
+    "s" #'consult-lsp-file-symbols
+    "S" #'consult-lsp-symbols
+    "SPC" #'consult-mark
+    "S-SPC" #'consult-global-mark)
+
+  (my/ide-keys
+    "i" #'consult-imenu
+    "I" #'consult-imenu-multi
+    "r" #'consult-ripgrep
+    "o" #'consult-outline)
 
   :custom
   ;; Type < followed by a prefix key to narrow the available candidates.
@@ -903,21 +940,21 @@
 (use-package embark
   :commands embark-prefix-help-command
 
-  :bind
-  (:map global-map
-        ("C-." . embark-act)
-        ("M-." . embark-dwim)
-        ("C-h b" . embark-bindings))
-  (:map minibuffer-local-map
-        ("C-S-b" . embark-become))
+  :general
+  ("C-." #'embark-act
+   "M-." #'embark-dwim
+   "C-h b" #'embark-bindings)
+
+  (minibuffer-local-map
+   "C-S-b" #'embark-become)
 
   ;; Shorter keybindings for frequently used actions.
-  (:map embark-file-map
-        ("r" . consult-ripgrep))
-  (:map embark-buffer-map
-        ("r" . consult-ripgrep))
-  (:map embark-bookmark-map
-        ("r" . consult-ripgrep))
+  (embark-file-map
+   "r" #'consult-ripgrep)
+  (embark-buffer-map
+   "r" #'consult-ripgrep)
+  (embark-bookmark-map
+   "r" #'consult-ripgrep)
 
   :custom
   ;; Just show the minimal "Act" prompt (the default starts with minimal
@@ -994,11 +1031,11 @@
              (call-interactively (symbol-function ',fn)))))))
 
   ;; Create ace-window actions against relevant keymaps.
-  (define-key embark-file-map (kbd "o") (my/embark-ace-window-action find-file))
-  (define-key embark-buffer-map (kbd "o") (my/embark-ace-window-action switch-to-buffer))
-  (define-key embark-bookmark-map (kbd "o") (my/embark-ace-window-action bookmark-jump))
-  (define-key my/embark-org-roam-node-map (kbd "o") (my/embark-ace-window-action org-roam-node-find))
-  (define-key my/embark-consult-xref-map (kbd "o") (my/embark-ace-window-action my/goto-consult-xref)))
+  (general-def embark-file-map "o" (my/embark-ace-window-action find-file))
+  (general-def embark-buffer-map "o" (my/embark-ace-window-action switch-to-buffer))
+  (general-def embark-bookmark-map "o" (my/embark-ace-window-action bookmark-jump))
+  (general-def my/embark-org-roam-node-map "o" (my/embark-ace-window-action org-roam-node-find))
+  (general-def my/embark-consult-xref-map "o" (my/embark-ace-window-action my/goto-consult-xref)))
 
 (use-package embark-consult
   :hook
@@ -1008,6 +1045,7 @@
 (use-package rg
   :commands rg-enable-default-bindings
   :custom
+  ;; TODO: How to do this with general.el?
   (rg-keymap-prefix (kbd "C-c r"))
   :init
   ;; TODO: Need a way to hide popper when the side window is shown.
@@ -1015,9 +1053,9 @@
   (rg-enable-default-bindings))
 
 (use-package wgrep
-  :bind
-  (:map global-map
-        ("C-c C-w" . wgrep-change-to-wgrep-mode))
+  :general
+  (my/c-c-keys
+   "C-w" #'wgrep-change-to-wgrep-mode)
   :custom
   (wgrep-auto-save-buffer t))
 
@@ -1038,10 +1076,9 @@
 ;;;;; Region Expansion
 
 (use-package expand-region
-  :bind
-  (:map global-map
-        ("C-=" . er/expand-region)
-        ("C-+" . er/mark-outside-pairs))
+  :general
+  ("C-=" #'er/expand-region
+   "C-+" #'er/mark-outside-pairs)
   :custom
   (expand-region-fast-keys-enabled nil)
   (expand-region-autocopy-register "e"))
@@ -1061,20 +1098,21 @@
 ;; https://github.com/karthink/.emacs.d/blob/master/lisp/setup-avy.el.
 (use-package avy
   :functions ring-ref
-  :bind
-  (:map global-map
-        ("M-j" . nil)
-        ("M-j j" . avy-goto-char-timer)
-        ("M-j l" . avy-goto-line)
-        ("M-j M-l" . avy-goto-end-of-line)
-        ("M-j y" . avy-copy-line)
-        ("M-j M-y" . avy-copy-region)
-        ("M-j k" . avy-kill-whole-line)
-        ("M-j M-k" . avy-kill-region)
-        ("M-j w" . avy-kill-ring-save-whole-line)
-        ("M-j M-w" . avy-kill-ring-save-region)
-        ("M-j m" . avy-move-line)
-        ("M-j M-m" . avy-move-region))
+  :general
+  ("M-j" nil)
+  (:prefix
+   "M-j"
+   "j" #'avy-goto-char-timer
+   "l" #'avy-goto-line
+   "M-l" #'avy-goto-end-of-line
+   "y" #'avy-copy-line
+   "M-y" #'avy-copy-region
+   "k" #'avy-kill-whole-line
+   "M-k" #'avy-kill-region
+   "w" #'avy-kill-ring-save-whole-line
+   "M-w" #'avy-kill-ring-save-region
+   "m" #'avy-move-line
+   "M-m" #'avy-move-region)
 
   :init
   (defun my/avy-action-embark (pt)
@@ -1132,30 +1170,41 @@
 
 (use-package isearch
   :straight nil
-  :bind
-  ;; C-s is already taken by `consult-line' so create different bindings for
-  ;; isearch. `isearch-forward-regexp' and `isearch-backward-regexp' are more
-  ;; generally useful
-  (:map global-map
-        ("C-S-s" . isearch-forward)
-        ("C-S-r" . isearch-backward))
-  (:map isearch-mode-map
-        ("C-S-s" . isearch-repeat-forward)
-        ("C-S-r" . isearch-repeat-backward)))
+  :general
+  (my/search-keys
+    "]" #'isearch-forward
+    "[" #'isearch-backward
+    "}" #'isearch-forward-regexp
+    "{" #'isearch-backward-regexp
+    "." #'isearch-forward-thing-at-point)
+  (isearch-mode-map
+   "C-n" #'isearch-repeat-forward
+   "C-p" #'isearch-repeat-backward))
+
+;;;;; Highlighting
+
+(use-package hi-lock
+  :straight nil
+  :general
+  (my/search-keys
+    "h." #'highlight-symbol-at-point
+    "hh" #'highlight-regexp
+    "hl" #'highlight-lines-matching-regexp
+    "hu" #'unhighlight-regexp))
 
 ;;;; Buffer Management
 
 (use-package ibuffer
   :straight nil
-  :bind
-  (:map global-map
-        ;; Replace `list-buffers' with `ibuffer'.
-        ("C-x C-b" . ibuffer))
-  (:map ibuffer-mode-map
-        ;; Keep M-o binding for ace-window.
-        ("M-o" . nil)
-        ;; Group buffers by VC project.
-        ("/ p" . ibuffer-vc-set-filter-groups-by-vc-root))
+  :general
+  (my/c-x-keys
+    ;; Replace `list-buffers' with `ibuffer'.
+    "C-x C-b" #'ibuffer)
+  (ibuffer-mode-map
+   ;; Keep M-o binding for ace-window.
+   "M-o" nil
+   ;; Group buffers by VC project.
+   "/p" #'ibuffer-vc-set-filter-groups-by-vc-root)
   :init
   (use-package ibuffer-vc))
 
@@ -1165,13 +1214,13 @@
 
 (use-package dired
   :straight nil
-  :bind
-  (:map dired-mode-map
-        ("C-o" . nil)
-        ("N" . dired-create-empty-file)
-        ("?" . which-key-show-major-mode)
-        ("i" . dired-subtree-insert)
-        (";" . dired-subtree-remove))
+  :general
+  (dired-mode-map
+   "C-o" nil
+   "N" #'dired-create-empty-file
+   "?" #'which-key-show-major-mode
+   "i" #'dired-subtree-insert
+   ";" #'dired-subtree-remove)
   :hook
   (dired-mode . auto-revert-mode)
   :custom
@@ -1221,14 +1270,13 @@
 ;; to dired and eshell for manipulation. This treemacs config was inspired by:
 ;; https://github.com/seagle0128/.emacs.d/blob/8cbec0c132cd6de06a8c293598a720d377f3f5b9/lisp/init-treemacs.el.
 (use-package treemacs
-  :bind
-  (:map global-map
-        ("M-t" . treemacs)
-        ("M-T" . my/treemacs-stay)
-        ("M-0" . treemacs-select-window))
-  (:map treemacs-mode-map
-        ;; Otherwise it takes two clicks to open a directory.
-        ([mouse-1] . treemacs-single-click-expand-action))
+  :general
+  ("M-t" #'treemacs
+   "M-T" #'my/treemacs-stay
+   "M-0" #'treemacs-select-window)
+  (treemacs-mode-map
+   ;; Otherwise it takes two clicks to open a directory.
+   [mouse-1] #'treemacs-single-click-expand-action)
 
   :hook
   ;; Don't wrap long lines in Treemacs.
@@ -1283,10 +1331,10 @@
 
 (use-package project
   :straight nil
-  :bind
-  (:map project-prefix-map
-        ("F" . my/project-find-file-relative)
-        ("u" . my/project-refresh-list))
+  :general
+  (project-prefix-map
+   "F" #'my/project-find-file-relative
+   "u" #'my/project-refresh-list)
 
   :custom
   (project-switch-commands
@@ -1367,19 +1415,16 @@ as there appears to be a bug in the current version."
 
 (use-package outline
   :straight nil
-  :hook
-  (emacs-lisp-mode . (lambda ()
-                       (setq-local outline-regexp ";;;+ [^\n]")
-                       (outline-minor-mode)))
-  :bind
-  (:map outline-minor-mode-map
-        ("C-c C-n" . outline-next-visible-heading)
-        ("C-c C-p" . outline-previous-visible-heading)
-        ("C-c C-f" . outline-forward-same-level)
-        ("C-c C-b" . outline-backward-same-level)
-        ("C-c C-a" . outline-show-all)
-        ("C-c C-h" . outline-hide-other)
-        ("C-c C-u" . outline-up-heading))
+  :general
+  (my/c-c-keys
+   :keymaps 'outline-minor-mode-map
+   "C-n" #'outline-next-visible-heading
+   "C-p" #'outline-previous-visible-heading
+   "C-f" #'outline-forward-same-level
+   "C-b" #'outline-backward-same-level
+   "C-a" #'outline-show-all
+   "C-h" #'outline-hide-other
+   "C-u" #'outline-up-heading)
   ;; TODO: Find better keybindings as these are taken by Paredit.
   ;; ("M-<down>" . outline-move-subtree-down)
   ;; ("M-<up>" . outline-move-subtree-up))
@@ -1391,16 +1436,16 @@ as there appears to be a bug in the current version."
 (use-package yasnippet
   :after consult-yasnippet
   :hook ((text-mode prog-mode eshell-mode) . yas-minor-mode)
-  :bind
-  (:map global-map
-  	("C-c y n" . yas-new-snippet)
-        ("C-c y u" . yas-reload-all)
-        ("C-c y d" . yas-describe-tables))
-  (:map yas-minor-mode-map
-        ("C-c &" . nil)
-        ("C-c y y" . yas-expand)
-        ("C-c y i" . consult-yasnippet)
-        ("C-c y f" . yas-visit-snippet-file))
+  :general
+  (my/c-c-keys
+   "yn" #'yas-new-snippet
+   "yu" #'yas-reload-all
+   "yd" #'yas-describe-tables)
+  (my/c-c-keys
+   :keymaps 'yas-minor-mode-map
+   "yy" #'yas-expand
+   "yi" #'consult-yasnippet
+   "yf" #'yas-visit-snippet-file)
 
   :custom
   (yas-verbosity 1)
@@ -1437,33 +1482,38 @@ as there appears to be a bug in the current version."
     terraform-mode
     python-mode) . lsp-deferred)
 
-  ;; :bind
-  ;; (:map lsp-mode-map
-  ;;       ;; Documentation.
-  ;;       ("M-p" . lsp-ui-doc-toggle)
-  ;;       ("M-P" . lsp-describe-thing-at-point)
-  ;;       ;; Imenu.
-  ;;       ("M-i i" . lsp-ui-imenu)
-  ;;       ;; Workspaces.
-  ;;       ("M-i w q" . lsp-workspace-shutdown)
-  ;;       ("M-i w r" . lsp-workspace-restart)
-  ;;       ;; Toggles.
-  ;;       ("M-i v l" . lsp-toggle-trace-io)
-  ;;       ("M-i v i" . lsp-inlay-hints-mode)
-  ;;       ;; Goto.
-  ;;       ("M-i g h" . lsp-treemacs-call-hierarchy)
-  ;;       ("M-i g i" . lsp-find-implementation)
-  ;;       ("M-i g r" . lsp-find-references)
-  ;;       ("M-i g d" . lsp-find-type-definition)
-  ;;       ;; Actions.
-  ;;       ("M-i a a" . lsp-execute-code-action)
-  ;;       ("M-i a o" . lsp-organize-imports)
-  ;;       ("M-i a r" . lsp-rename)
-  ;;       ;; Peeks (TODO: remove bindings that aren't useful).
-  ;;       ("M-i p g" . lsp-ui-peek-find-definitions)
-  ;;       ("M-i p i" . lsp-ui-peek-find-implementation)
-  ;;       ("M-i p r" . lsp-ui-peek-find-references)
-  ;;       ("M-i p s" . lsp-ui-peek-find-workspace-symbol))
+  :general
+  (my/ide-keys
+    :keymaps 'lsp-mode-map
+    ;; Symbols
+    "s" #'consult-lsp-file-symbols
+    "S" #'consult-lsp-symbols
+    ;; Workspaces.
+    "wq" #'lsp-workspace-shutdown
+    "wr" #'lsp-workspace-restart
+    ;; Toggles.
+    "vl" #'lsp-toggle-trace-io
+    "vi" #'lsp-inlay-hints-mode
+    ;; Goto.
+    "gh" #'lsp-treemacs-call-hierarchy
+    "gi" #'lsp-find-implementation
+    "gr" #'lsp-find-references
+    "gd" #'lsp-find-type-definition
+    "gI" #'lsp-ui-imenu
+    ;; Actions.
+    "aa" #'lsp-execute-code-action
+    "ao" #'lsp-organize-imports
+    "ar" #'lsp-rename
+    ;; Peeks (TODO: remove bindings that aren't useful).
+    "pg" #'lsp-ui-peek-find-definitions
+    "pi" #'lsp-ui-peek-find-implementation
+    "pr" #'lsp-ui-peek-find-references
+    "ps" #'lsp-ui-peek-find-workspace-symbol)
+
+  (my/search-keys
+    :keymaps 'lsp-mode-map
+    "s" #'consult-lsp-file-symbols
+    "S" #'consult-lsp-symbols)
 
   :custom
   (lsp-log-io nil)
@@ -1633,46 +1683,44 @@ as there appears to be a bug in the current version."
    my/dap-rust-lldb-debug-provider
    dap-ui-hide-many-windows)
   :commands
-  (dap-mode
-   dap-ui-mode
-   dap-register-debug-provider
+  (dap-register-debug-provider
    dap-register-debug-template)
 
-  :hook
-  (go-mode . dap-mode)
-  (rustic-mode . dap-mode)
-
-  ;; :bind
-  ;; (:map dap-mode-map
-  ;;       ;; Start/stop commands.
-  ;;       ("M-i d d" . dap-debug)
-  ;;       ("M-i d D" . dap-debug-last)
-  ;;       ("M-i d q" . my/dap-quit)
-  ;;       ;; Hydra menu.
-  ;;       ("M-i d m" . dap-hydra)
-  ;;       ;; UI window commands.
-  ;;       ("M-i d r" . dap-ui-repl)
-  ;;       ("M-i d l" . dap-ui-locals)
-  ;;       ("M-i d e" . dap-ui-expressions)
-  ;;       ;; Breakpoint commands.
-  ;;       ("M-i d b" . dap-breakpoint-toggle)
-  ;;       ("M-i d k" . dap-ui-breakpoint-delete)
-  ;;       ("M-i d K" . dap-breakpoint-delete-all)
-  ;;       ;; Stepping commands.
-  ;;       ("M-i d n" . dap-next)
-  ;;       ("M-i d i" . dap-step-in)
-  ;;       ("M-i d o" . dap-step-out)
-  ;;       ("M-i d c" . dap-continue)
-  ;;       ;; Stack frame commands.
-  ;;       ("M-i d f" . dap-switch-stack-frame)
-  ;;       ("M-i d <up>" . dap-up-stack-frame)
-  ;;       ("M-i d <down>" . dap-down-stack-frame)
-  ;;       ;; Expression commands.
-  ;;       ("M-i d +" . dap-ui-expressions-add)
-  ;;       ("M-i d -" . dap-ui-expressions-remove)
-  ;;       ;; Evaluation commands.
-  ;;       ("M-i d :" . dap-eval)
-  ;;       ("M-i d ." . dap-eval-thing-at-point))
+  :general
+  (my/ide-keys
+    ;; DAP is implemented as a global mode so after it starts the following
+    ;; keybindings will become available regardless of the buffer. Not a huge
+    ;; deal but something to be aware of.
+    :keymaps 'dap-mode-map
+    ;; Start/stop commands.
+    "dd" 'dap-debug
+    "dD" 'dap-debug-last
+    "dq" 'my/dap-quit
+    ;; Hydra menu.
+    "dm" 'dap-hydra
+    ;; UI window commands.
+    "dr" 'dap-ui-repl
+    "dl" 'dap-ui-locals
+    "de" 'dap-ui-expressions
+    ;; Breakpoint commands.
+    "db" 'dap-breakpoint-toggle
+    "dk" 'dap-ui-breakpoint-delete
+    "dK" 'dap-breakpoint-delete-all
+    ;; Stepping commands.
+    "dn" 'dap-next
+    "di" 'dap-step-in
+    "do" 'dap-step-out
+    "dc" 'dap-continue
+    ;; Stack frame commands.
+    "df" 'dap-switch-stack-frame
+    "d <up>" 'dap-up-stack-frame
+    "d <down>" 'dap-down-stack-frame
+    ;; Expression commands.
+    "d +" 'dap-ui-expressions-add
+    "d -" 'dap-ui-expressions-remove
+    ;; Evaluation commands.
+    "d :" 'dap-eval
+    "d ." 'dap-eval-thing-at-point)
 
   :custom
   (dap-auto-configure-features '(locals breakpoints expressions repl))
@@ -1764,9 +1812,9 @@ as there appears to be a bug in the current version."
 
 (use-package flycheck
   :hook (prog-mode . flycheck-mode)
-  ;; :bind
-  ;; (:map flycheck-mode-map
-  ;;       ("M-i l" . flycheck-list-errors))
+  :general
+  (my/ide-keys
+    "l" #'flycheck-list-errors)
   :custom
   ;; Tell Flycheck to use the load-path of the current Emacs session. Without
   ;; this, Flycheck tends towards both false negatives and false positives.
@@ -1779,47 +1827,23 @@ as there appears to be a bug in the current version."
 ;;;;;; Rust
 
 (use-package rustic
-  ;; :functions my/build-rust-keymap
-  ;; :commands
-  ;; (rustic-cargo-add
-  ;;  rustic-cargo-build
-  ;;  rustic-cargo-clean
-  ;;  rustic-format-buffer
-  ;;  rustic-cargo-fmt
-  ;;  rustic-cargo-clippy
-  ;;  rustic-cargo-outdated
-  ;;  rustic-cargo-run
-  ;;  rustic-cargo-test
-  ;;  rustic-cargo-current-test
-  ;;  rustic-cargo-upgrade
-  ;;  lsp-rust-analyzer-open-external-docs)
-  ;; :config
-  ;; ;; The following function is used to ensure Rust keybindings are placed in
-  ;; ;; both `rustic-mode-map' and `rustic-compilation-mode-map' (so they can also
-  ;; ;; be used from within the compilation popup window). I'm sure there is a
-  ;; ;; more idiomatic way to do this but I haven't found it yet.
-  ;; (defun my/build-rust-keymap (base-map)
-  ;;   "Return custom Rust keymap built on top of BASE-MAP."
-  ;;   ;; Build keybindings.
-  ;;   (define-key base-map (kbd "M-i b b") #'rustic-cargo-build)
-  ;;   (define-key base-map (kbd "M-i b a") #'rustic-cargo-add)
-  ;;   (define-key base-map (kbd "M-i b c") #'rustic-cargo-clean)
-  ;;   (define-key base-map (kbd "M-i b f") #'rustic-cargo-fmt)
-  ;;   (define-key base-map (kbd "M-i b l") #'rustic-cargo-clippy)
-  ;;   (define-key base-map (kbd "M-i b o") #'rustic-cargo-outdated)
-  ;;   (define-key base-map (kbd "M-i b u") #'rustic-cargo-upgrade)
-  ;;   (define-key base-map (kbd "M-i b r") #'rustic-cargo-run)
-  ;;   ;; Test keybindings.
-  ;;   (define-key base-map (kbd "M-i t p") #'rustic-cargo-test)
-  ;;   (define-key base-map (kbd "M-i t t") #'rustic-cargo-current-test)
-  ;;   ;; Goto keybindings.
-  ;;   (define-key base-map (kbd "M-i g d") #'lsp-rust-analyzer-open-external-docs)
-  ;;   base-map)
-
-  ;; (setq rustic-mode-map (my/build-rust-keymap (make-sparse-keymap)))
-  ;; (setq rustic-compilation-mode-map
-  ;;       (my/build-rust-keymap rustic-compilation-mode-map))
-  )
+  :general
+  (my/ide-keys
+    :keymaps '(rustic-mode-map rustic-compilation-mode-map)
+    ;; Build.
+    "bb" #'rustic-cargo-build
+    "ba" #'rustic-cargo-add
+    "bc" #'rustic-cargo-clean
+    "bf" #'rustic-cargo-fmt
+    "bl" #'rustic-cargo-clippy
+    "bo" #'rustic-cargo-outdated
+    "bu" #'rustic-cargo-upgrade
+    "br" #'rustic-cargo-run
+    ;; Test.
+    "tp" #'rustic-cargo-test
+    "tt" #'rustic-cargo-current-test
+    ;; Goto.
+    "gd" #'lsp-rust-analyzer-open-external-docs))
 
 ;;;;;; Terraform
 
@@ -1860,25 +1884,24 @@ as there appears to be a bug in the current version."
 
 (use-package go-mode
   :commands (go-play-buffer go-play-region)
-  ;; :bind
-  ;; (:map go-mode-map
-  ;;       ;; Build keybindings.
-  ;;       ("M-i b r" . go-run)
-  ;;       ("M-i b b" . compile)
-  ;;       ("M-i b B" . recompile)
-  ;;       ;; Goto keybindings.
-  ;;       ("M-i g p" . my/go-play-dwim)
-  ;;       ;; Test keybindings.
-  ;;       ("M-i t f" . go-test-current-file)
-  ;;       ("M-i t t" . go-test-current-test)
-  ;;       ("M-i t p" . go-test-current-project)
-  ;;       ("M-i t b" . go-test-current-benchmark)
-  ;;       ("M-i t c" . go-test-current-coverage)
-  ;;       ;; Action keybindings.
-  ;;       ("M-i a t" . go-tag-add)
-  ;;       ("M-i a T" . go-tag-remove)
-  ;;       ("M-i a g" . go-gen-test-dwim)
-  ;;       ("M-i a i" . go-impl))
+  :general
+  (my/ide-keys
+    :keymaps 'go-mode-map
+    ;; Build.
+    "br" #'go-run
+    ;; Goto.
+    "gp" #'my/go-play-dwim
+    ;; Test.
+    "tf" #'go-test-current-file
+    "tt" #'go-test-current-test
+    "tp" #'go-test-current-project
+    "tb" #'go-test-current-benchmark
+    "tc" #'go-test-current-coverage
+    ;; Action.
+    "at" #'go-tag-add
+    "aT" #'go-tag-remove
+    "ag" #'go-gen-test-dwim
+    "ai" #'go-impl)
 
   :hook
   (go-mode . (lambda () (setq-local tab-width 4)))
@@ -1916,17 +1939,14 @@ as there appears to be a bug in the current version."
   ("\\.BUILD\\'" . bazel-mode)
   ("\\.bazel\\'" . bazel-mode)
   ("\\.star\\'" . bazel-starlark-mode)
-  ;; :bind
-  ;; (:map bazel-mode-map
-  ;;       ;; Keep Bazel under its own prefix rather than reusing the standard
-  ;;       ;; build prefix (i.e. 'M-i b') as sometimes both `bazel-mode' and
-  ;;       ;; programming modes such as `rustic-mode' are run simultaneously
-  ;;       ;; which can cause collisions.
-  ;;       ("M-i z b" . bazel-build)
-  ;;       ("M-i z f" . bazel-buildifier)
-  ;;       ("M-i z r" . bazel-run)
-  ;;       ("M-i z t" . bazel-test)
-  ;;       ("M-i z c" . bazel-coverage))
+  :general
+  (my/ide-keys
+    :keymaps 'bazel-mode-map
+    "zb" #'bazel-build
+    "zf" #'bazel-buildifier
+    "zr" #'bazel-run
+    "zt" #'bazel-test
+    "zc" #'bazel-coverage)
   :custom
   (bazel-buildifier-before-save t)
   :init
@@ -1948,8 +1968,9 @@ as there appears to be a bug in the current version."
 ;;;;;; YAML
 
 (use-package yaml-mode
-  :mode (("\\.yml\\'"  . yaml-mode)
-	 ("\\.yaml\\'" . yaml-mode)))
+  :mode
+  ("\\.yml\\'"  . yaml-mode)
+  ("\\.yaml\\'" . yaml-mode))
 
 ;;;;;; Jsonnet
 
@@ -1961,27 +1982,30 @@ as there appears to be a bug in the current version."
   :straight nil
   :hook
   (emacs-lisp-mode . my/init-emacs-lisp-mode)
-  :bind
-  (:map global-map
-        ("C-x C-r" . eval-region))
-  (:map emacs-lisp-mode-map
-        ("M-p" . eldoc-print-current-symbol-info))
+  :general
+  (my/c-x-keys
+   "C-r" #'eval-region)
+  (emacs-lisp-mode-map
+   ;; TODO: There must be something better/more useful than this?!
+   "M-p" #'eldoc-print-current-symbol-info)
   :init
   (defun my/init-emacs-lisp-mode ()
     "Initializes `emacs-lisp-mode'."
-    (setq-local fill-column 80)))
+    (setq-local fill-column 80)
+    (setq-local outline-regexp ";;;+ [^\n]")
+    (outline-minor-mode)))
 
 (use-package paredit
-  :bind
-  (:map paredit-mode-map
-        ;; Unbind Paredit keybindings I don't use that can cause collisions.
-        ("C-<left>" . nil)
-        ("C-<right>" . nil)
-        ("C-M-<left>" . nil)
-        ("C-M-<right>" . nil)
-        ("M-S" . nil)
-        ("M-s" . nil)
-        ("M-?" . nil))
+  :general
+  (paredit-mode-map
+   ;; Unbind Paredit keybindings I don't use that can cause collisions.
+   "C-<left>" nil
+   "C-<right>" nil
+   "C-M-<left>" nil
+   "C-M-<right>" nil
+   "M-S" nil
+   "M-s" nil
+   "M-?" nil)
   :hook
   ;; Note that I specifically don't enable Paredit in minibuffers as it causes
   ;; issues with RET keybindings.
@@ -1998,10 +2022,10 @@ as there appears to be a bug in the current version."
 
 (use-package sgml-mode
   :straight nil
-  :bind
-  (:map html-mode-map
-        ;; Unbind M-o as I want that for ace-window.
-        ("M-o" . nil)))
+  :general
+  (html-mode-map
+   ;; Unbind M-o as I want that for ace-window.
+   "M-o" nil))
 
 ;;;;;; Markdown
 
@@ -2014,11 +2038,11 @@ as there appears to be a bug in the current version."
 ;;;; Git
 
 (use-package magit
-  :bind
-  (:map global-map
-        ("C-c g s" . magit-status)
-        ("C-c g d" . magit-dispatch)
-        ("C-c g f" . magit-file-dispatch))
+  :general
+  (my/c-c-keys
+   "gs" #'magit-status
+   "gd" #'magit-dispatch
+   "gf" #'magit-file-dispatch)
   :custom
   ;; Tell Magit not to add the C-x bindings as we'll use the ones above.
   (magit-define-global-key-bindings nil)
@@ -2027,10 +2051,10 @@ as there appears to be a bug in the current version."
   (magit-commit-show-diff nil))
 
 (use-package browse-at-remote
-  :bind
-  (:map global-map
-        ("C-c g o" . browse-at-remote)
-        ("C-c g k" . browse-at-remote-kill)))
+  :general
+  (my/c-c-keys
+   "go" #'browse-at-remote
+   "gk" #'browse-at-remote-kill))
 
 ;;;; Shell/Terminal
 
@@ -2041,11 +2065,16 @@ as there appears to be a bug in the current version."
   (eshell-pre-command . my/eshell-pre-command)
   (eshell-post-command . my/eshell-post-command)
 
-  :bind
-  (:map global-map
-	("C-c e" . eshell))
-  (:map eshell-mode-map
-        ("C-c C-o" . nil)) ;; Needed for `org-open-at-point-global'.
+  :general
+  (my/c-c-keys
+   "e" #'eshell)
+  (my/c-c-keys
+   :keymaps 'eshell-mode-map
+   ;; Needed for `org-open-at-point-global'.
+   "C-o" nil)
+  (eshell-hist-mode-map
+   ;; Needed for search key prefix.
+   "M-s" nil)
 
   :custom
   (eshell-history-size 10000)
@@ -2068,10 +2097,7 @@ as there appears to be a bug in the current version."
     ;; the latter results in `eshell-output-filter-functions' being set to nil.
     ;; See: https://emacs.stackexchange.com/a/45281
     (remove-hook 'eshell-output-filter-functions
-                 'eshell-postoutput-scroll-to-bottom)
-    ;; Unbind M-s as that's used for consult commands. This needs to happen
-    ;; here as `eshell-hist-mode-map' isn't loaded in time for `:bind' above.
-    (define-key eshell-hist-mode-map (kbd "M-s") nil))
+                 'eshell-postoutput-scroll-to-bottom))
 
   (defun my/eshell-pre-command ()
     "Eshell pre-command hook function."
@@ -2132,22 +2158,24 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 
 (use-package sh-script
   :straight nil
-  :bind
-  (:map sh-mode-map
-        ("C-c C-o" . nil)))
+  :general
+  (my/c-c-keys
+   :keymap sh-mode-map
+   "C-o" nil))
 
 (use-package detached
   :commands detached-init
-  :bind
-  (:map global-map
-        ([remap async-shell-command] . detached-shell-command)
-        ([remap compile] . detached-compile)
-        ([remap recompile] . detached-compile-recompile)
-        ;; TODO: Disable consult integration until this issue is resolved:
-        ;; https://lists.sr.ht/~niklaseklund/detached.el/%3CCAM-j%3Dqsnjw4%3D9kYbYGGR1oqC7BGxmZphN5Jq2gHdO3p8nQYdTw%40mail.gmail.com%3E.
-        ;; ([remap detached-open-session] . detached-consult-session)
-        ("C-c d d" . detached-open-session)
-        ("C-c d l" . detached-list-sessions))
+  :general
+  ([remap async-shell-command] #'detached-shell-command
+   [remap compile] #'detached-compile
+   [remap recompile] #'detached-compile-recompile
+   ;; TODO: Disable consult integration until this issue is resolved:
+   ;; https://lists.sr.ht/~niklaseklund/detached.el/%3CCAM-j%3Dqsnjw4%3D9kYbYGGR1oqC7BGxmZphN5Jq2gHdO3p8nQYdTw%40mail.gmail.com%3E.
+   ;; [remap detached-open-session] #'detached-consult-session
+   )
+  (my/c-c-keys
+   "dd" #'detached-open-session
+   "dl" #'detached-list-sessions)
   :custom
   (detached-terminal-data-command system-type)
   ;; TODO: Would prefer to use D-Bus or `alert' but haven't been able to
@@ -2193,23 +2221,26 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    my/org-agenda-refile-someday-ongoing
    my/org-agenda-refile-inbox)
 
-  :bind
-  (:map global-map
-        ("C-c o l" . org-store-link)
-        ("C-c o a" . org-agenda)
-        ("C-c o m" . org-capture)
-        ("C-c o S" . org-save-all-org-buffers)
-        ("C-c o i" . my/org-capture-inbox)
-        ("C-c o b" . my/org-capture-bookmark)
-        ("C-c o c" . my/org-capture-coffee)
-        ("C-c C-o" . org-open-at-point-global)) ;; Open links everywhere.
-  (:map org-mode-map
-        ("C-'" . nil) ;; Used for Popper.
-        ("C-c C-S-l" . org-cliplink))
-  (:map org-agenda-mode-map
-        ("r" . my/hydra-org-agenda-refile/body)
-        ("k" . org-agenda-kill)
-        ("?" . which-key-show-major-mode))
+  :general
+  (my/c-c-keys
+   "ol" #'org-store-link
+   "oa" #'org-agenda
+   "om" #'org-capture
+   "oS" #'org-save-all-org-buffers
+   "oi" #'my/org-capture-inbox
+   "ob" #'my/org-capture-bookmark
+   "oc" #'my/org-capture-coffee
+   "C-o" #'org-open-at-point-global)
+  (my/c-c-keys
+   :keymaps 'org-mode-map
+   "C-S-l" #'org-cliplink)
+  (org-mode-map
+   ;; Used for Popper.
+   "C-'" nil)
+  (org-agenda-mode-map
+   "r" #'my/hydra-org-agenda-refile/body
+   "k" #'org-agenda-kill
+   "?" #'which-key-show-major-mode)
 
   :hook
   (org-mode . my/init-org-mode)
@@ -2493,20 +2524,21 @@ specified then a task category will be determined by the item's tags."
 
 (use-package org-roam
   :commands org-roam-db-autosync-mode
-  :bind
-  (("C-c n l" . org-roam-buffer-toggle)
-   ("C-c n f" . org-roam-node-find)
-   ("C-c n g" . org-roam-graph)
-   ("C-c n i" . org-roam-node-insert)
-   ("C-c n c" . org-roam-capture)
-   ("C-c n t" . org-roam-tag-add)
-   ("C-c j ." . org-roam-dailies-find-directory)
-   ("C-c j j" . org-roam-dailies-capture-today)
-   ("C-c j J" . org-roam-dailies-goto-today)
-   ("C-c j y" . org-roam-dailies-capture-yesterday)
-   ("C-c j Y" . org-roam-dailies-goto-yesterday)
-   ("C-c j d" . org-roam-dailies-capture-date)
-   ("C-c j D" . org-roam-dailies-goto-date))
+  :general
+  (my/c-c-keys
+   "nl" #'org-roam-buffer-toggle
+   "nf" #'org-roam-node-find
+   "ng" #'org-roam-graph
+   "ni" #'org-roam-node-insert
+   "nc" #'org-roam-capture
+   "nt" #'org-roam-tag-add
+   "j." #'org-roam-dailies-find-directory
+   "jj" #'org-roam-dailies-capture-today
+   "jJ" #'org-roam-dailies-goto-today
+   "jy" #'org-roam-dailies-capture-yesterday
+   "jY" #'org-roam-dailies-goto-yesterday
+   "jd" #'org-roam-dailies-capture-date
+   "jD" #'org-roam-dailies-goto-date)
 
   :custom
   (org-roam-directory (expand-file-name "notes/" my/pkm-dir))
@@ -2547,9 +2579,9 @@ specified then a task category will be determined by the item's tags."
 
 (use-package proced
   :straight nil
-  :bind
-  (:map global-map
-        ("C-x C-p" . proced))
+  :general
+  (my/c-x-keys
+   "C-p" #'proced)
   :custom
   (proced-enable-color-flag t))
 
@@ -2563,184 +2595,6 @@ specified then a task category will be determined by the item's tags."
   (auth-source-do-cache nil)
   :init
   (auth-source-pass-enable))
-
-;;;; Keybindings
-
-(use-package general
-  :functions (my/ide-keys my/search-keys)
-  :config
-  ;; TODO: How to unbind things (e.g. M-o) from ALL keymaps?
-  ;; Apparently possible to unbind multiple maps and keys with:
-  ;; (general-unbind :keymaps '(foo bar) "a" "b")
-  ;; See: https://github.com/kisaragi-hiu/kisaragi-hiu.com/blob/609aebce8efdad0b3d0729962d31f4dcfe25988d/content/2021-06-02-insert-key-double-key.org#L58
-  (general-unbind "M-i")
-  ;; Search keybindings: one stop shop for finding things.
-  (general-create-definer my/search-keys :prefix "M-s")
-  ;; IDE keybindings: one stop shop for all things programming.
-  (general-create-definer my/ide-keys :prefix "M-i"))
-
-;;;;; IDE Keybindings (M-i)
-
-;;;;;; IDE: Global Keybindings
-
-(my/ide-keys
-  ;; Misc.
-  "|" 'display-fill-column-indicator-mode
-  ;; Build.
-  "b" '(:ignore t :which-key "build")
-  "b1" 'compile
-  "b2" 'recompile
-  ;; Flycheck.
-  "l" 'flycheck-list-errors
-  ;; Search.
-  "i" 'consult-imenu
-  "I" 'consult-imenu-multi
-  "r" 'consult-ripgrep
-  "o" 'consult-outline)
-
-;;;;;; IDE: LSP Keybindings
-
-(my/ide-keys
-  :keymaps 'lsp-mode-map
-  ;; Workspaces.
-  "w" '(:ignore t :which-key "workspaces")
-  "wq" 'lsp-workspace-shutdown
-  "wr" 'lsp-workspace-restart
-  ;; Toggles.
-  "v" '(:ignore t :which-key "toggles")
-  "vl" 'lsp-toggle-trace-io
-  "vi" 'lsp-inlay-hints-mode
-  ;; Goto.
-  "g" '(:ignore t :which-key "goto")
-  "gh" 'lsp-treemacs-call-hierarchy
-  "gi" 'lsp-find-implementation
-  "gr" 'lsp-find-references
-  "gd" 'lsp-find-type-definition
-  "gI" 'lsp-ui-imenu
-  ;; Actions.
-  "a" '(:ignore t :which-key "actions")
-  "aa" 'lsp-execute-code-action
-  "ao" 'lsp-organize-imports
-  "ar" 'lsp-rename
-  ;; Search
-  "s" '(:ignore t :which-key "search")
-  "ss" 'consult-lsp-file-symbols
-  "sS" 'consult-lsp-symbols
-  ;; Peeks (TODO: remove bindings that aren't useful).
-  "p" '(:ignore t :which-key "peek")
-  "pg" 'lsp-ui-peek-find-definitions
-  "pi" 'lsp-ui-peek-find-implementation
-  "pr" 'lsp-ui-peek-find-references
-  "ps" 'lsp-ui-peek-find-workspace-symbol)
-
-;;;;;; IDE: DAP Keybindings
-
-(my/ide-keys
-  :keymaps 'dap-mode-map
-  "d" '(:ignore t :which-key "debug")
-  ;; Start/stop commands.
-  "dd" 'dap-debug
-  "dD" 'dap-debug-last
-  "dq" 'my/dap-quit
-  ;; Hydra menu.
-  "dm" 'dap-hydra
-  ;; UI window commands.
-  "dr" 'dap-ui-repl
-  "dl" 'dap-ui-locals
-  "de" 'dap-ui-expressions
-  ;; Breakpoint commands.
-  "db" 'dap-breakpoint-toggle
-  "dk" 'dap-ui-breakpoint-delete
-  "dK" 'dap-breakpoint-delete-all
-  ;; Stepping commands.
-  "dn" 'dap-next
-  "di" 'dap-step-in
-  "do" 'dap-step-out
-  "dc" 'dap-continue
-  ;; Stack frame commands.
-  "df" 'dap-switch-stack-frame
-  "d <up>" 'dap-up-stack-frame
-  "d <down>" 'dap-down-stack-frame
-  ;; Expression commands.
-  "d +" 'dap-ui-expressions-add
-  "d -" 'dap-ui-expressions-remove
-  ;; Evaluation commands.
-  "d :" 'dap-eval
-  "d ." 'dap-eval-thing-at-point)
-
-;;;;;; IDE: Rust Keybindings
-
-(my/ide-keys
-  :keymaps '(rustic-mode-map rustic-compilation-mode-map)
-  ;; Build.
-  "b" '(:ignore t :which-key "build")
-  "bb" 'rustic-cargo-build
-  "ba" 'rustic-cargo-add
-  "bc" 'rustic-cargo-clean
-  "bf" 'rustic-cargo-fmt
-  "bl" 'rustic-cargo-clippy
-  "bo" 'rustic-cargo-outdated
-  "bu" 'rustic-cargo-upgrade
-  "br" 'rustic-cargo-run
-  ;; Test.
-  "t" '(:ignore t :which-key "test")
-  "tp" 'rustic-cargo-test
-  "tt" 'rustic-cargo-current-test
-  ;; Goto.
-  "g" '(:ignore t :which-key "goto")
-  "gd" 'lsp-rust-analyzer-open-external-docs)
-
-;;;;;; IDE: Go Keybindings
-
-(my/ide-keys
-  :keymaps 'go-mode-map
-  ;; Build.
-  "br" 'go-run
-  ;; Goto.
-  "gp" 'my/go-play-dwim
-  ;; Test.
-  "tf" 'go-test-current-file
-  "tt" 'go-test-current-test
-  "tp" 'go-test-current-project
-  "tb" 'go-test-current-benchmark
-  "tc" 'go-test-current-coverage
-  ;; Action.
-  "at" 'go-tag-add
-  "aT" 'go-tag-remove
-  "ag" 'go-gen-test-dwim
-  "ai" 'go-impl)
-
-;;;;;; IDE: Bazel Keybindings
-
-(my/ide-keys
-  :keymaps 'bazel-mode-map
-  "zb" 'bazel-build
-  "zf" 'bazel-buildifier
-  "zr" 'bazel-run
-  "zt" 'bazel-test
-  "zc" 'bazel-coverage)
-
-;;;;; Search Keybindings (M-s)
-
-;;;;;; Search: Global Keybindings
-
-(my/search-keys
-  ;; TODO: Delete old M-s keybindings and add Isearch into here.
-  ;; Especially 'M-s .'. Watch https://www.youtube.com/watch?v=f2mQXNnChwc.
-  "d" 'consult-dir
-  "f" 'consult-find
-  "l" 'consult-line
-  "L" 'my/consult-line-strict
-  "r" 'consult-ripgrep
-  "i" 'consult-imenu
-  "I" 'consult-imenu-multi
-  "m" 'consult-bookmark
-  "g" 'consult-goto-line
-  "o" 'consult-outline
-  "s" 'consult-lsp-file-symbols
-  "S" 'consult-lsp-symbols
-  "SPC" 'consult-mark
-  "S-SPC" 'consult-global-mark)
 
 ;;; End:
 (provide 'init)
