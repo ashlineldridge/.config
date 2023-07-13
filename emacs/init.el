@@ -242,48 +242,48 @@
 
   (defvar my/font-configs
     '((:name "Laptop"
-       :fixed-font "Iosevka Fixed SS14"
-       :fixed-font-size 140
-       :fixed-font-weight normal
-       :variable-font "Iosevka Aile"
-       :variable-font-size 140
-       :line-number-font-size 120
-       :mode-line-font-size 130)
+       :fixed-font "Iosevka Comfy"
+       :fixed-font-height 140
+       :fixed-font-weight regular
+       :variable-font "Iosevka Comfy Duo"
+       :variable-font-height 140
+       :line-number-font-height 120
+       :mode-line-font-height 130)
       (:name "Desktop"
-       :fixed-font "Iosevka Fixed SS14"
-       :fixed-font-size 148
-       :fixed-font-weight normal
-       :variable-font "Iosevka Aile"
-       :variable-font-size 148
-       :line-number-font-size 124
-       :mode-line-font-size 136)))
+       :fixed-font "Iosevka Comfy"
+       :fixed-font-height 148
+       :fixed-font-weight regular
+       :variable-font "Iosevka Comfy Duo"
+       :variable-font-height 148
+       :line-number-font-height 124
+       :mode-line-font-height 140)))
 
   (defun my/apply-font-config (index)
     "Apply the INDEX'th font configuration from `my/font-configs'."
     (let* ((config (nth index my/font-configs))
            (name (plist-get config :name))
            (fixed-font (plist-get config :fixed-font))
-           (fixed-font-size (plist-get config :fixed-font-size))
+           (fixed-font-height (plist-get config :fixed-font-height))
            (fixed-font-weight (plist-get config :fixed-font-weight))
            (variable-font (plist-get config :variable-font))
-           (variable-font-size (plist-get config :variable-font-size))
-           (line-number-font-size (plist-get config :line-number-font-size))
-           (mode-line-font-size (plist-get config :mode-line-font-size)))
+           (variable-font-height (plist-get config :variable-font-height))
+           (line-number-font-height (plist-get config :line-number-font-height))
+           (mode-line-font-height (plist-get config :mode-line-font-height)))
       (set-face-attribute 'default nil
                           :font fixed-font
-                          :height fixed-font-size
+                          :height fixed-font-height
                           :weight fixed-font-weight)
       (set-face-attribute 'variable-pitch nil
                           :font variable-font
-                          :height variable-font-size)
+                          :height variable-font-height)
       (set-face-attribute 'line-number nil
                           :font fixed-font
-                          :height line-number-font-size
+                          :height line-number-font-height
                           :weight 'ultra-light)
       (set-face-attribute 'mode-line nil
-                          :height mode-line-font-size)
+                          :height mode-line-font-height)
       (set-face-attribute 'mode-line-inactive nil
-                          :height mode-line-font-size)
+                          :height mode-line-font-height)
       (message "Applied font configuration: %s" name)))
 
   (defvar my/font-config-index 0)
