@@ -25,12 +25,12 @@
   ;; Automatically unbind non-prefix keys when used.
   (general-auto-unbind-keys)
   ;; Search prefix: one-stop shop for finding things.
-  (general-create-definer my/search-keys :prefix "M-s")
+  (general-create-definer my/bind-search :prefix "M-s")
   ;; IDE prefix: one-stop shop for all things programming.
-  (general-create-definer my/ide-keys :prefix "M-i")
+  (general-create-definer my/bind-ide :prefix "M-i")
   ;; C-c and C-x prefix helpers.
-  (general-create-definer my/c-c-keys :prefix "C-c")
-  (general-create-definer my/c-x-keys :prefix "C-x"))
+  (general-create-definer my/bind-c-c :prefix "C-c")
+  (general-create-definer my/bind-c-x :prefix "C-x"))
 
 (use-package hydra)
 
@@ -54,30 +54,31 @@
    "C-M-k" #'my/delete-to-eol
    "M-<backspace>" #'my/delete-to-bol)
 
-  (my/c-x-keys
+  (my/bind-c-x
    "m" nil
    "2" #'my/split-window-vertically
    "3" #'my/split-window-horizontally
    "C-k" #'kill-this-buffer
+   "C-x" #'exchange-point-and-mark
    "ww" #'my/toggle-show-trailing-whitespace
    "wk" #'delete-trailing-whitespace)
 
-  (my/search-keys
-    ;; Add search prefix descriptions.
-    "h" '(:ignore t :which-key "highlight"))
+  (my/bind-search
+   ;; Add search prefix descriptions.
+   "h" '(:ignore t :which-key "highlight"))
 
-  (my/ide-keys
-    ;; Add IDE prefix descriptions.
-    "a" '(:ignore t :which-key "actions")
-    "b" '(:ignore t :which-key "build")
-    "d" '(:ignore t :which-key "debug")
-    "g" '(:ignore t :which-key "goto")
-    "p" '(:ignore t :which-key "peek")
-    "v" '(:ignore t :which-key "toggles")
-    "w" '(:ignore t :which-key "workspaces")
-    "|" #'display-fill-column-indicator-mode
-    "b1" #'compile
-    "b2" #'recompile)
+  (my/bind-ide
+   ;; Add IDE prefix descriptions.
+   "a" '(:ignore t :which-key "actions")
+   "b" '(:ignore t :which-key "build")
+   "d" '(:ignore t :which-key "debug")
+   "g" '(:ignore t :which-key "goto")
+   "p" '(:ignore t :which-key "peek")
+   "v" '(:ignore t :which-key "toggles")
+   "w" '(:ignore t :which-key "workspaces")
+   "|" #'display-fill-column-indicator-mode
+   "b1" #'compile
+   "b2" #'recompile)
 
   :custom
   (inhibit-startup-message t)
@@ -241,21 +242,21 @@
 
   (defvar my/font-configs
     '((:name "Laptop"
-             :fixed-font "Iosevka Fixed SS14"
-             :fixed-font-size 140
-             :fixed-font-weight normal
-             :variable-font "Iosevka Aile"
-             :variable-font-size 140
-             :line-number-font-size 120
-             :mode-line-font-size 130)
+       :fixed-font "Iosevka Fixed SS14"
+       :fixed-font-size 140
+       :fixed-font-weight normal
+       :variable-font "Iosevka Aile"
+       :variable-font-size 140
+       :line-number-font-size 120
+       :mode-line-font-size 130)
       (:name "Desktop"
-             :fixed-font "Iosevka Fixed SS14"
-             :fixed-font-size 148
-             :fixed-font-weight normal
-             :variable-font "Iosevka Aile"
-             :variable-font-size 148
-             :line-number-font-size 124
-             :mode-line-font-size 136)))
+       :fixed-font "Iosevka Fixed SS14"
+       :fixed-font-size 148
+       :fixed-font-weight normal
+       :variable-font "Iosevka Aile"
+       :variable-font-size 148
+       :line-number-font-size 124
+       :mode-line-font-size 136)))
 
   (defun my/apply-font-config (index)
     "Apply the INDEX'th font configuration from `my/font-configs'."
@@ -669,7 +670,7 @@
   (pcomplete-completions-at-point lsp-completion-at-point)
   :general
   ("C-r" #'my/cape-history)
-  (my/c-c-keys
+  (my/bind-c-c
    "pp" #'completion-at-point
    "pt" #'complete-tag
    "pd" #'cape-dabbrev
@@ -773,36 +774,36 @@
   (consult-narrow-map
    "C-<" #'consult-narrow-help)
 
-  (my/c-c-keys
+  (my/bind-c-c
    "os" #'consult-org-agenda)
 
-  (my/c-x-keys
+  (my/bind-c-x
    "b" #'consult-buffer
    "rr" #'consult-register
    "rl" #'consult-register-load
    "rs" #'consult-register-store)
 
-  (my/search-keys
-    "d" #'consult-dir
-    "f" #'consult-find
-    "l" #'consult-line
-    "L" #'my/consult-line-strict
-    "r" #'consult-ripgrep
-    "i" #'consult-imenu
-    "I" #'consult-imenu-multi
-    "m" #'consult-bookmark
-    "g" #'consult-goto-line
-    "o" #'consult-outline
-    "s" #'consult-lsp-file-symbols
-    "S" #'consult-lsp-symbols
-    "SPC" #'consult-mark
-    "S-SPC" #'consult-global-mark)
+  (my/bind-search
+   "d" #'consult-dir
+   "f" #'consult-find
+   "l" #'consult-line
+   "L" #'my/consult-line-strict
+   "r" #'consult-ripgrep
+   "i" #'consult-imenu
+   "I" #'consult-imenu-multi
+   "m" #'consult-bookmark
+   "g" #'consult-goto-line
+   "o" #'consult-outline
+   "s" #'consult-lsp-file-symbols
+   "S" #'consult-lsp-symbols
+   "SPC" #'consult-mark
+   "S-SPC" #'consult-global-mark)
 
-  (my/ide-keys
-    "i" #'consult-imenu
-    "I" #'consult-imenu-multi
-    "r" #'consult-ripgrep
-    "o" #'consult-outline)
+  (my/bind-ide
+   "i" #'consult-imenu
+   "I" #'consult-imenu-multi
+   "r" #'consult-ripgrep
+   "o" #'consult-outline)
 
   :custom
   ;; Type < followed by a prefix key to narrow the available candidates.
@@ -893,18 +894,18 @@
 
   (defvar my/consult-source-eshell-buffer
     `(:name "Eshell Buffer"
-            :narrow ?e
-            :category eshell-buffer
-            :face consult-buffer
-            :history buffer-name-history
-            ;; https://github.com/jwiegley/use-package/issues/795#issuecomment-673077162
-            :state ,#'consult--buffer-state
-            :action ,#'consult--buffer-action
-            :items ,(lambda ()
-                      (consult--buffer-query
-                       :sort 'visibility
-                       :as #'buffer-name
-                       :mode 'eshell-mode))))
+      :narrow ?e
+      :category eshell-buffer
+      :face consult-buffer
+      :history buffer-name-history
+      ;; https://github.com/jwiegley/use-package/issues/795#issuecomment-673077162
+      :state ,#'consult--buffer-state
+      :action ,#'consult--buffer-action
+      :items ,(lambda ()
+                (consult--buffer-query
+                 :sort 'visibility
+                 :as #'buffer-name
+                 :mode 'eshell-mode))))
 
 
   (consult-customize
@@ -1054,7 +1055,7 @@
 
 (use-package wgrep
   :general
-  (my/c-c-keys
+  (my/bind-c-c
    "C-w" #'wgrep-change-to-wgrep-mode)
   :custom
   (wgrep-auto-save-buffer t))
@@ -1100,8 +1101,7 @@
   :functions ring-ref
   :general
   ("M-j" nil)
-  (:prefix
-   "M-j"
+  (:prefix "M-j"
    "j" #'avy-goto-char-timer
    "l" #'avy-goto-line
    "M-l" #'avy-goto-end-of-line
@@ -1171,12 +1171,12 @@
 (use-package isearch
   :straight nil
   :general
-  (my/search-keys
-    "]" #'isearch-forward
-    "[" #'isearch-backward
-    "}" #'isearch-forward-regexp
-    "{" #'isearch-backward-regexp
-    "." #'isearch-forward-thing-at-point)
+  (my/bind-search
+   "]" #'isearch-forward
+   "[" #'isearch-backward
+   "}" #'isearch-forward-regexp
+   "{" #'isearch-backward-regexp
+   "." #'isearch-forward-thing-at-point)
   (isearch-mode-map
    "C-n" #'isearch-repeat-forward
    "C-p" #'isearch-repeat-backward))
@@ -1186,20 +1186,20 @@
 (use-package hi-lock
   :straight nil
   :general
-  (my/search-keys
-    "h." #'highlight-symbol-at-point
-    "hh" #'highlight-regexp
-    "hl" #'highlight-lines-matching-regexp
-    "hu" #'unhighlight-regexp))
+  (my/bind-search
+   "h." #'highlight-symbol-at-point
+   "hh" #'highlight-regexp
+   "hl" #'highlight-lines-matching-regexp
+   "hu" #'unhighlight-regexp))
 
 ;;;; Buffer Management
 
 (use-package ibuffer
   :straight nil
   :general
-  (my/c-x-keys
-    ;; Replace `list-buffers' with `ibuffer'.
-    "C-x C-b" #'ibuffer)
+  (my/bind-c-x
+   ;; Replace `list-buffers' with `ibuffer'.
+   "C-x C-b" #'ibuffer)
   (ibuffer-mode-map
    ;; Keep M-o binding for ace-window.
    "M-o" nil
@@ -1416,7 +1416,7 @@ as there appears to be a bug in the current version."
 (use-package outline
   :straight nil
   :general
-  (my/c-c-keys
+  (my/bind-c-c
    :keymaps 'outline-minor-mode-map
    "C-n" #'outline-next-visible-heading
    "C-p" #'outline-previous-visible-heading
@@ -1437,11 +1437,11 @@ as there appears to be a bug in the current version."
   :after consult-yasnippet
   :hook ((text-mode prog-mode eshell-mode) . yas-minor-mode)
   :general
-  (my/c-c-keys
+  (my/bind-c-c
    "yn" #'yas-new-snippet
    "yu" #'yas-reload-all
    "yd" #'yas-describe-tables)
-  (my/c-c-keys
+  (my/bind-c-c
    :keymaps 'yas-minor-mode-map
    "yy" #'yas-expand
    "yi" #'consult-yasnippet
@@ -1483,37 +1483,37 @@ as there appears to be a bug in the current version."
     python-mode) . lsp-deferred)
 
   :general
-  (my/ide-keys
-    :keymaps 'lsp-mode-map
-    ;; Symbols
-    "s" #'consult-lsp-file-symbols
-    "S" #'consult-lsp-symbols
-    ;; Workspaces.
-    "wq" #'lsp-workspace-shutdown
-    "wr" #'lsp-workspace-restart
-    ;; Toggles.
-    "vl" #'lsp-toggle-trace-io
-    "vi" #'lsp-inlay-hints-mode
-    ;; Goto.
-    "gh" #'lsp-treemacs-call-hierarchy
-    "gi" #'lsp-find-implementation
-    "gr" #'lsp-find-references
-    "gd" #'lsp-find-type-definition
-    "gI" #'lsp-ui-imenu
-    ;; Actions.
-    "aa" #'lsp-execute-code-action
-    "ao" #'lsp-organize-imports
-    "ar" #'lsp-rename
-    ;; Peeks (TODO: remove bindings that aren't useful).
-    "pg" #'lsp-ui-peek-find-definitions
-    "pi" #'lsp-ui-peek-find-implementation
-    "pr" #'lsp-ui-peek-find-references
-    "ps" #'lsp-ui-peek-find-workspace-symbol)
+  (my/bind-ide
+   :keymaps 'lsp-mode-map
+   ;; Symbols
+   "s" #'consult-lsp-file-symbols
+   "S" #'consult-lsp-symbols
+   ;; Workspaces.
+   "wq" #'lsp-workspace-shutdown
+   "wr" #'lsp-workspace-restart
+   ;; Toggles.
+   "vl" #'lsp-toggle-trace-io
+   "vi" #'lsp-inlay-hints-mode
+   ;; Goto.
+   "gh" #'lsp-treemacs-call-hierarchy
+   "gi" #'lsp-find-implementation
+   "gr" #'lsp-find-references
+   "gd" #'lsp-find-type-definition
+   "gI" #'lsp-ui-imenu
+   ;; Actions.
+   "aa" #'lsp-execute-code-action
+   "ao" #'lsp-organize-imports
+   "ar" #'lsp-rename
+   ;; Peeks (TODO: remove bindings that aren't useful).
+   "pg" #'lsp-ui-peek-find-definitions
+   "pi" #'lsp-ui-peek-find-implementation
+   "pr" #'lsp-ui-peek-find-references
+   "ps" #'lsp-ui-peek-find-workspace-symbol)
 
-  (my/search-keys
-    :keymaps 'lsp-mode-map
-    "s" #'consult-lsp-file-symbols
-    "S" #'consult-lsp-symbols)
+  (my/bind-search
+   :keymaps 'lsp-mode-map
+   "s" #'consult-lsp-file-symbols
+   "S" #'consult-lsp-symbols)
 
   :custom
   (lsp-log-io nil)
@@ -1612,13 +1612,13 @@ as there appears to be a bug in the current version."
    lsp-ui-peek-find-references
    lsp-ui-peek-find-workspace-symbol)
   :custom
-    (lsp-ui-sideline-delay 0)
-    (lsp-ui-doc-delay 0)
-    (lsp-ui-imenu-auto-refresh t)
-    (lsp-ui-doc-show-with-mouse nil)
-    (lsp-ui-doc-position 'at-point)
-    (lsp-ui-doc-max-width 150)
-    (lsp-ui-doc-max-height 30))
+  (lsp-ui-sideline-delay 0)
+  (lsp-ui-doc-delay 0)
+  (lsp-ui-imenu-auto-refresh t)
+  (lsp-ui-doc-show-with-mouse nil)
+  (lsp-ui-doc-position 'at-point)
+  (lsp-ui-doc-max-width 150)
+  (lsp-ui-doc-max-height 30))
 
 ;;;;;; DAP (Debug Adapter Protocol)
 
@@ -1687,40 +1687,40 @@ as there appears to be a bug in the current version."
    dap-register-debug-template)
 
   :general
-  (my/ide-keys
-    ;; DAP is implemented as a global mode so after it starts the following
-    ;; keybindings will become available regardless of the buffer. Not a huge
-    ;; deal but something to be aware of.
-    :keymaps 'dap-mode-map
-    ;; Start/stop commands.
-    "dd" 'dap-debug
-    "dD" 'dap-debug-last
-    "dq" 'my/dap-quit
-    ;; Hydra menu.
-    "dm" 'dap-hydra
-    ;; UI window commands.
-    "dr" 'dap-ui-repl
-    "dl" 'dap-ui-locals
-    "de" 'dap-ui-expressions
-    ;; Breakpoint commands.
-    "db" 'dap-breakpoint-toggle
-    "dk" 'dap-ui-breakpoint-delete
-    "dK" 'dap-breakpoint-delete-all
-    ;; Stepping commands.
-    "dn" 'dap-next
-    "di" 'dap-step-in
-    "do" 'dap-step-out
-    "dc" 'dap-continue
-    ;; Stack frame commands.
-    "df" 'dap-switch-stack-frame
-    "d <up>" 'dap-up-stack-frame
-    "d <down>" 'dap-down-stack-frame
-    ;; Expression commands.
-    "d +" 'dap-ui-expressions-add
-    "d -" 'dap-ui-expressions-remove
-    ;; Evaluation commands.
-    "d :" 'dap-eval
-    "d ." 'dap-eval-thing-at-point)
+  (my/bind-ide
+   ;; DAP is implemented as a global mode so after it starts the following
+   ;; keybindings will become available regardless of the buffer. Not a huge
+   ;; deal but something to be aware of.
+   :keymaps 'dap-mode-map
+   ;; Start/stop commands.
+   "dd" 'dap-debug
+   "dD" 'dap-debug-last
+   "dq" 'my/dap-quit
+   ;; Hydra menu.
+   "dm" 'dap-hydra
+   ;; UI window commands.
+   "dr" 'dap-ui-repl
+   "dl" 'dap-ui-locals
+   "de" 'dap-ui-expressions
+   ;; Breakpoint commands.
+   "db" 'dap-breakpoint-toggle
+   "dk" 'dap-ui-breakpoint-delete
+   "dK" 'dap-breakpoint-delete-all
+   ;; Stepping commands.
+   "dn" 'dap-next
+   "di" 'dap-step-in
+   "do" 'dap-step-out
+   "dc" 'dap-continue
+   ;; Stack frame commands.
+   "df" 'dap-switch-stack-frame
+   "d <up>" 'dap-up-stack-frame
+   "d <down>" 'dap-down-stack-frame
+   ;; Expression commands.
+   "d +" 'dap-ui-expressions-add
+   "d -" 'dap-ui-expressions-remove
+   ;; Evaluation commands.
+   "d :" 'dap-eval
+   "d ." 'dap-eval-thing-at-point)
 
   :custom
   (dap-auto-configure-features '(locals breakpoints expressions repl))
@@ -1768,10 +1768,10 @@ as there appears to be a bug in the current version."
         (dap--put-if-absent :dap-server-path my/dap-rust-lldb-debug-program)
         (dap--put-if-absent :cwd (expand-file-name (my/project-current-root)))
         (dap--put-if-absent :program
-                            (read-file-name
-                             "Select binary file to debug: "
-                             (my/project-current-root)
-                             nil t nil #'file-executable-p))))
+          (read-file-name
+           "Select binary file to debug: "
+           (my/project-current-root)
+           nil t nil #'file-executable-p))))
 
   ;; Register the custom DAP debug provider for Rust using LLDB.
   (dap-register-debug-provider "rust-lldb" #'my/dap-rust-lldb-debug-provider)
@@ -1813,8 +1813,8 @@ as there appears to be a bug in the current version."
 (use-package flycheck
   :hook (prog-mode . flycheck-mode)
   :general
-  (my/ide-keys
-    "l" #'flycheck-list-errors)
+  (my/bind-ide
+   "l" #'flycheck-list-errors)
   :custom
   ;; Tell Flycheck to use the load-path of the current Emacs session. Without
   ;; this, Flycheck tends towards both false negatives and false positives.
@@ -1828,22 +1828,22 @@ as there appears to be a bug in the current version."
 
 (use-package rustic
   :general
-  (my/ide-keys
-    :keymaps '(rustic-mode-map rustic-compilation-mode-map)
-    ;; Build.
-    "bb" #'rustic-cargo-build
-    "ba" #'rustic-cargo-add
-    "bc" #'rustic-cargo-clean
-    "bf" #'rustic-cargo-fmt
-    "bl" #'rustic-cargo-clippy
-    "bo" #'rustic-cargo-outdated
-    "bu" #'rustic-cargo-upgrade
-    "br" #'rustic-cargo-run
-    ;; Test.
-    "tp" #'rustic-cargo-test
-    "tt" #'rustic-cargo-current-test
-    ;; Goto.
-    "gd" #'lsp-rust-analyzer-open-external-docs))
+  (my/bind-ide
+   :keymaps '(rustic-mode-map rustic-compilation-mode-map)
+   ;; Build.
+   "bb" #'rustic-cargo-build
+   "ba" #'rustic-cargo-add
+   "bc" #'rustic-cargo-clean
+   "bf" #'rustic-cargo-fmt
+   "bl" #'rustic-cargo-clippy
+   "bo" #'rustic-cargo-outdated
+   "bu" #'rustic-cargo-upgrade
+   "br" #'rustic-cargo-run
+   ;; Test.
+   "tp" #'rustic-cargo-test
+   "tt" #'rustic-cargo-current-test
+   ;; Goto.
+   "gd" #'lsp-rust-analyzer-open-external-docs))
 
 ;;;;;; Terraform
 
@@ -1885,23 +1885,23 @@ as there appears to be a bug in the current version."
 (use-package go-mode
   :commands (go-play-buffer go-play-region)
   :general
-  (my/ide-keys
-    :keymaps 'go-mode-map
-    ;; Build.
-    "br" #'go-run
-    ;; Goto.
-    "gp" #'my/go-play-dwim
-    ;; Test.
-    "tf" #'go-test-current-file
-    "tt" #'go-test-current-test
-    "tp" #'go-test-current-project
-    "tb" #'go-test-current-benchmark
-    "tc" #'go-test-current-coverage
-    ;; Action.
-    "at" #'go-tag-add
-    "aT" #'go-tag-remove
-    "ag" #'go-gen-test-dwim
-    "ai" #'go-impl)
+  (my/bind-ide
+   :keymaps 'go-mode-map
+   ;; Build.
+   "br" #'go-run
+   ;; Goto.
+   "gp" #'my/go-play-dwim
+   ;; Test.
+   "tf" #'go-test-current-file
+   "tt" #'go-test-current-test
+   "tp" #'go-test-current-project
+   "tb" #'go-test-current-benchmark
+   "tc" #'go-test-current-coverage
+   ;; Action.
+   "at" #'go-tag-add
+   "aT" #'go-tag-remove
+   "ag" #'go-gen-test-dwim
+   "ai" #'go-impl)
 
   :hook
   (go-mode . (lambda () (setq-local tab-width 4)))
@@ -1940,13 +1940,13 @@ as there appears to be a bug in the current version."
   ("\\.bazel\\'" . bazel-mode)
   ("\\.star\\'" . bazel-starlark-mode)
   :general
-  (my/ide-keys
-    :keymaps 'bazel-mode-map
-    "zb" #'bazel-build
-    "zf" #'bazel-buildifier
-    "zr" #'bazel-run
-    "zt" #'bazel-test
-    "zc" #'bazel-coverage)
+  (my/bind-ide
+   :keymaps 'bazel-mode-map
+   "zb" #'bazel-build
+   "zf" #'bazel-buildifier
+   "zr" #'bazel-run
+   "zt" #'bazel-test
+   "zc" #'bazel-coverage)
   :custom
   (bazel-buildifier-before-save t)
   :init
@@ -1983,7 +1983,7 @@ as there appears to be a bug in the current version."
   :hook
   (emacs-lisp-mode . my/init-emacs-lisp-mode)
   :general
-  (my/c-x-keys
+  (my/bind-c-x
    "C-r" #'eval-region)
   (emacs-lisp-mode-map
    ;; TODO: There must be something better/more useful than this?!
@@ -2018,6 +2018,11 @@ as there appears to be a bug in the current version."
   :hook
   (emacs-lisp-mode . rainbow-delimiters-mode))
 
+(use-package emacs-lisp-indent
+  :straight (:host github :repo "ashlineldridge/emacs-lisp-indent")
+  :init
+  (emacs-lisp-indent-install))
+
 ;;;;;; SGML/HTML
 
 (use-package sgml-mode
@@ -2039,7 +2044,7 @@ as there appears to be a bug in the current version."
 
 (use-package magit
   :general
-  (my/c-c-keys
+  (my/bind-c-c
    "gs" #'magit-status
    "gd" #'magit-dispatch
    "gf" #'magit-file-dispatch)
@@ -2052,7 +2057,7 @@ as there appears to be a bug in the current version."
 
 (use-package browse-at-remote
   :general
-  (my/c-c-keys
+  (my/bind-c-c
    "go" #'browse-at-remote
    "gk" #'browse-at-remote-kill))
 
@@ -2066,9 +2071,9 @@ as there appears to be a bug in the current version."
   (eshell-post-command . my/eshell-post-command)
 
   :general
-  (my/c-c-keys
+  (my/bind-c-c
    "e" #'eshell)
-  (my/c-c-keys
+  (my/bind-c-c
    :keymaps 'eshell-mode-map
    ;; Needed for `org-open-at-point-global'.
    "C-o" nil)
@@ -2159,7 +2164,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 (use-package sh-script
   :straight nil
   :general
-  (my/c-c-keys
+  (my/bind-c-c
    :keymap sh-mode-map
    "C-o" nil))
 
@@ -2173,7 +2178,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    ;; https://lists.sr.ht/~niklaseklund/detached.el/%3CCAM-j%3Dqsnjw4%3D9kYbYGGR1oqC7BGxmZphN5Jq2gHdO3p8nQYdTw%40mail.gmail.com%3E.
    ;; [remap detached-open-session] #'detached-consult-session
    )
-  (my/c-c-keys
+  (my/bind-c-c
    "dd" #'detached-open-session
    "dl" #'detached-list-sessions)
   :custom
@@ -2222,7 +2227,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    my/org-agenda-refile-inbox)
 
   :general
-  (my/c-c-keys
+  (my/bind-c-c
    "ol" #'org-store-link
    "oa" #'org-agenda
    "om" #'org-capture
@@ -2231,7 +2236,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    "ob" #'my/org-capture-bookmark
    "oc" #'my/org-capture-coffee
    "C-o" #'org-open-at-point-global)
-  (my/c-c-keys
+  (my/bind-c-c
    :keymaps 'org-mode-map
    "C-S-l" #'org-cliplink)
   (org-mode-map
@@ -2525,7 +2530,7 @@ specified then a task category will be determined by the item's tags."
 (use-package org-roam
   :commands org-roam-db-autosync-mode
   :general
-  (my/c-c-keys
+  (my/bind-c-c
    "nl" #'org-roam-buffer-toggle
    "nf" #'org-roam-node-find
    "ng" #'org-roam-graph
@@ -2580,7 +2585,7 @@ specified then a task category will be determined by the item's tags."
 (use-package proced
   :straight nil
   :general
-  (my/c-x-keys
+  (my/bind-c-x
    "C-p" #'proced)
   :custom
   (proced-enable-color-flag t))
