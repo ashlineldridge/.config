@@ -509,7 +509,7 @@
   ;; Use Embark for `prefix-help-command' as it is searchable.
   (which-key-show-early-on-C-h nil)
   (which-key-use-C-h-commands nil)
-  (which-key-idle-delay 0.5)
+  (which-key-idle-delay 1.0)
   (which-key-idle-secondary-delay 0.05)
   (which-key-popup-type 'side-window)
   (which-key-side-window-location '(bottom right))
@@ -957,6 +957,17 @@
   (embark-bookmark-map
    "r" #'consult-ripgrep)
 
+  ;; Try to mirror the symbol-targeting IDE keys with Embark.
+  ('(embark-general-map
+     embark-command-map
+     embark-identifier-map
+     embark-symbol-map)
+   "ar" #'my/embark-lsp-rename
+   "gr" #'xref-find-references
+   "gd" #'xref-find-definitions
+   "gh" #'lsp-treemacs-call-hierarchy
+   "gi" #'my/embark-lsp-find-implementations)
+
   :custom
   ;; Just show the minimal "Act" prompt (the default starts with minimal
   ;; and then `embark-mixed-indicator-delay' kicks in and the verbose screen
@@ -984,8 +995,7 @@
 
   :config
   ;; Org-roam nodes have their own Embark category and hence need their own
-  ;; keymap so that I can act on them. Here, I create a new Embark keymap and
-  ;; add it to `embark-keymap-alist'.
+  ;; keymap to act on them.
   (defvar-keymap my/embark-org-roam-node-map
     :doc "Keymap for Embark `org-roam-node' actions"
     :parent embark-general-map)
@@ -1036,7 +1046,21 @@
   (general-def embark-buffer-map "o" (my/embark-ace-window-action switch-to-buffer))
   (general-def embark-bookmark-map "o" (my/embark-ace-window-action bookmark-jump))
   (general-def my/embark-org-roam-node-map "o" (my/embark-ace-window-action org-roam-node-find))
-  (general-def my/embark-consult-xref-map "o" (my/embark-ace-window-action my/goto-consult-xref)))
+  (general-def my/embark-consult-xref-map "o" (my/embark-ace-window-action my/goto-consult-xref))
+
+  ;; Wrapper for `lsp-find-implementation' to make it work with Embark.
+  (defun my/embark-lsp-find-implementations ()
+    "Find implementations of the symbol under point."
+    (interactive)
+    (read-from-minibuffer "")
+    (lsp-find-implementation))
+
+  ;; Wrapper for `lsp-rename' to make it work with Embark.
+  (defun my/embark-lsp-rename ()
+    "Rename the symbol under point."
+    (interactive)
+    (read-from-minibuffer "")
+    (call-interactively #'lsp-rename)))
 
 (use-package embark-consult
   :hook
@@ -1483,32 +1507,37 @@ as there appears to be a bug in the current version."
     python-mode) . lsp-deferred)
 
   :general
+  (lsp-mode-map
+   "M-p" #'lsp-ui-doc-glance
+   "M-P" #'lsp-describe-thing-at-point
+   "C-M-p" #'lsp-ui-doc-toggle)
+
   (my/bind-ide
-   :keymaps 'lsp-mode-map
-   ;; Symbols
-   "s" #'consult-lsp-file-symbols
-   "S" #'consult-lsp-symbols
-   ;; Workspaces.
-   "wq" #'lsp-workspace-shutdown
-   "wr" #'lsp-workspace-restart
-   ;; Toggles.
-   "vl" #'lsp-toggle-trace-io
-   "vi" #'lsp-inlay-hints-mode
-   ;; Goto.
-   "gh" #'lsp-treemacs-call-hierarchy
-   "gi" #'lsp-find-implementation
-   "gr" #'lsp-find-references
-   "gd" #'lsp-find-type-definition
-   "gI" #'lsp-ui-imenu
-   ;; Actions.
-   "aa" #'lsp-execute-code-action
-   "ao" #'lsp-organize-imports
-   "ar" #'lsp-rename
-   ;; Peeks (TODO: remove bindings that aren't useful).
-   "pg" #'lsp-ui-peek-find-definitions
-   "pi" #'lsp-ui-peek-find-implementation
-   "pr" #'lsp-ui-peek-find-references
-   "ps" #'lsp-ui-peek-find-workspace-symbol)
+    :keymaps 'lsp-mode-map
+    ;; Symbols
+    "s" #'consult-lsp-file-symbols
+    "S" #'consult-lsp-symbols
+    ;; Workspaces.
+    "wq" #'lsp-workspace-shutdown
+    "wr" #'lsp-workspace-restart
+    ;; Toggles.
+    "vl" #'lsp-toggle-trace-io
+    "vi" #'lsp-inlay-hints-mode
+    ;; Goto.
+    "gh" #'lsp-treemacs-call-hierarchy
+    "gi" #'lsp-find-implementation
+    "gr" #'xref-find-references
+    "gd" #'xref-find-definitions
+    "gI" #'lsp-ui-imenu
+    ;; Actions.
+    "aa" #'lsp-execute-code-action
+    "ao" #'lsp-organize-imports
+    "ar" #'lsp-rename
+    ;; Peeks (TODO: remove bindings that aren't useful).
+    "pg" #'lsp-ui-peek-find-definitions
+    "pi" #'lsp-ui-peek-find-implementation
+    "pr" #'lsp-ui-peek-find-references
+    "ps" #'lsp-ui-peek-find-workspace-symbol)
 
   (my/bind-search
    :keymaps 'lsp-mode-map
