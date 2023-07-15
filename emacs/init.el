@@ -22,6 +22,22 @@
 (use-package general
   :commands general-auto-unbind-keys
   :config
+  ;; General Approach to Keybinding:
+  ;;
+  ;; "M-s" is the key prefix for "searching". I.e. I want to navigate away from
+  ;; my current location and the command I execute will help me do it. Commands
+  ;; that fall into this category are placed directly under the "M-s" prefix.
+  ;;
+  ;; "M-i" is the "IDE" key prefix. All IDE-like commands fall under a relevant
+  ;; subprefix of "M-i". E.g. the most useful "M-s" search keybindings are
+  ;; replicated under "M-i s", all build-related keybindings are found under
+  ;; "M-i b", all test-related keybindings under "M-i t", and so on.
+  ;;
+  ;; Embark action keymaps are used to mirror the relevant parts of the "M-i"
+  ;; layout, in a way that acts on the symbol under point. E.g. `embark-act' +
+  ;; "r r" renames the symbol, `embark-act' + "s s" uses ripgrep to search the
+  ;; project for the symbol, etc.
+
   ;; Automatically unbind non-prefix keys when used.
   (general-auto-unbind-keys)
   ;; Search prefix: one-stop shop for finding things.
@@ -71,11 +87,11 @@
 
   (my/bind-ide
     ;; Add IDE prefix descriptions.
-    "a" '(:ignore t :which-key "actions")
     "b" '(:ignore t :which-key "build")
     "d" '(:ignore t :which-key "debug")
-    "g" '(:ignore t :which-key "goto")
+    "s" '(:ignore t :which-key "search")
     "p" '(:ignore t :which-key "peek")
+    "r" '(:ignore t :which-key "refactor")
     "v" '(:ignore t :which-key "toggles")
     "w" '(:ignore t :which-key "workspaces")
     "|" #'display-fill-column-indicator-mode
@@ -448,7 +464,7 @@
     "M-K" #'popper-kill-latest-popup)
 
   :preface
-  (defvar my/popper-ignore-modes '(grep-mode))
+  (defvar my/popper-ignore-modes '(grep-mode rg-mode))
 
   :custom
   (popper-window-height 15)
@@ -797,22 +813,20 @@
     "f" #'consult-find
     "l" #'consult-line
     "L" #'my/consult-line-strict
-    "r" #'consult-ripgrep
+    "s" #'consult-ripgrep
     "i" #'consult-imenu
     "I" #'consult-imenu-multi
     "m" #'consult-bookmark
     "g" #'consult-goto-line
-    "o" #'consult-outline
-    "s" #'consult-lsp-file-symbols
-    "S" #'consult-lsp-symbols
+    "-" #'consult-outline
     "SPC" #'consult-mark
     "S-SPC" #'consult-global-mark)
 
   (my/bind-ide
-    "i" #'consult-imenu
-    "I" #'consult-imenu-multi
-    "r" #'consult-ripgrep
-    "o" #'consult-outline)
+    "si" #'consult-imenu
+    "sI" #'consult-imenu-multi
+    "ss" #'consult-ripgrep
+    "s-" #'consult-outline)
 
   :custom
   ;; Type < followed by a prefix key to narrow the available candidates.
@@ -948,7 +962,10 @@
 (use-package consult-yasnippet)
 
 (use-package embark
-  :commands embark-prefix-help-command
+  :commands
+  (embark-prefix-help-command
+   embark-target-identifier-at-point)
+  :functions my/embark-target-lsp-identifier-at-point
 
   :general
   (general-def
@@ -959,24 +976,32 @@
   (general-def 'minibuffer-local-map
     "C-S-b" #'embark-become)
 
-  ;; Shorter keybindings for frequently used actions.
-  (general-def 'embark-file-map
-    "r" #'consult-ripgrep)
-  (general-def 'embark-buffer-map
-    "r" #'consult-ripgrep)
-  (general-def 'embark-bookmark-map
-    "r" #'consult-ripgrep)
-
-  ;; Try to mirror the symbol-targeting IDE keys with Embark.
+  ;; Ideally, I'd just put these in the general map but "s" is bound into
+  ;; multiple child maps. When I unbind it it is replaced with nil which
+  ;; still takes precedence over the general map. At some point I'll fully
+  ;; switch over to my own custom maps and this won't be a problem.
   (general-def '(embark-general-map
                  embark-command-map
+                 embark-function-map
                  embark-identifier-map
                  embark-symbol-map)
-    "ar" #'my/embark-lsp-rename
-    "gr" #'xref-find-references
-    "gd" #'xref-find-definitions
-    "gh" #'lsp-treemacs-call-hierarchy
-    "gi" #'my/embark-lsp-find-implementations)
+    "s]" #'embark-isearch-forward
+    "s[" #'embark-isearch-backward
+    "sh" #'embark-toggle-highlight
+    "sl" #'consult-line
+    "ss" #'consult-ripgrep
+    "sr" #'xref-find-references
+    "sd" #'xref-find-definitions
+    "sp" #'my/rg-dwim-project-dir
+    "sd" #'my/rg-dwim-current-dir
+    "sf" #'rg-dwim-current-file)
+
+  (general-def 'embark-file-map
+    "o" (my/embark-ace-window-action find-file))
+  (general-def 'embark-buffer-map
+    "o" (my/embark-ace-window-action switch-to-buffer))
+  (general-def 'embark-bookmark-map
+    "o" (my/embark-ace-window-action bookmark-jump))
 
   :custom
   ;; Just show the minimal "Act" prompt (the default starts with minimal
@@ -1004,36 +1029,45 @@
       (embark-prefix-help-command)))
 
   :config
-  ;; Org-roam nodes have their own Embark category and hence need their own
-  ;; keymap to act on them.
-  (defvar-keymap my/embark-org-roam-node-map
-    :doc "Keymap for Embark `org-roam-node' actions"
-    :parent embark-general-map)
+  ;; Embark x LSP integration.
+  (with-eval-after-load 'lsp-mode
+    ;; Custom identification of LSP identifiers.
+    (defun my/embark-target-lsp-identifier-at-point ()
+      "Return LSP identifier at point for Embark or nil."
+      (when lsp-mode
+        (when-let ((sym (embark-target-identifier-at-point)))
+          (cons 'lsp-identifier (cdr (car sym))))))
 
-  (defvar-keymap my/embark-consult-xref-map
-    :doc "Keymap for Embark `consult-xref' actions"
-    :parent embark-general-map)
+    (defun my/embark-consult-lsp-file-symbols ()
+      (interactive)
+      (let ((location (read-from-minibuffer "")))
+        (message "Location is: %s" location)
+        (consult-lsp-file-symbols)))
 
-  (add-to-list 'embark-keymap-alist '(org-roam-node . my/embark-org-roam-node-map))
-  (add-to-list 'embark-keymap-alist '(consult-xref . my/embark-consult-xref-map))
-  (add-to-list 'embark-keymap-alist '(xref . my/embark-consult-xref-map))
+    (add-to-list 'embark-target-finders #'my/embark-target-lsp-identifier-at-point)
 
-  ;; This function is used as the argument to `my/embark-ace-window-action' for
-  ;; opening a `consult-xref' candidate in an `ace-window' selected window.
-  ;; TODO: There must be a more idiomatic way to do this (may need to lean
-  ;; on `consult-xref' private functions) rather than string splitting. This
-  ;; way is flawed as it only navigates to the line rather than where the
-  ;; symbol is on the line.
-  (defun my/goto-consult-xref ()
-    "Embark action function for opening a `consult-xref' candidate."
-    (interactive)
-    (let ((location (read-from-minibuffer "")))
-      (let* ((parts (string-split location ":"))
-             (file (nth 0 parts))
-             (line (nth 1 parts)))
-        (find-file file)
-        (goto-char (point-min))
-        (forward-line (1- (string-to-number line))))))
+    (defvar-keymap my/embark-lsp-identifier-map
+      :doc "Keymap for Embark LSP identifier actions."
+      :parent embark-identifier-map
+      "h h" #'lsp-ui-doc-glance
+      "h d" #'lsp-describe-thing-at-point
+      "r a" #'lsp-execute-code-action
+      "r r" #'lsp-rename
+      "s h" #'lsp-treemacs-call-hierarchy
+      "s i" #'lsp-find-implementation
+      "s o" #'consult-lsp-file-symbols
+      "s O" #'consult-lsp-symbols)
+
+    ;; Associate the LSP action map with the 'lsp-identifier symbol.
+    (add-to-list 'embark-keymap-alist '(lsp-identifier . my/embark-lsp-identifier-map))
+
+    ;; Adapt the associated commands so that they are usable as Embark actions.
+    ;; If commands don't behave properly with Embark, play with this. Look at
+    ;; similar commands already in `embark-target-injection-hooks' and mimic.
+    (add-to-list 'embark-target-injection-hooks '(lsp-rename embark--ignore-target))
+    (add-to-list 'embark-target-injection-hooks '(lsp-find-implementation embark--ignore-target))
+    (add-to-list 'embark-target-injection-hooks '(consult-lsp-symbols embark--allow-edit))
+    (add-to-list 'embark-target-injection-hooks '(consult-lsp-file-symbols embark--allow-edit)))
 
   ;; Macro for defining an Embark action that executes FN using an `ace-window'
   ;; selected window. Taken from:
@@ -1051,26 +1085,37 @@
              (aw-switch-to-window (aw-select nil))
              (call-interactively (symbol-function ',fn)))))))
 
-  ;; Create ace-window actions against relevant keymaps.
-  (general-def embark-file-map "o" (my/embark-ace-window-action find-file))
-  (general-def embark-buffer-map "o" (my/embark-ace-window-action switch-to-buffer))
-  (general-def embark-bookmark-map "o" (my/embark-ace-window-action bookmark-jump))
-  (general-def my/embark-org-roam-node-map "o" (my/embark-ace-window-action org-roam-node-find))
-  (general-def my/embark-consult-xref-map "o" (my/embark-ace-window-action my/goto-consult-xref))
-
-  ;; Wrapper for `lsp-find-implementation' to make it work with Embark.
-  (defun my/embark-lsp-find-implementations ()
-    "Find implementations of the symbol under point."
+  ;; This function is used as the argument to `my/embark-ace-window-action' for
+  ;; opening a `consult-xref' candidate in an `ace-window' selected window.
+  ;; TODO: What is the more idiomatic way to do this? This way is flawed as it
+  ;; only navigates to the line rather than where the symbol is on the line.
+  (defun my/goto-consult-xref ()
+    "Embark action function for opening a `consult-xref' candidate."
     (interactive)
-    (read-from-minibuffer "")
-    (lsp-find-implementation))
+    (let ((location (read-from-minibuffer "")))
+      (message "The location is: %s" location)
+      (let* ((parts (string-split location ":"))
+             (file (nth 0 parts))
+             (line (nth 1 parts)))
+        (find-file file)
+        (goto-char (point-min))
+        (forward-line (1- (string-to-number line))))))
 
-  ;; Wrapper for `lsp-rename' to make it work with Embark.
-  (defun my/embark-lsp-rename ()
-    "Rename the symbol under point."
-    (interactive)
-    (read-from-minibuffer "")
-    (call-interactively #'lsp-rename)))
+  ;; Org-roam nodes have their own Embark category and hence need their own
+  ;; keymap to act on them.
+  (defvar-keymap my/embark-org-roam-node-map
+    :doc "Keymap for Embark `org-roam-node' actions"
+    :parent embark-general-map
+    "o" (my/embark-ace-window-action org-roam-node-find))
+
+  (defvar-keymap my/embark-consult-xref-map
+    :doc "Keymap for Embark `consult-xref' actions"
+    :parent embark-general-map
+    "o" (my/embark-ace-window-action my/goto-consult-xref))
+
+  (add-to-list 'embark-keymap-alist '(org-roam-node . my/embark-org-roam-node-map))
+  (add-to-list 'embark-keymap-alist '(consult-xref . my/embark-consult-xref-map))
+  (add-to-list 'embark-keymap-alist '(xref . my/embark-consult-xref-map)))
 
 (use-package embark-consult
   :hook
@@ -1078,14 +1123,33 @@
   (embark-collect-mode . consult-preview-at-point-mode))
 
 (use-package rg
-  :commands rg-enable-default-bindings
-  :custom
-  ;; TODO: How to do this with general.el?
-  (rg-keymap-prefix (kbd "C-c r"))
-  :init
-  ;; TODO: Need a way to hide popper when the side window is shown.
-  ;; See also: https://github.com/seagle0128/.emacs.d/blob/00f25c86d2efc9067364e2173d102a4bf1b460ad/lisp/init-utils.el#L163.
-  (rg-enable-default-bindings))
+  :commands rg-menu
+  :functions popper--bury-all
+  :general
+  (my/bind-search
+    "M-s" #'my/rg-menu)
+  :config
+  (defun my/rg-menu ()
+    "Bury any popups before calling `rg-menu'."
+    (interactive)
+    (popper--bury-all)
+    (call-interactively #'rg-menu))
+
+  ;; DWIM project search across all file extensions (used by Embark).
+  (rg-define-search my/rg-dwim-project-dir
+    "Search for thing at point under the project root directory."
+    :query point
+    :format literal
+    :files "*"
+    :dir project)
+
+  ;; DWIM CWD search across all file extensions (used by Embark).
+  (rg-define-search my/rg-dwim-current-dir
+    "Search for thing at point under the current directory."
+    :query point
+    :format literal
+    :files "*"
+    :dir current))
 
 (use-package wgrep
   :general
@@ -1522,35 +1586,38 @@ as there appears to be a bug in the current version."
     "M-P" #'lsp-describe-thing-at-point
     "C-M-p" #'lsp-ui-doc-toggle)
 
+  (my/bind-search :keymaps 'lsp-mode-map
+    "o" #'consult-lsp-symbols
+    "O" #'consult-lsp-file-symbols)
+
   (my/bind-ide :keymaps 'lsp-mode-map
-    ;; Symbols
-    "s" #'consult-lsp-file-symbols
-    "S" #'consult-lsp-symbols
-    ;; Workspaces.
-    "wq" #'lsp-workspace-shutdown
-    "wr" #'lsp-workspace-restart
-    ;; Toggles.
-    "vl" #'lsp-toggle-trace-io
-    "vi" #'lsp-inlay-hints-mode
-    ;; Goto.
-    "gh" #'lsp-treemacs-call-hierarchy
-    "gi" #'lsp-find-implementation
-    "gr" #'xref-find-references
-    "gd" #'xref-find-definitions
-    "gI" #'lsp-ui-imenu
-    ;; Actions.
-    "aa" #'lsp-execute-code-action
-    "ao" #'lsp-organize-imports
-    "ar" #'lsp-rename
-    ;; Peeks (TODO: remove bindings that aren't useful).
+    ;; Help.
+    "hh" #'lsp-ui-doc-glance
+    "hH" #'lsp-ui-doc-toggle
+    "hd" #'lsp-describe-thing-at-point
+    ;; Peek.
     "pg" #'lsp-ui-peek-find-definitions
     "pi" #'lsp-ui-peek-find-implementation
     "pr" #'lsp-ui-peek-find-references
-    "ps" #'lsp-ui-peek-find-workspace-symbol)
-
-  (my/bind-search :keymaps 'lsp-mode-map
-    "s" #'consult-lsp-file-symbols
-    "S" #'consult-lsp-symbols)
+    "ps" #'lsp-ui-peek-find-workspace-symbol
+    ;; Refactor.
+    "ra" #'lsp-execute-code-action
+    "ro" #'lsp-organize-imports
+    "rr" #'lsp-rename
+    ;; Search.
+    "sh" #'lsp-treemacs-call-hierarchy
+    "si" #'lsp-find-implementation
+    "sr" #'xref-find-references
+    "sd" #'xref-find-definitions
+    "sI" #'lsp-ui-imenu
+    "so" #'consult-lsp-symbols
+    "sO" #'consult-lsp-file-symbols
+    ;; Toggles.
+    "vl" #'lsp-toggle-trace-io
+    "vi" #'lsp-inlay-hints-mode
+    ;; Workspaces.
+    "wq" #'lsp-workspace-shutdown
+    "wr" #'lsp-workspace-restart)
 
   :custom
   (lsp-log-io nil)
@@ -1618,7 +1685,6 @@ as there appears to be a bug in the current version."
   :init
   (defun my/if-essential-advice (f &rest args)
     "Around advice that invokes F with ARGS if `non-essential' is non-nil."
-    (message "Checking essential advice: %s" non-essential)
     (unless non-essential
       (apply f args)))
 
@@ -1752,11 +1818,11 @@ as there appears to be a bug in the current version."
     "d <up>" 'dap-up-stack-frame
     "d <down>" 'dap-down-stack-frame
     ;; Expression commands.
-    "d +" 'dap-ui-expressions-add
-    "d -" 'dap-ui-expressions-remove
+    "d+" 'dap-ui-expressions-add
+    "d-" 'dap-ui-expressions-remove
     ;; Evaluation commands.
-    "d :" 'dap-eval
-    "d ." 'dap-eval-thing-at-point)
+    "d:" 'dap-eval
+    "d." 'dap-eval-thing-at-point)
 
   :custom
   (dap-auto-configure-features '(locals breakpoints expressions repl))
@@ -1877,8 +1943,8 @@ as there appears to be a bug in the current version."
     ;; Test.
     "tp" #'rustic-cargo-test
     "tt" #'rustic-cargo-current-test
-    ;; Goto.
-    "gd" #'lsp-rust-analyzer-open-external-docs))
+    ;; Help.
+    "ho" #'lsp-rust-analyzer-open-external-docs))
 
 ;;;;;; Terraform
 
@@ -1923,19 +1989,19 @@ as there appears to be a bug in the current version."
   (my/bind-ide :keymaps 'go-mode-map
     ;; Build.
     "br" #'go-run
-    ;; Goto.
-    "gp" #'my/go-play-dwim
+    ;; Help.
+    "hp" #'my/go-play-dwim
+    ;; Refactor.
+    "rt" #'go-tag-add
+    "rT" #'go-tag-remove
+    "rg" #'go-gen-test-dwim
+    "ri" #'go-impl
     ;; Test.
     "tf" #'go-test-current-file
     "tt" #'go-test-current-test
     "tp" #'go-test-current-project
     "tb" #'go-test-current-benchmark
-    "tc" #'go-test-current-coverage
-    ;; Action.
-    "at" #'go-tag-add
-    "aT" #'go-tag-remove
-    "ag" #'go-gen-test-dwim
-    "ai" #'go-impl)
+    "tc" #'go-test-current-coverage)
 
   :hook
   (go-mode . (lambda () (setq-local tab-width 4)))
@@ -2029,23 +2095,25 @@ as there appears to be a bug in the current version."
     (outline-minor-mode)))
 
 (use-package paredit
-  :general
-  (general-def 'paredit-mode-map
-    ;; Unbind Paredit keybindings I don't use that can cause collisions.
-    "C-<left>" nil
-    "C-<right>" nil
-    "C-M-<left>" nil
-    "C-M-<right>" nil
-    "M-S" nil
-    "M-s" nil
-    "M-?" nil)
   :hook
   ;; Note that I specifically don't enable Paredit in minibuffers as it causes
   ;; issues with RET keybindings.
   (emacs-lisp-mode . paredit-mode)       ;; Elisp buffers.
   (lisp-mode . paredit-mode)             ;; Common Lisp buffers.
   (lisp-interaction-mode . paredit-mode) ;; Scratch buffers.
-  (ielm-mode-hook . paredit-mode))       ;; IELM buffers.
+  (ielm-mode-hook . paredit-mode)        ;; IELM buffers.
+
+  :config
+  ;; Unbind Paredit keybindings I don't use that can cause collisions. This
+  ;; doesn't work unless I do it under :config rather than :general.
+  (general-unbind 'paredit-mode-map
+    "C-<left>"
+    "C-<right>"
+    "C-M-<left>"
+    "C-M-<right>"
+    "M-S"
+    "M-s"
+    "M-?"))
 
 (use-package rainbow-delimiters
   :hook
