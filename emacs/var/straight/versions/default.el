@@ -99,6 +99,7 @@
  ("transient" . "a1575e58331b1ff85ac97667df0130ae822ccf5f")
  ("transpose-frame" . "94c87794d53883a2358d13da264ad8dab9a52daa")
  ("treemacs" . "6531ac0a9084ce2f45e9105bc20b685bf277b9a6")
+ ("treemacs-nerd-icons" . "8ddd94661ab9f3c9094dd4b5632bcdd57bdf871d")
  ("typescript.el" . "4fcb4594819caf472ae42ea068a1c7795cf07f46")
  ("undo-tree" . "16f4121032d09ef44b3d7d02c4d02c3c2f18041f")
  ("use-package" . "a6e856418d2ebd053b34e0ab2fda328abeba731c")
