@@ -464,7 +464,13 @@
     "M-K" #'popper-kill-latest-popup)
 
   :preface
-  (defvar my/popper-ignore-modes '(grep-mode rg-mode))
+  ;; TODO: For buffers like rg results, Embark collect/export, etc, I'd like
+  ;; to display them in a window to the immediate left or right of the current
+  ;; window (splitting if necessary, if the active window is on the left show
+  ;; the results on the right and vice versa. When I actually figure out how
+  ;; to do that I'll exclude those buffers from popper's contorl. Until then,
+  ;; just show the results buffer as a popup and move as appropriate.
+  (defvar my/popper-ignore-modes '(grep-mode))
 
   :custom
   (popper-window-height 15)
