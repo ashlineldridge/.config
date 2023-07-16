@@ -64,13 +64,15 @@
   ;; Prefer full `general-def' form for execing and indentation.
   (general-def
     "C-h C-h" nil
-    "<escape>" #'keyboard-escape-quit
     "C-;" #'comment-line
     "M-[" #'previous-buffer
     "M-]" #'next-buffer
     "C-S-k" #'my/copy-to-eol
     "C-M-k" #'my/delete-to-eol
-    "M-<backspace>" #'my/delete-to-bol)
+    "M-<backspace>" #'my/delete-to-bol
+    "<escape>" #'keyboard-escape-quit
+    ;; Override default quit window behaviour to also kill the buffer.
+    [remap quit-window] #'my/quit-window-kill)
 
   (my/bind-c-x
     "m" nil
@@ -209,6 +211,11 @@
       (if (eq point begin)
           (delete-backward-char 1 nil)
         (delete-region (line-beginning-position) (point)))))
+
+  (defun my/quit-window-kill ()
+    "Quit the window and kill the buffer."
+    (interactive)
+    (quit-window t))
 
   (defun my/query-replace-case-sensitive ()
     "Calls `query-replace' in a case-sensitive way."
@@ -423,12 +430,6 @@
 (use-package window
   :straight nil
   :custom
-  ;; The following customizations result in Emacs not trying to be clever with
-  ;; my windows. Generally, when I open a buffer I want it to occupy the same
-  ;; window unless a more appropriate window for that buffer already exists.
-  (display-buffer-base-action '((display-buffer-reuse-mode-window
-                                 display-buffer-reuse-window
-                                 display-buffer-same-window)))
   (even-window-sizes nil)
   :init
   (defhydra my/hydra-manage-windows (global-map "C-o")
@@ -449,9 +450,26 @@
 
 ;;;;; Window Placement
 
-;; For more advanced configuration, see:
-;; https://github.com/seagle0128/.emacs.d/blob/8cbec0c132cd6de06a8c293598a720d377f3f5b9/lisp/init-window.el#L148.
+;; Use Shackle for managing windows that aren't considered to be "popups" by
+;; Popper. Shackle basically replaces the manual configuration of
+;; `display-buffer-base-action' and `display-buffer-alist' with a simpler
+;; syntax. `shackle-mode' needs to be called before `popper-mode' so that the
+;; latter gets priority in `display-buffer-alist'; that way, any buffer not
+;; claimed by Popper will be subject to Shackle's rules.
+(use-package shackle
+  :commands shackle-mode
+  :custom
+  ;; May want to either a) leave this as nil (and possibly set `display-buffer-base-action'
+  ;; to something like https://github.com/ashlineldridge/.config/blob/849f08740cfce95af964d864e06b2a1d534886d7/emacs/init.el#L429)
+  ;; or b) define more rules to specifically control how buffers are placed.
+  (shackle-default-rule :same t)
+  (shackle-rules
+   '(("*rg*" :select t :other t)))
+  :init
+  (shackle-mode 1))
+
 (use-package popper
+  :after shackle
   :commands
   (popper-mode popper-echo-mode popper-kill-latest-popup popper-open-latest)
   :general
@@ -470,7 +488,7 @@
   ;; the results on the right and vice versa. When I actually figure out how
   ;; to do that I'll exclude those buffers from popper's contorl. Until then,
   ;; just show the results buffer as a popup and move as appropriate.
-  (defvar my/popper-ignore-modes '(grep-mode))
+  (defvar my/popper-ignore-modes '(grep-mode rg-mode))
 
   :custom
   (popper-window-height 15)
@@ -501,6 +519,8 @@
            (derived-mode-p 'compilation-mode))))))
 
   (popper-echo-dispatch-keys '(?0 ?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9))
+
+  ;; Taken from: https://github.com/seagle0128/.emacs.d/blob/8cbec0c132cd6de06a8c293598a720d377f3f5b9/lisp/init-window.el#L148.
   (popper-mode-line
    '(:eval (let ((face (if (doom-modeline--active)
                            'mode-line-emphasis
@@ -980,7 +1000,7 @@
     "C-h b" #'embark-bindings)
 
   (general-def 'minibuffer-local-map
-    "C-S-b" #'embark-become)
+    "C-M-." #'embark-become)
 
   ;; Ideally, I'd just put these in the general map but "s" is bound into
   ;; multiple child maps. When I unbind it it is replaced with nil which
@@ -2277,6 +2297,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   :commands detached-init
   :general
   (general-def
+    [remap shell-command] #'detached-shell-command
     [remap async-shell-command] #'detached-shell-command
     [remap compile] #'detached-compile
     [remap recompile] #'detached-compile-recompile
@@ -2284,6 +2305,8 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     ;; https://lists.sr.ht/~niklaseklund/detached.el/%3CCAM-j%3Dqsnjw4%3D9kYbYGGR1oqC7BGxmZphN5Jq2gHdO3p8nQYdTw%40mail.gmail.com%3E.
     ;; [remap detached-open-session] #'detached-consult-session
     )
+  (general-def 'detached-shell-mode-map
+    "q" #'my/quit-window-kill)
   (my/bind-c-c
     "dd" #'detached-open-session
     "dl" #'detached-list-sessions)
