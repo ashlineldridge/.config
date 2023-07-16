@@ -430,6 +430,11 @@
 (use-package window
   :straight nil
   :custom
+  ;; The following provides the default `display-buffer' behaviour for buffers
+  ;; that are not managed by either Popper or Shackle.
+  (display-buffer-base-action '((display-buffer-reuse-mode-window
+                                 display-buffer-reuse-window
+                                 display-buffer-same-window)))
   (even-window-sizes nil)
   :init
   (defhydra my/hydra-manage-windows (global-map "C-o")
@@ -459,12 +464,10 @@
 (use-package shackle
   :commands shackle-mode
   :custom
-  ;; May want to either a) leave this as nil (and possibly set `display-buffer-base-action'
-  ;; to something like https://github.com/ashlineldridge/.config/blob/849f08740cfce95af964d864e06b2a1d534886d7/emacs/init.el#L429)
-  ;; or b) define more rules to specifically control how buffers are placed.
-  (shackle-default-rule :same t)
+  (shackle-default-rule nil)
   (shackle-rules
-   '(("*rg*" :select t :other t)))
+   '(("*rg*" :select t :other t)
+     ("*helpful" :select t :other t :regexp t)))
   :init
   (shackle-mode 1))
 
@@ -500,7 +503,6 @@
      "\\*Pp Macroexpand Output\\*"
      "\\*Flycheck "
      "\\*Help\\*"
-     "\\*helpful "
      "\\*eldoc for "
      "\\*eshell-output\\*"
      "CAPTURE-.*\\.org"
