@@ -625,32 +625,32 @@
     (when completion-in-region--data
       (let ((completion-extra-properties corfu--extra)
             completion-cycle-threshold completion-cycling)
-        (apply #'consult-completion-in-region completion-in-region--data))))
+        (apply #'consult-completion-in-region completion-in-region--data)))))
 
-  :config
-  ;; Documentation shown alongside Corfu completion popups.
-  (use-package corfu-popupinfo
-    :after corfu
-    :straight
-    (:host github :repo "minad/corfu" :files ("extensions/corfu-popupinfo.el"))
-    :general
-    (general-def 'corfu-map
-      "M-d" #'corfu-popupinfo-toggle
-      "M-p" #'corfu-popupinfo-scroll-down
-      "M-n" #'corfu-popupinfo-scroll-up)
-    :hook
-    (corfu-mode . corfu-popupinfo-mode)
-    :custom
-    (corfu-popupinfo-delay 1.0))
+;; Documentation shown alongside Corfu completion popups.
+(use-package corfu-popupinfo
+  :after corfu
+  :straight
+  (:host github :repo "minad/corfu" :files ("extensions/corfu-popupinfo.el"))
+  :general
+  (general-def 'corfu-map
+    "M-d" #'corfu-popupinfo-toggle
+    "M-p" #'corfu-popupinfo-scroll-down
+    "M-n" #'corfu-popupinfo-scroll-up)
+  :hook
+  (corfu-mode . corfu-popupinfo-mode)
+  :custom
+  (corfu-popupinfo-delay 1.0))
 
-  ;; Corfu icons.
-  (use-package kind-icon
-    :after corfu
-    :commands kind-icon-margin-formatter
-    :custom
-    (kind-icon-default-face 'corfu-default)
-    :init
-    (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter)))
+;; Corfu icons.
+(use-package kind-icon
+  :after corfu
+  :commands kind-icon-margin-formatter
+  :defines corfu-margin-formatters
+  :custom
+  (kind-icon-default-face 'corfu-default)
+  :init
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
 ;; Vertico provides the vertical completion minibuffer and Orderless provides
 ;; the "completion style". Some commands that make use of Vertico's selection
@@ -1429,20 +1429,21 @@
   ;; See: https://github.com/Alexander-Miller/treemacs/issues/1018#issuecomment-1599599392.
   (defun treemacs--propagate-new-icons (_theme))
 
-  ;; Style the treemacs viewer with nerd icons.
-  (use-package treemacs-nerd-icons
-    :functions treemacs-load-theme
-    :custom-face
-    (treemacs-nerd-icons-root-face ((t (:inherit nerd-icons-green :height 1.3))))
-    (treemacs-nerd-icons-file-face ((t (:inherit nerd-icons-dsilver))))
-    :config
-    (treemacs-load-theme "nerd-icons"))
-
   ;; By default, treemacs-mode will add itself to `aw-ignored-buffers' which
   ;; prevents jumping to its window using ace-window. Personally, I prefer
   ;; being able to treat it just like any other window.
   (require 'ace-window)
   (setq aw-ignored-buffers (delq 'treemacs-mode aw-ignored-buffers)))
+
+;; Style the treemacs viewer with nerd icons.
+(use-package treemacs-nerd-icons
+  :after treemacs
+  :functions treemacs-load-theme
+  :custom-face
+  (treemacs-nerd-icons-root-face ((t (:inherit nerd-icons-green :height 1.3))))
+  (treemacs-nerd-icons-file-face ((t (:inherit nerd-icons-dsilver))))
+  :config
+  (treemacs-load-theme "nerd-icons"))
 
 ;;;;; File History
 

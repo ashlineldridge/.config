@@ -90,6 +90,7 @@
  ("rust-mode" . "e443ccf2884028d3b6cc550ff20e7c92dadccb68")
  ("rustic" . "39423d1cf4fa054c36bf9577356451f4c06ee148")
  ("s.el" . "dda84d38fffdaf0c9b12837b504b402af910d01d")
+ ("shackle" . "f1467db75a8fa5d51c676181fb308ccbf7b05e6f")
  ("shrink-path.el" . "c14882c8599aec79a6e8ef2d06454254bb3e1e41")
  ("spinner" . "634529bb3173e09b37499f636de70abf29d9fa8a")
  ("straight.el" . "039e5c9a9b5c00749602afb41341e9e77ba09429")
