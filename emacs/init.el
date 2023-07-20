@@ -13,9 +13,9 @@
 
 ;;;; System Check
 
-;; For now, this config only supports window systems.
+;; For now, this config doesn't support terminals.
 (unless window-system
-  (error "This Emacs configuration is for window systems only"))
+  (error "This Emacs configuration doesn't support terminals"))
 
 ;;;; Keybinding Management
 
@@ -28,9 +28,8 @@
   ;; my current location and the command I execute will help me do it. Commands
   ;; that fall into this category are placed directly under the "M-s" prefix.
   ;;
-  ;; "M-i" is the "IDE" key prefix. All IDE-like commands fall under a relevant
-  ;; subprefix of "M-i". E.g. the most useful "M-s" search keybindings are
-  ;; replicated under "M-i s", all build-related keybindings are found under
+  ;; "M-i" is the "IDE" key prefix and IDE-like commands fall under a relevant
+  ;; subprefix of "M-i". E.g. all build-related keybindings are found under
   ;; "M-i b", all test-related keybindings under "M-i t", and so on.
   ;;
   ;; Embark action keymaps are used to mirror the relevant parts of the "M-i"
@@ -63,16 +62,15 @@
   :general
   ;; Prefer full `general-def' form for execing and indentation.
   (general-def
-    "C-h C-h" nil
+    "<escape>" #'keyboard-escape-quit
     "C-;" #'comment-line
-    "M-[" #'previous-buffer
-    "M-]" #'next-buffer
+    "C-q" #'kill-this-buffer
     "C-S-k" #'my/copy-to-eol
     "C-M-k" #'my/delete-to-eol
-    "M-<backspace>" #'my/delete-to-bol
-    "<escape>" #'keyboard-escape-quit
-    ;; Override default quit window behaviour to also kill the buffer.
-    [remap quit-window] #'my/quit-window-kill)
+    "C-h C-h" nil
+    "M-[" #'previous-buffer
+    "M-]" #'next-buffer
+    "M-<backspace>" #'my/delete-to-bol)
 
   (my/bind-c-x
     "m" nil
@@ -85,7 +83,9 @@
 
   (my/bind-search
     ;; Add search prefix descriptions.
-    "h" '(:ignore t :which-key "highlight"))
+    "h" '(:ignore t :which-key "highlight")
+    "t" #'xref-find-definitions ;; Think: "source of [t]ruth".
+    "u" #'xref-find-references) ;; Think: "[u]sages".
 
   (my/bind-ide
     ;; Add IDE prefix descriptions.
@@ -98,7 +98,9 @@
     "w" '(:ignore t :which-key "workspaces")
     "|" #'display-fill-column-indicator-mode
     "b1" #'compile
-    "b2" #'recompile)
+    "b2" #'recompile
+    "st" #'xref-find-definitions
+    "su" #'xref-find-references)
 
   :custom
   (inhibit-startup-message t)
@@ -211,11 +213,6 @@
       (if (eq point begin)
           (delete-backward-char 1 nil)
         (delete-region (line-beginning-position) (point)))))
-
-  (defun my/quit-window-kill ()
-    "Quit the window and kill the buffer."
-    (interactive)
-    (quit-window t))
 
   (defun my/query-replace-case-sensitive ()
     "Calls `query-replace' in a case-sensitive way."
@@ -485,12 +482,6 @@
     "M-K" #'popper-kill-latest-popup)
 
   :preface
-  ;; TODO: For buffers like rg results, Embark collect/export, etc, I'd like
-  ;; to display them in a window to the immediate left or right of the current
-  ;; window (splitting if necessary, if the active window is on the left show
-  ;; the results on the right and vice versa. When I actually figure out how
-  ;; to do that I'll exclude those buffers from popper's contorl. Until then,
-  ;; just show the results buffer as a popup and move as appropriate.
   (defvar my/popper-ignore-modes '(grep-mode rg-mode))
 
   :custom
@@ -847,7 +838,6 @@
 
   (my/bind-search
     "a" #'consult-org-agenda
-    "d" #'consult-dir
     "f" #'consult-find
     "l" #'consult-line
     "L" #'my/consult-line-strict
@@ -888,16 +878,17 @@
   (consult-ripgrep-args
    '("rg"
      "--null"
-     "--hidden"
-     "--glob=!.git/"
      "--line-buffered"
      "--color=never"
      "--max-columns=1000"
      "--path-separator=/"
      "--smart-case"
      "--no-heading"
+     "--with-filename"
      "--line-number"
-     "."))
+     "--search-zip"
+     "--hidden"
+     "--glob=!.git/"))
 
   ;; Tell `consult-find' to search hidden dirs/files but ignore .git/.
   (consult-find-args "find . -not ( -name .git -type d -prune )")
@@ -987,6 +978,9 @@
 
 (use-package consult-dir
   :commands consult-dir
+  :general
+  (my/bind-search
+    "d" #'consult-dir)
   :custom
   (consult-dir-shadow-filenames nil)
   (consult-dir-default-command #'consult-dir-dired))
@@ -1028,11 +1022,11 @@
     "sh" #'embark-toggle-highlight
     "sl" #'consult-line
     "ss" #'consult-ripgrep
-    "sr" #'xref-find-references
-    "sd" #'xref-find-definitions
-    "sp" #'my/rg-dwim-project-dir
-    "sd" #'my/rg-dwim-current-dir
-    "sf" #'rg-dwim-current-file)
+    "su" #'xref-find-references
+    "st" #'xref-find-definitions
+    "sP" #'my/rg-dwim-project-dir
+    "sD" #'my/rg-dwim-current-dir
+    "sF" #'rg-dwim-current-file)
 
   (general-def 'embark-file-map
     "o" (my/embark-ace-window-action find-file))
@@ -1091,10 +1085,10 @@
       "h d" #'lsp-describe-thing-at-point
       "r a" #'lsp-execute-code-action
       "r r" #'lsp-rename
-      "s h" #'lsp-treemacs-call-hierarchy
-      "s i" #'lsp-find-implementation
-      "s o" #'consult-lsp-file-symbols
-      "s O" #'consult-lsp-symbols)
+      "s c" #'lsp-treemacs-call-hierarchy
+      "s y" #'lsp-find-implementation
+      "s o" #'consult-lsp-symbols
+      "s O" #'consult-lsp-file-symbols)
 
     ;; Associate the LSP action map with the 'lsp-identifier symbol.
     (add-to-list 'embark-keymap-alist '(lsp-identifier . my/embark-lsp-identifier-map))
@@ -1165,7 +1159,11 @@
   :functions popper--bury-all
   :general
   (my/bind-search
-    "M-s" #'my/rg-menu)
+    "M-s" #'my/rg-menu
+    "P" #'my/rg-dwim-project-dir
+    "D" #'my/rg-dwim-current-dir
+    "F" #'rg-dwim-current-file)
+
   :config
   (defun my/rg-menu ()
     "Bury any popups before calling `rg-menu'."
@@ -1336,7 +1334,7 @@
   :general
   (my/bind-c-x
     ;; Replace `list-buffers' with `ibuffer'.
-    "C-x C-b" #'ibuffer)
+    "C-b" #'ibuffer)
   (general-def 'ibuffer-mode-map
     ;; Keep M-o binding for ace-window.
     "M-o" nil
@@ -1472,33 +1470,23 @@
   :straight nil
   :general
   (general-def 'project-prefix-map
-    "F" #'my/project-find-file-relative
     "u" #'my/project-refresh-list)
 
   :custom
   (project-switch-commands
    '((project-find-file "Find file" ?f)
      (project-find-dir "Find directory" ?d)
-     (project-dired "Dired" ?D)
-     (consult-ripgrep "Ripgrep" ?r)
+     (project-dired "Dired" ?j)
+     (consult-ripgrep "Search" ?s)
      (magit-project-status "Magit" ?m)
-     (project-eshell "Eshell" ?e)
-     (project-shell-command "Shell" ?!)
-     (project-async-shell-command "Async shell" ?&)))
+     (project-eshell "Eshell" ?$)
+     (my/project-detached-shell-command "Detached Shell" ?&)))
 
   :config
   (defun my/project-current-root ()
     "Return the root directory of the current or nil."
     (if-let* ((proj (project-current)))
         (project-root proj)))
-
-  (defun my/project-find-file-relative ()
-    "Complete a file name relative to the current buffer and project."
-    (interactive)
-    (if-let* ((proj (project-current))
-              (dir default-directory))
-        (project-find-file-in (buffer-file-name) (list dir) proj nil)
-      (project-find-file)))
 
   (defun my/project-refresh-list ()
     "Refresh list of known projects."
@@ -1531,7 +1519,14 @@ as there appears to be a bug in the current version."
           (message "No projects were found")
         (project--write-project-list)
         (message "%d project%s were found"
-                 count (if (= count 1) "" "s"))))))
+                 count (if (= count 1) "" "s")))))
+
+  (defun my/project-detached-shell-command ()
+    "Run `detached-shell-command' in the project's root directory."
+    ;; (declare (interactive-only detached-shell-command))
+    (interactive)
+    (let ((default-directory (project-root (project-current t))))
+      (call-interactively #'detached-shell-command))))
 
 ;;;;; Auto-Save
 
@@ -1626,6 +1621,9 @@ as there appears to be a bug in the current version."
     "C-M-p" #'lsp-ui-doc-toggle)
 
   (my/bind-search :keymaps 'lsp-mode-map
+    "c" #'lsp-treemacs-call-hierarchy
+    "y" #'lsp-find-implementation
+    "I" #'lsp-ui-imenu
     "o" #'consult-lsp-symbols
     "O" #'consult-lsp-file-symbols)
 
@@ -1644,10 +1642,8 @@ as there appears to be a bug in the current version."
     "ro" #'lsp-organize-imports
     "rr" #'lsp-rename
     ;; Search.
-    "sh" #'lsp-treemacs-call-hierarchy
-    "si" #'lsp-find-implementation
-    "sr" #'xref-find-references
-    "sd" #'xref-find-definitions
+    "sc" #'lsp-treemacs-call-hierarchy
+    "sy" #'lsp-find-implementation
     "sI" #'lsp-ui-imenu
     "so" #'consult-lsp-symbols
     "sO" #'consult-lsp-file-symbols
@@ -1746,13 +1742,6 @@ as there appears to be a bug in the current version."
 
 (use-package lsp-ui
   :after lsp-mode
-  :commands
-  ;; Prevents Flycheck warnings in general.el below.
-  (lsp-ui-imenu
-   lsp-ui-peek-find-definitions
-   lsp-ui-peek-find-implementation
-   lsp-ui-peek-find-references
-   lsp-ui-peek-find-workspace-symbol)
   :custom
   (lsp-ui-sideline-delay 0)
   (lsp-ui-doc-delay 0)
@@ -1760,7 +1749,8 @@ as there appears to be a bug in the current version."
   (lsp-ui-doc-show-with-mouse nil)
   (lsp-ui-doc-position 'at-point)
   (lsp-ui-doc-max-width 150)
-  (lsp-ui-doc-max-height 30))
+  (lsp-ui-doc-max-height 30)
+  (lsp-ui-peek-always-show t))
 
 ;;;;;; DAP (Debug Adapter Protocol)
 
@@ -2318,8 +2308,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     ;; https://lists.sr.ht/~niklaseklund/detached.el/%3CCAM-j%3Dqsnjw4%3D9kYbYGGR1oqC7BGxmZphN5Jq2gHdO3p8nQYdTw%40mail.gmail.com%3E.
     ;; [remap detached-open-session] #'detached-consult-session
     )
-  (general-def 'detached-shell-mode-map
-    "q" #'my/quit-window-kill)
   (my/bind-c-c
     "dd" #'detached-open-session
     "dl" #'detached-list-sessions)
