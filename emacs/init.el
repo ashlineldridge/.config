@@ -33,9 +33,9 @@
   ;; "M-i b", all test-related keybindings under "M-i t", and so on.
   ;;
   ;; Embark action keymaps are used to mirror the relevant parts of the "M-i"
-  ;; layout, in a way that acts on the symbol under point. E.g. `embark-act' +
-  ;; "r r" renames the symbol, `embark-act' + "s s" uses ripgrep to search the
-  ;; project for the symbol, etc.
+  ;; and "M-s" layouts in a way that acts on the symbol under point. E.g.
+  ;; `embark-act' + "r r" renames the symbol, `embark-act' + "s s" uses ripgrep
+  ;; to search the project for the symbol, etc.
 
   ;; Automatically unbind non-prefix keys when used.
   (general-auto-unbind-keys)
@@ -91,16 +91,13 @@
     ;; Add IDE prefix descriptions.
     "b" '(:ignore t :which-key "build")
     "d" '(:ignore t :which-key "debug")
-    "s" '(:ignore t :which-key "search")
     "p" '(:ignore t :which-key "peek")
     "r" '(:ignore t :which-key "refactor")
     "v" '(:ignore t :which-key "toggles")
     "w" '(:ignore t :which-key "workspaces")
     "|" #'display-fill-column-indicator-mode
     "b1" #'compile
-    "b2" #'recompile
-    "st" #'xref-find-definitions
-    "su" #'xref-find-references)
+    "b2" #'recompile)
 
   :custom
   (inhibit-startup-message t)
@@ -849,12 +846,6 @@
     "-" #'consult-outline
     "SPC" #'consult-mark
     "S-SPC" #'consult-global-mark)
-
-  (my/bind-ide
-    "si" #'consult-imenu
-    "sI" #'consult-imenu-multi
-    "ss" #'consult-ripgrep
-    "s-" #'consult-outline)
 
   :custom
   ;; Type < followed by a prefix key to narrow the available candidates.
@@ -1641,12 +1632,6 @@ as there appears to be a bug in the current version."
     "ra" #'lsp-execute-code-action
     "ro" #'lsp-organize-imports
     "rr" #'lsp-rename
-    ;; Search.
-    "sc" #'lsp-treemacs-call-hierarchy
-    "sy" #'lsp-find-implementation
-    "sI" #'lsp-ui-imenu
-    "so" #'consult-lsp-symbols
-    "sO" #'consult-lsp-file-symbols
     ;; Toggles.
     "vl" #'lsp-toggle-trace-io
     "vi" #'lsp-inlay-hints-mode
