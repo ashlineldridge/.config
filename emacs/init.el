@@ -686,13 +686,23 @@
   :custom
   (vertico-multiform-categories
    '((consult-grep buffer)
-     (imenu buffer)))
+     (imenu buffer)
+     (file (vertico-sort-function . my/vertico-sort-dirs-first))))
+
   ;; Some things work better via commands than categories.
   (vertico-multiform-commands
    '((xref-find-references buffer)
      (consult-outline buffer)))
+
   :init
-  (vertico-multiform-mode 1))
+  (vertico-multiform-mode 1)
+
+  :config
+  (defun my/vertico-sort-dirs-first (files)
+    "Sorts FILES by directories then alphanumerically."
+    (setq files (vertico-sort-history-length-alpha files))
+    (nconc (seq-filter (lambda (x) (string-suffix-p "/" x)) files)
+           (seq-remove (lambda (x) (string-suffix-p "/" x)) files))))
 
 ;; I don't enable `vertico-buffer-mode' directly since this makes Vertico
 ;; always run in a buffer. Instead, `vertico-multiform' is used to toggle
