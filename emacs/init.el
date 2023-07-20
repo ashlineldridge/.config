@@ -1208,6 +1208,7 @@
     "C-+" #'er/mark-outside-pairs)
   :custom
   (expand-region-fast-keys-enabled nil)
+  ;; TODO: Why doesn't this work properly?
   (expand-region-autocopy-register "e"))
 
 ;;;;; Whitespace
@@ -1514,7 +1515,6 @@ as there appears to be a bug in the current version."
 
   (defun my/project-detached-shell-command ()
     "Run `detached-shell-command' in the project's root directory."
-    ;; (declare (interactive-only detached-shell-command))
     (interactive)
     (let ((default-directory (project-root (project-current t))))
       (call-interactively #'detached-shell-command))))
@@ -2297,6 +2297,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "dd" #'detached-open-session
     "dl" #'detached-list-sessions)
   :custom
+  (detached-detach-key "C-c d x")
   (detached-terminal-data-command system-type)
   ;; TODO: Would prefer to use D-Bus or `alert' but haven't been able to
   ;; to get either working properly on macOS.
