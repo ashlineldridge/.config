@@ -1191,6 +1191,8 @@
 
 (use-package undo-tree
   :commands global-undo-tree-mode
+  :general
+  (general-unbind 'undo-tree-mode-map "C-_")
   :custom
   ;; Disable history saving for now.
   (undo-tree-auto-save-history nil)
@@ -1205,11 +1207,11 @@
   :general
   (general-def
     "C-=" #'er/expand-region
-    "C-+" #'er/mark-outside-pairs)
+    "C-+" #'er/mark-outside-pairs
+    "C-\\" #'er/mark-symbol
+    "C-|" #'er/mark-defun)
   :custom
-  (expand-region-fast-keys-enabled nil)
-  ;; TODO: Why doesn't this work properly?
-  (expand-region-autocopy-register "e"))
+  (expand-region-fast-keys-enabled nil))
 
 ;;;;; Whitespace
 
