@@ -69,7 +69,9 @@
  ("no-littering" . "1773beeb23c43ce52428957814a2be62532870f8")
  ("nongnu-elpa" . "c0840d025ba5ad3fc3f2dbd08d3b4ab72cf07574")
  ("orderless" . "e6784026717a8a6a7dcd0bf31fd3414f148c542e")
- ("org" . "c9b80f06d4cf085adc373af50c8a80ffc27f4cd0")
+ ;; Org is pinned to this version to fix the following issue:
+ ;; https://github.com/org-roam/org-roam/issues/2361.
+ ("org" . "8ef6205a560cd3a92f8c5f8fe34953b80121c2cb")
  ("org-bullets" . "767f55feb58b840a5a04eabfc3fbbf0d257c4792")
  ("org-cliplink" . "13e0940b65d22bec34e2de4bc8cba1412a7abfbc")
  ("org-roam" . "5c06471c3a11348342719fd9011486455adeb701")
