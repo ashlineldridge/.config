@@ -1220,6 +1220,16 @@
   (text-mode . ws-butler-mode)
   (prog-mode . ws-butler-mode))
 
+;;;;; Special Characters
+
+(use-package iso-transl
+  :straight nil
+  :general
+  ;; Bind C-x 8 0 to insert a zero-width space character which can be used to
+  ;; escape org mode emphasis markers.
+  ;; See: https://emacs.stackexchange.com/questions/16688/how-can-i-escape-the-in-org-mode-to-prevent-bold-fontification.
+  (general-def 'iso-transl-ctl-x-8-map
+    "0" [?​]))
 
 ;;;;; Point Jumping
 
@@ -2337,6 +2347,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    org-get-tags
    org-structure-template-alist
    org-refile-get-targets
+   org-restart-font-lock
    my/org-agenda-refile
    my/org-agenda-refile-archive
    my/org-agenda-refile-personal-ongoing
@@ -2584,7 +2595,7 @@ _q_: Quit this menu
   ;; out of the return value from `org-refile-get-targets' is adapted from:
   ;; https://emacs.stackexchange.com/questions/54580/org-refile-under-a-given-heading.
   (defun my/org-agenda-refile (file heading)
-    "Refiles the current agenda item to the refile target for FILE and HEADING."
+    "Refile the current agenda item to the refile target for FILE and HEADING."
     (org-agenda-refile nil
                        (seq-find
                         (lambda (refloc)
@@ -2594,7 +2605,7 @@ _q_: Quit this menu
                         (org-refile-get-targets)) nil))
 
   (defun my/org-agenda-refile-archive (&optional category)
-    "Refiles the current org agenda item into the appropriate archive.
+    "Refile the current org agenda item into the appropriate archive.
 If CATEGORY is specified it must equal \\='personal or \\='work; if it is not
 specified then a task category will be determined by the item's tags."
     (interactive)
@@ -2612,24 +2623,30 @@ specified then a task category will be determined by the item's tags."
                  (t (message "Bad selection")))))))
 
   (defun my/org-agenda-refile-personal-ongoing ()
-    "Refiles the current org agenda item into the personal/ongoing list."
+    "Refile the current org agenda item into the personal/ongoing list."
     (interactive)
     (my/org-agenda-refile my/gtd-personal-file "Projects/Ongoing/Tasks"))
 
   (defun my/org-agenda-refile-work-ongoing ()
-    "Refiles the current org agenda item into the work/ongoing list."
+    "Refile the current org agenda item into the work/ongoing list."
     (interactive)
     (my/org-agenda-refile my/gtd-work-file "Projects/Ongoing/Tasks"))
 
   (defun my/org-agenda-refile-someday-ongoing ()
-    "Refiles the current org agenda item into the someday/ongoing list."
+    "Refile the current org agenda item into the someday/ongoing list."
     (interactive)
     (my/org-agenda-refile my/gtd-someday-file "Projects/Ongoing/Tasks"))
 
   (defun my/org-agenda-refile-inbox ()
-    "Refiles the current org agenda item into the inbox list."
+    "Refile the current org agenda item into the inbox list."
     (interactive)
     (my/org-agenda-refile my/gtd-inbox-file "Inbox"))
+
+  (defun my/org-toggle-emphasis-markers ()
+    "Toggle the display of org emphasis markers."
+    (interactive)
+    (org-restart-font-lock)
+    (setq org-hide-emphasis-markers (not org-hide-emphasis-markers)))
 
   ;; Save all org buffers before quitting the agenda ('s' saves immediately).
   (advice-add #'org-agenda-quit :before #'org-save-all-org-buffers)
