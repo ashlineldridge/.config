@@ -147,5 +147,3 @@
 
 [github]
 	user = ashlineldridge
-[url "git@github.com:"]
-	insteadOf = https://github.com

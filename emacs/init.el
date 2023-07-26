@@ -91,6 +91,7 @@
     ;; Add IDE prefix descriptions.
     "b" '(:ignore t :which-key "build")
     "d" '(:ignore t :which-key "debug")
+    "h" '(:ignore t :which-key "help")
     "p" '(:ignore t :which-key "peek")
     "r" '(:ignore t :which-key "refactor")
     "v" '(:ignore t :which-key "toggles")
@@ -563,9 +564,7 @@
 
   :general
   (general-def 'corfu-map
-    ;; By default, `corfu-insert-separator' is bound to M-SPC which on
-    ;; macOS is already taken by Spotlight. Instead, bind it to S-SPC -
-    ;; this allows us to enter a space character using S-SPC to completing.
+    ;; We S-SPC to keep completion going and include the space.
     "S-SPC" #'corfu-insert-separator
     ;; Move the completion session to the minibuffer.
     "M-m" #'my/corfu-move-to-minibuffer)
