@@ -1216,8 +1216,7 @@
 
 (use-package ws-butler
   :hook
-  (text-mode . ws-butler-mode)
-  (prog-mode . ws-butler-mode))
+  ((text-mode prog-mode) . ws-butler-mode))
 
 ;;;;; Special Characters
 
@@ -1570,7 +1569,8 @@ as there appears to be a bug in the current version."
 
 (use-package yasnippet
   :after consult-yasnippet
-  :hook ((text-mode prog-mode eshell-mode) . yas-minor-mode)
+  :hook
+  ((text-mode prog-mode eshell-mode) . yas-minor-mode)
   :general
   (my/bind-c-c
     "yn" #'yas-new-snippet
@@ -1928,7 +1928,8 @@ as there appears to be a bug in the current version."
 
 (use-package eldoc
   :straight nil
-  :hook (emacs-lisp-mode . eldoc-mode)
+  :hook
+  (emacs-lisp-mode . eldoc-mode)
   :custom
   (eldoc-idle-delay 0)
   :init
@@ -1938,7 +1939,8 @@ as there appears to be a bug in the current version."
 ;;;;;; Flycheck
 
 (use-package flycheck
-  :hook (prog-mode . flycheck-mode)
+  :hook
+  (prog-mode . flycheck-mode)
   :general
   (my/bind-ide
     "l" #'flycheck-list-errors)
@@ -1970,41 +1972,6 @@ as there appears to be a bug in the current version."
     "tt" #'rustic-cargo-current-test
     ;; Help.
     "ho" #'lsp-rust-analyzer-open-external-docs))
-
-;;;;;; Terraform
-
-(use-package terraform-mode)
-
-;;;;;; Python
-
-(use-package python
-  :straight nil
-  :init
-  (setq python-shell-interpreter "python3"))
-
-;;;;;; JavaScript
-
-(use-package js2-mode
-  :mode "\\.js\\'")
-
-;;;;;; TypeScript
-
-(use-package typescript-mode)
-
-;;;;;; Rego
-
-(use-package rego-mode)
-
-;;;;;; Docker
-
-(use-package dockerfile-mode)
-
-;;;;;; Shell
-
-(use-package sh-script
-  :straight nil
-  :custom
-  (sh-basic-offset 2))
 
 ;;;;;; Go
 
@@ -2050,6 +2017,107 @@ as there appears to be a bug in the current version."
 (use-package go-tag)
 (use-package go-gen-test)
 (use-package go-impl)
+
+;;;;;;
+
+(use-package prog-mode
+  :straight nil
+  :general
+  (my/bind-ide
+    "ba" #'my/build-system-add
+    "bb" #'my/build-system-build
+    "bc" #'my/build-system-clean
+    "bl" #'my/build-system-lint
+    "br" #'my/build-system-run
+    "bu" #'my/build-system-upgrade)
+
+  :init
+  (defun my/build-system-type ()
+    "Return a symbol representing the current project's build type."
+    (if-let* ((dir (my/project-current-root)))
+        (cond ((file-exists-p (expand-file-name "Cargo.toml" dir)) 'cargo)
+              ((file-exists-p (expand-file-name "go.mod" dir)) 'go))))
+
+  ;; TODO: See if there are options for the missing Go ones below.
+
+  (defun my/build-system-add ()
+    "Execute the add-dependency action."
+    (interactive)
+    (pcase (my/build-system-type)
+      ('cargo (rustic-cargo-add))
+      (t (message "The clean action is not known for this build system"))))
+
+  (defun my/build-system-build ()
+    "Execute the build/compile action."
+    (interactive)
+    (pcase (my/build-system-type)
+      ('cargo (rustic-cargo-build))
+      ;; TODO: Can I do better?
+      ('go (compile))))
+
+  (defun my/build-system-clean ()
+    "Execute the clean action."
+    (interactive)
+    (pcase (my/clean-system-type)
+      ('cargo (rustic-cargo-clean))
+      (t (message "The clean action is not known for this build system"))))
+
+  (defun my/build-system-lint ()
+    "Execute the lint action."
+    (interactive)
+    (pcase (my/lint-system-type)
+      ('cargo (rustic-cargo-clippy))
+      (t (message "The lint action is not known for this build system"))))
+
+  (defun my/build-system-run ()
+    "Execute the run action."
+    (interactive)
+    (pcase (my/build-system-type)
+      ('cargo (rustic-cargo-run))
+      ('go (go-run))))
+
+  (defun my/build-system-upgrade ()
+    "Execute the upgrade action."
+    (interactive)
+    (pcase (my/build-system-type)
+      ('cargo (rustic-cargo-upgrade))
+      (t (message "The upgrade action is not known for this build system"))))
+  )
+
+;;;;;; Terraform
+
+(use-package terraform-mode)
+
+;;;;;; Python
+
+(use-package python
+  :straight nil
+  :init
+  (setq python-shell-interpreter "python3"))
+
+;;;;;; JavaScript
+
+(use-package js2-mode
+  :mode "\\.js\\'")
+
+;;;;;; TypeScript
+
+(use-package typescript-mode)
+
+;;;;;; Rego
+
+(use-package rego-mode)
+
+;;;;;; Docker
+
+(use-package dockerfile-mode)
+
+;;;;;; Shell
+
+(use-package sh-script
+  :straight nil
+  :custom
+  (sh-basic-offset 2))
 
 ;;;;;; Protobuf
 
