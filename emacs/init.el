@@ -1953,25 +1953,101 @@ as there appears to be a bug in the current version."
 
 ;;;;; Programming Languages
 
+;;;;;; General
+
+(use-package prog-mode
+  :straight nil
+  :general
+  (my/bind-ide
+    ;; Build.
+    "ba" #'my/build-system-add
+    "bb" #'my/build-system-build
+    "bc" #'my/build-system-clean
+    "bf" #'my/build-system-fmt
+    "bl" #'my/build-system-lint
+    "bo" #'my/build-system-outdated
+    "br" #'my/build-system-run
+    "bu" #'my/build-system-upgrade
+    ;; Test.
+    "tp" #'my/build-system-test)
+
+  :init
+  (defun my/build-system-type ()
+    "Return a symbol representing the current project's build type."
+    (if-let* ((dir (my/project-current-root)))
+        (cond ((file-exists-p (expand-file-name "Cargo.toml" dir)) 'cargo)
+              ((file-exists-p (expand-file-name "go.mod" dir)) 'go))))
+
+  (defvar my/build-system-command-alist
+    '((cargo
+       (add . rustic-cargo-add)
+       (build . rustic-cargo-build)
+       (clean . rustic-cargo-clean)
+       (fmt . rustic-cargo-fmt)
+       (lint . rustic-cargo-clippy)
+       (run . rustic-cargo-run)
+       (upgrade . rustic-cargo-upgrade)
+       (test . rustic-cargo-test))
+      (go
+       (build . recompile)
+       (run . go-run)
+       (test . go-test-current-project))))
+
+  (defun my/build-system-run-action (action)
+    "Executes ACTION using the project's build sytem."
+    (if-let* ((type (my/build-system-type))
+              (commands (alist-get type my/build-system-command-alist))
+              (command (alist-get action commands)))
+        (funcall command)
+      (message "Action %s is not known for this build system" action)))
+
+  (defun my/build-system-add ()
+    "Execute the add dependency action."
+    (interactive)
+    (my/build-system-run-action 'add))
+
+  (defun my/build-system-build ()
+    "Execute the build/compile action."
+    (interactive)
+    (my/build-system-run-action 'build))
+
+  (defun my/build-system-clean ()
+    "Execute the clean action."
+    (interactive)
+    (my/build-system-run-action 'clean))
+
+  (defun my/build-system-fmt ()
+    "Execute the fmt action."
+    (interactive)
+    (my/build-system-run-action 'fmt))
+
+  (defun my/build-system-lint ()
+    "Execute the lint action."
+    (interactive)
+    (my/build-system-run-action 'lint))
+
+  (defun my/build-system-run ()
+    "Execute the run action."
+    (interactive)
+    (my/build-system-run-action 'run))
+
+  (defun my/build-system-upgrade ()
+    "Execute the upgrade action."
+    (interactive)
+    (my/build-system-run-action 'upgrade))
+
+  (defun my/build-system-test ()
+    "Execute the test project action."
+    (interactive)
+    (my/build-system-run-action 'test)))
+
 ;;;;;; Rust
 
 (use-package rustic
   :general
-  (my/bind-ide :keymaps '(rustic-mode-map rustic-compilation-mode-map)
-    ;; Build.
-    "bb" #'rustic-cargo-build
-    "ba" #'rustic-cargo-add
-    "bc" #'rustic-cargo-clean
-    "bf" #'rustic-cargo-fmt
-    "bl" #'rustic-cargo-clippy
-    "bo" #'rustic-cargo-outdated
-    "bu" #'rustic-cargo-upgrade
-    "br" #'rustic-cargo-run
-    ;; Test.
-    "tp" #'rustic-cargo-test
-    "tt" #'rustic-cargo-current-test
-    ;; Help.
-    "ho" #'lsp-rust-analyzer-open-external-docs))
+  (my/bind-ide :keymaps 'rustic-mode-map
+    "ho" #'lsp-rust-analyzer-open-external-docs
+    "tt" #'rustic-cargo-current-test))
 
 ;;;;;; Go
 
@@ -1979,8 +2055,6 @@ as there appears to be a bug in the current version."
   :commands (go-play-buffer go-play-region)
   :general
   (my/bind-ide :keymaps 'go-mode-map
-    ;; Build.
-    "br" #'go-run
     ;; Help.
     "hp" #'my/go-play-dwim
     ;; Refactor.
@@ -1990,10 +2064,7 @@ as there appears to be a bug in the current version."
     "ri" #'go-impl
     ;; Test.
     "tf" #'go-test-current-file
-    "tt" #'go-test-current-test
-    "tp" #'go-test-current-project
-    "tb" #'go-test-current-benchmark
-    "tc" #'go-test-current-coverage)
+    "tt" #'go-test-current-test)
 
   :hook
   (go-mode . (lambda () (setq-local tab-width 4)))
@@ -2017,72 +2088,6 @@ as there appears to be a bug in the current version."
 (use-package go-tag)
 (use-package go-gen-test)
 (use-package go-impl)
-
-;;;;;;
-
-(use-package prog-mode
-  :straight nil
-  :general
-  (my/bind-ide
-    "ba" #'my/build-system-add
-    "bb" #'my/build-system-build
-    "bc" #'my/build-system-clean
-    "bl" #'my/build-system-lint
-    "br" #'my/build-system-run
-    "bu" #'my/build-system-upgrade)
-
-  :init
-  (defun my/build-system-type ()
-    "Return a symbol representing the current project's build type."
-    (if-let* ((dir (my/project-current-root)))
-        (cond ((file-exists-p (expand-file-name "Cargo.toml" dir)) 'cargo)
-              ((file-exists-p (expand-file-name "go.mod" dir)) 'go))))
-
-  ;; TODO: See if there are options for the missing Go ones below.
-
-  (defun my/build-system-add ()
-    "Execute the add-dependency action."
-    (interactive)
-    (pcase (my/build-system-type)
-      ('cargo (rustic-cargo-add))
-      (t (message "The clean action is not known for this build system"))))
-
-  (defun my/build-system-build ()
-    "Execute the build/compile action."
-    (interactive)
-    (pcase (my/build-system-type)
-      ('cargo (rustic-cargo-build))
-      ;; TODO: Can I do better?
-      ('go (compile))))
-
-  (defun my/build-system-clean ()
-    "Execute the clean action."
-    (interactive)
-    (pcase (my/clean-system-type)
-      ('cargo (rustic-cargo-clean))
-      (t (message "The clean action is not known for this build system"))))
-
-  (defun my/build-system-lint ()
-    "Execute the lint action."
-    (interactive)
-    (pcase (my/lint-system-type)
-      ('cargo (rustic-cargo-clippy))
-      (t (message "The lint action is not known for this build system"))))
-
-  (defun my/build-system-run ()
-    "Execute the run action."
-    (interactive)
-    (pcase (my/build-system-type)
-      ('cargo (rustic-cargo-run))
-      ('go (go-run))))
-
-  (defun my/build-system-upgrade ()
-    "Execute the upgrade action."
-    (interactive)
-    (pcase (my/build-system-type)
-      ('cargo (rustic-cargo-upgrade))
-      (t (message "The upgrade action is not known for this build system"))))
-  )
 
 ;;;;;; Terraform
 
