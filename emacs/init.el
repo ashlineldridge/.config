@@ -2060,7 +2060,7 @@ as there appears to be a bug in the current version."
   :general
   (my/bind-ide :keymaps 'go-mode-map
     ;; Build.
-    "br" . #'go-run
+    "br" #'go-run
     ;; Help.
     "hp" #'my/go-play-dwim
     ;; Refactor.
