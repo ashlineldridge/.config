@@ -2620,6 +2620,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     (interactive)
     (org-indent-mode 1)
     (visual-line-mode 1)
+    (variable-pitch-mode 1)
     (display-line-numbers-mode 0))
 
   (defun my/org-agenda-cmp-todo (a b)
