@@ -1989,8 +1989,6 @@ as there appears to be a bug in the current version."
        (upgrade . rustic-cargo-upgrade)
        (test . rustic-cargo-test))
       (go
-       (build . recompile)
-       (run . go-run)
        (test . go-test-current-project))))
 
   (defun my/build-system-run-action (action)
@@ -2055,6 +2053,8 @@ as there appears to be a bug in the current version."
   :commands (go-play-buffer go-play-region)
   :general
   (my/bind-ide :keymaps 'go-mode-map
+    ;; Build.
+    "br" . #'go-run
     ;; Help.
     "hp" #'my/go-play-dwim
     ;; Refactor.
