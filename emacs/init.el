@@ -1216,8 +1216,7 @@
 
 (use-package ws-butler
   :hook
-  (text-mode . ws-butler-mode)
-  (prog-mode . ws-butler-mode))
+  ((text-mode prog-mode) . ws-butler-mode))
 
 ;;;;; Special Characters
 
@@ -1570,7 +1569,8 @@ as there appears to be a bug in the current version."
 
 (use-package yasnippet
   :after consult-yasnippet
-  :hook ((text-mode prog-mode eshell-mode) . yas-minor-mode)
+  :hook
+  ((text-mode prog-mode eshell-mode) . yas-minor-mode)
   :general
   (my/bind-c-c
     "yn" #'yas-new-snippet
@@ -1928,7 +1928,8 @@ as there appears to be a bug in the current version."
 
 (use-package eldoc
   :straight nil
-  :hook (emacs-lisp-mode . eldoc-mode)
+  :hook
+  (emacs-lisp-mode . eldoc-mode)
   :custom
   (eldoc-idle-delay 0)
   :init
@@ -1938,7 +1939,8 @@ as there appears to be a bug in the current version."
 ;;;;;; Flycheck
 
 (use-package flycheck
-  :hook (prog-mode . flycheck-mode)
+  :hook
+  (prog-mode . flycheck-mode)
   :general
   (my/bind-ide
     "l" #'flycheck-list-errors)
@@ -1951,25 +1953,141 @@ as there appears to be a bug in the current version."
 
 ;;;;; Programming Languages
 
+;;;;;; General
+
+(use-package prog-mode
+  :straight nil
+  :general
+  (my/bind-ide
+    ;; Build.
+    "ba" #'my/build-system-add
+    "bb" #'my/build-system-build
+    "bc" #'my/build-system-clean
+    "bf" #'my/build-system-fmt
+    "bl" #'my/build-system-lint
+    "bo" #'my/build-system-outdated
+    "br" #'my/build-system-run
+    "bu" #'my/build-system-upgrade
+    ;; Test.
+    "tp" #'my/build-system-test)
+
+  :init
+  (defun my/build-system-type ()
+    "Return a symbol representing the current project's build type."
+    (if-let* ((dir (my/project-current-root)))
+        (cond ((file-exists-p (expand-file-name "Cargo.toml" dir)) 'cargo)
+              ((file-exists-p (expand-file-name "go.mod" dir)) 'go))))
+
+  (defvar my/build-system-command-alist
+    '((cargo
+       (add . rustic-cargo-add)
+       (build . rustic-cargo-build)
+       (clean . rustic-cargo-clean)
+       (fmt . rustic-cargo-fmt)
+       (lint . rustic-cargo-clippy)
+       (run . rustic-cargo-run)
+       (upgrade . rustic-cargo-upgrade)
+       (test . rustic-cargo-test))
+      (go
+       (build . recompile)
+       (run . go-run)
+       (test . go-test-current-project))))
+
+  (defun my/build-system-run-action (action)
+    "Executes ACTION using the project's build sytem."
+    (if-let* ((type (my/build-system-type))
+              (commands (alist-get type my/build-system-command-alist))
+              (command (alist-get action commands)))
+        (funcall command)
+      (message "Action %s is not known for this build system" action)))
+
+  (defun my/build-system-add ()
+    "Execute the add dependency action."
+    (interactive)
+    (my/build-system-run-action 'add))
+
+  (defun my/build-system-build ()
+    "Execute the build/compile action."
+    (interactive)
+    (my/build-system-run-action 'build))
+
+  (defun my/build-system-clean ()
+    "Execute the clean action."
+    (interactive)
+    (my/build-system-run-action 'clean))
+
+  (defun my/build-system-fmt ()
+    "Execute the fmt action."
+    (interactive)
+    (my/build-system-run-action 'fmt))
+
+  (defun my/build-system-lint ()
+    "Execute the lint action."
+    (interactive)
+    (my/build-system-run-action 'lint))
+
+  (defun my/build-system-run ()
+    "Execute the run action."
+    (interactive)
+    (my/build-system-run-action 'run))
+
+  (defun my/build-system-upgrade ()
+    "Execute the upgrade action."
+    (interactive)
+    (my/build-system-run-action 'upgrade))
+
+  (defun my/build-system-test ()
+    "Execute the test project action."
+    (interactive)
+    (my/build-system-run-action 'test)))
+
 ;;;;;; Rust
 
 (use-package rustic
   :general
-  (my/bind-ide :keymaps '(rustic-mode-map rustic-compilation-mode-map)
-    ;; Build.
-    "bb" #'rustic-cargo-build
-    "ba" #'rustic-cargo-add
-    "bc" #'rustic-cargo-clean
-    "bf" #'rustic-cargo-fmt
-    "bl" #'rustic-cargo-clippy
-    "bo" #'rustic-cargo-outdated
-    "bu" #'rustic-cargo-upgrade
-    "br" #'rustic-cargo-run
-    ;; Test.
-    "tp" #'rustic-cargo-test
-    "tt" #'rustic-cargo-current-test
+  (my/bind-ide :keymaps 'rustic-mode-map
+    "ho" #'lsp-rust-analyzer-open-external-docs
+    "tt" #'rustic-cargo-current-test))
+
+;;;;;; Go
+
+(use-package go-mode
+  :commands (go-play-buffer go-play-region)
+  :general
+  (my/bind-ide :keymaps 'go-mode-map
     ;; Help.
-    "ho" #'lsp-rust-analyzer-open-external-docs))
+    "hp" #'my/go-play-dwim
+    ;; Refactor.
+    "rt" #'go-tag-add
+    "rT" #'go-tag-remove
+    "rg" #'go-gen-test-dwim
+    "ri" #'go-impl
+    ;; Test.
+    "tf" #'go-test-current-file
+    "tt" #'go-test-current-test)
+
+  :hook
+  (go-mode . (lambda () (setq-local tab-width 4)))
+
+  :custom
+  (go-play-browse-function #'browse-url)
+
+  :init
+  ;; Remove the default `go-mode' keybindings.
+  (setq go-mode-map (make-sparse-keymap))
+
+  :config
+  (defun my/go-play-dwim ()
+    "Opens Go Playground for the buffer or region (if active)."
+    (interactive)
+    (if (region-active-p)
+        (go-play-region (region-beginning) (region-end))
+      (go-play-buffer))))
+
+(use-package gotest)
+(use-package go-tag)
+(use-package go-gen-test)
+(use-package go-impl)
 
 ;;;;;; Terraform
 
@@ -2005,51 +2123,6 @@ as there appears to be a bug in the current version."
   :straight nil
   :custom
   (sh-basic-offset 2))
-
-;;;;;; Go
-
-(use-package go-mode
-  :commands (go-play-buffer go-play-region)
-  :general
-  (my/bind-ide :keymaps 'go-mode-map
-    ;; Build.
-    "br" #'go-run
-    ;; Help.
-    "hp" #'my/go-play-dwim
-    ;; Refactor.
-    "rt" #'go-tag-add
-    "rT" #'go-tag-remove
-    "rg" #'go-gen-test-dwim
-    "ri" #'go-impl
-    ;; Test.
-    "tf" #'go-test-current-file
-    "tt" #'go-test-current-test
-    "tp" #'go-test-current-project
-    "tb" #'go-test-current-benchmark
-    "tc" #'go-test-current-coverage)
-
-  :hook
-  (go-mode . (lambda () (setq-local tab-width 4)))
-
-  :custom
-  (go-play-browse-function #'browse-url)
-
-  :init
-  ;; Remove the default `go-mode' keybindings.
-  (setq go-mode-map (make-sparse-keymap))
-
-  :config
-  (defun my/go-play-dwim ()
-    "Opens Go Playground for the buffer or region (if active)."
-    (interactive)
-    (if (region-active-p)
-        (go-play-region (region-beginning) (region-end))
-      (go-play-buffer))))
-
-(use-package gotest)
-(use-package go-tag)
-(use-package go-gen-test)
-(use-package go-impl)
 
 ;;;;;; Protobuf
 
