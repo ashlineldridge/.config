@@ -1985,6 +1985,7 @@ as there appears to be a bug in the current version."
        (clean . rustic-cargo-clean)
        (fmt . rustic-cargo-fmt)
        (lint . rustic-cargo-clippy)
+       (outdated . rustic-cargo-outdated)
        (run . rustic-cargo-run)
        (upgrade . rustic-cargo-upgrade)
        (test . rustic-cargo-test))
@@ -2023,6 +2024,11 @@ as there appears to be a bug in the current version."
     "Execute the lint action."
     (interactive)
     (my/build-system-run-action 'lint))
+
+  (defun my/build-system-outdated ()
+    "Execute the outdated action."
+    (interactive)
+    (my/build-system-run-action 'outdated))
 
   (defun my/build-system-run ()
     "Execute the run action."
