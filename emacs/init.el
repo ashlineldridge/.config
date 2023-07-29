@@ -2403,7 +2403,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 
 (use-package org
   :preface
-  ;; GTD (Getting Things Done) paths.
+  ;; GTD (agenda) & PKM (notes) paths.
   (defvar my/gtd-dir (expand-file-name "~/dev/home/gtd/"))
   (defvar my/pkm-dir (expand-file-name "~/dev/home/pkm/"))
   (defvar my/gtd-inbox-file (expand-file-name "inbox.org" my/gtd-dir))
@@ -2446,13 +2446,13 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "C-o" #'org-open-at-point-global)
   (my/bind-c-c :keymaps 'org-mode-map
     "C-S-l" #'org-cliplink)
-  (general-def 'org-mode-map
-    ;; Used for Popper.
-    "C-'" nil)
   (general-def 'org-agenda-mode-map
     "r" #'my/hydra-org-agenda-refile/body
     "k" #'org-agenda-kill
     "?" #'which-key-show-major-mode)
+  (general-unbind 'org-mode-map
+    ;; Used for Popper.
+    "C-'")
 
   :hook
   (org-mode . my/init-org-mode)
@@ -2622,7 +2622,8 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     (org-indent-mode 1)
     (visual-line-mode 1)
     (variable-pitch-mode 1)
-    (display-line-numbers-mode 0))
+    (display-line-numbers-mode 0)
+    (setq-local line-spacing 2))
 
   (defun my/org-agenda-cmp-todo (a b)
     "Custom compares agenda items A and B based on their todo keywords."
@@ -2729,7 +2730,9 @@ specified then a task category will be determined by the item's tags."
     (setq org-hide-emphasis-markers (not org-hide-emphasis-markers)))
 
   ;; Use fixed pitch for appropriate org elements (use C-u C-x = to determine
-  ;; the font face of the character under point).
+  ;; the font face of the character under point). See also:
+  ;; https://zzamboni.org/post/beautifying-org-mode-in-emacs; and
+  ;; https://github.com/daviwil/dotfiles/blob/7ed5195e0007bccb43420cfec271ab779f4720fd/Emacs.org#fonts-and-bullets.
   (dolist (face '(org-block org-table))
     (set-face-attribute face nil :inherit 'fixed-pitch))
 
