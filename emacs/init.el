@@ -265,7 +265,6 @@
     '((:name "Laptop"
        :fixed-font "Iosevka Comfy"
        :fixed-font-height 140
-       :fixed-font-weight regular
        :variable-font "Iosevka Comfy Duo"
        :variable-font-height 140
        :line-number-font-height 120
@@ -273,7 +272,6 @@
       (:name "Desktop"
        :fixed-font "Iosevka Comfy"
        :fixed-font-height 148
-       :fixed-font-weight regular
        :variable-font "Iosevka Comfy Duo"
        :variable-font-height 148
        :line-number-font-height 124
@@ -285,26 +283,29 @@
            (name (plist-get config :name))
            (fixed-font (plist-get config :fixed-font))
            (fixed-font-height (plist-get config :fixed-font-height))
-           (fixed-font-weight (plist-get config :fixed-font-weight))
            (variable-font (plist-get config :variable-font))
            (variable-font-height (plist-get config :variable-font-height))
            (line-number-font-height (plist-get config :line-number-font-height))
            (mode-line-font-height (plist-get config :mode-line-font-height)))
       (set-face-attribute 'default nil
                           :font fixed-font
-                          :height fixed-font-height
-                          :weight fixed-font-weight)
+                          :height fixed-font-height)
+      (set-face-attribute 'fixed-pitch nil
+                          :font fixed-font
+                          :height fixed-font-height)
       (set-face-attribute 'variable-pitch nil
                           :font variable-font
                           :height variable-font-height)
+      (set-face-attribute 'mode-line nil
+                          :font fixed-font
+                          :height mode-line-font-height)
+      (set-face-attribute 'mode-line-inactive nil
+                          :font fixed-font
+                          :height mode-line-font-height)
       (set-face-attribute 'line-number nil
                           :font fixed-font
                           :height line-number-font-height
-                          :weight 'ultra-light)
-      (set-face-attribute 'mode-line nil
-                          :height mode-line-font-height)
-      (set-face-attribute 'mode-line-inactive nil
-                          :height mode-line-font-height)
+                          :slant 'italic)
       (message "Applied font configuration: %s" name)))
 
   (defvar my/font-config-index 0)
@@ -2726,6 +2727,11 @@ specified then a task category will be determined by the item's tags."
     (interactive)
     (org-restart-font-lock)
     (setq org-hide-emphasis-markers (not org-hide-emphasis-markers)))
+
+  ;; Use fixed pitch for appropriate org elements (use C-u C-x = to determine
+  ;; the font face of the character under point).
+  (dolist (face '(org-block org-table))
+    (set-face-attribute face nil :inherit 'fixed-pitch))
 
   ;; Save all org buffers before quitting the agenda ('s' saves immediately).
   (advice-add #'org-agenda-quit :before #'org-save-all-org-buffers)
