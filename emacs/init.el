@@ -492,7 +492,7 @@
      "\\*Backtrace\\*"
      "\\*Breakpoints\\*"
      "\\*Pp Macroexpand Output\\*"
-     "\\*Flycheck "
+     "\\*Flymake "
      "\\*eshell-output\\*"
      "CAPTURE-.*\\.org"
      "\\*Call Hierarchy\\*"
@@ -783,6 +783,7 @@
   :general
   (general-def
     "C-s" #'consult-line
+    "C-S-s" #'my/consult-line-strict
     "M-g M-g" #'consult-goto-line
     "M-y" #'consult-yank-pop)
 
@@ -805,8 +806,7 @@
   (my/bind-search
     "a" #'consult-org-agenda
     "f" #'consult-find
-    "l" #'consult-line
-    "L" #'my/consult-line-strict
+    "l" #'consult-flymake
     "s" #'consult-ripgrep
     "i" #'consult-imenu
     "I" #'consult-imenu-multi
@@ -932,6 +932,7 @@
    consult-line
    consult-mark
    consult-global-mark
+   consult-flymake
    :preview-key 'any))
 
 (use-package consult-dir
@@ -1562,7 +1563,6 @@ as there appears to be a bug in the current version."
                        #'eglot-completion-at-point
                        #'cape-file))))
 
-  (setq eglot-stay-out-of '(flymake))
   ;; See: https://github.com/minad/corfu/wiki#filter-list-of-all-possible-completions-with-completion-style-like-orderless.
   (add-to-list 'completion-category-overrides '(eglot (styles orderless))))
 
@@ -1607,20 +1607,24 @@ as there appears to be a bug in the current version."
   (general-def
     "M-p" #'eldoc-box-help-at-point))
 
-;;;;;; Flycheck
+;;;;;; Flymake
 
-(use-package flycheck
-  :hook
-  (prog-mode . flycheck-mode)
+;; See also: https://github.com/seagle0128/.emacs.d/blob/85554195f81c5eb403b564d29e3fd3324bafecba/lisp/init-flymake.el.
+(use-package flymake
+  :straight nil
   :general
-  (my/bind-ide
-    "l" #'flycheck-list-errors)
-  :custom
-  ;; Tell Flycheck to use the load-path of the current Emacs session. Without
-  ;; this, Flycheck tends towards both false negatives and false positives.
-  (flycheck-emacs-lisp-load-path 'inherit)
-  ;; For performance, only perform checking when a file is saved or opened.
-  (flycheck-check-syntax-automatically '(save mode-enabled)))
+  (my/bind-ide 'flymake-mode-map
+    "ll" #'flymake-show-buffer-diagnostics
+    "lp" #'flymake-show-project-diagnostics)
+  :hook
+  (prog-mode . flymake-mode)
+  (after-init . my/flymake-init)
+  :config
+  (defun my/flymake-init ()
+    "Flymake mode initialization function."
+    ;; Tell Flymake about the value of `load-path' late in the startup sequence.
+    ;; See: https://emacs.stackexchange.com/a/72754.
+    (setq elisp-flymake-byte-compile-load-path load-path)))
 
 ;;;;; Programming Languages
 
