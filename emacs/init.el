@@ -34,7 +34,7 @@
   ;;
   ;; Embark action keymaps are used to mirror the relevant parts of the "M-i"
   ;; and "M-s" layouts in a way that acts on the symbol under point. E.g.
-  ;; `embark-act' + "r r" renames the symbol, `embark-act' + "s s" uses ripgrep
+  ;; `embark-act' + "a r" renames the symbol, `embark-act' + "s s" uses ripgrep
   ;; to search the project for the symbol, etc.
 
   ;; Automatically unbind non-prefix keys when used.
@@ -462,9 +462,9 @@
   :custom
   (shackle-default-rule nil)
   (shackle-rules
-   '(("*rg*" :select t :other t)
-     ("*helpful" :select t :other t :regexp t)
-     ("*lsp-help*" :select nil :other t)))
+   '(("*eldoc" :select nil :other t :regexp t)
+     ("*helpful" :select nil :other t :regexp t)
+     ("*rg*" :select t :other t)))
   :init
   (shackle-mode 1))
 
@@ -493,8 +493,6 @@
      "\\*Breakpoints\\*"
      "\\*Pp Macroexpand Output\\*"
      "\\*Flycheck "
-     "\\*Help\\*"
-     "\\*eldoc for "
      "\\*eshell-output\\*"
      "CAPTURE-.*\\.org"
      "\\*Call Hierarchy\\*"
@@ -536,13 +534,19 @@
   :general
   (general-def
     "C-h c" #'helpful-callable
-    "C-h ." #'helpful-at-point
     ;; Replace `describe-*' bindings with Helpful.
     [remap describe-function] #'helpful-function
     [remap describe-symbol] #'helpful-symbol
     [remap describe-variable] #'helpful-variable
     [remap describe-command] #'helpful-command
-    [remap describe-key] #'helpful-key))
+    [remap describe-key] #'helpful-key)
+  (general-def 'emacs-lisp-mode-map
+    ;; Replace `display-local-help' with Helpful.
+    "C-h ." #'helpful-at-point)
+
+  :custom
+  ;; Required so that I can tell Shackle NOT to select Helpful buffers.
+  (helpful-switch-buffer-function #'display-buffer))
 
 (use-package which-key
   :commands (which-key-mode which-key-add-key-based-replacements)
@@ -579,7 +583,7 @@
   ;; delay configured below).
   (corfu-auto t)
   ;; Number of typed characters before Corfu will display its pop-up.
-  (corfu-auto-prefix 1)
+  (corfu-auto-prefix 3)
   ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This
   ;; setting only applies after the minimum number of prefix characters have
   ;; been entered. This is really useful to keep so that short words that you
@@ -626,8 +630,8 @@
   :general
   (general-def 'corfu-map
     "M-d" #'corfu-popupinfo-toggle
-    "M-p" #'corfu-popupinfo-scroll-down
-    "M-n" #'corfu-popupinfo-scroll-up)
+    "<up>" #'corfu-popupinfo-scroll-down
+    "<down>" #'corfu-popupinfo-scroll-up)
   :hook
   (corfu-mode . corfu-popupinfo-mode)
   :custom
@@ -715,8 +719,6 @@
 ;; Dedicated completion commands.
 (use-package cape
   :commands cape-super-capf
-  :functions
-  (pcomplete-completions-at-point lsp-completion-at-point)
   :general
   (general-def
     "C-r" #'my/cape-history)
@@ -730,15 +732,7 @@
     "ps" #'cape-symbol
     "pa" #'cape-abbrev
     "pl" #'cape-line
-    "py" #'cape-yasnippet
     "pw" #'cape-dict)
-
-  :hook
-  (emacs-lisp-mode . my/init-elisp-capfs)
-  (eshell-mode . my/init-eshell-capfs)
-  (minibuffer-mode . my/init-eshell-capfs)
-  (org-mode . my/init-org-capfs)
-  (lsp-completion-mode . my/init-lsp-capfs)
 
   :custom
   ;; Only show dabbrev candidates of a minimum length to avoid being annoying.
@@ -747,46 +741,20 @@
   (cape-dabbrev-check-other-buffers nil)
 
   :init
-  (use-package cape-yasnippet
-    :after yasnippet
-    :straight
-    (:host github :repo "elken/cape-yasnippet")
-    :custom
-    (cape-yasnippet-lookup-by 'key))
-
   (defun my/cape-history ()
     "Version of `cape-history' that runs as an in-buffer completion."
     (interactive)
     (let ((completion-at-point-functions (list #'cape-history)))
-      (completion-at-point)))
+      (completion-at-point))))
 
-  ;; These separate completion setup functions are a work-in-progress.
-  ;; See: https://github.com/minad/corfu/wiki#using-cape-to-tweak-and-combine-capfs.
-  (defun my/init-elisp-capfs ()
-    "Configure CAPFs to be used for `emacs-lisp-mode'."
-    (setq-local completion-at-point-functions
-                (list #'elisp-completion-at-point #'cape-file)))
-
-  (defun my/init-eshell-capfs ()
-    "Configure CAPFs to be used for `eshell-mode'."
-    (setq-local completion-at-point-functions (list
-                                               #'pcomplete-completions-at-point
-                                               #'cape-file
-                                               #'cape-dabbrev)))
-
-  (defun my/init-org-capfs ()
-    "Configure CAPFs to be used for `org-mode'."
-    (setq-local completion-at-point-functions
-                (list #'cape-file)))
-
-  (defun my/init-lsp-capfs ()
-    "Configure CAPFs to be used for `lsp-mode'."
-    ;; See: https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
-    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(orderless))
-    (setq-local completion-at-point-functions
-                (list
-                 (cape-super-capf #'lsp-completion-at-point #'cape-yasnippet)))))
+(use-package cape-yasnippet
+  :straight
+  (:host github :repo "elken/cape-yasnippet")
+  :general
+  (my/bind-c-c
+    "py" #'cape-yasnippet)
+  :custom
+  (cape-yasnippet-lookup-by 'key))
 
 ;; Orderless configuration mostly taken from:
 ;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
@@ -891,8 +859,7 @@
   ;; respective LSP servers. The font faces are chosen for aesthetics only.
   ;; If a symbol category is missing from the alists below the symbols for
   ;; that category will be displayed in an ungrouped way and the line will be
-  ;; prefixed with the category name - it can then; be added below. See the
-  ;; `lsp-imenu-symbol-kinds' variable and also:
+  ;; prefixed with the category name - it can then be added below. See:
   ;; https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#symbolKind.
   (consult-imenu-config
    '((emacs-lisp-mode
@@ -965,7 +932,6 @@
    consult-line
    consult-mark
    consult-global-mark
-   consult-lsp-file-symbols
    :preview-key 'any))
 
 (use-package consult-dir
@@ -977,19 +943,12 @@
   (consult-dir-shadow-filenames nil)
   (consult-dir-default-command #'consult-dir-dired))
 
-(use-package consult-lsp
-  :commands
-  (consult-lsp-symbols consult-lsp-file-symbols)
-  :custom
-  (consult-lsp-marginalia-mode t))
-
 (use-package consult-yasnippet)
 
 (use-package embark
   :commands
   (embark-prefix-help-command
    embark-target-identifier-at-point)
-  :functions my/embark-target-lsp-identifier-at-point
 
   :general
   (general-def
@@ -1011,14 +970,20 @@
                  embark-symbol-map)
     "s]" #'embark-isearch-forward
     "s[" #'embark-isearch-backward
+    "s^" #'eglot-find-implementation
     "sh" #'embark-toggle-highlight
     "sl" #'consult-line
+    "so" #'consult-eglot-symbols
     "ss" #'consult-ripgrep
-    "su" #'xref-find-references
     "st" #'xref-find-definitions
+    "su" #'xref-find-references
     "sP" #'my/rg-dwim-project-dir
     "sD" #'my/rg-dwim-current-dir
     "sF" #'rg-dwim-current-file)
+
+  (general-def 'embark-identifier-map
+    "aa" #'eglot-code-actions
+    "ar" #'eglot-rename)
 
   (general-def 'embark-file-map
     "o" (my/embark-ace-window-action find-file))
@@ -1053,45 +1018,13 @@
       (embark-prefix-help-command)))
 
   :config
-  ;; Embark x LSP integration.
-  (with-eval-after-load 'lsp-mode
-    ;; Custom identification of LSP identifiers.
-    (defun my/embark-target-lsp-identifier-at-point ()
-      "Return LSP identifier at point for Embark or nil."
-      (when lsp-mode
-        (when-let ((sym (embark-target-identifier-at-point)))
-          (cons 'lsp-identifier (cdr (car sym))))))
-
-    (defun my/embark-consult-lsp-file-symbols ()
-      (interactive)
-      (let ((location (read-from-minibuffer "")))
-        (message "Location is: %s" location)
-        (consult-lsp-file-symbols)))
-
-    (add-to-list 'embark-target-finders #'my/embark-target-lsp-identifier-at-point)
-
-    (defvar-keymap my/embark-lsp-identifier-map
-      :doc "Keymap for Embark LSP identifier actions."
-      :parent embark-identifier-map
-      "h h" #'lsp-ui-doc-toggle
-      "h d" #'lsp-describe-thing-at-point
-      "r a" #'lsp-execute-code-action
-      "r r" #'lsp-rename
-      "s c" #'lsp-treemacs-call-hierarchy
-      "s y" #'lsp-find-implementation
-      "s o" #'consult-lsp-symbols
-      "s O" #'consult-lsp-file-symbols)
-
-    ;; Associate the LSP action map with the 'lsp-identifier symbol.
-    (add-to-list 'embark-keymap-alist '(lsp-identifier . my/embark-lsp-identifier-map))
-
-    ;; Adapt the associated commands so that they are usable as Embark actions.
-    ;; If commands don't behave properly with Embark, play with this. Look at
-    ;; similar commands already in `embark-target-injection-hooks' and mimic.
-    (add-to-list 'embark-target-injection-hooks '(lsp-rename embark--ignore-target))
-    (add-to-list 'embark-target-injection-hooks '(lsp-find-implementation embark--ignore-target))
-    (add-to-list 'embark-target-injection-hooks '(consult-lsp-symbols embark--allow-edit))
-    (add-to-list 'embark-target-injection-hooks '(consult-lsp-file-symbols embark--allow-edit)))
+  ;; Adapt the associated commands so that they are usable as Embark actions.
+  ;; If commands don't behave properly with Embark, play with this. Look at
+  ;; similar commands already in `embark-target-injection-hooks' and mimic.
+  (add-to-list 'embark-target-injection-hooks '(eglot-code-actions embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(eglot-rename embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
 
   ;; Macro for defining an Embark action that executes FN using an `ace-window'
   ;; selected window. Taken from:
@@ -1599,294 +1532,45 @@ as there appears to be a bug in the current version."
   ;; Use goimports rather than gofmt so that imports get optimized.
   (setf (alist-get 'go-mode apheleia-mode-alist) 'goimports))
 
-;;;;;; LSP (Language Server Protocol)
+;;;;;; LSP
 
-(use-package lsp-mode
-  :functions my/if-essential-advice
-
-  :commands
-  (lsp
-   lsp-deferred
-   lsp-register-custom-settings)
-
+(use-package eglot
+  :commands eglot-completion-at-point
   :hook
-  ((c-mode
-    c++-mode
-    go-mode
-    rustic-mode
-    sh-mode
-    terraform-mode
-    python-mode) . lsp-deferred)
+  ((go-mode rustic-mode) . eglot-ensure)
+  (eglot-managed-mode . my/eglot-init)
 
   :general
-  (general-def 'lsp-mode-map
-    "M-p" #'lsp-ui-doc-toggle
-    "M-P" #'lsp-describe-thing-at-point)
+  (my/bind-search :keymaps 'eglot-mode-map
+    "^" #'eglot-find-implementation)
 
-  (my/bind-search :keymaps 'lsp-mode-map
-    "c" #'lsp-treemacs-call-hierarchy
-    "y" #'lsp-find-implementation
-    "I" #'lsp-ui-imenu
-    "o" #'consult-lsp-symbols
-    "O" #'consult-lsp-file-symbols)
-
-  (my/bind-ide :keymaps 'lsp-mode-map
-    ;; Help.
-    "hh" #'lsp-ui-doc-toggle
-    "hd" #'lsp-describe-thing-at-point
-    ;; Peek.
-    "pg" #'lsp-ui-peek-find-definitions
-    "pi" #'lsp-ui-peek-find-implementation
-    "pr" #'lsp-ui-peek-find-references
-    "ps" #'lsp-ui-peek-find-workspace-symbol
-    ;; Refactor.
-    "ra" #'lsp-execute-code-action
-    "ro" #'lsp-organize-imports
-    "rr" #'lsp-rename
-    ;; Toggles.
-    "vl" #'lsp-toggle-trace-io
-    "vi" #'lsp-inlay-hints-mode
+  (my/bind-ide :keymaps 'eglot-mode-map
+    ;; Actions.
+    "aa" #'eglot-code-actions
+    "ao" #'eglot-code-action-organize-imports
+    "ar" #'eglot-rename
     ;; Workspaces.
-    "wq" #'lsp-workspace-shutdown
-    "wr" #'lsp-workspace-restart)
-
-  :custom
-  (lsp-log-io nil)
-
-  ;; No need to also show the count.
-  (lsp-modeline-code-actions-segments '(icon))
-
-  ;; Haven't found a great use for these.
-  (lsp-lens-enable nil)
-
-  ;; The Flycheck modeline segment already displays this.
-  (lsp-modeline-diagnostics-enable nil)
-
-  ;; Display type hints by default (not supported by all language servers).
-  (lsp-inlay-hint-enable t)
-
-  ;; Recommended setting as I'm using Corfu instead of Company for completion.
-  ;; See: https://github.com/minad/corfu/issues/71#issuecomment-977693717
-  (lsp-completion-provider :none)
-
-  ;; Categorise `lsp-ui-imenu' entries by their type (variable, function, etc).
-  (lsp-imenu-index-function #'lsp-imenu-create-categorized-index)
-
-  ;; Close the language server buffer when the last file in the workspace/
-  ;; project is closed.
-  (lsp-keep-workspace-alive nil)
-
-  ;; Disable Eldoc hover as too much info is displayed and its distracting.
-  ;; See: https://github.com/emacs-lsp/lsp-mode/issues/2613
-  ;; Also: https://github.com/rust-analyzer/rust-analyzer/issues/3415
-  (lsp-eldoc-enable-hover nil)
-
-  ;; Use "clippy" rather than "check" for additional lints.
-  (lsp-rust-analyzer-cargo-watch-command "clippy")
-
-  ;; Configure lsp-mode to use the official terraform-ls LSP server rather than
-  ;; terraform-lsp which it uses by default and is more experimental.
-  (lsp-terraform-server '("terraform-ls" "serve"))
-
-  :init
-  (defun my/if-essential-advice (f &rest args)
-    "Around advice that invokes F with ARGS if `non-essential' is non-nil."
-    (unless non-essential
-      (apply f args)))
-
-  ;; Advise `lsp-deferred' and `lsp' so that they only run if non-essential is
-  ;; non-nil. This prevents lsp-mode from starting during Consult previews.
-  (advice-add 'lsp :around #'my/if-essential-advice)
-  (advice-add 'lsp-deferred :around #'my/if-essential-advice)
+    "wr" #'eglot-reconnect
+    "wq" #'eglot-shutdown
+    "wQ" #'eglot-shutdown-all)
 
   :config
-  ;; Configure custom LSP server settings.
-  ;;
-  ;; For gpls:
-  ;; See: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/emacs.md#configuring-gopls-via-lsp-mode
-  ;; And available settings: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/settings.md
-  ;; Not all experimental settings appear to be documented. For the full list,
-  ;; see: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/internal/lsp/source/options.go
-  (lsp-register-custom-settings
-   '(("gopls.completeUnimported" t t)
-     ("gopls.staticcheck" t t))))
+  (defun my/eglot-init ()
+    "Eglot mode initialization function."
+    (setq-local completion-at-point-functions
+                (list (cape-super-capf
+                       #'eglot-completion-at-point
+                       #'cape-file))))
 
-(use-package lsp-ui
-  :after lsp-mode
-  :custom
-  (lsp-ui-sideline-delay 0)
-  (lsp-ui-doc-delay 0)
-  (lsp-ui-imenu-auto-refresh t)
-  (lsp-ui-doc-show-with-mouse nil)
-  (lsp-ui-doc-position 'at-point)
-  (lsp-ui-doc-max-width 150)
-  (lsp-ui-doc-max-height 30)
-  (lsp-ui-peek-always-show t))
+  (setq eglot-stay-out-of '(flymake))
+  ;; See: https://github.com/minad/corfu/wiki#filter-list-of-all-possible-completions-with-completion-style-like-orderless.
+  (add-to-list 'completion-category-overrides '(eglot (styles orderless))))
 
-;;;;;; DAP (Debug Adapter Protocol)
-
-;; The following DAP configuration is optimised for debugging Rust and Go.
-;; The same keybindings and UI is used across all languages. The Go debugging
-;; workflow follows the recommendations for Go here:
-;; https://emacs-lsp.github.io/dap-mode/page/configuration.
-;;
-;; The Rust debugging workflow does not follow the recommendations for Rust in
-;; the docs linked above as they recommend using rust-gdb which cannot be used
-;; on Apple silicon as gdb doesn't support it yet.
-;;
-;; To work around this and other issues, I've defined my own custom debug
-;; configuration (a DAP provider and a template) for debugging Rust. When
-;; `dap-debug' is run, a configuration named "Rust LLDB Default" will be shown.
-;; When selected, this configuration will prompt for the executable file to be
-;; debugged. Unlike with Go/Delve, the debuggable executable must be recompiled
-;; between code changes. This default configuration does not supply arguments
-;; or environment variables.
-;;
-;; For more advanced Rust debugging scenarios (e.g. args, vars, multiple
-;; binaries, etc), drop a launch.json file at the root of the Rust project
-;; with the following format:
-;;
-;; {
-;;   "version": "0.2.0",
-;;   "configurations": [{
-;;     "name": "Rust LLDB Custom",
-;;     "type": "rust-lldb",
-;;     "request": "launch",
-;;     "program": "${workspaceFolder}/target/debug/axum-full-example",
-;;     "args": [],
-;;     "env": {},
-;;     "cwd": "${workspaceFolder}",
-;;     "stopOnEntry": false,
-;;     "debuggerRoot": "${workspaceFolder}"
-;;   }]
-;; }
-;;
-;; In the example above, replace "axum-full-example" with the name of the
-;; executable. If there are multiple executables, multiple configuration
-;; blocks will be needed and each should have a unique name (e.g.
-;; "Rust LLDB Custom (axum-full-example)", etc).
-;;
-;; When a launch.json file is present, `dap-debug' will show the configurations
-;; that it defines in addition to the ones that are registered below. The
-;; launch.json configurations will be mixed in with the properties set by the
-;; `my/dap-rust-lldb-debug-provider' provider below as long as a type of
-;; "rust-lldb" is specified.
-;;
-;; Note: dap-mode uses `lsp-workspace-root' to determine the root project
-;; directory that should contain the launch.json (or .vscode/launch.json) file.
-;; In projects with submodules where you want to debug a submodule
-;; independently, this can cause problems if `lsp-workspace-root' says that the
-;; project root is higher up the directory tree than you want it to be. If you
-;; get stuck in this cycle you will probably want to delete or edit
-;; ~/.config/emacs/.lsp-session-v1 or find a way to hook into dap-mode/lsp-mode
-;; so the process is a bit smarter.
-(use-package dap-mode
-  :functions
-  (my/project-current-root
-   my/dap-rust-lldb-debug-provider
-   dap-ui-hide-many-windows)
-  :commands
-  (dap-register-debug-provider
-   dap-register-debug-template)
-
+(use-package consult-eglot
+  :after eglot
   :general
-  ;; DAP is implemented as a global mode so after it starts the following
-  ;; keybindings will become available regardless of the buffer. Not a huge
-  ;; deal but something to be aware of.
-  (my/bind-ide :keymaps 'dap-mode-map
-    ;; Start/stop commands.
-    "dd" 'dap-debug
-    "dD" 'dap-debug-last
-    "dq" 'my/dap-quit
-    ;; Hydra menu.
-    "dm" 'dap-hydra
-    ;; UI window commands.
-    "dr" 'dap-ui-repl
-    "dl" 'dap-ui-locals
-    "de" 'dap-ui-expressions
-    ;; Breakpoint commands.
-    "db" 'dap-breakpoint-toggle
-    "dk" 'dap-ui-breakpoint-delete
-    "dK" 'dap-breakpoint-delete-all
-    ;; Stepping commands.
-    "dn" 'dap-next
-    "di" 'dap-step-in
-    "do" 'dap-step-out
-    "dc" 'dap-continue
-    ;; Stack frame commands.
-    "df" 'dap-switch-stack-frame
-    "d <up>" 'dap-up-stack-frame
-    "d <down>" 'dap-down-stack-frame
-    ;; Expression commands.
-    "d+" 'dap-ui-expressions-add
-    "d-" 'dap-ui-expressions-remove
-    ;; Evaluation commands.
-    "d:" 'dap-eval
-    "d." 'dap-eval-thing-at-point)
-
-  :custom
-  (dap-auto-configure-features '(locals breakpoints expressions repl))
-  (dap-print-io nil)
-  (dap-ui-repl-history-dir no-littering-var-directory)
-  ;; TODO: Unfortunately locals doesn't work that great. It doesn't auto-expand
-  ;; or refresh after each step/breakpoint and it often doesn't stay up to
-  ;; date with the current frame. For now, I'll just stick to using the REPL.
-  (dap-ui-locals-expand-depth 3)
-
-  :init
-  ;; Override the placement of DAP UI windows so things are less cluttered.
-  ;; The locals window and the expressions window will overlay the REPL window
-  ;; when they are displayed. The below configuration is shown by default.
-  (defvar dap-ui-buffer-configurations
-    '(("*dap-ui-repl*" .
-       ((side . right)
-        (slot . 1)
-        (window-width . 0.25)))
-      ("*dap-ui-breakpoints*" .
-       ((side . right)
-        (slot . 2)
-        (window-width . 0.25)
-        (window-height . 0.3)))))
-
-  :config
-  (require 'dap-dlv-go)
-  (require 'dap-ui)
-
-  (defun my/dap-quit ()
-    "Disconnect from the DAP session and hide all the DAP UI windows."
-    (interactive)
-    (call-interactively 'dap-disconnect)
-    (dap-ui-hide-many-windows))
-
-  ;; Location of lldb-vscode on the host.
-  (defvar my/dap-rust-lldb-debug-program
-    '("/opt/homebrew/opt/llvm/bin/lldb-vscode"))
-
-  ;; Custom DAP debug provider for Rust using LLDB. This allows the Rust binary
-  ;; that is to be debugged to be selected at the start of the debug session.
-  (defun my/dap-rust-lldb-debug-provider (conf)
-    "Populate CONF with the required arguments."
-    (-> conf
-        (dap--put-if-absent :dap-server-path my/dap-rust-lldb-debug-program)
-        (dap--put-if-absent :cwd (expand-file-name (my/project-current-root)))
-        (dap--put-if-absent :program
-          (read-file-name
-           "Select binary file to debug: "
-           (my/project-current-root)
-           nil t nil #'file-executable-p))))
-
-  ;; Register the custom DAP debug provider for Rust using LLDB.
-  (dap-register-debug-provider "rust-lldb" #'my/dap-rust-lldb-debug-provider)
-
-  ;; Register the custom DAP template for the custom provider.
-  (dap-register-debug-template "Rust LLDB Default"
-                               (list :type "rust-lldb"
-                                     :request "launch"
-                                     :name "rust-lldb-template"
-                                     :mode "auto"
-                                     :buildFlags nil
-                                     :args nil
-                                     :env nil)))
+  (my/bind-search :keymaps 'eglot-mode-map
+    "o" #'consult-eglot-symbols))
 
 ;;;;;; Xref
 
@@ -1903,13 +1587,25 @@ as there appears to be a bug in the current version."
 
 (use-package eldoc
   :straight nil
-  :hook
-  (emacs-lisp-mode . eldoc-mode)
+  :general
+  (my/bind-ide
+    "h" #'eldoc-doc-buffer)
+  (general-def
+    "C-h t" #'eldoc-mode)
   :custom
+  (global-eldoc-mode 1)
   (eldoc-idle-delay 0)
+  (eldoc-echo-area-use-multiline-p nil)
+  (eldoc-echo-area-prefer-doc-buffer t)
+  (eldoc-documentation-strategy #'eldoc-documentation-compose)
   :init
   ;; Print Eldoc documentation in echo area when Paredit commands are run.
   (eldoc-add-command-completions "paredit-"))
+
+(use-package eldoc-box
+  :general
+  (general-def
+    "M-p" #'eldoc-box-help-at-point))
 
 ;;;;;; Flycheck
 
@@ -2025,8 +1721,9 @@ as there appears to be a bug in the current version."
 (use-package rustic
   :general
   (my/bind-ide :keymaps 'rustic-mode-map
-    "ho" #'lsp-rust-analyzer-open-external-docs
-    "tt" #'rustic-cargo-current-test))
+    "tt" #'rustic-cargo-current-test)
+  :custom
+  (rustic-lsp-client 'eglot))
 
 ;;;;;; Go
 
@@ -2159,19 +1856,21 @@ as there appears to be a bug in the current version."
 (use-package elisp-mode
   :straight nil
   :hook
-  (emacs-lisp-mode . my/init-emacs-lisp-mode)
+  (emacs-lisp-mode . my/elisp-init)
+
   :general
   (my/bind-c-x
     "C-r" #'eval-region)
-  (general-def 'emacs-lisp-mode-map
-    ;; TODO: There must be something better/more useful than this?!
-    "M-p" #'eldoc-print-current-symbol-info)
-  :init
-  (defun my/init-emacs-lisp-mode ()
-    "Initializes `emacs-lisp-mode'."
+
+  :config
+  (defun my/elisp-init ()
+    "Elisp mode initialization function."
     (setq-local fill-column 80)
     (setq-local outline-regexp ";;;+ [^\n]")
-    (outline-minor-mode)))
+    (outline-minor-mode)
+    (setq-local completion-at-point-functions
+                (list #'elisp-completion-at-point
+                      #'cape-file))))
 
 (use-package paredit
   :hook
@@ -2246,7 +1945,7 @@ as there appears to be a bug in the current version."
 (use-package eshell
   :straight nil
   :hook
-  (eshell-mode . my/init-eshell-mode)
+  (eshell-mode . my/eshell-init)
   (eshell-pre-command . my/eshell-pre-command)
   (eshell-post-command . my/eshell-post-command)
 
@@ -2268,11 +1967,11 @@ as there appears to be a bug in the current version."
   ;; The following commands will be started in `term-mode'.
   (eshell-visual-commands '("vi" "vim" "htop" "ktop" "watch" "gcloud"))
 
-  :init
+  :config
   ;; Needed so that `eshell-mode-map' is available above.
   (require 'esh-mode)
 
-  (defun my/init-eshell-mode ()
+  (defun my/eshell-init ()
     "Hook function executed when `eshell-mode' is run."
     ;; Don't wrap long lines in eshell.
     (setq-local truncate-lines t)
@@ -2281,7 +1980,12 @@ as there appears to be a bug in the current version."
     ;; the latter results in `eshell-output-filter-functions' being set to nil.
     ;; See: https://emacs.stackexchange.com/a/45281
     (remove-hook 'eshell-output-filter-functions
-                 'eshell-postoutput-scroll-to-bottom))
+                 'eshell-postoutput-scroll-to-bottom)
+    ;; Configuration eshell completion.
+    (setq-local completion-at-point-functions
+                (list #'pcomplete-completions-at-point
+                      #'cape-file
+                      #'cape-dabbrev)))
 
   (defun my/eshell-pre-command ()
     "Eshell pre-command hook function."
@@ -2429,7 +2133,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "C-'")
 
   :hook
-  (org-mode . my/init-org-mode)
+  (org-mode . my/org-init)
 
   :custom
   (org-agenda-cmp-user-defined #'my/org-agenda-cmp-todo)
@@ -2590,14 +2294,15 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (require 'org-tempo)
 
   :config
-  (defun my/init-org-mode ()
-    "Org-mode init function that should be attached to `org-mode-hook`."
+  (defun my/org-init ()
+    "Org mode initialization function."
     (interactive)
     (org-indent-mode 1)
     (visual-line-mode 1)
     (variable-pitch-mode 1)
     (display-line-numbers-mode 0)
-    (setq-local line-spacing 2))
+    (setq-local line-spacing 2)
+    (setq-local completion-at-point-functions (list #'cape-file)))
 
   (defun my/org-agenda-cmp-todo (a b)
     "Custom compares agenda items A and B based on their todo keywords."
