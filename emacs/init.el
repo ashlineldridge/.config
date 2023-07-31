@@ -20,7 +20,7 @@
 ;;;; Keybinding Management
 
 (use-package general
-  :commands general-auto-unbind-keys
+  :commands (general-auto-unbind-keys general-define-key)
   :config
   ;; General Approach to Keybinding:
   ;;
@@ -47,7 +47,8 @@
   (general-create-definer my/bind-c-c :prefix "C-c")
   (general-create-definer my/bind-c-x :prefix "C-x"))
 
-(use-package hydra)
+(use-package transient
+  :commands transient-get-value)
 
 ;;;; Base Settings
 
@@ -377,7 +378,10 @@
 
 (use-package ace-window
   :after consult
-  :commands (aw-switch-to-window aw-delete-window)
+  :commands
+  (aw-switch-to-window
+   aw-delete-window
+   aw-select)
   :general
   (general-def
     "M-o" #'ace-window)
@@ -778,7 +782,8 @@
   :commands
   (consult--buffer-state
    consult--buffer-action
-   consult--buffer-query)
+   consult--buffer-query
+   consult--customize-put)
 
   :general
   (general-def
@@ -1081,7 +1086,12 @@
   (embark-collect-mode . consult-preview-at-point-mode))
 
 (use-package rg
-  :commands rg-menu
+  :commands
+  (rg-menu
+   rg-run
+   rg-project-root
+   rg-read-pattern
+   rg-tag-default)
   :functions popper--bury-all
   :general
   (my/bind-search
