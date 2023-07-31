@@ -130,6 +130,7 @@
   (async-shell-command-buffer 'new-buffer)
   (savehist-mode t)
   (electric-pair-mode t)
+  (repeat-mode t)
   ;; Increase margins slightly.
   (fringe-mode 5)
   ;; Ignore any changes made via the customization UI.
