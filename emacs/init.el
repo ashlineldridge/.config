@@ -1160,8 +1160,8 @@
   (general-def
     "C-=" #'er/expand-region
     "C-+" #'er/mark-outside-pairs
-    "C-\\" #'er/mark-symbol
-    "C-|" #'er/mark-defun)
+    "C-_" #'er/mark-symbol
+    "C-\\" #'er/mark-defun)
   :custom
   (expand-region-fast-keys-enabled nil))
 
