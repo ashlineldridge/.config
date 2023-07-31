@@ -430,6 +430,10 @@
 
 (use-package window
   :straight nil
+  :general
+  (general-def
+    "C-o" '(:keymap my/window-map))
+
   :custom
   ;; The following provides the default `display-buffer' behaviour for buffers
   ;; that are not managed by either Popper or Shackle.
@@ -437,22 +441,30 @@
                                  display-buffer-reuse-window
                                  display-buffer-same-window)))
   (even-window-sizes nil)
-  :init
-  (defhydra my/hydra-manage-windows (global-map "C-o")
-    ("a" ace-window :exit t)
-    ("p" previous-window-any-frame :exit t)
-    ("<left>" shrink-window-horizontally)
-    ("<right>" enlarge-window-horizontally)
-    ("<down>" shrink-window)
-    ("<up>" enlarge-window)
-    ("=" balance-windows :exit t)
-    ("]" rotate-frame-clockwise)
-    ("[" rotate-frame-anticlockwise)
-    ("x" flip-frame :exit t) ;; Flip about x-axis.
-    ("y" flop-frame :exit t) ;; Flip about y-axis.
-    ("u" winner-undo :exit t)
-    ("r" winner-redo :exit t)
-    ("q" nil)))
+
+  :config
+  (defvar-keymap my/window-map
+    :doc "Keymap for window commands."
+    "o" #'other-window
+    "C-o" #'previous-window-any-frame
+    "b" #'shrink-window-horizontally
+    "f" #'enlarge-window-horizontally
+    "n" #'enlarge-window
+    "p" #'shrink-window
+    "]" #'rotate-frame-clockwise
+    "[" #'rotate-frame-anticlockwise
+    "x" #'flip-frame
+    "y" #'flop-frame
+    "u" #'winner-undo
+    "r" #'winner-redo)
+
+  ;; Use `my/window-map' as the repeat map for the window commands. This allows
+  ;; all window commands to be repeated with only the final key.
+  (map-keymap
+   (lambda (_key cmd)
+     (when (symbolp cmd)
+       (put cmd 'repeat-map 'my/window-map)))
+   my/window-map))
 
 ;;;;; Window Placement
 
@@ -1068,12 +1080,12 @@
   ;; Org-roam nodes have their own Embark category and hence need their own
   ;; keymap to act on them.
   (defvar-keymap my/embark-org-roam-node-map
-    :doc "Keymap for Embark `org-roam-node' actions"
+    :doc "Keymap for Embark `org-roam-node' actions."
     :parent embark-general-map
     "o" (my/embark-ace-window-action org-roam-node-find))
 
   (defvar-keymap my/embark-consult-xref-map
-    :doc "Keymap for Embark `consult-xref' actions"
+    :doc "Keymap for Embark `consult-xref' actions."
     :parent embark-general-map
     "o" (my/embark-ace-window-action my/goto-consult-xref))
 
@@ -2140,7 +2152,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (my/bind-c-c :keymaps 'org-mode-map
     "C-S-l" #'org-cliplink)
   (general-def 'org-agenda-mode-map
-    "r" #'my/hydra-org-agenda-refile/body
+    "ra" #'my/org-agenda-refile-archive
+    "rp" #'my/org-agenda-refile-personal-ongoing
+    "rw" #'my/org-agenda-refile-work-ongoing
+    "rs" #'my/org-agenda-refile-someday-ongoing
+    "ri" #'my/org-agenda-refile-inbox
     "k" #'org-agenda-kill
     "?" #'which-key-show-major-mode)
   (general-unbind 'org-mode-map
@@ -2345,24 +2361,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "Capture a coffee log entry."
     (interactive)
     (org-capture nil "c"))
-
-  (defhydra my/hydra-org-agenda-refile ()
-    "
-Refile this agenda item to:
-
-_a_: Archive
-_p_: Personal/ongoing
-_w_: Work/ongoing
-_s_: Someday/ongoing
-_i_: Inbox
-_q_: Quit this menu
-"
-    ("a" my/org-agenda-refile-archive :exit t)
-    ("p" my/org-agenda-refile-personal-ongoing :exit t)
-    ("w" my/org-agenda-refile-work-ongoing :exit t)
-    ("s" my/org-agenda-refile-someday-ongoing :exit t)
-    ("i" my/org-agenda-refile-inbox :exit t)
-    ("q" nil))
 
   ;; Function for refiling the current agenda item under point to the specified
   ;; file and heading. `org-agenda-refile' requires a destination refloc list
