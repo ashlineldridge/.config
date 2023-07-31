@@ -1986,7 +1986,7 @@ as there appears to be a bug in the current version."
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
   ;; The following commands will be started in `term-mode'.
-  (eshell-visual-commands '("vi" "vim" "htop" "ktop" "watch" "gcloud"))
+  (eshell-visual-commands '("vi" "vim" "htop" "ktop" "watch"))
 
   :config
   ;; Needed so that `eshell-mode-map' is available above.
