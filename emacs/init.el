@@ -445,6 +445,7 @@
   :config
   (defvar-keymap my/window-map
     :doc "Keymap for window commands."
+    "=" #'balance-windows
     "o" #'other-window
     "C-o" #'previous-window-any-frame
     "b" #'shrink-window-horizontally
@@ -1571,6 +1572,9 @@ as there appears to be a bug in the current version."
     "wr" #'eglot-reconnect
     "wq" #'eglot-shutdown
     "wQ" #'eglot-shutdown-all)
+
+  :custom
+  (eglot-autoshutdown t)
 
   :config
   (defun my/eglot-init ()
