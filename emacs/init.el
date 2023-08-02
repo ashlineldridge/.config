@@ -244,17 +244,21 @@
 ;; The Modus themes are pre-installed into Emacs 28+ but I pull latest.
 (use-package modus-themes
   :functions my/apply-font-config
+  :commands modus-themes-load-theme
   :general
   (general-def
     "<f12>" #'my/cycle-font-config)
+
+  :hook
+  ;; Load theme after init and install hook to update fonts.
+  (emacs-startup . (lambda () (modus-themes-load-theme 'modus-vivendi)))
+  (modus-themes-post-load . my/apply-font-config)
+
   :custom
   (modus-themes-italic-constructs t)
-  (modus-themes-region '(no-extend accented))
-  (modus-themes-mode-line '(borderless))
-  (modus-themes-paren-match '(intense underline))
-  (modus-themes-prompts '(bold intense))
+  (modus-themes-custom-auto-reload t)
+  (modus-themes-prompts '(italic bold))
   (modus-themes-org-blocks 'gray-background)
-  (modus-themes-fringes nil)
   (modus-themes-headings
    '((1 . (variable-pitch rainbow background 1.3))
      (2 . (variable-pitch rainbow background semibold 1.2))
@@ -262,8 +266,7 @@
      (t . (variable-pitch rainbow semilight 1.1))))
 
   :init
-  (load-theme 'modus-vivendi t)
-
+  (defvar my/font-config-index 0)
   (defvar my/font-configs
     '((:name "Laptop"
        :fixed-font "Iosevka Comfy"
@@ -280,9 +283,10 @@
        :line-number-font-height 124
        :mode-line-font-height 140)))
 
-  (defun my/apply-font-config (index)
+  (defun my/apply-font-config (&optional index)
     "Apply the INDEX'th font configuration from `my/font-configs'."
-    (let* ((config (nth index my/font-configs))
+    (let* ((index (or index my/font-config-index))
+           (config (nth index my/font-configs))
            (name (plist-get config :name))
            (fixed-font (plist-get config :fixed-font))
            (fixed-font-height (plist-get config :fixed-font-height))
@@ -311,17 +315,12 @@
                           :slant 'italic)
       (message "Applied font configuration: %s" name)))
 
-  (defvar my/font-config-index 0)
-
   (defun my/cycle-font-config ()
     "Cycle to the next font configuration."
     (interactive)
     (setq my/font-config-index (mod (+ my/font-config-index 1)
                                     (length my/font-configs)))
-    (my/apply-font-config my/font-config-index))
-
-  ;; Apply the initial font configuration.
-  (my/apply-font-config my/font-config-index))
+    (my/apply-font-config my/font-config-index)))
 
 ;;;;; Icons
 
