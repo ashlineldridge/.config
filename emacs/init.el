@@ -741,8 +741,6 @@
   (general-def
     "C-r" #'my/cape-history)
   (my/bind-c-c
-    "pp" #'completion-at-point
-    "pt" #'complete-tag
     "pd" #'cape-dabbrev
     "ph" #'cape-history
     "pf" #'cape-file
@@ -764,15 +762,6 @@
     (interactive)
     (let ((completion-at-point-functions (list #'cape-history)))
       (completion-at-point))))
-
-(use-package cape-yasnippet
-  :straight
-  (:host github :repo "elken/cape-yasnippet")
-  :general
-  (my/bind-c-c
-    "py" #'cape-yasnippet)
-  :custom
-  (cape-yasnippet-lookup-by 'key))
 
 ;; Orderless configuration mostly taken from:
 ;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
@@ -832,6 +821,7 @@
     "m" #'consult-bookmark
     "g" #'consult-goto-line
     "-" #'consult-outline
+    "=" #'consult-focus-lines
     "SPC" #'consult-mark
     "S-SPC" #'consult-global-mark)
 
@@ -956,8 +946,6 @@
   :custom
   (consult-dir-shadow-filenames nil)
   (consult-dir-default-command #'consult-dir-dired))
-
-(use-package consult-yasnippet)
 
 (use-package embark
   :commands
@@ -1521,25 +1509,19 @@ as there appears to be a bug in the current version."
 
 ;;;;; Code Templating
 
-(use-package yasnippet
-  :after consult-yasnippet
-  :hook
-  ((text-mode prog-mode eshell-mode) . yas-minor-mode)
+(use-package tempel
+  :commands tempel-complete
   :general
-  (my/bind-c-c
-    "yn" #'yas-new-snippet
-    "yu" #'yas-reload-all
-    "yd" #'yas-describe-tables)
-  (my/bind-c-c :keymaps 'yas-minor-mode-map
-    "yy" #'yas-expand
-    "yi" #'consult-yasnippet
-    "yf" #'yas-visit-snippet-file)
+  (general-def
+    "M-+" #'tempel-insert)
+  (general-def 'tempel-map
+    "<tab>" #'tempel-next
+    "S-<tab>" #'tempel-previous
+    [remap keyboard-quit] #'tempel-done)
 
   :custom
-  (yas-verbosity 1)
-  (yas-wrap-around-region t))
-
-(use-package yasnippet-snippets)
+  (tempel-trigger-prefix "<")
+  (tempel-path (no-littering-expand-etc-file-name "tempel/templates")))
 
 ;;;;; Code Formatting and Linting
 
@@ -1580,9 +1562,10 @@ as there appears to be a bug in the current version."
   (defun my/eglot-init ()
     "Eglot mode initialization function."
     (setq-local completion-at-point-functions
-                (list (cape-super-capf
-                       #'eglot-completion-at-point
-                       #'cape-file))))
+                (list
+                 #'tempel-complete
+                 #'eglot-completion-at-point
+                 #'cape-file)))
 
   ;; See: https://github.com/minad/corfu/wiki#filter-list-of-all-possible-completions-with-completion-style-like-orderless.
   (add-to-list 'completion-category-overrides '(eglot (styles orderless))))
@@ -1892,10 +1875,12 @@ as there appears to be a bug in the current version."
     "Elisp mode initialization function."
     (setq-local fill-column 80)
     (setq-local outline-regexp ";;;+ [^\n]")
-    (outline-minor-mode)
+    (outline-minor-mode 1)
     (setq-local completion-at-point-functions
-                (list #'elisp-completion-at-point
-                      #'cape-file))))
+                (list
+                 #'tempel-complete
+                 #'elisp-completion-at-point
+                 #'cape-file))))
 
 (use-package paredit
   :hook
@@ -2008,9 +1993,11 @@ as there appears to be a bug in the current version."
                  'eshell-postoutput-scroll-to-bottom)
     ;; Configuration eshell completion.
     (setq-local completion-at-point-functions
-                (list #'pcomplete-completions-at-point
-                      #'cape-file
-                      #'cape-dabbrev)))
+                (list
+                 #'tempel-complete
+                 #'pcomplete-completions-at-point
+                 #'cape-file
+                 #'cape-dabbrev)))
 
   (defun my/eshell-pre-command ()
     "Eshell pre-command hook function."
@@ -2317,10 +2304,8 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (org-use-sub-superscripts nil)
 
   :init
-  ;; Require the `org-agenda' package so that its keymap can be customized
-  ;; above and `org-tempo' to enable <s + TAB shortcuts in org docs.
+  ;; Require the `org-agenda' package so that its keymap can be customized.
   (require 'org-agenda)
-  (require 'org-tempo)
 
   :config
   (defun my/org-init ()
@@ -2331,7 +2316,8 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     (variable-pitch-mode 1)
     (display-line-numbers-mode 0)
     (setq-local line-spacing 2)
-    (setq-local completion-at-point-functions (list #'cape-file)))
+    (setq-local completion-at-point-functions
+                (list #'tempel-complete #'cape-file)))
 
   (defun my/org-agenda-cmp-todo (a b)
     "Custom compares agenda items A and B based on their todo keywords."
