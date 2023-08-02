@@ -127,6 +127,7 @@
   (fill-column 100)
   (column-number-mode t)
   (global-auto-revert-mode t)
+  (global-hl-line-mode t)
   (async-shell-command-buffer 'new-buffer)
   (savehist-mode t)
   (electric-pair-mode t)
