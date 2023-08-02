@@ -826,6 +826,9 @@
     "S-SPC" #'consult-global-mark)
 
   :custom
+  (register-preview-delay 0.5)
+  (register-preview-function #'consult-register-format)
+
   ;; Type < followed by a prefix key to narrow the available candidates.
   ;; Type C-< (defined above) to display prefix help. Alternatively, type
   ;; < followed by C-h (or ?) to make `embark-prefix-help-command' kick in
