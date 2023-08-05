@@ -395,7 +395,6 @@
 ;;;;; Window Manipulation and Selection
 
 (use-package ace-window
-  :after consult
   :commands
   (aw-switch-to-window
    aw-delete-window
@@ -624,7 +623,7 @@
   ;; been entered. This is really useful to keep so that short words that you
   ;; don't want autocompleted don't trigger the Corfu pop-up (and subsequent
   ;; completion which inserts a space after the completed word).
-  (corfu-auto-delay 0.3)
+  (corfu-auto-delay 0.5)
   ;; Automatically select the first candidate if it does not reference a
   ;; directory. This makes the eshell experience a little more natural.
   (corfu-preselect 'directory)
