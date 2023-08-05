@@ -102,6 +102,7 @@
     "b2" #'recompile)
 
   :custom
+  (confirm-kill-emacs #'yes-or-no-p)
   (inhibit-startup-message t)
   (tool-bar-mode nil)
   (tooltip-mode nil)
