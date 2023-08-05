@@ -1905,10 +1905,9 @@ as there appears to be a bug in the current version."
   :hook
   ;; Note that I specifically don't enable Paredit in minibuffers as it causes
   ;; issues with RET keybindings.
-  (emacs-lisp-mode . paredit-mode)       ;; Elisp buffers.
-  (lisp-mode . paredit-mode)             ;; Common Lisp buffers.
-  (lisp-interaction-mode . paredit-mode) ;; Scratch buffers.
-  (ielm-mode-hook . paredit-mode)        ;; IELM buffers.
+  ((lisp-mode
+    emacs-lisp-mode
+    inferior-emacs-lisp-mode) . paredit-mode)
 
   :config
   ;; Unbind Paredit keybindings I don't use that can cause collisions. This
@@ -1924,8 +1923,17 @@ as there appears to be a bug in the current version."
 
 (use-package rainbow-delimiters
   :hook
-  (emacs-lisp-mode . rainbow-delimiters-mode))
+  ((lisp-mode
+    emacs-lisp-mode
+    inferior-emacs-lisp-mode) . rainbow-delimiters-mode))
 
+(use-package aggressive-indent
+  :hook
+  ((lisp-mode
+    emacs-lisp-mode
+    inferior-emacs-lisp-mode) . aggressive-indent-mode))
+
+;; Custom Elisp indentation function - see code comments in package.
 (use-package emacs-lisp-indent
   :straight (:host github :repo "ashlineldridge/emacs-lisp-indent")
   :init
@@ -2004,6 +2012,8 @@ as there appears to be a bug in the current version."
     "Hook function executed when `eshell-mode' is run."
     ;; Don't wrap long lines in eshell.
     (setq-local truncate-lines t)
+    ;; Don't show line highlight in eshell.
+    (setq-local global-hl-line-mode nil)
     ;; Don't scroll the buffer around after it has been recentered (using C-l).
     ;; This seems to need to be done as a mode hook rather than in `:config' as
     ;; the latter results in `eshell-output-filter-functions' being set to nil.
