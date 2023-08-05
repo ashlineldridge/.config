@@ -132,6 +132,7 @@
   (async-shell-command-buffer 'new-buffer)
   (savehist-mode t)
   (electric-pair-mode t)
+  (electric-pair-inhibit-predicate #'my/electric-pair-inhibit)
   (repeat-mode t)
   ;; Increase margins slightly.
   (fringe-mode 5)
@@ -232,6 +233,11 @@
     "Flashes the mode line for a visible bell."
     (invert-face 'mode-line)
     (run-with-timer 0.1 nil 'invert-face 'mode-line))
+
+  (defun my/electric-pair-inhibit (c)
+    "Return whether C should be excluded from pairing."
+    ;; Exclude '<' as I want that for triggering Tempel.
+    (if (char-equal c ?<) t (electric-pair-default-inhibit c)))
 
   ;; Prefer running a single instance of Emacs in server mode.
   (require 'server)
