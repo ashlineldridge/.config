@@ -246,46 +246,51 @@
 
 ;;;; Appearance
 
-;;;;; Theme
+;;;;; Themes
 
-;; The Modus themes are pre-installed into Emacs 28+ but I pull latest.
+;; The Modus themes are pre-installed now but pull latest.
 (use-package modus-themes
-  :functions my/apply-font-config
   :commands modus-themes-load-theme
-  :general
-  (general-def
-    "<f12>" #'my/cycle-font-config)
-
   :hook
-  ;; Load theme after init and install hook to update fonts.
   (emacs-startup . (lambda () (modus-themes-load-theme 'modus-vivendi)))
-  (modus-themes-post-load . my/apply-font-config)
 
   :custom
+  (modus-themes-to-toggle '(modus-vivendi modus-operandi-tritanopia))
   (modus-themes-italic-constructs t)
   (modus-themes-custom-auto-reload t)
-  (modus-themes-prompts '(italic bold))
+  (modus-themes-prompts '(bold))
   (modus-themes-org-blocks 'gray-background)
   (modus-themes-headings
    '((1 . (variable-pitch rainbow background 1.3))
      (2 . (variable-pitch rainbow background semibold 1.2))
      (3 . (variable-pitch rainbow background semibold 1.1))
-     (t . (variable-pitch rainbow semilight 1.1))))
+     (t . (variable-pitch rainbow semilight 1.1)))))
 
-  :init
+;;;;; Fonts
+
+(use-package faces
+  :straight nil
+  :general
+  (general-def
+    "<f12>" #'my/cycle-font-config)
+
+  :hook
+  ;; Update fonts after theme is loaded so changes take effect.
+  (modus-themes-post-load . my/apply-font-config)
+
+  :config
   (defvar my/font-config-index 0)
+  (defvar my/fixed-font "Iosevka Comfy")
+  (defvar my/variable-font "Iosevka Comfy Duo")
+
   (defvar my/font-configs
     '((:name "Laptop"
-       :fixed-font "Iosevka Comfy"
        :fixed-font-height 140
-       :variable-font "Iosevka Comfy Duo"
        :variable-font-height 140
        :line-number-font-height 120
        :mode-line-font-height 130)
       (:name "Desktop"
-       :fixed-font "Iosevka Comfy"
        :fixed-font-height 148
-       :variable-font "Iosevka Comfy Duo"
        :variable-font-height 148
        :line-number-font-height 124
        :mode-line-font-height 140)))
@@ -295,31 +300,36 @@
     (let* ((index (or index my/font-config-index))
            (config (nth index my/font-configs))
            (name (plist-get config :name))
-           (fixed-font (plist-get config :fixed-font))
            (fixed-font-height (plist-get config :fixed-font-height))
-           (variable-font (plist-get config :variable-font))
            (variable-font-height (plist-get config :variable-font-height))
            (line-number-font-height (plist-get config :line-number-font-height))
            (mode-line-font-height (plist-get config :mode-line-font-height)))
       (set-face-attribute 'default nil
-                          :font fixed-font
+                          :font my/fixed-font
                           :height fixed-font-height)
       (set-face-attribute 'fixed-pitch nil
-                          :font fixed-font
+                          :font my/fixed-font
                           :height fixed-font-height)
       (set-face-attribute 'variable-pitch nil
-                          :font variable-font
+                          :font my/variable-font
                           :height variable-font-height)
       (set-face-attribute 'mode-line nil
-                          :font fixed-font
+                          :font my/fixed-font
                           :height mode-line-font-height)
       (set-face-attribute 'mode-line-inactive nil
-                          :font fixed-font
+                          :font my/fixed-font
                           :height mode-line-font-height)
       (set-face-attribute 'line-number nil
-                          :font fixed-font
+                          :font my/fixed-font
                           :height line-number-font-height
                           :slant 'italic)
+
+      ;; Use fixed pitch for appropriate org elements (use C-u C-x = to
+      ;; determine the font face of the character under point). Note that
+      ;; `modus-themes-mixed-fonts' can also be used to achieve this.
+      (require 'org-faces)
+      (dolist (face '(org-block org-table))
+        (set-face-attribute face nil :inherit 'fixed-pitch))
       (message "Applied font configuration: %s" name)))
 
   (defun my/cycle-font-config ()
@@ -2414,13 +2424,6 @@ specified then a task category will be determined by the item's tags."
     (interactive)
     (org-restart-font-lock)
     (setq org-hide-emphasis-markers (not org-hide-emphasis-markers)))
-
-  ;; Use fixed pitch for appropriate org elements (use C-u C-x = to determine
-  ;; the font face of the character under point). See also:
-  ;; https://zzamboni.org/post/beautifying-org-mode-in-emacs; and
-  ;; https://github.com/daviwil/dotfiles/blob/7ed5195e0007bccb43420cfec271ab779f4720fd/Emacs.org#fonts-and-bullets.
-  (dolist (face '(org-block org-table))
-    (set-face-attribute face nil :inherit 'fixed-pitch))
 
   ;; Save all org buffers before quitting the agenda ('s' saves immediately).
   (advice-add #'org-agenda-quit :before #'org-save-all-org-buffers)
