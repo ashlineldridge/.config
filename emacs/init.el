@@ -676,6 +676,9 @@
   :after corfu
   :commands kind-icon-margin-formatter
   :defines corfu-margin-formatters
+  :hook
+  ;; After toggling between themes the icon cache needs to be reset.
+  (modus-themes-post-load . kind-icon-reset-cache)
   :custom
   (kind-icon-default-face 'corfu-default)
   :init
