@@ -497,7 +497,7 @@
   (shackle-default-rule nil)
   (shackle-rules
    '(("*eldoc" :select nil :other t :regexp t)
-     ("*helpful" :select nil :other t :regexp t)
+     ("*helpful" :select t :other t :regexp t)
      ("*rg*" :select t :other t)))
   :init
   (shackle-mode 1))
@@ -806,6 +806,7 @@
    consult--buffer-action
    consult--buffer-query
    consult--customize-put)
+  :defines consult-imenu-config
 
   :general
   (general-def
@@ -884,48 +885,6 @@
   ;; Tell `consult-find' to search hidden dirs/files but ignore .git/.
   (consult-find-args "find . -not ( -name .git -type d -prune )")
 
-  ;; Customize `consult-imenu' groupings for languages I regularly use. The
-  ;; imenu backend for each language will return the symbol category strings
-  ;; used below. For Rust and Go, the imenu backend is implemented by their
-  ;; respective LSP servers. The font faces are chosen for aesthetics only.
-  ;; If a symbol category is missing from the alists below the symbols for
-  ;; that category will be displayed in an ungrouped way and the line will be
-  ;; prefixed with the category name - it can then be added below. See:
-  ;; https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#symbolKind.
-  (consult-imenu-config
-   '((emacs-lisp-mode
-      ;; This configuration is copied directly from consult-imenu.el as I'd
-      ;; prefer to set `consult-imenu-config' entirely within :custom.
-      :toplevel "Functions"
-      :types ((?f "Functions" font-lock-function-name-face)
-              (?m "Macros" font-lock-preprocessor-face)
-              (?p "Packages" font-lock-constant-face)
-              (?t "Types" font-lock-type-face)
-              (?v "Variables" font-lock-variable-name-face)))
-     ;; Rust and Go imenus get bypassed by Eglot as Eglot thinks the language
-     ;; servers don't support :textDocument/documentSymbol. As such, the
-     ;; default imenu contruction function `imenu-default-create-index-function'
-     ;; gets used rather than consulting the language server. Ideally, I'd like
-     ;; to configure tree-sitter to construct these imenus. The following
-     ;; symbol categories are parsed directly from the buffer by
-     ;; `imenu-default-create-index-function'.
-     (rustic-mode
-      :types ((?e "Enum" font-lock-constant-face)
-              (?f "Fn" font-lock-function-name-face)
-              (?i "Impl" font-lock-type-face)
-              (?M "Macro" font-lock-preprocessor-face)
-              (?m "Mod" font-lock-keyword-face)
-              (?s "Struct" font-lock-type-face)
-              (?T "Type" font-lock-type-face )
-              (?t "Trait" font-lock-type-face)))
-     (go-mode
-      :types ((?f "func" font-lock-function-name-face)
-              (?t "type" font-lock-type-face)))
-     (protobuf-mode
-      :types ((?s "Service" font-lock-function-name-face)
-              (?m "Message" font-lock-variable-name-face)
-              (?e "Enum" font-lock-constant-face)))))
-
   :config
   (defun my/consult-line-strict (&optional initial start)
     "Version of `consult-line' that uses a strict substring completion style."
@@ -947,7 +906,6 @@
                  :sort 'visibility
                  :as #'buffer-name
                  :mode 'eshell-mode))))
-
 
   (consult-customize
    ;; Source name and narrow key customization.
@@ -1506,9 +1464,7 @@ as there appears to be a bug in the current version."
   ;; Disable built-in `auto-save-mode' as this replaces it.
   (auto-save-default nil)
   (super-save-auto-save-when-idle t)
-  ;; Large idle duration to avoid programming modes (e.g., Rustic) that perform
-  ;; actions on save from running to eagerly.
-  (super-save-idle-duration 40)
+  (super-save-idle-duration 15)
   (super-save-max-buffer-size 100000)
   :init
   (super-save-mode 1))
@@ -1558,14 +1514,42 @@ as there appears to be a bug in the current version."
   (apheleia-global-mode 1)
   :config
   ;; Use goimports rather than gofmt so that imports get optimized.
-  (setf (alist-get 'go-mode apheleia-mode-alist) 'goimports))
+  (setf (alist-get 'go-ts-mode apheleia-mode-alist) 'goimports))
+
+;;;;;; Tree-Sitter
+
+(use-package treesit
+  :straight nil
+  :custom
+  (treesit-extra-load-path (list (no-littering-expand-var-file-name "tree-sitter")))
+  (treesit-font-lock-level 4) ;; Be extra.
+  :config
+  (setq treesit-language-source-alist
+        '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+          (go "https://github.com/tree-sitter/tree-sitter-go")
+          (gomod "https://github.com/camdencheek/tree-sitter-gomod")
+          (json "https://github.com/tree-sitter/tree-sitter-json")
+          (rust "https://github.com/tree-sitter/tree-sitter-rust")
+          (toml "https://github.com/tree-sitter/tree-sitter-toml")
+          (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+  (setq major-mode-remap-alist
+        '((bash-mode . bash-ts-mode)
+          (go-mode . go-ts-mode)
+          (js-json-mode . json-ts-mode)
+          (rust-mode . rust-ts-mode)
+          (rustic-mode . rust-ts-mode)
+          (sh-mode . bash-ts-mode)
+          (toml-mode . toml-ts-mode)
+          (yaml-mode . yaml-ts-mode))))
 
 ;;;;;; LSP
 
 (use-package eglot
   :commands eglot-completion-at-point
   :hook
-  ((go-mode rustic-mode) . eglot-ensure)
+  ((bash-ts-mode
+    go-ts-mode
+    rust-ts-mode) . eglot-ensure)
   (eglot-managed-mode . my/eglot-init)
 
   :general
@@ -1584,10 +1568,12 @@ as there appears to be a bug in the current version."
 
   :custom
   (eglot-autoshutdown t)
+  ;; Tree-sitter produces a better imenu.
+  (eglot-stay-out-of '(imenu))
 
   :config
   (defun my/eglot-init ()
-    "Eglot mode initialization function."
+    "Init function for `eglot--managed-mode'."
     (setq-local completion-at-point-functions
                 (list
                  #'tempel-complete
@@ -1672,10 +1658,10 @@ as there appears to be a bug in the current version."
     "lp" #'flymake-show-project-diagnostics)
   :hook
   (prog-mode . flymake-mode)
-  (after-init . my/flymake-init)
+  (after-init . my/flymake-global-init)
   :config
-  (defun my/flymake-init ()
-    "Flymake mode initialization function."
+  (defun my/flymake-global-init ()
+    "Global init function for `flymake-mode'."
     ;; Tell Flymake about the value of `load-path' late in the startup sequence.
     ;; See: https://emacs.stackexchange.com/a/72754.
     (setq elisp-flymake-byte-compile-load-path load-path)))
@@ -1776,54 +1762,131 @@ as there appears to be a bug in the current version."
 
 ;;;;;; Rust
 
+(use-package rust-ts-mode
+  :straight nil
+  ;; Demand to register .rs files in `auto-mode-alist'.
+  :demand t
+  :hook
+  (rust-ts-mode . my/rust-ts-mode-init)
+  :config
+  ;; Custom function to be used for `treesit-defun-name-function' that
+  ;; handles a wider range of node types the one provided by `rust-ts-mode'.
+  (defun my/treesit-rust-defun-name (node)
+    "Return the defun name of NODE for Rust node types."
+    (pcase (treesit-node-type node)
+      ("const_item"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ("macro_definition"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ("trait_item"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ;; Call the default value of `treesit-defun-name-function'.
+      (_ (rust-ts-mode--defun-name node))))
+
+  (defun my/rust-ts-mode-init ()
+    "Init function for `rust-ts-mode'."
+    ;; Override the default function used by tree-sitter to turn a node into
+    ;; the name that is displayed by imenu.
+    (setq-local treesit-defun-name-function #'my/treesit-rust-defun-name)
+
+    ;; Override the imenu 'categories for Rust as the defaults leave out quite
+    ;; a few node types. See possible node types here:
+    ;; https://github.com/tree-sitter/tree-sitter-rust/blob/0a70e15da977489d954c219af9b50b8a722630ee/src/node-types.json.
+    (setq-local treesit-simple-imenu-settings
+                '(("Associated Type" "\\`type_item\\'" nil nil)
+                  ("Constant" "\\`const_item\\'" nil nil)
+                  ("Enumeration" "\\`enum_item\\'" nil nil)
+                  ("Function" "\\`function_item\\'" nil nil)
+                  ("Implementation" "\\`impl_item\\'" nil nil)
+                  ("Macro" "\\`macro_definition\\'" nil nil)
+                  ("Module" "\\`mod_item\\'" nil nil)
+                  ("Static" "\\`static_item\\'" nil nil)
+                  ("Struct" "\\`struct_item\\'" nil nil)
+                  ("Trait" "\\`trait_item\\'" nil nil))))
+
+  ;; Update `consult-imenu-config' with the symbol categories for Rust.
+  (with-eval-after-load 'consult-imenu
+    (add-to-list 'consult-imenu-config
+                 '(rust-ts-mode
+                   :types ((?a "Associated Type" font-lock-type-face)
+                           (?c "Constant" font-lock-constant-face)
+                           (?e "Enumeration" font-lock-constant-face)
+                           (?f "Function" font-lock-function-name-face)
+                           (?i "Implementation" font-lock-type-face)
+                           (?M "Macro" font-lock-preprocessor-face)
+                           (?m "Module" font-lock-keyword-face)
+                           (?S "Static" font-lock-preprocessor-face)
+                           (?s "Struct" font-lock-operator-face)
+                           (?t "Trait" font-lock-type-face))))))
+
 (use-package rustic
+  ;; TODO: Look at reintegrating Rustic when it provides tree-sitter support.
+  ;; This package is not disabled as I want to use the `rustic-*' functions.
+  ;; However, `rustic-mode' should not be run as it is mapped to `rust-ts-mode'
+  ;; in `major-mode-remap-alist'. See: https://github.com/brotzeit/rustic/issues/475.
   :general
-  (my/bind-ide :keymaps 'rustic-mode-map
+  (my/bind-ide :keymaps 'rust-ts-mode-map
     "tt" #'rustic-cargo-current-test)
   :custom
   (rustic-lsp-client 'eglot))
 
 ;;;;;; Go
 
-(use-package go-mode
-  :commands (go-play-buffer go-play-region)
-  :general
-  (my/bind-ide :keymaps 'go-mode-map
-    ;; Build.
-    "br" #'go-run
-    ;; Help.
-    "hp" #'my/go-play-dwim
-    ;; Refactor.
-    "rt" #'go-tag-add
-    "rT" #'go-tag-remove
-    "rg" #'go-gen-test-dwim
-    "ri" #'go-impl
-    ;; Test.
-    "tf" #'go-test-current-file
-    "tt" #'go-test-current-test)
-
+(use-package go-ts-mode
+  :straight nil
+  ;; Demand to register .go files in `auto-mode-alist'.
+  :demand t
   :hook
-  (go-mode . (lambda () (setq-local tab-width 4)))
-
-  :custom
-  (go-play-browse-function #'browse-url)
-
-  :init
-  ;; Remove the default `go-mode' keybindings.
-  (setq go-mode-map (make-sparse-keymap))
-
+  (go-ts-mode . my/go-ts-mode-init)
   :config
-  (defun my/go-play-dwim ()
-    "Opens Go Playground for the buffer or region (if active)."
-    (interactive)
-    (if (region-active-p)
-        (go-play-region (region-beginning) (region-end))
-      (go-play-buffer))))
+  (defun my/treesit-go-defun-name (node)
+    "Return the defun name of NODE for Go node types."
+    (pcase (treesit-node-type node)
+      ("const_spec"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ("var_spec"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      (_ (go-ts-mode--defun-name node))))
 
-(use-package gotest)
-(use-package go-tag)
-(use-package go-gen-test)
-(use-package go-impl)
+  ;; See possible node types here:
+  ;; https://github.com/tree-sitter/tree-sitter-go/blob/bbaa67a180cfe0c943e50c55130918be8efb20bd/src/node-types.json.
+  (defun my/go-ts-mode-init ()
+    "Init function for `go-ts-mode'."
+    (setq-local tab-width 4)
+    (setq-local treesit-defun-name-function #'my/treesit-go-defun-name)
+    (setq-local treesit-simple-imenu-settings
+                '(("Constant" "\\`const_spec\\'" nil nil)
+                  ("Function" "\\`function_declaration\\'" nil nil)
+                  ("Interface" "\\`type_declaration\\'" go-ts-mode--interface-node-p nil)
+                  ("Method" "\\`method_declaration\\'" nil nil)
+                  ("New Type" "\\`type_declaration\\'" go-ts-mode--other-type-node-p nil)
+                  ("Struct" "\\`type_declaration\\'" go-ts-mode--struct-node-p nil)
+                  ("Type Alias" "\\`type_declaration\\'" go-ts-mode--alias-node-p nil)
+                  ;; Unfortunately, this also includes local variables.
+                  ("Variable" "\\`var_spec\\'" nil nil))))
+
+  (with-eval-after-load 'consult-imenu
+    (add-to-list 'consult-imenu-config
+                 '(go-ts-mode
+                   :types ((?c "Constant" font-lock-variable-name-face)
+                           (?f "Function" font-lock-function-name-face)
+                           (?i "Interface" font-lock-type-face)
+                           (?m "Method" font-lock-keyword-face)
+                           (?t "New Type" font-lock-type-face)
+                           (?s "Struct" font-lock-type-face)
+                           (?a "Type Alias" font-lock-type-face)
+                           (?v "Variable" font-lock-variable-name-face))))))
+
+(use-package gotest
+  :general
+  (my/bind-ide :keymaps 'go-ts-mode-map
+    "tf" #'go-test-current-file
+    "tt" #'go-test-current-test))
+
+(use-package go-gen-test
+  :general
+  (my/bind-ide :keymaps 'go-ts-mode-map
+    "rg" #'go-gen-test-dwim))
 
 ;;;;;; Terraform
 
@@ -1863,7 +1926,14 @@ as there appears to be a bug in the current version."
 ;;;;;; Protobuf
 
 (use-package protobuf-mode
-  :mode "\\.proto\\'")
+  :mode "\\.proto\\'"
+  :config
+  (with-eval-after-load 'consult-imenu
+    (add-to-list 'consult-imenu-config
+                 '(protobuf-mode
+                   :types ((?s "Service" font-lock-function-name-face)
+                           (?m "Message" font-lock-variable-name-face)
+                           (?e "Enum" font-lock-constant-face))))))
 
 ;;;;;; Bazel
 
@@ -1900,10 +1970,11 @@ as there appears to be a bug in the current version."
 
 ;;;;;; YAML
 
-(use-package yaml-mode
-  :mode
-  ("\\.yml\\'"  . yaml-mode)
-  ("\\.yaml\\'" . yaml-mode))
+(use-package yaml-ts-mode)
+
+;;;;;; JSON
+
+(use-package json-ts-mode)
 
 ;;;;;; Jsonnet
 
@@ -1922,7 +1993,7 @@ as there appears to be a bug in the current version."
 
   :config
   (defun my/elisp-init ()
-    "Elisp mode initialization function."
+    "Init function for `emacs-lisp-mode'."
     (setq-local fill-column 80)
     (setq-local outline-regexp ";;;+ [^\n]")
     (outline-minor-mode 1)
@@ -2369,7 +2440,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 
   :config
   (defun my/org-init ()
-    "Org mode initialization function."
+    "Init function for `org-mode'."
     (interactive)
     (org-indent-mode 1)
     (visual-line-mode 1)
@@ -2469,7 +2540,7 @@ specified then a task category will be determined by the item's tags."
   (advice-add #'org-agenda-quit :before #'org-save-all-org-buffers)
 
   ;; Make it easier to create `org-babel' code blocks.
-  (add-to-list #'org-structure-template-alist '("el" . "src emacs-lisp")))
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")))
 
 (use-package org-cliplink)
 
