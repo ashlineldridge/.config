@@ -83,6 +83,7 @@ emacs-install:
 	brew install emacs-plus@$(EMACS_VERSION) \
 		--with-imagemagick \
 		--with-no-frame-refocus \
+		--with-poll \
 		--with-native-comp \
 		--with-savchenkovaleriy-big-sur-icon
 
