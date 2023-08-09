@@ -1595,7 +1595,30 @@ as there appears to be a bug in the current version."
                  #'cape-file)))
 
   ;; See: https://github.com/minad/corfu/wiki#filter-list-of-all-possible-completions-with-completion-style-like-orderless.
-  (add-to-list 'completion-category-overrides '(eglot (styles orderless))))
+  (add-to-list 'completion-category-overrides '(eglot (styles orderless)))
+
+  ;; Configure rust-analyzer.
+  (add-to-list
+   'eglot-server-programs
+   '((rust-mode rust-ts-mode) .
+     ("rust-analyzer" :initializationOptions
+      (:procMacro (:enable t)
+       :cargo (:buildScripts (:enable t) :features "all")))))
+
+  ;; Configure gopls.
+  (add-to-list
+   'eglot-server-programs
+   '((go-mode go-ts-mode) .
+     ("gopls" :initializationOptions
+      ;; Configure Go inlay hints. See all options:
+      ;; https://github.com/golang/tools/blob/master/gopls/doc/inlayHints.md.
+      (:hints (:parameterNames t
+               :rangeVariableTypes t
+               :functionTypeParameters t
+               :assignVariableTypes t
+               :compositeLiteralFields t
+               :compositeLiteralTypes t
+               :constantValues t))))))
 
 (use-package consult-eglot
   :after eglot
