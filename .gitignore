@@ -13,6 +13,9 @@ emacs/var/straight/versions/*
 # completely work for the eln-cache directory.
 # See: https://github.com/emacscollective/no-littering/discussions/206.
 emacs/eln-cache/
+# This is tree-sitter's default download location.
+# I manually move the libs to emacs/var/tree-sitter/.
+emacs/tree-sitter/
 # This file maintains work-specific config I don't want public.
 emacs/early-init-private.el
 # This file mostly appears temporarily but can sometimes hang around.

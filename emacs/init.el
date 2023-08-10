@@ -20,7 +20,7 @@
 ;;;; Keybinding Management
 
 (use-package general
-  :commands general-auto-unbind-keys
+  :commands (general-auto-unbind-keys general-define-key)
   :config
   ;; General Approach to Keybinding:
   ;;
@@ -34,7 +34,7 @@
   ;;
   ;; Embark action keymaps are used to mirror the relevant parts of the "M-i"
   ;; and "M-s" layouts in a way that acts on the symbol under point. E.g.
-  ;; `embark-act' + "r r" renames the symbol, `embark-act' + "s s" uses ripgrep
+  ;; `embark-act' + "a r" renames the symbol, `embark-act' + "s s" uses ripgrep
   ;; to search the project for the symbol, etc.
 
   ;; Automatically unbind non-prefix keys when used.
@@ -47,7 +47,8 @@
   (general-create-definer my/bind-c-c :prefix "C-c")
   (general-create-definer my/bind-c-x :prefix "C-x"))
 
-(use-package hydra)
+(use-package transient
+  :commands transient-get-value)
 
 ;;;; Base Settings
 
@@ -101,6 +102,7 @@
     "b2" #'recompile)
 
   :custom
+  (confirm-kill-emacs #'yes-or-no-p)
   (inhibit-startup-message t)
   (tool-bar-mode nil)
   (tooltip-mode nil)
@@ -126,9 +128,12 @@
   (fill-column 100)
   (column-number-mode t)
   (global-auto-revert-mode t)
+  (global-hl-line-mode t)
   (async-shell-command-buffer 'new-buffer)
   (savehist-mode t)
   (electric-pair-mode t)
+  (electric-pair-inhibit-predicate #'my/electric-pair-inhibit)
+  (repeat-mode t)
   ;; Increase margins slightly.
   (fringe-mode 5)
   ;; Ignore any changes made via the customization UI.
@@ -229,6 +234,11 @@
     (invert-face 'mode-line)
     (run-with-timer 0.1 nil 'invert-face 'mode-line))
 
+  (defun my/electric-pair-inhibit (c)
+    "Return whether C should be excluded from pairing."
+    ;; Exclude '<' as I want that for triggering Tempel.
+    (if (char-equal c ?<) t (electric-pair-default-inhibit c)))
+
   ;; Prefer running a single instance of Emacs in server mode.
   (require 'server)
   (unless (server-running-p)
@@ -236,89 +246,98 @@
 
 ;;;; Appearance
 
-;;;;; Theme
+;;;;; Themes
 
-;; The Modus themes are pre-installed into Emacs 28+ but I pull latest.
+;; The Modus themes are pre-installed now but pull latest.
 (use-package modus-themes
-  :functions my/apply-font-config
-  :general
-  (general-def
-    "<f12>" #'my/cycle-font-config)
+  :commands modus-themes-load-theme
+  :hook
+  (emacs-startup . (lambda () (modus-themes-load-theme 'modus-vivendi)))
+
   :custom
+  (modus-themes-to-toggle '(modus-vivendi modus-operandi-tritanopia))
   (modus-themes-italic-constructs t)
-  (modus-themes-region '(no-extend accented))
-  (modus-themes-mode-line '(borderless))
-  (modus-themes-paren-match '(intense underline))
-  (modus-themes-prompts '(bold intense))
+  (modus-themes-custom-auto-reload t)
+  (modus-themes-prompts '(bold))
   (modus-themes-org-blocks 'gray-background)
-  (modus-themes-fringes nil)
   (modus-themes-headings
    '((1 . (variable-pitch rainbow background 1.3))
      (2 . (variable-pitch rainbow background semibold 1.2))
      (3 . (variable-pitch rainbow background semibold 1.1))
-     (t . (variable-pitch rainbow semilight 1.1))))
+     (t . (variable-pitch rainbow semilight 1.1)))))
 
-  :init
-  (load-theme 'modus-vivendi t)
+;;;;; Fonts
+
+(use-package faces
+  :straight nil
+  :general
+  (general-def
+    "<f12>" #'my/cycle-font-config)
+
+  :hook
+  ;; Update fonts after theme is loaded so changes take effect.
+  (modus-themes-post-load . my/apply-font-config)
+
+  :config
+  (defvar my/font-config-index 0)
+  (defvar my/fixed-font "Iosevka Comfy")
+  (defvar my/variable-font "Iosevka Comfy Duo")
 
   (defvar my/font-configs
     '((:name "Laptop"
-       :fixed-font "Iosevka Comfy"
        :fixed-font-height 140
-       :variable-font "Iosevka Comfy Duo"
        :variable-font-height 140
        :line-number-font-height 120
        :mode-line-font-height 130)
       (:name "Desktop"
-       :fixed-font "Iosevka Comfy"
        :fixed-font-height 148
-       :variable-font "Iosevka Comfy Duo"
        :variable-font-height 148
        :line-number-font-height 124
        :mode-line-font-height 140)))
 
-  (defun my/apply-font-config (index)
+  (defun my/apply-font-config (&optional index)
     "Apply the INDEX'th font configuration from `my/font-configs'."
-    (let* ((config (nth index my/font-configs))
+    (let* ((index (or index my/font-config-index))
+           (config (nth index my/font-configs))
            (name (plist-get config :name))
-           (fixed-font (plist-get config :fixed-font))
            (fixed-font-height (plist-get config :fixed-font-height))
-           (variable-font (plist-get config :variable-font))
            (variable-font-height (plist-get config :variable-font-height))
            (line-number-font-height (plist-get config :line-number-font-height))
            (mode-line-font-height (plist-get config :mode-line-font-height)))
       (set-face-attribute 'default nil
-                          :font fixed-font
+                          :font my/fixed-font
                           :height fixed-font-height)
       (set-face-attribute 'fixed-pitch nil
-                          :font fixed-font
+                          :font my/fixed-font
                           :height fixed-font-height)
       (set-face-attribute 'variable-pitch nil
-                          :font variable-font
+                          :font my/variable-font
                           :height variable-font-height)
       (set-face-attribute 'mode-line nil
-                          :font fixed-font
+                          :font my/fixed-font
                           :height mode-line-font-height)
       (set-face-attribute 'mode-line-inactive nil
-                          :font fixed-font
+                          :font my/fixed-font
                           :height mode-line-font-height)
       (set-face-attribute 'line-number nil
-                          :font fixed-font
+                          :font my/fixed-font
                           :height line-number-font-height
                           :slant 'italic)
-      (message "Applied font configuration: %s" name)))
 
-  (defvar my/font-config-index 0)
+      ;; Use fixed pitch for appropriate org elements (use C-u C-x = to
+      ;; determine the font face of the character under point). Note that
+      ;; `modus-themes-mixed-fonts' can also be used to achieve this.
+      (require 'org-faces)
+      (dolist (face '(org-block org-table))
+        (set-face-attribute face nil :inherit 'fixed-pitch))
+      (message "Applied font configuration: %s" name)))
 
   (defun my/cycle-font-config ()
     "Cycle to the next font configuration."
     (interactive)
     (setq my/font-config-index (mod (+ my/font-config-index 1)
                                     (length my/font-configs)))
-    (my/apply-font-config my/font-config-index))
-
-  ;; Apply the initial font configuration.
-  (my/apply-font-config my/font-config-index))
+    (my/apply-font-config my/font-config-index)))
 
 ;;;;; Icons
 
@@ -376,8 +395,10 @@
 ;;;;; Window Manipulation and Selection
 
 (use-package ace-window
-  :after consult
-  :commands (aw-switch-to-window aw-delete-window)
+  :commands
+  (aw-switch-to-window
+   aw-delete-window
+   aw-select)
   :general
   (general-def
     "M-o" #'ace-window)
@@ -425,6 +446,10 @@
 
 (use-package window
   :straight nil
+  :general
+  (general-def
+    "C-o" '(:keymap my/window-map))
+
   :custom
   ;; The following provides the default `display-buffer' behaviour for buffers
   ;; that are not managed by either Popper or Shackle.
@@ -432,22 +457,31 @@
                                  display-buffer-reuse-window
                                  display-buffer-same-window)))
   (even-window-sizes nil)
-  :init
-  (defhydra my/hydra-manage-windows (global-map "C-o")
-    ("a" ace-window :exit t)
-    ("p" previous-window-any-frame :exit t)
-    ("<left>" shrink-window-horizontally)
-    ("<right>" enlarge-window-horizontally)
-    ("<down>" shrink-window)
-    ("<up>" enlarge-window)
-    ("=" balance-windows :exit t)
-    ("]" rotate-frame-clockwise)
-    ("[" rotate-frame-anticlockwise)
-    ("x" flip-frame :exit t) ;; Flip about x-axis.
-    ("y" flop-frame :exit t) ;; Flip about y-axis.
-    ("u" winner-undo :exit t)
-    ("r" winner-redo :exit t)
-    ("q" nil)))
+
+  :config
+  (defvar-keymap my/window-map
+    :doc "Keymap for window commands."
+    "=" #'balance-windows
+    "o" #'other-window
+    "C-o" #'previous-window-any-frame
+    "b" #'shrink-window-horizontally
+    "f" #'enlarge-window-horizontally
+    "n" #'enlarge-window
+    "p" #'shrink-window
+    "]" #'rotate-frame-clockwise
+    "[" #'rotate-frame-anticlockwise
+    "x" #'flip-frame
+    "y" #'flop-frame
+    "u" #'winner-undo
+    "r" #'winner-redo)
+
+  ;; Use `my/window-map' as the repeat map for the window commands. This allows
+  ;; all window commands to be repeated with only the final key.
+  (map-keymap
+   (lambda (_key cmd)
+     (when (symbolp cmd)
+       (put cmd 'repeat-map 'my/window-map)))
+   my/window-map))
 
 ;;;;; Window Placement
 
@@ -462,8 +496,9 @@
   :custom
   (shackle-default-rule nil)
   (shackle-rules
-   '(("*rg*" :select t :other t)
-     ("*helpful" :select t :other t :regexp t)))
+   '(("*eldoc" :select nil :other t :regexp t)
+     ("*helpful" :select t :other t :regexp t)
+     ("*rg*" :select t :other t)))
   :init
   (shackle-mode 1))
 
@@ -491,9 +526,7 @@
      "\\*Backtrace\\*"
      "\\*Breakpoints\\*"
      "\\*Pp Macroexpand Output\\*"
-     "\\*Flycheck "
-     "\\*Help\\*"
-     "\\*eldoc for "
+     "\\*Flymake "
      "\\*eshell-output\\*"
      "CAPTURE-.*\\.org"
      "\\*Call Hierarchy\\*"
@@ -535,13 +568,19 @@
   :general
   (general-def
     "C-h c" #'helpful-callable
-    "C-h ." #'helpful-at-point
     ;; Replace `describe-*' bindings with Helpful.
     [remap describe-function] #'helpful-function
     [remap describe-symbol] #'helpful-symbol
     [remap describe-variable] #'helpful-variable
     [remap describe-command] #'helpful-command
-    [remap describe-key] #'helpful-key))
+    [remap describe-key] #'helpful-key)
+  (general-def 'emacs-lisp-mode-map
+    ;; Replace `display-local-help' with Helpful.
+    "C-h ." #'helpful-at-point)
+
+  :custom
+  ;; Required so that I can tell Shackle NOT to select Helpful buffers.
+  (helpful-switch-buffer-function #'display-buffer))
 
 (use-package which-key
   :commands (which-key-mode which-key-add-key-based-replacements)
@@ -578,13 +617,13 @@
   ;; delay configured below).
   (corfu-auto t)
   ;; Number of typed characters before Corfu will display its pop-up.
-  (corfu-auto-prefix 1)
+  (corfu-auto-prefix 3)
   ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This
   ;; setting only applies after the minimum number of prefix characters have
   ;; been entered. This is really useful to keep so that short words that you
   ;; don't want autocompleted don't trigger the Corfu pop-up (and subsequent
   ;; completion which inserts a space after the completed word).
-  (corfu-auto-delay 0.3)
+  (corfu-auto-delay 0.5)
   ;; Automatically select the first candidate if it does not reference a
   ;; directory. This makes the eshell experience a little more natural.
   (corfu-preselect 'directory)
@@ -625,8 +664,8 @@
   :general
   (general-def 'corfu-map
     "M-d" #'corfu-popupinfo-toggle
-    "M-p" #'corfu-popupinfo-scroll-down
-    "M-n" #'corfu-popupinfo-scroll-up)
+    "<up>" #'corfu-popupinfo-scroll-down
+    "<down>" #'corfu-popupinfo-scroll-up)
   :hook
   (corfu-mode . corfu-popupinfo-mode)
   :custom
@@ -637,6 +676,9 @@
   :after corfu
   :commands kind-icon-margin-formatter
   :defines corfu-margin-formatters
+  :hook
+  ;; After toggling between themes the icon cache needs to be reset.
+  (modus-themes-post-load . kind-icon-reset-cache)
   :custom
   (kind-icon-default-face 'corfu-default)
   :init
@@ -714,14 +756,10 @@
 ;; Dedicated completion commands.
 (use-package cape
   :commands cape-super-capf
-  :functions
-  (pcomplete-completions-at-point lsp-completion-at-point)
   :general
   (general-def
     "C-r" #'my/cape-history)
   (my/bind-c-c
-    "pp" #'completion-at-point
-    "pt" #'complete-tag
     "pd" #'cape-dabbrev
     "ph" #'cape-history
     "pf" #'cape-file
@@ -729,15 +767,7 @@
     "ps" #'cape-symbol
     "pa" #'cape-abbrev
     "pl" #'cape-line
-    "py" #'cape-yasnippet
     "pw" #'cape-dict)
-
-  :hook
-  (emacs-lisp-mode . my/init-elisp-capfs)
-  (eshell-mode . my/init-eshell-capfs)
-  (minibuffer-mode . my/init-eshell-capfs)
-  (org-mode . my/init-org-capfs)
-  (lsp-completion-mode . my/init-lsp-capfs)
 
   :custom
   ;; Only show dabbrev candidates of a minimum length to avoid being annoying.
@@ -746,46 +776,11 @@
   (cape-dabbrev-check-other-buffers nil)
 
   :init
-  (use-package cape-yasnippet
-    :after yasnippet
-    :straight
-    (:host github :repo "elken/cape-yasnippet")
-    :custom
-    (cape-yasnippet-lookup-by 'key))
-
   (defun my/cape-history ()
     "Version of `cape-history' that runs as an in-buffer completion."
     (interactive)
     (let ((completion-at-point-functions (list #'cape-history)))
-      (completion-at-point)))
-
-  ;; These separate completion setup functions are a work-in-progress.
-  ;; See: https://github.com/minad/corfu/wiki#using-cape-to-tweak-and-combine-capfs.
-  (defun my/init-elisp-capfs ()
-    "Configure CAPFs to be used for `emacs-lisp-mode'."
-    (setq-local completion-at-point-functions
-                (list #'elisp-completion-at-point #'cape-file)))
-
-  (defun my/init-eshell-capfs ()
-    "Configure CAPFs to be used for `eshell-mode'."
-    (setq-local completion-at-point-functions (list
-                                               #'pcomplete-completions-at-point
-                                               #'cape-file
-                                               #'cape-dabbrev)))
-
-  (defun my/init-org-capfs ()
-    "Configure CAPFs to be used for `org-mode'."
-    (setq-local completion-at-point-functions
-                (list #'cape-file)))
-
-  (defun my/init-lsp-capfs ()
-    "Configure CAPFs to be used for `lsp-mode'."
-    ;; See: https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
-    (setf (alist-get 'styles (alist-get 'lsp-capf completion-category-defaults))
-          '(orderless))
-    (setq-local completion-at-point-functions
-                (list
-                 (cape-super-capf #'lsp-completion-at-point #'cape-yasnippet)))))
+      (completion-at-point))))
 
 ;; Orderless configuration mostly taken from:
 ;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
@@ -809,11 +804,14 @@
   :commands
   (consult--buffer-state
    consult--buffer-action
-   consult--buffer-query)
+   consult--buffer-query
+   consult--customize-put)
+  :defines consult-imenu-config
 
   :general
   (general-def
     "C-s" #'consult-line
+    "C-S-s" #'my/consult-line-strict
     "M-g M-g" #'consult-goto-line
     "M-y" #'consult-yank-pop)
 
@@ -836,18 +834,21 @@
   (my/bind-search
     "a" #'consult-org-agenda
     "f" #'consult-find
-    "l" #'consult-line
-    "L" #'my/consult-line-strict
+    "l" #'consult-flymake
     "s" #'consult-ripgrep
     "i" #'consult-imenu
     "I" #'consult-imenu-multi
     "m" #'consult-bookmark
     "g" #'consult-goto-line
     "-" #'consult-outline
+    "=" #'consult-focus-lines
     "SPC" #'consult-mark
     "S-SPC" #'consult-global-mark)
 
   :custom
+  (register-preview-delay 0.5)
+  (register-preview-function #'consult-register-format)
+
   ;; Type < followed by a prefix key to narrow the available candidates.
   ;; Type C-< (defined above) to display prefix help. Alternatively, type
   ;; < followed by C-h (or ?) to make `embark-prefix-help-command' kick in
@@ -884,50 +885,6 @@
   ;; Tell `consult-find' to search hidden dirs/files but ignore .git/.
   (consult-find-args "find . -not ( -name .git -type d -prune )")
 
-  ;; Customize `consult-imenu' groupings for languages I regularly use. The
-  ;; imenu backend for each language will return the symbol category strings
-  ;; used below. For Rust and Go, the imenu backend is implemented by their
-  ;; respective LSP servers. The font faces are chosen for aesthetics only.
-  ;; If a symbol category is missing from the alists below the symbols for
-  ;; that category will be displayed in an ungrouped way and the line will be
-  ;; prefixed with the category name - it can then; be added below. See the
-  ;; `lsp-imenu-symbol-kinds' variable and also:
-  ;; https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#symbolKind.
-  (consult-imenu-config
-   '((emacs-lisp-mode
-      ;; This configuration is copied directly from consult-imenu.el as I'd
-      ;; prefer to set `consult-imenu-config' idempotently within :custom.
-      :toplevel "Functions"
-      :types ((?f "Functions" font-lock-function-name-face)
-              (?m "Macros" font-lock-function-name-face)
-              (?p "Packages" font-lock-constant-face)
-              (?t "Types" font-lock-type-face)
-              (?v "Variables" font-lock-variable-name-face)))
-     (rustic-mode
-      :types ((?f "Functions" font-lock-function-name-face)
-              (?F "Fields" font-lock-variable-name-face)
-              (?s "Structs" font-lock-type-face)
-              (?i "Interfaces" font-lock-type-face)
-              (?c "Constants" font-lock-constant-face)
-              (?m "Modules" font-lock-type-face)
-              (?o "Objects" font-lock-type-face)
-              (?e "Enums" font-lock-constant-face)
-              (?E "Enum Members" font-lock-variable-name-face)
-              (?t "Type Parameters" font-lock-type-face)))
-     (go-mode
-      :types ((?f "Functions" font-lock-function-name-face)
-              (?m "Methods" font-lock-function-name-face)
-              (?F "Fields" font-lock-variable-name-face)
-              (?s "Structs" font-lock-type-face)
-              (?i "Interfaces" font-lock-type-face)
-              (?v "Variables" font-lock-variable-name-face)
-              (?c "Constants" font-lock-constant-face)))
-     (protobuf-mode
-      ;; The imenu symbols in `protobuf-mode' aren't pluralized.
-      :types ((?s "Service" font-lock-function-name-face)
-              (?m "Message" font-lock-variable-name-face)
-              (?e "Enum" font-lock-constant-face)))))
-
   :config
   (defun my/consult-line-strict (&optional initial start)
     "Version of `consult-line' that uses a strict substring completion style."
@@ -950,7 +907,6 @@
                  :as #'buffer-name
                  :mode 'eshell-mode))))
 
-
   (consult-customize
    ;; Source name and narrow key customization.
    consult--source-buffer :name "Open Buffer" :narrow ?b
@@ -964,7 +920,7 @@
    consult-line
    consult-mark
    consult-global-mark
-   consult-lsp-file-symbols
+   consult-flymake
    :preview-key 'any))
 
 (use-package consult-dir
@@ -976,19 +932,10 @@
   (consult-dir-shadow-filenames nil)
   (consult-dir-default-command #'consult-dir-dired))
 
-(use-package consult-lsp
-  :commands
-  (consult-lsp-symbols consult-lsp-file-symbols)
-  :custom
-  (consult-lsp-marginalia-mode t))
-
-(use-package consult-yasnippet)
-
 (use-package embark
   :commands
   (embark-prefix-help-command
    embark-target-identifier-at-point)
-  :functions my/embark-target-lsp-identifier-at-point
 
   :general
   (general-def
@@ -1010,14 +957,20 @@
                  embark-symbol-map)
     "s]" #'embark-isearch-forward
     "s[" #'embark-isearch-backward
+    "s^" #'eglot-find-implementation
     "sh" #'embark-toggle-highlight
     "sl" #'consult-line
+    "so" #'consult-eglot-symbols
     "ss" #'consult-ripgrep
-    "su" #'xref-find-references
     "st" #'xref-find-definitions
+    "su" #'xref-find-references
     "sP" #'my/rg-dwim-project-dir
     "sD" #'my/rg-dwim-current-dir
     "sF" #'rg-dwim-current-file)
+
+  (general-def 'embark-identifier-map
+    "aa" #'eglot-code-actions
+    "ar" #'eglot-rename)
 
   (general-def 'embark-file-map
     "o" (my/embark-ace-window-action find-file))
@@ -1052,45 +1005,13 @@
       (embark-prefix-help-command)))
 
   :config
-  ;; Embark x LSP integration.
-  (with-eval-after-load 'lsp-mode
-    ;; Custom identification of LSP identifiers.
-    (defun my/embark-target-lsp-identifier-at-point ()
-      "Return LSP identifier at point for Embark or nil."
-      (when lsp-mode
-        (when-let ((sym (embark-target-identifier-at-point)))
-          (cons 'lsp-identifier (cdr (car sym))))))
-
-    (defun my/embark-consult-lsp-file-symbols ()
-      (interactive)
-      (let ((location (read-from-minibuffer "")))
-        (message "Location is: %s" location)
-        (consult-lsp-file-symbols)))
-
-    (add-to-list 'embark-target-finders #'my/embark-target-lsp-identifier-at-point)
-
-    (defvar-keymap my/embark-lsp-identifier-map
-      :doc "Keymap for Embark LSP identifier actions."
-      :parent embark-identifier-map
-      "h h" #'lsp-ui-doc-glance
-      "h d" #'lsp-describe-thing-at-point
-      "r a" #'lsp-execute-code-action
-      "r r" #'lsp-rename
-      "s c" #'lsp-treemacs-call-hierarchy
-      "s y" #'lsp-find-implementation
-      "s o" #'consult-lsp-symbols
-      "s O" #'consult-lsp-file-symbols)
-
-    ;; Associate the LSP action map with the 'lsp-identifier symbol.
-    (add-to-list 'embark-keymap-alist '(lsp-identifier . my/embark-lsp-identifier-map))
-
-    ;; Adapt the associated commands so that they are usable as Embark actions.
-    ;; If commands don't behave properly with Embark, play with this. Look at
-    ;; similar commands already in `embark-target-injection-hooks' and mimic.
-    (add-to-list 'embark-target-injection-hooks '(lsp-rename embark--ignore-target))
-    (add-to-list 'embark-target-injection-hooks '(lsp-find-implementation embark--ignore-target))
-    (add-to-list 'embark-target-injection-hooks '(consult-lsp-symbols embark--allow-edit))
-    (add-to-list 'embark-target-injection-hooks '(consult-lsp-file-symbols embark--allow-edit)))
+  ;; Adapt the associated commands so that they are usable as Embark actions.
+  ;; If commands don't behave properly with Embark, play with this. Look at
+  ;; similar commands already in `embark-target-injection-hooks' and mimic.
+  (add-to-list 'embark-target-injection-hooks '(eglot-code-actions embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(eglot-rename embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
 
   ;; Macro for defining an Embark action that executes FN using an `ace-window'
   ;; selected window. Taken from:
@@ -1127,12 +1048,12 @@
   ;; Org-roam nodes have their own Embark category and hence need their own
   ;; keymap to act on them.
   (defvar-keymap my/embark-org-roam-node-map
-    :doc "Keymap for Embark `org-roam-node' actions"
+    :doc "Keymap for Embark `org-roam-node' actions."
     :parent embark-general-map
     "o" (my/embark-ace-window-action org-roam-node-find))
 
   (defvar-keymap my/embark-consult-xref-map
-    :doc "Keymap for Embark `consult-xref' actions"
+    :doc "Keymap for Embark `consult-xref' actions."
     :parent embark-general-map
     "o" (my/embark-ace-window-action my/goto-consult-xref))
 
@@ -1146,7 +1067,12 @@
   (embark-collect-mode . consult-preview-at-point-mode))
 
 (use-package rg
-  :commands rg-menu
+  :commands
+  (rg-menu
+   rg-run
+   rg-project-root
+   rg-read-pattern
+   rg-tag-default)
   :functions popper--bury-all
   :general
   (my/bind-search
@@ -1208,8 +1134,8 @@
   (general-def
     "C-=" #'er/expand-region
     "C-+" #'er/mark-outside-pairs
-    "C-\\" #'er/mark-symbol
-    "C-|" #'er/mark-defun)
+    "C-_" #'er/mark-symbol
+    "C-\\" #'er/mark-defun)
   :custom
   (expand-region-fast-keys-enabled nil))
 
@@ -1538,9 +1464,7 @@ as there appears to be a bug in the current version."
   ;; Disable built-in `auto-save-mode' as this replaces it.
   (auto-save-default nil)
   (super-save-auto-save-when-idle t)
-  ;; Large idle duration to avoid programming modes (e.g., Rustic) that perform
-  ;; actions on save from running to eagerly.
-  (super-save-idle-duration 40)
+  (super-save-idle-duration 15)
   (super-save-max-buffer-size 100000)
   :init
   (super-save-mode 1))
@@ -1568,25 +1492,19 @@ as there appears to be a bug in the current version."
 
 ;;;;; Code Templating
 
-(use-package yasnippet
-  :after consult-yasnippet
-  :hook
-  ((text-mode prog-mode eshell-mode) . yas-minor-mode)
+(use-package tempel
+  :commands tempel-complete
   :general
-  (my/bind-c-c
-    "yn" #'yas-new-snippet
-    "yu" #'yas-reload-all
-    "yd" #'yas-describe-tables)
-  (my/bind-c-c :keymaps 'yas-minor-mode-map
-    "yy" #'yas-expand
-    "yi" #'consult-yasnippet
-    "yf" #'yas-visit-snippet-file)
+  (general-def
+    "M-+" #'tempel-insert)
+  (general-def 'tempel-map
+    "<tab>" #'tempel-next
+    "S-<tab>" #'tempel-previous
+    [remap keyboard-quit] #'tempel-done)
 
   :custom
-  (yas-verbosity 1)
-  (yas-wrap-around-region t))
-
-(use-package yasnippet-snippets)
+  (tempel-trigger-prefix "<")
+  (tempel-path (no-littering-expand-etc-file-name "tempel/templates")))
 
 ;;;;; Code Formatting and Linting
 
@@ -1596,323 +1514,103 @@ as there appears to be a bug in the current version."
   (apheleia-global-mode 1)
   :config
   ;; Use goimports rather than gofmt so that imports get optimized.
-  (setf (alist-get 'go-mode apheleia-mode-alist) 'goimports))
+  (setf (alist-get 'go-ts-mode apheleia-mode-alist) 'goimports))
 
-;;;;;; LSP (Language Server Protocol)
+;;;;;; Tree-Sitter
 
-(use-package lsp-mode
-  :functions my/if-essential-advice
+(use-package treesit
+  :straight nil
+  :custom
+  (treesit-extra-load-path (list (no-littering-expand-var-file-name "tree-sitter")))
+  (treesit-font-lock-level 4) ;; Be extra.
+  :config
+  (setq treesit-language-source-alist
+        '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+          (go "https://github.com/tree-sitter/tree-sitter-go")
+          (gomod "https://github.com/camdencheek/tree-sitter-gomod")
+          (json "https://github.com/tree-sitter/tree-sitter-json")
+          (rust "https://github.com/tree-sitter/tree-sitter-rust")
+          (toml "https://github.com/tree-sitter/tree-sitter-toml")
+          (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+  (setq major-mode-remap-alist
+        '((bash-mode . bash-ts-mode)
+          (go-mode . go-ts-mode)
+          (js-json-mode . json-ts-mode)
+          (rust-mode . rust-ts-mode)
+          (rustic-mode . rust-ts-mode)
+          (sh-mode . bash-ts-mode)
+          (toml-mode . toml-ts-mode)
+          (yaml-mode . yaml-ts-mode))))
 
-  :commands
-  (lsp
-   lsp-deferred
-   lsp-register-custom-settings)
+;;;;;; LSP
 
+(use-package eglot
+  :commands eglot-completion-at-point
   :hook
-  ((c-mode
-    c++-mode
-    go-mode
-    rustic-mode
-    sh-mode
-    terraform-mode
-    python-mode) . lsp-deferred)
+  ((bash-ts-mode
+    go-ts-mode
+    rust-ts-mode) . eglot-ensure)
+  (eglot-managed-mode . my/eglot-init)
 
   :general
-  (general-def 'lsp-mode-map
-    "M-p" #'lsp-ui-doc-glance
-    "M-P" #'lsp-describe-thing-at-point
-    "C-M-p" #'lsp-ui-doc-toggle)
+  (my/bind-search :keymaps 'eglot-mode-map
+    "^" #'eglot-find-implementation)
 
-  (my/bind-search :keymaps 'lsp-mode-map
-    "c" #'lsp-treemacs-call-hierarchy
-    "y" #'lsp-find-implementation
-    "I" #'lsp-ui-imenu
-    "o" #'consult-lsp-symbols
-    "O" #'consult-lsp-file-symbols)
-
-  (my/bind-ide :keymaps 'lsp-mode-map
-    ;; Help.
-    "hh" #'lsp-ui-doc-glance
-    "hH" #'lsp-ui-doc-toggle
-    "hd" #'lsp-describe-thing-at-point
-    ;; Peek.
-    "pg" #'lsp-ui-peek-find-definitions
-    "pi" #'lsp-ui-peek-find-implementation
-    "pr" #'lsp-ui-peek-find-references
-    "ps" #'lsp-ui-peek-find-workspace-symbol
-    ;; Refactor.
-    "ra" #'lsp-execute-code-action
-    "ro" #'lsp-organize-imports
-    "rr" #'lsp-rename
-    ;; Toggles.
-    "vl" #'lsp-toggle-trace-io
-    "vi" #'lsp-inlay-hints-mode
+  (my/bind-ide :keymaps 'eglot-mode-map
+    ;; Actions.
+    "aa" #'eglot-code-actions
+    "ao" #'eglot-code-action-organize-imports
+    "ar" #'eglot-rename
     ;; Workspaces.
-    "wq" #'lsp-workspace-shutdown
-    "wr" #'lsp-workspace-restart)
+    "wr" #'eglot-reconnect
+    "wq" #'eglot-shutdown
+    "wQ" #'eglot-shutdown-all)
 
   :custom
-  (lsp-log-io nil)
-
-  ;; No need to also show the count.
-  (lsp-modeline-code-actions-segments '(icon))
-
-  ;; Haven't found a great use for these.
-  (lsp-lens-enable nil)
-
-  ;; The Flycheck modeline segment already displays this.
-  (lsp-modeline-diagnostics-enable nil)
-
-  ;; Display type hints by default (not supported by all language servers).
-  (lsp-inlay-hint-enable t)
-
-  ;; Recommended setting as I'm using Corfu instead of Company for completion.
-  ;; See: https://github.com/minad/corfu/issues/71#issuecomment-977693717
-  (lsp-completion-provider :none)
-
-  ;; Categorise `lsp-ui-imenu' entries by their type (variable, function, etc).
-  (lsp-imenu-index-function #'lsp-imenu-create-categorized-index)
-
-  ;; Close the language server buffer when the last file in the workspace/
-  ;; project is closed.
-  (lsp-keep-workspace-alive nil)
-
-  ;; When `lsp-eldoc-render-all' is set to nil, moving point to a function call
-  ;; should result in a one line function signature being displayed in the
-  ;; minibuffer. There is an issue with lsp-mode and rust-analyzer, however,
-  ;; where what gets displayed is not the function signature but (usually) the
-  ;; type of struct to which the function belongs. However, setting
-  ;; `lsp-eldoc-render-all' to non-nil is even worse as it often results in a
-  ;; huge block of text being displayed that contains too much information.
-  ;; I'm going to disable for now, and use lsp-ui mouse over or
-  ;; `lsp-ui-doc-glance' to view type information.
-  ;; See: https://github.com/emacs-lsp/lsp-mode/issues/2613
-  ;; Also: https://github.com/rust-analyzer/rust-analyzer/issues/3415
-  (lsp-eldoc-render-all nil)
-  (lsp-eldoc-enable-hover nil)
-
-  ;; Disable the displaying of signature help in the minibuffer as it makes the
-  ;; size of the minibuffer expand to show all the additional info which is
-  ;; distracting. Signature help can be obtained from lsp-ui via mouse hover or
-  ;; calling `lsp-ui-doc-glance' explicitly.
-  (lsp-signature-auto-activate nil)
-  (lsp-signature-render-documentation nil)
-
-  ;; The following --query-driver args allow clangd to be used with the
-  ;; compile_commands.json generated by bazel-compilation-database. This is
-  ;; due to the fact that, by default, clangd expects the driver to be a
-  ;; standard compiler executable (e.g. clang++). The log level can be changed
-  ;; to "debug" for additional information.
-  (lsp-clients-clangd-args '("--query-driver=**/wrapped_clang"
-			     "--background-index"
-			     "--log=info"))
-
-  ;; Use "clippy" rather than "check" for additional lints.
-  (lsp-rust-analyzer-cargo-watch-command "clippy")
-
-  ;; Configure lsp-mode to use the official terraform-ls LSP server rather than
-  ;; terraform-lsp which it uses by default and is more experimental.
-  (lsp-terraform-server '("terraform-ls" "serve"))
-
-  :init
-  (defun my/if-essential-advice (f &rest args)
-    "Around advice that invokes F with ARGS if `non-essential' is non-nil."
-    (unless non-essential
-      (apply f args)))
-
-  ;; Advise `lsp-deferred' and `lsp' so that they only run if non-essential is
-  ;; non-nil. This prevents lsp-mode from starting during Consult previews.
-  (advice-add 'lsp :around #'my/if-essential-advice)
-  (advice-add 'lsp-deferred :around #'my/if-essential-advice)
+  (eglot-autoshutdown t)
+  ;; Tree-sitter produces a better imenu.
+  (eglot-stay-out-of '(imenu))
 
   :config
-  ;; Configure custom LSP server settings.
-  ;;
-  ;; For gpls:
-  ;; See: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/emacs.md#configuring-gopls-via-lsp-mode
-  ;; And available settings: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/doc/settings.md
-  ;; Not all experimental settings appear to be documented. For the full list,
-  ;; see: https://github.com/golang/tools/blob/9b5e55b1a7e215a54c9784492d801104a8381a91/gopls/internal/lsp/source/options.go
-  (lsp-register-custom-settings
-   '(("gopls.completeUnimported" t t)
-     ("gopls.staticcheck" t t))))
+  (defun my/eglot-init ()
+    "Init function for `eglot--managed-mode'."
+    (setq-local completion-at-point-functions
+                (list
+                 #'tempel-complete
+                 #'eglot-completion-at-point
+                 #'cape-file)))
 
-(use-package lsp-ui
-  :after lsp-mode
-  :custom
-  (lsp-ui-sideline-delay 0)
-  (lsp-ui-doc-delay 0)
-  (lsp-ui-imenu-auto-refresh t)
-  (lsp-ui-doc-show-with-mouse nil)
-  (lsp-ui-doc-position 'at-point)
-  (lsp-ui-doc-max-width 150)
-  (lsp-ui-doc-max-height 30)
-  (lsp-ui-peek-always-show t))
+  ;; See: https://github.com/minad/corfu/wiki#filter-list-of-all-possible-completions-with-completion-style-like-orderless.
+  (add-to-list 'completion-category-overrides '(eglot (styles orderless)))
 
-;;;;;; DAP (Debug Adapter Protocol)
+  ;; Configure rust-analyzer.
+  (add-to-list
+   'eglot-server-programs
+   '((rust-mode rust-ts-mode) .
+     ("rust-analyzer" :initializationOptions
+      (:procMacro (:enable t)
+       :cargo (:buildScripts (:enable t) :features "all")))))
 
-;; The following DAP configuration is optimised for debugging Rust and Go.
-;; The same keybindings and UI is used across all languages. The Go debugging
-;; workflow follows the recommendations for Go here:
-;; https://emacs-lsp.github.io/dap-mode/page/configuration.
-;;
-;; The Rust debugging workflow does not follow the recommendations for Rust in
-;; the docs linked above as they recommend using rust-gdb which cannot be used
-;; on Apple silicon as gdb doesn't support it yet.
-;;
-;; To work around this and other issues, I've defined my own custom debug
-;; configuration (a DAP provider and a template) for debugging Rust. When
-;; `dap-debug' is run, a configuration named "Rust LLDB Default" will be shown.
-;; When selected, this configuration will prompt for the executable file to be
-;; debugged. Unlike with Go/Delve, the debuggable executable must be recompiled
-;; between code changes. This default configuration does not supply arguments
-;; or environment variables.
-;;
-;; For more advanced Rust debugging scenarios (e.g. args, vars, multiple
-;; binaries, etc), drop a launch.json file at the root of the Rust project
-;; with the following format:
-;;
-;; {
-;;   "version": "0.2.0",
-;;   "configurations": [{
-;;     "name": "Rust LLDB Custom",
-;;     "type": "rust-lldb",
-;;     "request": "launch",
-;;     "program": "${workspaceFolder}/target/debug/axum-full-example",
-;;     "args": [],
-;;     "env": {},
-;;     "cwd": "${workspaceFolder}",
-;;     "stopOnEntry": false,
-;;     "debuggerRoot": "${workspaceFolder}"
-;;   }]
-;; }
-;;
-;; In the example above, replace "axum-full-example" with the name of the
-;; executable. If there are multiple executables, multiple configuration
-;; blocks will be needed and each should have a unique name (e.g.
-;; "Rust LLDB Custom (axum-full-example)", etc).
-;;
-;; When a launch.json file is present, `dap-debug' will show the configurations
-;; that it defines in addition to the ones that are registered below. The
-;; launch.json configurations will be mixed in with the properties set by the
-;; `my/dap-rust-lldb-debug-provider' provider below as long as a type of
-;; "rust-lldb" is specified.
-;;
-;; Note: dap-mode uses `lsp-workspace-root' to determine the root project
-;; directory that should contain the launch.json (or .vscode/launch.json) file.
-;; In projects with submodules where you want to debug a submodule
-;; independently, this can cause problems if `lsp-workspace-root' says that the
-;; project root is higher up the directory tree than you want it to be. If you
-;; get stuck in this cycle you will probably want to delete or edit
-;; ~/.config/emacs/.lsp-session-v1 or find a way to hook into dap-mode/lsp-mode
-;; so the process is a bit smarter.
-(use-package dap-mode
-  :functions
-  (my/project-current-root
-   my/dap-rust-lldb-debug-provider
-   dap-ui-hide-many-windows)
-  :commands
-  (dap-register-debug-provider
-   dap-register-debug-template)
+  ;; Configure gopls.
+  (add-to-list
+   'eglot-server-programs
+   '((go-mode go-ts-mode) .
+     ("gopls" :initializationOptions
+      ;; Configure Go inlay hints. See all options:
+      ;; https://github.com/golang/tools/blob/master/gopls/doc/inlayHints.md.
+      (:hints (:parameterNames t
+               :rangeVariableTypes t
+               :functionTypeParameters t
+               :assignVariableTypes t
+               :compositeLiteralFields t
+               :compositeLiteralTypes t
+               :constantValues t))))))
 
+(use-package consult-eglot
+  :after eglot
   :general
-  ;; DAP is implemented as a global mode so after it starts the following
-  ;; keybindings will become available regardless of the buffer. Not a huge
-  ;; deal but something to be aware of.
-  (my/bind-ide :keymaps 'dap-mode-map
-    ;; Start/stop commands.
-    "dd" 'dap-debug
-    "dD" 'dap-debug-last
-    "dq" 'my/dap-quit
-    ;; Hydra menu.
-    "dm" 'dap-hydra
-    ;; UI window commands.
-    "dr" 'dap-ui-repl
-    "dl" 'dap-ui-locals
-    "de" 'dap-ui-expressions
-    ;; Breakpoint commands.
-    "db" 'dap-breakpoint-toggle
-    "dk" 'dap-ui-breakpoint-delete
-    "dK" 'dap-breakpoint-delete-all
-    ;; Stepping commands.
-    "dn" 'dap-next
-    "di" 'dap-step-in
-    "do" 'dap-step-out
-    "dc" 'dap-continue
-    ;; Stack frame commands.
-    "df" 'dap-switch-stack-frame
-    "d <up>" 'dap-up-stack-frame
-    "d <down>" 'dap-down-stack-frame
-    ;; Expression commands.
-    "d+" 'dap-ui-expressions-add
-    "d-" 'dap-ui-expressions-remove
-    ;; Evaluation commands.
-    "d:" 'dap-eval
-    "d." 'dap-eval-thing-at-point)
-
-  :custom
-  (dap-auto-configure-features '(locals breakpoints expressions repl))
-  (dap-print-io nil)
-  (dap-ui-repl-history-dir no-littering-var-directory)
-  ;; TODO: Unfortunately locals doesn't work that great. It doesn't auto-expand
-  ;; or refresh after each step/breakpoint and it often doesn't stay up to
-  ;; date with the current frame. For now, I'll just stick to using the REPL.
-  (dap-ui-locals-expand-depth 3)
-
-  :init
-  ;; Override the placement of DAP UI windows so things are less cluttered.
-  ;; The locals window and the expressions window will overlay the REPL window
-  ;; when they are displayed. The below configuration is shown by default.
-  (defvar dap-ui-buffer-configurations
-    '(("*dap-ui-repl*" .
-       ((side . right)
-        (slot . 1)
-        (window-width . 0.25)))
-      ("*dap-ui-breakpoints*" .
-       ((side . right)
-        (slot . 2)
-        (window-width . 0.25)
-        (window-height . 0.3)))))
-
-  :config
-  (require 'dap-dlv-go)
-  (require 'dap-ui)
-
-  (defun my/dap-quit ()
-    "Disconnect from the DAP session and hide all the DAP UI windows."
-    (interactive)
-    (call-interactively 'dap-disconnect)
-    (dap-ui-hide-many-windows))
-
-  ;; Location of lldb-vscode on the host.
-  (defvar my/dap-rust-lldb-debug-program
-    '("/opt/homebrew/opt/llvm/bin/lldb-vscode"))
-
-  ;; Custom DAP debug provider for Rust using LLDB. This allows the Rust binary
-  ;; that is to be debugged to be selected at the start of the debug session.
-  (defun my/dap-rust-lldb-debug-provider (conf)
-    "Populate CONF with the required arguments."
-    (-> conf
-        (dap--put-if-absent :dap-server-path my/dap-rust-lldb-debug-program)
-        (dap--put-if-absent :cwd (expand-file-name (my/project-current-root)))
-        (dap--put-if-absent :program
-          (read-file-name
-           "Select binary file to debug: "
-           (my/project-current-root)
-           nil t nil #'file-executable-p))))
-
-  ;; Register the custom DAP debug provider for Rust using LLDB.
-  (dap-register-debug-provider "rust-lldb" #'my/dap-rust-lldb-debug-provider)
-
-  ;; Register the custom DAP template for the custom provider.
-  (dap-register-debug-template "Rust LLDB Default"
-                               (list :type "rust-lldb"
-                                     :request "launch"
-                                     :name "rust-lldb-template"
-                                     :mode "auto"
-                                     :buildFlags nil
-                                     :args nil
-                                     :env nil)))
+  (my/bind-search :keymaps 'eglot-mode-map
+    "o" #'consult-eglot-symbols))
 
 ;;;;;; Xref
 
@@ -1929,28 +1627,44 @@ as there appears to be a bug in the current version."
 
 (use-package eldoc
   :straight nil
-  :hook
-  (emacs-lisp-mode . eldoc-mode)
+  :general
+  (my/bind-ide
+    "h" #'eldoc-doc-buffer)
+  (general-def
+    "C-h t" #'eldoc-mode)
   :custom
+  (global-eldoc-mode 1)
   (eldoc-idle-delay 0)
+  (eldoc-echo-area-use-multiline-p nil)
+  (eldoc-echo-area-prefer-doc-buffer t)
+  (eldoc-documentation-strategy #'eldoc-documentation-compose)
   :init
   ;; Print Eldoc documentation in echo area when Paredit commands are run.
   (eldoc-add-command-completions "paredit-"))
 
-;;;;;; Flycheck
-
-(use-package flycheck
-  :hook
-  (prog-mode . flycheck-mode)
+(use-package eldoc-box
   :general
-  (my/bind-ide
-    "l" #'flycheck-list-errors)
-  :custom
-  ;; Tell Flycheck to use the load-path of the current Emacs session. Without
-  ;; this, Flycheck tends towards both false negatives and false positives.
-  (flycheck-emacs-lisp-load-path 'inherit)
-  ;; For performance, only perform checking when a file is saved or opened.
-  (flycheck-check-syntax-automatically '(save mode-enabled)))
+  (general-def
+    "M-p" #'eldoc-box-help-at-point))
+
+;;;;;; Flymake
+
+;; See also: https://github.com/seagle0128/.emacs.d/blob/85554195f81c5eb403b564d29e3fd3324bafecba/lisp/init-flymake.el.
+(use-package flymake
+  :straight nil
+  :general
+  (my/bind-ide 'flymake-mode-map
+    "ll" #'flymake-show-buffer-diagnostics
+    "lp" #'flymake-show-project-diagnostics)
+  :hook
+  (prog-mode . flymake-mode)
+  (after-init . my/flymake-global-init)
+  :config
+  (defun my/flymake-global-init ()
+    "Global init function for `flymake-mode'."
+    ;; Tell Flymake about the value of `load-path' late in the startup sequence.
+    ;; See: https://emacs.stackexchange.com/a/72754.
+    (setq elisp-flymake-byte-compile-load-path load-path)))
 
 ;;;;; Programming Languages
 
@@ -2048,53 +1762,131 @@ as there appears to be a bug in the current version."
 
 ;;;;;; Rust
 
+(use-package rust-ts-mode
+  :straight nil
+  ;; Demand to register .rs files in `auto-mode-alist'.
+  :demand t
+  :hook
+  (rust-ts-mode . my/rust-ts-mode-init)
+  :config
+  ;; Custom function to be used for `treesit-defun-name-function' that
+  ;; handles a wider range of node types the one provided by `rust-ts-mode'.
+  (defun my/treesit-rust-defun-name (node)
+    "Return the defun name of NODE for Rust node types."
+    (pcase (treesit-node-type node)
+      ("const_item"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ("macro_definition"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ("trait_item"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ;; Call the default value of `treesit-defun-name-function'.
+      (_ (rust-ts-mode--defun-name node))))
+
+  (defun my/rust-ts-mode-init ()
+    "Init function for `rust-ts-mode'."
+    ;; Override the default function used by tree-sitter to turn a node into
+    ;; the name that is displayed by imenu.
+    (setq-local treesit-defun-name-function #'my/treesit-rust-defun-name)
+
+    ;; Override the imenu 'categories for Rust as the defaults leave out quite
+    ;; a few node types. See possible node types here:
+    ;; https://github.com/tree-sitter/tree-sitter-rust/blob/0a70e15da977489d954c219af9b50b8a722630ee/src/node-types.json.
+    (setq-local treesit-simple-imenu-settings
+                '(("Associated Type" "\\`type_item\\'" nil nil)
+                  ("Constant" "\\`const_item\\'" nil nil)
+                  ("Enumeration" "\\`enum_item\\'" nil nil)
+                  ("Function" "\\`function_item\\'" nil nil)
+                  ("Implementation" "\\`impl_item\\'" nil nil)
+                  ("Macro" "\\`macro_definition\\'" nil nil)
+                  ("Module" "\\`mod_item\\'" nil nil)
+                  ("Static" "\\`static_item\\'" nil nil)
+                  ("Struct" "\\`struct_item\\'" nil nil)
+                  ("Trait" "\\`trait_item\\'" nil nil))))
+
+  ;; Update `consult-imenu-config' with the symbol categories for Rust.
+  (with-eval-after-load 'consult-imenu
+    (add-to-list 'consult-imenu-config
+                 '(rust-ts-mode
+                   :types ((?a "Associated Type" font-lock-type-face)
+                           (?c "Constant" font-lock-constant-face)
+                           (?e "Enumeration" font-lock-constant-face)
+                           (?f "Function" font-lock-function-name-face)
+                           (?i "Implementation" font-lock-type-face)
+                           (?M "Macro" font-lock-preprocessor-face)
+                           (?m "Module" font-lock-keyword-face)
+                           (?S "Static" font-lock-preprocessor-face)
+                           (?s "Struct" font-lock-operator-face)
+                           (?t "Trait" font-lock-type-face))))))
+
 (use-package rustic
+  ;; TODO: Look at reintegrating Rustic when it provides tree-sitter support.
+  ;; This package is not disabled as I want to use the `rustic-*' functions.
+  ;; However, `rustic-mode' should not be run as it is mapped to `rust-ts-mode'
+  ;; in `major-mode-remap-alist'. See: https://github.com/brotzeit/rustic/issues/475.
   :general
-  (my/bind-ide :keymaps 'rustic-mode-map
-    "ho" #'lsp-rust-analyzer-open-external-docs
-    "tt" #'rustic-cargo-current-test))
+  (my/bind-ide :keymaps 'rust-ts-mode-map
+    "tt" #'rustic-cargo-current-test)
+  :custom
+  (rustic-lsp-client 'eglot))
 
 ;;;;;; Go
 
-(use-package go-mode
-  :commands (go-play-buffer go-play-region)
-  :general
-  (my/bind-ide :keymaps 'go-mode-map
-    ;; Build.
-    "br" #'go-run
-    ;; Help.
-    "hp" #'my/go-play-dwim
-    ;; Refactor.
-    "rt" #'go-tag-add
-    "rT" #'go-tag-remove
-    "rg" #'go-gen-test-dwim
-    "ri" #'go-impl
-    ;; Test.
-    "tf" #'go-test-current-file
-    "tt" #'go-test-current-test)
-
+(use-package go-ts-mode
+  :straight nil
+  ;; Demand to register .go files in `auto-mode-alist'.
+  :demand t
   :hook
-  (go-mode . (lambda () (setq-local tab-width 4)))
-
-  :custom
-  (go-play-browse-function #'browse-url)
-
-  :init
-  ;; Remove the default `go-mode' keybindings.
-  (setq go-mode-map (make-sparse-keymap))
-
+  (go-ts-mode . my/go-ts-mode-init)
   :config
-  (defun my/go-play-dwim ()
-    "Opens Go Playground for the buffer or region (if active)."
-    (interactive)
-    (if (region-active-p)
-        (go-play-region (region-beginning) (region-end))
-      (go-play-buffer))))
+  (defun my/treesit-go-defun-name (node)
+    "Return the defun name of NODE for Go node types."
+    (pcase (treesit-node-type node)
+      ("const_spec"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ("var_spec"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      (_ (go-ts-mode--defun-name node))))
 
-(use-package gotest)
-(use-package go-tag)
-(use-package go-gen-test)
-(use-package go-impl)
+  ;; See possible node types here:
+  ;; https://github.com/tree-sitter/tree-sitter-go/blob/bbaa67a180cfe0c943e50c55130918be8efb20bd/src/node-types.json.
+  (defun my/go-ts-mode-init ()
+    "Init function for `go-ts-mode'."
+    (setq-local tab-width 4)
+    (setq-local treesit-defun-name-function #'my/treesit-go-defun-name)
+    (setq-local treesit-simple-imenu-settings
+                '(("Constant" "\\`const_spec\\'" nil nil)
+                  ("Function" "\\`function_declaration\\'" nil nil)
+                  ("Interface" "\\`type_declaration\\'" go-ts-mode--interface-node-p nil)
+                  ("Method" "\\`method_declaration\\'" nil nil)
+                  ("New Type" "\\`type_declaration\\'" go-ts-mode--other-type-node-p nil)
+                  ("Struct" "\\`type_declaration\\'" go-ts-mode--struct-node-p nil)
+                  ("Type Alias" "\\`type_declaration\\'" go-ts-mode--alias-node-p nil)
+                  ;; Unfortunately, this also includes local variables.
+                  ("Variable" "\\`var_spec\\'" nil nil))))
+
+  (with-eval-after-load 'consult-imenu
+    (add-to-list 'consult-imenu-config
+                 '(go-ts-mode
+                   :types ((?c "Constant" font-lock-variable-name-face)
+                           (?f "Function" font-lock-function-name-face)
+                           (?i "Interface" font-lock-type-face)
+                           (?m "Method" font-lock-keyword-face)
+                           (?t "New Type" font-lock-type-face)
+                           (?s "Struct" font-lock-type-face)
+                           (?a "Type Alias" font-lock-type-face)
+                           (?v "Variable" font-lock-variable-name-face))))))
+
+(use-package gotest
+  :general
+  (my/bind-ide :keymaps 'go-ts-mode-map
+    "tf" #'go-test-current-file
+    "tt" #'go-test-current-test))
+
+(use-package go-gen-test
+  :general
+  (my/bind-ide :keymaps 'go-ts-mode-map
+    "rg" #'go-gen-test-dwim))
 
 ;;;;;; Terraform
 
@@ -2134,7 +1926,14 @@ as there appears to be a bug in the current version."
 ;;;;;; Protobuf
 
 (use-package protobuf-mode
-  :mode "\\.proto\\'")
+  :mode "\\.proto\\'"
+  :config
+  (with-eval-after-load 'consult-imenu
+    (add-to-list 'consult-imenu-config
+                 '(protobuf-mode
+                   :types ((?s "Service" font-lock-function-name-face)
+                           (?m "Message" font-lock-variable-name-face)
+                           (?e "Enum" font-lock-constant-face))))))
 
 ;;;;;; Bazel
 
@@ -2171,10 +1970,11 @@ as there appears to be a bug in the current version."
 
 ;;;;;; YAML
 
-(use-package yaml-mode
-  :mode
-  ("\\.yml\\'"  . yaml-mode)
-  ("\\.yaml\\'" . yaml-mode))
+(use-package yaml-ts-mode)
+
+;;;;;; JSON
+
+(use-package json-ts-mode)
 
 ;;;;;; Jsonnet
 
@@ -2185,28 +1985,31 @@ as there appears to be a bug in the current version."
 (use-package elisp-mode
   :straight nil
   :hook
-  (emacs-lisp-mode . my/init-emacs-lisp-mode)
+  (emacs-lisp-mode . my/elisp-init)
+
   :general
   (my/bind-c-x
     "C-r" #'eval-region)
-  (general-def 'emacs-lisp-mode-map
-    ;; TODO: There must be something better/more useful than this?!
-    "M-p" #'eldoc-print-current-symbol-info)
-  :init
-  (defun my/init-emacs-lisp-mode ()
-    "Initializes `emacs-lisp-mode'."
+
+  :config
+  (defun my/elisp-init ()
+    "Init function for `emacs-lisp-mode'."
     (setq-local fill-column 80)
     (setq-local outline-regexp ";;;+ [^\n]")
-    (outline-minor-mode)))
+    (outline-minor-mode 1)
+    (setq-local completion-at-point-functions
+                (list
+                 #'tempel-complete
+                 #'elisp-completion-at-point
+                 #'cape-file))))
 
 (use-package paredit
   :hook
   ;; Note that I specifically don't enable Paredit in minibuffers as it causes
   ;; issues with RET keybindings.
-  (emacs-lisp-mode . paredit-mode)       ;; Elisp buffers.
-  (lisp-mode . paredit-mode)             ;; Common Lisp buffers.
-  (lisp-interaction-mode . paredit-mode) ;; Scratch buffers.
-  (ielm-mode-hook . paredit-mode)        ;; IELM buffers.
+  ((lisp-mode
+    emacs-lisp-mode
+    inferior-emacs-lisp-mode) . paredit-mode)
 
   :config
   ;; Unbind Paredit keybindings I don't use that can cause collisions. This
@@ -2222,8 +2025,17 @@ as there appears to be a bug in the current version."
 
 (use-package rainbow-delimiters
   :hook
-  (emacs-lisp-mode . rainbow-delimiters-mode))
+  ((lisp-mode
+    emacs-lisp-mode
+    inferior-emacs-lisp-mode) . rainbow-delimiters-mode))
 
+(use-package aggressive-indent
+  :hook
+  ((lisp-mode
+    emacs-lisp-mode
+    inferior-emacs-lisp-mode) . aggressive-indent-mode))
+
+;; Custom Elisp indentation function - see code comments in package.
 (use-package emacs-lisp-indent
   :straight (:host github :repo "ashlineldridge/emacs-lisp-indent")
   :init
@@ -2272,7 +2084,7 @@ as there appears to be a bug in the current version."
 (use-package eshell
   :straight nil
   :hook
-  (eshell-mode . my/init-eshell-mode)
+  (eshell-mode . my/eshell-init)
   (eshell-pre-command . my/eshell-pre-command)
   (eshell-post-command . my/eshell-post-command)
 
@@ -2292,22 +2104,31 @@ as there appears to be a bug in the current version."
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
   ;; The following commands will be started in `term-mode'.
-  (eshell-visual-commands '("vi" "vim" "htop" "ktop" "watch" "gcloud"))
+  (eshell-visual-commands '("vi" "vim" "htop" "ktop" "watch"))
 
-  :init
+  :config
   ;; Needed so that `eshell-mode-map' is available above.
   (require 'esh-mode)
 
-  (defun my/init-eshell-mode ()
+  (defun my/eshell-init ()
     "Hook function executed when `eshell-mode' is run."
     ;; Don't wrap long lines in eshell.
     (setq-local truncate-lines t)
+    ;; Don't show line highlight in eshell.
+    (setq-local global-hl-line-mode nil)
     ;; Don't scroll the buffer around after it has been recentered (using C-l).
     ;; This seems to need to be done as a mode hook rather than in `:config' as
     ;; the latter results in `eshell-output-filter-functions' being set to nil.
     ;; See: https://emacs.stackexchange.com/a/45281
     (remove-hook 'eshell-output-filter-functions
-                 'eshell-postoutput-scroll-to-bottom))
+                 'eshell-postoutput-scroll-to-bottom)
+    ;; Configuration eshell completion.
+    (setq-local completion-at-point-functions
+                (list
+                 #'tempel-complete
+                 #'pcomplete-completions-at-point
+                 #'cape-file
+                 #'cape-dabbrev)))
 
   (defun my/eshell-pre-command ()
     "Eshell pre-command hook function."
@@ -2447,7 +2268,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (my/bind-c-c :keymaps 'org-mode-map
     "C-S-l" #'org-cliplink)
   (general-def 'org-agenda-mode-map
-    "r" #'my/hydra-org-agenda-refile/body
+    "ra" #'my/org-agenda-refile-archive
+    "rp" #'my/org-agenda-refile-personal-ongoing
+    "rw" #'my/org-agenda-refile-work-ongoing
+    "rs" #'my/org-agenda-refile-someday-ongoing
+    "ri" #'my/org-agenda-refile-inbox
     "k" #'org-agenda-kill
     "?" #'which-key-show-major-mode)
   (general-unbind 'org-mode-map
@@ -2455,7 +2280,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "C-'")
 
   :hook
-  (org-mode . my/init-org-mode)
+  (org-mode . my/org-init)
 
   :custom
   (org-agenda-cmp-user-defined #'my/org-agenda-cmp-todo)
@@ -2610,20 +2435,20 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (org-use-sub-superscripts nil)
 
   :init
-  ;; Require the `org-agenda' package so that its keymap can be customized
-  ;; above and `org-tempo' to enable <s + TAB shortcuts in org docs.
+  ;; Require the `org-agenda' package so that its keymap can be customized.
   (require 'org-agenda)
-  (require 'org-tempo)
 
   :config
-  (defun my/init-org-mode ()
-    "Org-mode init function that should be attached to `org-mode-hook`."
+  (defun my/org-init ()
+    "Init function for `org-mode'."
     (interactive)
     (org-indent-mode 1)
     (visual-line-mode 1)
     (variable-pitch-mode 1)
     (display-line-numbers-mode 0)
-    (setq-local line-spacing 2))
+    (setq-local line-spacing 2)
+    (setq-local completion-at-point-functions
+                (list #'tempel-complete #'cape-file)))
 
   (defun my/org-agenda-cmp-todo (a b)
     "Custom compares agenda items A and B based on their todo keywords."
@@ -2651,24 +2476,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "Capture a coffee log entry."
     (interactive)
     (org-capture nil "c"))
-
-  (defhydra my/hydra-org-agenda-refile ()
-    "
-Refile this agenda item to:
-
-_a_: Archive
-_p_: Personal/ongoing
-_w_: Work/ongoing
-_s_: Someday/ongoing
-_i_: Inbox
-_q_: Quit this menu
-"
-    ("a" my/org-agenda-refile-archive :exit t)
-    ("p" my/org-agenda-refile-personal-ongoing :exit t)
-    ("w" my/org-agenda-refile-work-ongoing :exit t)
-    ("s" my/org-agenda-refile-someday-ongoing :exit t)
-    ("i" my/org-agenda-refile-inbox :exit t)
-    ("q" nil))
 
   ;; Function for refiling the current agenda item under point to the specified
   ;; file and heading. `org-agenda-refile' requires a destination refloc list
@@ -2729,18 +2536,11 @@ specified then a task category will be determined by the item's tags."
     (org-restart-font-lock)
     (setq org-hide-emphasis-markers (not org-hide-emphasis-markers)))
 
-  ;; Use fixed pitch for appropriate org elements (use C-u C-x = to determine
-  ;; the font face of the character under point). See also:
-  ;; https://zzamboni.org/post/beautifying-org-mode-in-emacs; and
-  ;; https://github.com/daviwil/dotfiles/blob/7ed5195e0007bccb43420cfec271ab779f4720fd/Emacs.org#fonts-and-bullets.
-  (dolist (face '(org-block org-table))
-    (set-face-attribute face nil :inherit 'fixed-pitch))
-
   ;; Save all org buffers before quitting the agenda ('s' saves immediately).
   (advice-add #'org-agenda-quit :before #'org-save-all-org-buffers)
 
   ;; Make it easier to create `org-babel' code blocks.
-  (add-to-list #'org-structure-template-alist '("el" . "src emacs-lisp")))
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")))
 
 (use-package org-cliplink)
 
