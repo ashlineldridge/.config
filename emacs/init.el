@@ -65,6 +65,7 @@
   (general-def
     "<escape>" #'keyboard-escape-quit
     "C-;" #'comment-line
+    [remap quit-window] #'kill-this-buffer
     "C-q" #'kill-this-buffer
     "C-S-k" #'my/copy-to-eol
     "C-M-k" #'my/delete-to-eol
@@ -294,6 +295,61 @@
        :variable-font-height 148
        :line-number-font-height 124
        :mode-line-font-height 140)))
+
+  ;; Create faces used in `consult-imenu-config' as extension points from
+  ;; the default faces used in programming language buffers. Use C-u C-x =
+  ;; to discover the font face under point.
+  (defface my/imenu-category-constant-face
+    '((t :inherit font-lock-constant-face))
+    "Face for displaying constant symbols in imenu.")
+
+  (defface my/imenu-category-enum-face
+    '((t :inherit font-lock-type-face))
+    "Face for displaying enumeration symbols in imenu.")
+
+  (defface my/imenu-category-function-face
+    '((t :inherit font-lock-function-name-face))
+    "Face for displaying function symbols in imenu.")
+
+  (defface my/imenu-category-impl-face
+    '((t :inherit font-lock-type-face))
+    "Face for displaying implementation symbols in imenu.")
+
+  (defface my/imenu-category-package-face
+    '((t :inherit font-lock-constant-face))
+    "Face for displaying package symbols in imenu.")
+
+  (defface my/imenu-category-macro-face
+    '((t :inherit font-lock-preprocessor-face))
+    "Face for displaying macro symbols in imenu.")
+
+  (defface my/imenu-category-method-face
+    '((t :inherit font-lock-function-name-face))
+    "Face for displaying method symbols in imenu.")
+
+  (defface my/imenu-category-module-face
+    '((t :inherit font-lock-constant-face))
+    "Face for displaying module symbols in imenu.")
+
+  (defface my/imenu-category-static-face
+    '((t :inherit font-lock-constant-face))
+    "Face for displaying static symbols in imenu.")
+
+  (defface my/imenu-category-struct-face
+    '((t :inherit font-lock-type-face))
+    "Face for displaying struct symbols in imenu.")
+
+  (defface my/imenu-category-trait-face
+    '((t :inherit font-lock-type-face))
+    "Face for displaying trait/interface symbols in imenu.")
+
+  (defface my/imenu-category-type-face
+    '((t :inherit font-lock-type-face))
+    "Face for displaying type-centric symbols in imenu.")
+
+  (defface my/imenu-category-variable-face
+    '((t :inherit font-lock-variable-name-face))
+    "Face for displaying variable symbols in imenu.")
 
   (defun my/apply-font-config (&optional index)
     "Apply the INDEX'th font configuration from `my/font-configs'."
@@ -564,11 +620,17 @@
 
 ;;;; Help System
 
+(use-package help-fns
+  :straight nil
+  :general
+  (general-def
+    "C-h F" #'describe-face))
+
 (use-package helpful
   :general
   (general-def
     "C-h c" #'helpful-callable
-    ;; Replace `describe-*' bindings with Helpful.
+    ;; Replace `describe-*' bindings with Helpful where possible.
     [remap describe-function] #'helpful-function
     [remap describe-symbol] #'helpful-symbol
     [remap describe-variable] #'helpful-variable
@@ -820,7 +882,9 @@
     "C-r" #'consult-history)
 
   (general-def consult-narrow-map
-    "C-<" #'consult-narrow-help)
+    "C-<" #'consult-narrow-help
+    ;; Remove if this becomes annoying due to needing a '?' character.
+    "?" #'consult-narrow-help)
 
   (my/bind-c-c
     "os" #'consult-org-agenda)
@@ -1808,16 +1872,16 @@ as there appears to be a bug in the current version."
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
                  '(rust-ts-mode
-                   :types ((?a "Associated Type" font-lock-type-face)
-                           (?c "Constant" font-lock-constant-face)
-                           (?e "Enumeration" font-lock-constant-face)
-                           (?f "Function" font-lock-function-name-face)
-                           (?i "Implementation" font-lock-type-face)
-                           (?M "Macro" font-lock-preprocessor-face)
-                           (?m "Module" font-lock-keyword-face)
-                           (?S "Static" font-lock-preprocessor-face)
-                           (?s "Struct" font-lock-operator-face)
-                           (?t "Trait" font-lock-type-face))))))
+                   :types ((?a "Associated Type" my/imenu-category-type-face)
+                           (?c "Constant" my/imenu-category-constant-face)
+                           (?e "Enumeration" my/imenu-category-enum-face)
+                           (?f "Function" my/imenu-category-function-face)
+                           (?i "Implementation" my/imenu-category-impl-face)
+                           (?M "Macro" my/imenu-category-macro-face)
+                           (?m "Module" my/imenu-category-module-face)
+                           (?S "Static" my/imenu-category-static-face)
+                           (?s "Struct" my/imenu-category-struct-face)
+                           (?t "Trait" my/imenu-category-trait-face))))))
 
 (use-package rustic
   ;; TODO: Look at reintegrating Rustic when it provides tree-sitter support.
@@ -1868,14 +1932,14 @@ as there appears to be a bug in the current version."
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
                  '(go-ts-mode
-                   :types ((?c "Constant" font-lock-variable-name-face)
-                           (?f "Function" font-lock-function-name-face)
-                           (?i "Interface" font-lock-type-face)
-                           (?m "Method" font-lock-keyword-face)
-                           (?t "New Type" font-lock-type-face)
-                           (?s "Struct" font-lock-type-face)
-                           (?a "Type Alias" font-lock-type-face)
-                           (?v "Variable" font-lock-variable-name-face))))))
+                   :types ((?c "Constant" my/imenu-category-constant-face)
+                           (?f "Function" my/imenu-category-function-face)
+                           (?i "Interface" my/imenu-category-trait-face)
+                           (?m "Method" my/imenu-category-method-face)
+                           (?t "New Type" my/imenu-category-type-face)
+                           (?s "Struct" my/imenu-category-struct-face)
+                           (?a "Type Alias" my/imenu-category-type-face)
+                           (?v "Variable" my/imenu-category-variable-face))))))
 
 (use-package gotest
   :general
@@ -1931,9 +1995,9 @@ as there appears to be a bug in the current version."
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
                  '(protobuf-mode
-                   :types ((?s "Service" font-lock-function-name-face)
-                           (?m "Message" font-lock-variable-name-face)
-                           (?e "Enum" font-lock-constant-face))))))
+                   :types ((?s "Service" my/imenu-category-impl-face)
+                           (?m "Message" my/imenu-category-struct-face)
+                           (?e "Enum" my/imenu-category-enum-face))))))
 
 ;;;;;; Bazel
 
@@ -2001,7 +2065,18 @@ as there appears to be a bug in the current version."
                 (list
                  #'tempel-complete
                  #'elisp-completion-at-point
-                 #'cape-file))))
+                 #'cape-file)))
+
+  ;; This configuration is from consult-imenu.el with the fonts changed.
+  (with-eval-after-load 'consult-imenu
+    (add-to-list 'consult-imenu-config
+                 '(emacs-lisp-mode
+                   :toplevel "Functions"
+                   :types ((?f "Functions" my/imenu-category-function-face)
+                           (?m "Macros" my/imenu-category-macro-face)
+                           (?p "Packages" my/imenu-category-package-face)
+                           (?t "Types" my/imenu-category-type-face)
+                           (?v "Variables" my/imenu-category-variable-face))))))
 
 (use-package paredit
   :hook
