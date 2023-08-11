@@ -1598,13 +1598,13 @@ as there appears to be a bug in the current version."
           (toml "https://github.com/tree-sitter/tree-sitter-toml")
           (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
   (setq major-mode-remap-alist
-        '((bash-mode . bash-ts-mode)
+        '((conf-toml-mode . toml-ts-mode)
+          (bash-mode . bash-ts-mode)
           (go-mode . go-ts-mode)
           (js-json-mode . json-ts-mode)
           (rust-mode . rust-ts-mode)
           (rustic-mode . rust-ts-mode)
           (sh-mode . bash-ts-mode)
-          (toml-mode . toml-ts-mode)
           (yaml-mode . yaml-ts-mode))))
 
 ;;;;;; LSP
