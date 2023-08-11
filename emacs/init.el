@@ -1722,9 +1722,24 @@ as there appears to be a bug in the current version."
   (eldoc-add-command-completions "paredit-"))
 
 (use-package eldoc-box
+  :commands
+  (eldoc-box-help-at-point
+   eldoc-box-quit-frame)
   :general
   (general-def
-    "M-p" #'eldoc-box-help-at-point))
+    "M-p" #'my/eldoc-box-toggle)
+
+  :config
+  ;; Quit Eldoc Box when C-g is received. Unfortunately, the variable
+  ;; `eldoc-box-clear-with-C-g' only applies to Eldoc Box's hover mode.
+  (advice-add #'keyboard-quit :before #'eldoc-box-quit-frame)
+
+  (defun my/eldoc-box-toggle ()
+    "Toggle the `eldoc-box-help-at-point' popup."
+    (interactive)
+    (if (and eldoc-box--frame (frame-visible-p eldoc-box--frame))
+        (eldoc-box-quit-frame)
+      (eldoc-box-help-at-point))))
 
 ;;;;;; Flymake
 
