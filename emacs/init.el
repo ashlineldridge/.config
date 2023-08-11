@@ -91,12 +91,12 @@
 
   (my/bind-ide
     ;; Add IDE prefix descriptions.
+    "a" '(:ignore t :which-key "actions")
     "b" '(:ignore t :which-key "build")
-    "d" '(:ignore t :which-key "debug")
     "h" '(:ignore t :which-key "help")
-    "p" '(:ignore t :which-key "peek")
+    "l" '(:ignore t :which-key "lint")
     "r" '(:ignore t :which-key "refactor")
-    "v" '(:ignore t :which-key "toggles")
+    "t" '(:ignore t :which-key "test")
     "w" '(:ignore t :which-key "workspaces")
     "|" #'display-fill-column-indicator-mode
     "b1" #'compile
@@ -982,6 +982,7 @@
    consult-imenu
    consult-imenu-multi
    consult-line
+   my/consult-line-strict
    consult-mark
    consult-global-mark
    consult-flymake
@@ -1609,7 +1610,11 @@ as there appears to be a bug in the current version."
 ;;;;;; LSP
 
 (use-package eglot
-  :commands eglot-completion-at-point
+  :commands
+  (eglot-completion-at-point
+   eglot--current-server-or-lose
+   eglot--request
+   eglot--TextDocumentPositionParams)
   :hook
   ((bash-ts-mode
     go-ts-mode
@@ -1625,6 +1630,8 @@ as there appears to be a bug in the current version."
     "aa" #'eglot-code-actions
     "ao" #'eglot-code-action-organize-imports
     "ar" #'eglot-rename
+    ;; Help.
+    "ho" #'my/eglot-open-external-docs
     ;; Workspaces.
     "wr" #'eglot-reconnect
     "wq" #'eglot-shutdown
@@ -1668,7 +1675,15 @@ as there appears to be a bug in the current version."
                :assignVariableTypes t
                :compositeLiteralFields t
                :compositeLiteralTypes t
-               :constantValues t))))))
+               :constantValues t)))))
+
+  (defun my/eglot-open-external-docs ()
+    "Open external documentation for the symbol at point (rust-analyzer only)."
+    (interactive)
+    (let ((url (eglot--request (eglot--current-server-or-lose)
+                               :experimental/externalDocs
+                               `(,@(eglot--TextDocumentPositionParams)))))
+      (browse-url url))))
 
 (use-package consult-eglot
   :after eglot
@@ -1693,7 +1708,7 @@ as there appears to be a bug in the current version."
   :straight nil
   :general
   (my/bind-ide
-    "h" #'eldoc-doc-buffer)
+    "hh" #'eldoc-doc-buffer)
   (general-def
     "C-h t" #'eldoc-mode)
   :custom
@@ -1772,7 +1787,7 @@ as there appears to be a bug in the current version."
        (test . go-test-current-project))))
 
   (defun my/build-system-run-action (action)
-    "Executes ACTION using the project's build sytem."
+    "Execute ACTION using the project's build sytem."
     (if-let* ((type (my/build-system-type))
               (commands (alist-get type my/build-system-command-alist))
               (command (alist-get action commands)))
@@ -1834,7 +1849,7 @@ as there appears to be a bug in the current version."
   (rust-ts-mode . my/rust-ts-mode-init)
   :config
   ;; Custom function to be used for `treesit-defun-name-function' that
-  ;; handles a wider range of node types the one provided by `rust-ts-mode'.
+  ;; handles a wider range of node types.
   (defun my/treesit-rust-defun-name (node)
     "Return the defun name of NODE for Rust node types."
     (pcase (treesit-node-type node)
