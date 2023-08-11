@@ -256,7 +256,7 @@
   (emacs-startup . (lambda () (modus-themes-load-theme 'modus-vivendi)))
 
   :custom
-  (modus-themes-to-toggle '(modus-vivendi modus-operandi-tritanopia))
+  (modus-themes-to-toggle '(modus-operandi-tinted modus-vivendi))
   (modus-themes-italic-constructs t)
   (modus-themes-custom-auto-reload t)
   (modus-themes-prompts '(bold))
