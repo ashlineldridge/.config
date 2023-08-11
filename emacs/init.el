@@ -253,7 +253,8 @@
 (use-package modus-themes
   :commands modus-themes-load-theme
   :hook
-  (emacs-startup . (lambda () (modus-themes-load-theme 'modus-vivendi)))
+  (emacs-startup . (lambda ()
+                     (modus-themes-load-theme (car modus-themes-to-toggle))))
 
   :custom
   (modus-themes-to-toggle '(modus-operandi-tinted modus-vivendi))
