@@ -1595,6 +1595,7 @@ as there appears to be a bug in the current version."
           (go "https://github.com/tree-sitter/tree-sitter-go")
           (gomod "https://github.com/camdencheek/tree-sitter-gomod")
           (json "https://github.com/tree-sitter/tree-sitter-json")
+          (proto "https://github.com/mitchellh/tree-sitter-proto")
           (rust "https://github.com/tree-sitter/tree-sitter-rust")
           (toml "https://github.com/tree-sitter/tree-sitter-toml")
           (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
@@ -1606,7 +1607,7 @@ as there appears to be a bug in the current version."
           (rust-mode . rust-ts-mode)
           (rustic-mode . rust-ts-mode)
           (sh-mode . bash-ts-mode)
-          (yaml-mode . yaml-ts-mode))))
+          (conf-toml-mode . toml-ts-mode))))
 
 ;;;;;; LSP
 
@@ -2020,15 +2021,15 @@ as there appears to be a bug in the current version."
 
 ;;;;;; Protobuf
 
-(use-package protobuf-mode
-  :mode "\\.proto\\'"
+(use-package protobuf-ts-mode
   :config
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
-                 '(protobuf-mode
-                   :types ((?s "Service" my/imenu-category-impl-face)
+                 '(protobuf-ts-mode
+                   :types ((?r "RPC" my/imenu-category-function-face)
+                           (?e "Enum" my/imenu-category-enum-face)
                            (?m "Message" my/imenu-category-struct-face)
-                           (?e "Enum" my/imenu-category-enum-face))))))
+                           (?s "Service" my/imenu-category-impl-face))))))
 
 ;;;;;; Bazel
 
