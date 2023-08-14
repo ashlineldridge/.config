@@ -1662,7 +1662,13 @@ as there appears to be a bug in the current version."
    '((rust-mode rust-ts-mode) .
      ("rust-analyzer" :initializationOptions
       (:procMacro (:enable t)
-       :cargo (:buildScripts (:enable t) :features "all")))))
+       :cargo (:buildScripts (:enable t) :features "all")
+       ;; Configure Rust inlay hints. Note that `:json-false' must be used to
+       ;; disable features. See all options:
+       ;; https://rust-analyzer.github.io/manual.html#configuration.
+       :inlayHints (:parameterHints (:enable :json-false)
+                    :closingBraceHints (:enable t
+                                        :minLines 20))))))
 
   ;; Configure gopls.
   (add-to-list
