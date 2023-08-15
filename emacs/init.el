@@ -1656,27 +1656,30 @@ as there appears to be a bug in the current version."
   ;; See: https://github.com/minad/corfu/wiki#filter-list-of-all-possible-completions-with-completion-style-like-orderless.
   (add-to-list 'completion-category-overrides '(eglot (styles orderless)))
 
-  ;; Configure rust-analyzer.
+  ;; Customize configuration of LSP servers via `eglot-server-programs' below.
+  ;; Note that `:json-false' is used to disable features rather than `nil'.
+
+  ;; See: https://rust-analyzer.github.io/manual.html#configuration.
   (add-to-list
    'eglot-server-programs
    '((rust-mode rust-ts-mode) .
      ("rust-analyzer" :initializationOptions
       (:procMacro (:enable t)
        :cargo (:buildScripts (:enable t) :features "all")
-       ;; Configure Rust inlay hints. Note that `:json-false' must be used to
-       ;; disable features. See all options:
-       ;; https://rust-analyzer.github.io/manual.html#configuration.
+       ;; Use Clippy for extra lints.
+       :check (:command "clippy")
+       ;; WIP: Trying out this setting.
+       :diagnostics (:experimental (:enable t))
+       ;; Configure Rust inlay hints.
        :inlayHints (:parameterHints (:enable :json-false)
                     :closingBraceHints (:enable t
                                         :minLines 20))))))
 
-  ;; Configure gopls.
+  ;; See: https://github.com/golang/tools/blob/master/gopls/doc/inlayHints.md.
   (add-to-list
    'eglot-server-programs
    '((go-mode go-ts-mode) .
      ("gopls" :initializationOptions
-      ;; Configure Go inlay hints. See all options:
-      ;; https://github.com/golang/tools/blob/master/gopls/doc/inlayHints.md.
       (:hints (:parameterNames t
                :rangeVariableTypes t
                :functionTypeParameters t
@@ -1715,16 +1718,17 @@ as there appears to be a bug in the current version."
 (use-package eldoc
   :straight nil
   :general
-  (my/bind-ide
-    "hh" #'eldoc-doc-buffer)
   (general-def
     "C-h t" #'eldoc-mode)
+  (my/bind-ide
+    "hh" #'eldoc-doc-buffer)
   :custom
   (global-eldoc-mode 1)
   (eldoc-idle-delay 0)
-  (eldoc-echo-area-use-multiline-p nil)
-  (eldoc-echo-area-prefer-doc-buffer t)
+  ;; Following allows Eldoc to compose both documentation and Flymake messages.
+  (eldoc-echo-area-use-multiline-p t)
   (eldoc-documentation-strategy #'eldoc-documentation-compose)
+  (eldoc-echo-area-prefer-doc-buffer t)
   :init
   ;; Print Eldoc documentation in echo area when Paredit commands are run.
   (eldoc-add-command-completions "paredit-"))
