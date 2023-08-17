@@ -1678,7 +1678,7 @@ as there appears to be a bug in the current version."
    'eglot-server-programs
    '((go-mode go-ts-mode) .
      ("gopls" :initializationOptions
-      (:hints (:parameterNames t
+      (:hints (:parameterNames :json-false
                :rangeVariableTypes t
                :functionTypeParameters t
                :assignVariableTypes t
