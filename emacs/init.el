@@ -1400,10 +1400,10 @@
 ;; to dired and eshell for manipulation. This treemacs config was inspired by:
 ;; https://github.com/seagle0128/.emacs.d/blob/8cbec0c132cd6de06a8c293598a720d377f3f5b9/lisp/init-treemacs.el.
 (use-package treemacs
+  :commands treemacs
   :general
   (general-def
-    "M-t" #'treemacs
-    "M-T" #'my/treemacs-stay
+    "M-t" #'my/treemacs-stay
     "M-0" #'treemacs-select-window)
   (treemacs-mode-map
    ;; Otherwise it takes two clicks to open a directory.
@@ -1423,17 +1423,15 @@
 
   :init
   (defun my/treemacs-stay ()
-    "Open the Treemacs viewer but don't shift focus to it."
+    "Open the Treemacs viewer but keep the current window selected."
     (interactive)
     (treemacs)
-    (treemacs-select-window))
+    ;; If the Treemacs buffer is visible then call `treemacs-select-window'
+    ;; to shift focus back to the previously selected window.
+    (when (eq 'visible (treemacs-current-visibility))
+      (treemacs-select-window)))
 
   :config
-  ;; Override `treemacs--propagate-new-icons' so that janky image icons from
-  ;; the default treemacs package don't get mixed in with the nerd icons.
-  ;; See: https://github.com/Alexander-Miller/treemacs/issues/1018#issuecomment-1599599392.
-  (defun treemacs--propagate-new-icons (_theme))
-
   ;; By default, treemacs-mode will add itself to `aw-ignored-buffers' which
   ;; prevents jumping to its window using ace-window. Personally, I prefer
   ;; being able to treat it just like any other window.
