@@ -1942,6 +1942,10 @@ as there appears to be a bug in the current version."
   :demand t
   :hook
   (go-ts-mode . my/go-ts-mode-init)
+
+  :custom
+  (go-ts-mode-indent-offset 4)
+
   :config
   (defun my/treesit-go-defun-name (node)
     "Return the defun name of NODE for Go node types."
@@ -1956,7 +1960,7 @@ as there appears to be a bug in the current version."
   ;; https://github.com/tree-sitter/tree-sitter-go/blob/bbaa67a180cfe0c943e50c55130918be8efb20bd/src/node-types.json.
   (defun my/go-ts-mode-init ()
     "Init function for `go-ts-mode'."
-    (setq-local tab-width 4)
+    (setq-local tab-width go-ts-mode-indent-offset)
     (setq-local treesit-defun-name-function #'my/treesit-go-defun-name)
     (setq-local treesit-simple-imenu-settings
                 '(("Constant" "\\`const_spec\\'" nil nil)
