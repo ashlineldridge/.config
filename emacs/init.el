@@ -50,6 +50,19 @@
 (use-package transient
   :commands transient-get-value)
 
+(use-package repeat
+  :straight nil
+  :commands my/repeatize
+  :config
+  ;; See: https://karthinks.com/software/it-bears-repeating.
+  (defun my/repeatize (keymap)
+    "Add `repeat-mode'-like support to KEYMAP (passed by symbol)."
+    (map-keymap
+     (lambda (_key cmd)
+       (when (symbolp cmd)
+         (put cmd 'repeat-map keymap)))
+     (symbol-value keymap))))
+
 ;;;; Base Settings
 
 (use-package emacs
@@ -505,7 +518,7 @@
   :straight nil
   :general
   (general-def
-    "C-o" '(:keymap my/window-map))
+    "C-o" '(:keymap my/window-repeat-map))
 
   :custom
   ;; The following provides the default `display-buffer' behaviour for buffers
@@ -516,8 +529,8 @@
   (even-window-sizes nil)
 
   :config
-  (defvar-keymap my/window-map
-    :doc "Keymap for window commands."
+  (defvar-keymap my/window-repeat-map
+    :doc "Keymap for repeatable window commands."
     "=" #'balance-windows
     "o" #'other-window
     "C-o" #'previous-window-any-frame
@@ -532,13 +545,7 @@
     "u" #'winner-undo
     "r" #'winner-redo)
 
-  ;; Use `my/window-map' as the repeat map for the window commands. This allows
-  ;; all window commands to be repeated with only the final key.
-  (map-keymap
-   (lambda (_key cmd)
-     (when (symbolp cmd)
-       (put cmd 'repeat-map 'my/window-map)))
-   my/window-map))
+  (my/repeatize 'my/window-repeat-map))
 
 ;;;;; Window Placement
 
@@ -1631,11 +1638,7 @@ as there appears to be a bug in the current version."
     "ao" #'eglot-code-action-organize-imports
     "ar" #'eglot-rename
     ;; Help.
-    "ho" #'my/eglot-open-external-docs
-    ;; Workspaces.
-    "wr" #'eglot-reconnect
-    "wq" #'eglot-shutdown
-    "wQ" #'eglot-shutdown-all)
+    "ho" #'my/eglot-open-external-docs)
 
   :custom
   (eglot-autoshutdown t)
@@ -1758,17 +1761,28 @@ as there appears to be a bug in the current version."
   :straight nil
   :general
   (my/bind-ide 'flymake-mode-map
-    "ll" #'flymake-show-buffer-diagnostics
-    "lp" #'flymake-show-project-diagnostics)
+    "ld" #'flymake-show-buffer-diagnostics
+    "lD" #'flymake-show-project-diagnostics
+    "ln" #'flymake-goto-next-error
+    "lp" #'flymake-goto-prev-error)
+
   :hook
   (prog-mode . flymake-mode)
   (after-init . my/flymake-global-init)
+
   :config
   (defun my/flymake-global-init ()
     "Global init function for `flymake-mode'."
     ;; Tell Flymake about the value of `load-path' late in the startup sequence.
     ;; See: https://emacs.stackexchange.com/a/72754.
-    (setq elisp-flymake-byte-compile-load-path load-path)))
+    (setq elisp-flymake-byte-compile-load-path load-path))
+
+  (defvar-keymap my/flymake-repeat-map
+    :doc "Keymap for repeatable Flymake commands."
+    "n" #'flymake-goto-next-error
+    "p" #'flymake-goto-prev-error)
+
+  (my/repeatize 'my/flymake-repeat-map))
 
 ;;;;; Programming Languages
 
