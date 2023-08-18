@@ -469,36 +469,53 @@
   (aw-switch-to-window
    aw-delete-window
    aw-select)
+
+  :functions
+  (my/split-window-vertically
+   my/split-window-horizontally)
+
   :general
   (general-def
     "M-o" #'ace-window)
+
   :custom
   (aw-display-mode-overlay t)
-  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l ?r ?t ?y ?u ?i ?o))
+  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?l ?m))
   (aw-dispatch-always t)
   (aw-background t)
+
   :config
   (defun my/ace-open-buffer (window)
     "Opens a buffer in WINDOW using `consult-buffer'."
     (aw-switch-to-window window)
     (consult-buffer))
 
-  (defun my/ace-delete-window-buffer (window)
-    "Ace Window dispatch action for deleting WINDOW and killing its buffer."
+  (defun my/ace-delete-window-kill-buffer (window)
+    "Ace Window action that deletes WINDOW and kills its buffer."
     (aw-delete-window window t))
+
+  (defun my/ace-split-window-vertically (window)
+    "Ace Window action that splits WINDOW vertically and selects the new one."
+    (select-window window)
+    (my/split-window-vertically))
+
+  (defun my/ace-split-window-horizontally (window)
+    "Split WINDOW horizontally."
+    (select-window window)
+    (my/split-window-horizontally))
 
   ;; Personalize Ace Window's dispatch menu (doesn't work when customized via
   ;; the :custom block so need to do via `setq' here).
   (setq aw-dispatch-alist
-        '((?0 aw-delete-window "Delete Window")
-          (?9 my/ace-delete-window-buffer "Delete Window and Kill Buffer")
+        '((?k aw-delete-window "Delete Window")
+          (?K my/ace-delete-window-kill-buffer "Delete Window and Kill Buffer")
           (?1 delete-other-windows "Delete Other Windows")
           (?w aw-swap-window "Swap Windows")
           (?m aw-move-window "Move Window")
           (?c aw-copy-window "Copy Window")
           (?b my/ace-open-buffer "Open Buffer")
-          (?2 aw-split-window-vert "Split Vertical")
-          (?3 aw-split-window-horz "Split Horizontal")
+          (?x my/ace-split-window-vertically "Split Vertical")
+          (?y my/ace-split-window-horizontally "Split Horizontal")
           (?? aw-show-dispatch-help))))
 
 ;; Brings in useful functions such as `transpose-frame', `flip-frame', etc.
