@@ -1269,7 +1269,7 @@
     "M-m" #'avy-move-region)
 
   :init
-  (defun my/avy-action-embark (pt)
+  (defun my/avy-action-embark-act (pt)
     "Avy action for running `embark-act' on the selected candidate."
     (unwind-protect
         (save-excursion
@@ -1320,7 +1320,7 @@
      (?y . avy-action-yank)
      (?Y . avy-action-yank-line)
      (?z . avy-action-zap-to-char)
-     (?. . my/avy-action-embark))))
+     (?. . my/avy-action-embark-act))))
 
 (use-package isearch
   :straight nil
