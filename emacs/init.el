@@ -43,7 +43,9 @@
   (general-create-definer my/bind-search :prefix "M-s")
   ;; IDE prefix: one-stop shop for all things programming.
   (general-create-definer my/bind-ide :prefix "M-i")
-  ;; C-c and C-x prefix helpers.
+  ;; Visual/apparearance prefix.
+  (general-create-definer my/bind-visual :prefix "M-0")
+  ;; C-c and C-x prefixes.
   (general-create-definer my/bind-c-c :prefix "C-c")
   (general-create-definer my/bind-c-x :prefix "C-x"))
 
@@ -265,10 +267,14 @@
 ;; The Modus themes are pre-installed now but pull latest.
 (use-package modus-themes
   :commands modus-themes-load-theme
+  :general
+  ;; Easy keybindings for when the mood changes.
+  (my/bind-visual
+    "M-0" #'modus-themes-toggle
+    "M--" #'modus-themes-select)
   :hook
   (emacs-startup . (lambda ()
                      (modus-themes-load-theme (car modus-themes-to-toggle))))
-
   :custom
   (modus-themes-to-toggle '(modus-operandi-tinted modus-vivendi))
   (modus-themes-italic-constructs t)
@@ -1424,11 +1430,15 @@
 ;; to dired and eshell for manipulation. This treemacs config was inspired by:
 ;; https://github.com/seagle0128/.emacs.d/blob/8cbec0c132cd6de06a8c293598a720d377f3f5b9/lisp/init-treemacs.el.
 (use-package treemacs
-  :commands treemacs
+  :commands
+  (treemacs
+   treemacs-select-window
+   ;; TODO: Why is Flymake complaining if these aren't declared?
+   treemacs-get-local-buffer
+   treemacs-get-local-window)
   :general
   (general-def
-    "M-t" #'my/treemacs-stay
-    "M-0" #'treemacs-select-window)
+    "M-t" #'my/treemacs-stay)
   (treemacs-mode-map
    ;; Otherwise it takes two clicks to open a directory.
    [mouse-1] #'treemacs-single-click-expand-action)
@@ -1636,6 +1646,7 @@ as there appears to be a bug in the current version."
 (use-package eglot
   :commands
   (eglot-completion-at-point
+   eglot-inlay-hints-mode
    eglot--current-server-or-lose
    eglot--request
    eglot--TextDocumentPositionParams)
@@ -1656,6 +1667,10 @@ as there appears to be a bug in the current version."
     "ar" #'eglot-rename
     ;; Help.
     "ho" #'my/eglot-open-external-docs)
+
+  ;; Easy keybindings for when the mood changes.
+  (my/bind-visual :keymaps
+    "i" #'eglot-inlay-hints-mode)
 
   :custom
   (eglot-autoshutdown t)
