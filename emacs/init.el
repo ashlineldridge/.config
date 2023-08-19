@@ -100,9 +100,7 @@
 
   (my/bind-search
     ;; Add search prefix descriptions.
-    "h" '(:ignore t :which-key "highlight")
-    "t" #'xref-find-definitions ;; Think: "source of [t]ruth".
-    "u" #'xref-find-references) ;; Think: "[u]sages".
+    "h" '(:ignore t :which-key "highlight"))
 
   (my/bind-ide
     ;; Add IDE prefix descriptions.
@@ -1739,6 +1737,11 @@ as there appears to be a bug in the current version."
 
 (use-package xref
   :straight nil
+  :general
+  (my/bind-search
+    "t" #'xref-find-definitions ;; Think: "source of [t]ruth".
+    "u" #'xref-find-references) ;; Think: "[u]sages".
+
   :custom
   ;; Don't prompt by default (invoke with prefix arg to prompt).
   (xref-prompt-for-identifier nil)
