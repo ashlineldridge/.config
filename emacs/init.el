@@ -116,6 +116,8 @@
   (ring-bell-function #'my/flash-mode-line)
   ;; Play nice with window managers like Yabai.
   (frame-resize-pixelwise t)
+  ;; Don't resize the frame when themes, fonts, etc, change.
+  (frame-inhibit-implied-resize t)
   (sentence-end-double-space nil)
   (delete-selection-mode t)
   (echo-keystrokes 0.01)
