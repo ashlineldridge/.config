@@ -654,8 +654,7 @@
      ;; from a member of `my/popper-ignore-modes'.
      (lambda (buf)
        (with-current-buffer buf
-         (unless (derived-mode-p
-                  (car (member major-mode my/popper-ignore-modes)))
+         (unless (apply #'derived-mode-p my/popper-ignore-modes)
            (derived-mode-p 'compilation-mode))))))
 
   (popper-echo-dispatch-keys '(?0 ?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9))
