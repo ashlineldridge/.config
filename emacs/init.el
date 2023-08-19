@@ -20,7 +20,9 @@
 ;;;; Keybinding Management
 
 (use-package general
-  :commands (general-auto-unbind-keys general-define-key)
+  :commands
+  (general-auto-unbind-keys
+   general-define-key)
   :config
   ;; General Approach to Keybinding:
   ;;
@@ -73,10 +75,9 @@
   ;; Display line numbers in certain modes.
   ((prog-mode config-mode text-mode) . display-line-numbers-mode)
   ;; Don't wrap long lines in programming modes.
-  (prog-mode . (lambda () (setq-local truncate-lines t)))
+  (prog-mode . my/truncate-lines)
 
   :general
-  ;; Prefer full `general-def' form for execing and indentation.
   (general-def
     "<escape>" #'keyboard-escape-quit
     "C-;" #'comment-line
@@ -202,6 +203,9 @@
     (interactive)
     (split-window-horizontally)
     (other-window 1))
+  (defun my/truncate-lines ()
+    "Truncate long lines rather than wrapping."
+    (setq-local truncate-lines t))
 
   (defun my/toggle-show-trailing-whitespace ()
     "Toggle visibility of trailing whitespace."
@@ -463,6 +467,18 @@
   :commands minions-mode
   :init
   (minions-mode 1))
+
+;;;;; Other Visuals
+
+(use-package hl-line
+  :straight nil
+  :hook
+  ((prog-mode
+    conf-mode
+    text-mode) . hl-line-mode)
+  :general
+  (my/bind-visual
+    "h" #'hl-line-mode))
 
 ;;;; Window Management
 
@@ -1443,7 +1459,7 @@
 
   :hook
   ;; Don't wrap long lines in Treemacs.
-  (treemacs-mode . (lambda () (setq-local truncate-lines t)))
+  (treemacs-mode . my/truncate-lines)
 
   :custom
   (treemacs-follow-mode t)
@@ -2280,10 +2296,8 @@ as there appears to be a bug in the current version."
 
   (defun my/eshell-init ()
     "Hook function executed when `eshell-mode' is run."
-    ;; Don't wrap long lines in eshell.
-    (setq-local truncate-lines t)
-    ;; Don't show line highlight in eshell.
-    (setq-local global-hl-line-mode nil)
+    ;; Default to not wrapping long eshell lines.
+    (my/truncate-lines)
     ;; Don't scroll the buffer around after it has been recentered (using C-l).
     ;; This seems to need to be done as a mode hook rather than in `:config' as
     ;; the latter results in `eshell-output-filter-functions' being set to nil.
