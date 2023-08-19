@@ -446,15 +446,18 @@
 (use-package hl-line
   :straight nil
   :hook
-  ((prog-mode
-    conf-mode
-    text-mode
-    special-mode
-    org-agenda-mode
-    compilation-mode) . hl-line-mode)
+  (after-change-major-mode . my/hl-line-mode-maybe)
   :general
   (my/bind-visual
-    "h" #'hl-line-mode))
+    "h" #'hl-line-mode)
+  :config
+  ;; Provides the functionality of `global-hl-line-mode' with the ability
+  ;; to disable for specific modes.
+  (defvar my/hl-line-ignore-modes nil)
+  (defun my/hl-line-mode-maybe ()
+    "Enable `hl-line-mode' if appropriate."
+    (unless (apply #'derived-mode-p my/hl-line-ignore-modes)
+      (hl-line-mode 1))))
 
 ;;;; Window Management
 
