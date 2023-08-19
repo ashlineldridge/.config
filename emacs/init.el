@@ -26,17 +26,12 @@
   :config
   ;; Automatically unbind non-prefix keys when used.
   (general-auto-unbind-keys)
-  ;; Search prefix: one-stop shop for finding things.
-  (general-create-definer my/bind-search :prefix "M-s")
-  ;; IDE prefix: one-stop shop for all things programming.
-  (general-create-definer my/bind-ide :prefix "M-i")
-  ;; Visual/apparearance prefix.
-  (general-create-definer my/bind-visual :prefix "M-0")
-  ;; Window prefix.
-  (general-create-definer my/bind-window :prefix "C-o")
-  ;; C-c and C-x prefixes.
-  (general-create-definer my/bind-c-c :prefix "C-c")
-  (general-create-definer my/bind-c-x :prefix "C-x"))
+  (general-create-definer my/bind-search :prefix "M-s") ;; Search prefix.
+  (general-create-definer my/bind-ide :prefix "M-i")    ;; IDE prefix.
+  (general-create-definer my/bind-visual :prefix "M-0") ;; Visual prefix.
+  (general-create-definer my/bind-window :prefix "C-o") ;; Window prefix.
+  (general-create-definer my/bind-c-c :prefix "C-c")    ;; C-c prefix.
+  (general-create-definer my/bind-c-x :prefix "C-x"))   ;; C-x prefixes.
 
 (use-package transient
   :commands transient-get-value)
