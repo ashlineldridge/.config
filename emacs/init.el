@@ -1241,6 +1241,14 @@
   :custom
   (wgrep-auto-save-buffer t))
 
+(use-package replace
+  :straight nil
+  :general
+  (my/bind-search
+    ;; Move the binding for `occur' as I want "M-s o" for symbol search.
+    "o" nil
+    "M-o" #'occur))
+
 ;;;; General Editing
 
 ;;;;; Undo/Redo
