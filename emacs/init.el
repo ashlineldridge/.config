@@ -1193,10 +1193,7 @@
   (add-to-list 'embark-keymap-alist '(consult-xref . my/embark-consult-xref-map))
   (add-to-list 'embark-keymap-alist '(xref . my/embark-consult-xref-map)))
 
-(use-package embark-consult
-  :hook
-  ;; TODO: Understand how this actually works.
-  (embark-collect-mode . consult-preview-at-point-mode))
+(use-package embark-consult)
 
 (use-package rg
   :commands
