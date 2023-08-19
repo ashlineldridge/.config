@@ -453,7 +453,10 @@
   :hook
   ((prog-mode
     conf-mode
-    text-mode) . hl-line-mode)
+    text-mode
+    special-mode
+    org-agenda-mode
+    compilation-mode) . hl-line-mode)
   :general
   (my/bind-visual
     "h" #'hl-line-mode))
