@@ -24,21 +24,6 @@
   (general-auto-unbind-keys
    general-define-key)
   :config
-  ;; General Approach to Keybinding:
-  ;;
-  ;; "M-s" is the key prefix for "searching". I.e. I want to navigate away from
-  ;; my current location and the command I execute will help me do it. Commands
-  ;; that fall into this category are placed directly under the "M-s" prefix.
-  ;;
-  ;; "M-i" is the "IDE" key prefix and IDE-like commands fall under a relevant
-  ;; subprefix of "M-i". E.g. all build-related keybindings are found under
-  ;; "M-i b", all test-related keybindings under "M-i t", and so on.
-  ;;
-  ;; Embark action keymaps are used to mirror the relevant parts of the "M-i"
-  ;; and "M-s" layouts in a way that acts on the symbol under point. E.g.
-  ;; `embark-act' + "a r" renames the symbol, `embark-act' + "s s" uses ripgrep
-  ;; to search the project for the symbol, etc.
-
   ;; Automatically unbind non-prefix keys when used.
   (general-auto-unbind-keys)
   ;; Search prefix: one-stop shop for finding things.
@@ -47,6 +32,8 @@
   (general-create-definer my/bind-ide :prefix "M-i")
   ;; Visual/apparearance prefix.
   (general-create-definer my/bind-visual :prefix "M-0")
+  ;; Window prefix.
+  (general-create-definer my/bind-window :prefix "C-o")
   ;; C-c and C-x prefixes.
   (general-create-definer my/bind-c-c :prefix "C-c")
   (general-create-definer my/bind-c-x :prefix "C-x"))
@@ -92,8 +79,6 @@
 
   (my/bind-c-x
     "m" nil
-    "2" #'my/split-window-vertically
-    "3" #'my/split-window-horizontally
     "C-k" #'kill-this-buffer
     "C-x" #'exchange-point-and-mark
     "ww" #'my/toggle-show-trailing-whitespace
@@ -112,9 +97,12 @@
     "r" '(:ignore t :which-key "refactor")
     "t" '(:ignore t :which-key "test")
     "w" '(:ignore t :which-key "workspaces")
-    "|" #'display-fill-column-indicator-mode
     "b1" #'compile
     "b2" #'recompile)
+
+  (my/bind-visual
+    "|" #'display-fill-column-indicator-mode
+    "l" #'toggle-truncate-lines)
 
   :custom
   (confirm-kill-emacs #'yes-or-no-p)
@@ -143,7 +131,6 @@
   (fill-column 100)
   (column-number-mode t)
   (global-auto-revert-mode t)
-  (global-hl-line-mode t)
   (async-shell-command-buffer 'new-buffer)
   (savehist-mode t)
   (electric-pair-mode t)
@@ -192,17 +179,6 @@
   (put 'upcase-region 'disabled nil)
   (put 'downcase-region 'disabled nil)
 
-  (defun my/split-window-vertically ()
-    "Split window vertically and select the other window."
-    (interactive)
-    (split-window-vertically)
-    (other-window 1))
-
-  (defun my/split-window-horizontally ()
-    "Split window horizontally and select the other window."
-    (interactive)
-    (split-window-horizontally)
-    (other-window 1))
   (defun my/truncate-lines ()
     "Truncate long lines rather than wrapping."
     (setq-local truncate-lines t))
@@ -266,14 +242,12 @@
 
 ;;;;; Themes
 
-;; The Modus themes are pre-installed now but pull latest.
 (use-package modus-themes
   :commands modus-themes-load-theme
   :general
   ;; Easy keybindings for when the mood changes.
   (my/bind-visual
-    "M-0" #'modus-themes-toggle
-    "M--" #'modus-themes-select)
+    "M-0" #'modus-themes-toggle)
   :hook
   (emacs-startup . (lambda ()
                      (modus-themes-load-theme (car modus-themes-to-toggle))))
@@ -289,34 +263,37 @@
      (3 . (variable-pitch rainbow background semibold 1.1))
      (t . (variable-pitch rainbow semilight 1.1)))))
 
+(use-package standard-themes)
+
 ;;;;; Fonts
 
 (use-package faces
   :straight nil
   :general
-  (general-def
-    "<f12>" #'my/cycle-font-config)
+  (my/bind-visual
+    "M-9" #'my/cycle-font-config)
 
   :hook
   ;; Update fonts after theme is loaded so changes take effect.
-  (modus-themes-post-load . my/apply-font-config)
+  ((modus-themes-post-load
+    standard-themes-post-load) . my/apply-font-config)
 
   :config
   (defvar my/font-config-index 0)
   (defvar my/fixed-font "Iosevka Comfy")
   (defvar my/variable-font "Iosevka Comfy Duo")
 
-  (defvar my/font-configs
-    '((:name "Laptop"
-       :fixed-font-height 140
-       :variable-font-height 140
-       :line-number-font-height 120
-       :mode-line-font-height 130)
-      (:name "Desktop"
-       :fixed-font-height 148
-       :variable-font-height 148
-       :line-number-font-height 124
-       :mode-line-font-height 140)))
+  (setq my/font-configs
+        '((:name "Laptop"
+           :fixed-font-height 140
+           :variable-font-height 140
+           :line-number-font-height 120
+           :mode-line-font-height 130)
+          (:name "Desktop"
+           :fixed-font-height 146
+           :variable-font-height 146
+           :line-number-font-height 124
+           :mode-line-font-height 138)))
 
   ;; Create faces used in `consult-imenu-config' as extension points from
   ;; the default faces used in programming language buffers. Use C-u C-x =
@@ -407,8 +384,7 @@
       ;; `modus-themes-mixed-fonts' can also be used to achieve this.
       (require 'org-faces)
       (dolist (face '(org-block org-table))
-        (set-face-attribute face nil :inherit 'fixed-pitch))
-      (message "Applied font configuration: %s" name)))
+        (set-face-attribute face nil :inherit 'fixed-pitch))))
 
   (defun my/cycle-font-config ()
     "Cycle to the next font configuration."
@@ -495,6 +471,11 @@
    my/split-window-horizontally)
 
   :general
+  (my/bind-window
+    ;; Add `ace-window' to the primary window prefix for completeness; though
+    ;; I pretty much always use the shorter M-o defined below.
+    "a" #'ace-window)
+
   (general-def
     "M-o" #'ace-window)
 
@@ -549,13 +530,32 @@
   :init
   (winner-mode 1))
 
-;;;;; General Window Keybindings
+;;;;; General Window Commands
 
 (use-package window
   :straight nil
   :general
-  (general-def
-    "C-o" '(:keymap my/window-repeat-map))
+  (my/bind-window
+    "=" #'balance-windows
+    "]" #'rotate-frame-clockwise
+    "[" #'rotate-frame-anticlockwise
+    "1" #'delete-other-windows
+    "o" #'other-window
+    "b" #'shrink-window-horizontally
+    "f" #'enlarge-window-horizontally
+    "n" #'enlarge-window
+    "p" #'shrink-window
+    "u" #'winner-undo
+    "r" #'winner-redo
+    "x" #'my/split-window-vertically
+    "y" #'my/split-window-horizontally
+    "X" #'flip-frame
+    "Y" #'flop-frame)
+
+  (my/bind-c-x
+    ;; Replace existing splitting bindings.
+    "2" #'my/split-window-vertically
+    "3" #'my/split-window-horizontally)
 
   :custom
   ;; The following provides the default `display-buffer' behaviour for buffers
@@ -568,23 +568,31 @@
   :config
   (defvar-keymap my/window-repeat-map
     :doc "Keymap for repeatable window commands."
-    "=" #'balance-windows
     "o" #'other-window
-    "C-o" #'previous-window-any-frame
     "b" #'shrink-window-horizontally
     "f" #'enlarge-window-horizontally
     "n" #'enlarge-window
     "p" #'shrink-window
     "]" #'rotate-frame-clockwise
     "[" #'rotate-frame-anticlockwise
-    "x" #'flip-frame
-    "y" #'flop-frame
     "u" #'winner-undo
     "r" #'winner-redo)
 
-  (my/repeatize 'my/window-repeat-map))
+  (my/repeatize 'my/window-repeat-map)
 
-;;;;; Window Placement
+  (defun my/split-window-vertically ()
+    "Split window vertically and select the other window."
+    (interactive)
+    (split-window-vertically)
+    (other-window 1))
+
+  (defun my/split-window-horizontally ()
+    "Split window horizontally and select the other window."
+    (interactive)
+    (split-window-horizontally)
+    (other-window 1)))
+
+;;;;; Window Orchestration
 
 ;; Use Shackle for managing windows that aren't considered to be "popups" by
 ;; Popper. Shackle basically replaces the manual configuration of
@@ -599,7 +607,8 @@
   (shackle-rules
    '(("*eldoc" :select nil :other t :regexp t)
      ("*helpful" :select t :other t :regexp t)
-     ("*rg*" :select t :other t)))
+     ("*rg*" :select t :other t)
+     ("*Occur*" :select t :other t)))
   :init
   (shackle-mode 1))
 
@@ -785,7 +794,8 @@
   :defines corfu-margin-formatters
   :hook
   ;; After toggling between themes the icon cache needs to be reset.
-  (modus-themes-post-load . kind-icon-reset-cache)
+  ((modus-themes-post-load
+    standard-themes-post-load) . kind-icon-reset-cache)
   :custom
   (kind-icon-default-face 'corfu-default)
   :init
@@ -954,6 +964,9 @@
     "SPC" #'consult-mark
     "S-SPC" #'consult-global-mark)
 
+  (my/bind-visual
+    "M--" #'consult-theme)
+
   :custom
   (register-preview-delay 0.5)
   (register-preview-function #'consult-register-format)
@@ -1048,6 +1061,13 @@
    embark-target-identifier-at-point)
 
   :general
+  ;; I want Embark action keymaps to have a symmetry with the relevant parts of
+  ;; my other major prefixes (e.g. "M-s" and "M-i"). E.g. if I can rename a
+  ;; symbol using "M-i a r" then I want to be able to do the same thing using
+  ;; `embark-act' + "a r". Similarly, for "M-s s" for; searching; `embark-act' +
+  ;; "s s" should search for the text being acted upon. This is a balancing act
+  ;; between practicality and my OCD (even the above example isn't truly
+  ;; symmetrical).
   (general-def
     "C-." #'embark-act
     "M-." #'embark-dwim
@@ -1660,10 +1680,10 @@ as there appears to be a bug in the current version."
 (use-package eglot
   :commands
   (eglot-completion-at-point
-   eglot-inlay-hints-mode
    eglot--current-server-or-lose
    eglot--request
    eglot--TextDocumentPositionParams)
+
   :hook
   ((bash-ts-mode
     go-ts-mode
@@ -1683,7 +1703,7 @@ as there appears to be a bug in the current version."
     "ho" #'my/eglot-open-external-docs)
 
   ;; Easy keybindings for when the mood changes.
-  (my/bind-visual :keymaps
+  (my/bind-visual :keymaps 'eglot-mode-map
     "i" #'eglot-inlay-hints-mode)
 
   :custom
@@ -1694,6 +1714,11 @@ as there appears to be a bug in the current version."
   :config
   (defun my/eglot-init ()
     "Init function for `eglot--managed-mode'."
+    ;; For cleaner visuals, leave inlay hints off by default and toggle them
+    ;; on when you want to see something. They don't interact well with
+    ;; `hl-line-mode' so when one is on the other is better toggled off.
+    ;; Try to preference using Eldoc instead of inlay hints.
+    (eglot-inlay-hints-mode -1)
     (setq-local completion-at-point-functions
                 (list
                  #'tempel-complete
