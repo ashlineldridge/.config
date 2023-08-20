@@ -81,7 +81,9 @@
 
   (my/bind-search
     ;; Add search prefix descriptions.
-    "h" '(:ignore t :which-key "highlight"))
+    "h" '(:ignore t :which-key "highlight")
+    "r" #'my/query-replace-wrap
+    "R" #'my/query-replace-regexp-wrap)
 
   (my/bind-ide
     ;; Add IDE prefix descriptions.
@@ -208,18 +210,6 @@
           (delete-backward-char 1 nil)
         (delete-region (line-beginning-position) (point)))))
 
-  (defun my/query-replace-case-sensitive ()
-    "Calls `query-replace' in a case-sensitive way."
-    (interactive)
-    (let (case-fold-search)
-      (call-interactively #'query-replace)))
-
-  (defun my/query-replace-regexp-case-sensitive ()
-    "Calls `query-replace-regexp' in a case-sensitive way."
-    (interactive)
-    (let (case-fold-search)
-      (call-interactively #'query-replace-regexp)))
-
   (defun my/flash-mode-line ()
     "Flashes the mode line for a visible bell."
     (invert-face 'mode-line)
@@ -229,6 +219,27 @@
     "Return whether C should be excluded from pairing."
     ;; Exclude '<' as I want that for triggering Tempel.
     (if (char-equal c ?<) t (electric-pair-default-inhibit c)))
+
+  (defun my/query-replace-advice (orig-fun &rest args)
+    "Around advice to add wrapping behaviour to `query-replace' and friends."
+    (save-excursion
+      (let ((point-start (point))
+            (point-min (point-min)))
+        (apply orig-fun args)
+        (when (and
+               (/= point-start point-min)
+               (yes-or-no-p "Wrap to beginning of buffer? "))
+          (beginning-of-buffer)
+          (setf (nth 3 args) point-min)
+          (setf (nth 4 args) point-start)
+          (apply orig-fun args)))))
+
+  ;; My versions of `query-replace' and `query-replace-regexp' that provide
+  ;; an option to wrap the buffer and return point its starting position.
+  (fset 'my/query-replace-wrap #'query-replace)
+  (fset 'my/query-replace-regexp-wrap #'query-replace-regexp)
+  (advice-add #'my/query-replace-wrap :around #'my/query-replace-advice)
+  (advice-add #'my/query-replace-regexp-wrap :around #'my/query-replace-advice)
 
   ;; Prefer running a single instance of Emacs in server mode.
   (require 'server)
@@ -453,7 +464,7 @@
   :config
   ;; Provides the functionality of `global-hl-line-mode' with the ability
   ;; to disable for specific modes.
-  (defvar my/hl-line-ignore-modes nil)
+  (defvar my/hl-line-ignore-modes '(eshell-mode))
   (defun my/hl-line-mode-maybe ()
     "Enable `hl-line-mode' if appropriate."
     (unless (apply #'derived-mode-p my/hl-line-ignore-modes)
@@ -1093,6 +1104,8 @@
     "sh" #'embark-toggle-highlight
     "sl" #'consult-line
     "so" #'consult-eglot-symbols
+    "sr" #'my/query-replace-wrap
+    "sR" #'my/query-replace-regexp-wrap
     "ss" #'consult-ripgrep
     "st" #'xref-find-definitions
     "su" #'xref-find-references
@@ -1144,6 +1157,10 @@
   (add-to-list 'embark-target-injection-hooks '(eglot-rename embark--ignore-target))
   (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
   (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(my/query-replace-wrap embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(my/query-replace-regexp-wrap embark--allow-edit))
 
   ;; Macro for defining an Embark action that executes FN using an `ace-window'
   ;; selected window. Taken from:
