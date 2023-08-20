@@ -727,7 +727,7 @@
 ;;;; Completion System
 
 (use-package corfu
-  :straight (corfu-mode :host github :repo "minad/corfu")
+  :straight (:host github :repo "minad/corfu")
   :commands (corfu-mode global-corfu-mode)
   :functions consult-completion-in-region
 
@@ -1283,15 +1283,12 @@
 
 ;;;;; Region Expansion
 
-(use-package expand-region
+(use-package expreg
+  :straight (:host github :repo "casouri/expreg")
   :general
   (general-def
-    "C-=" #'er/expand-region
-    "C-+" #'er/mark-outside-pairs
-    "C-_" #'er/mark-symbol
-    "C-\\" #'er/mark-defun)
-  :custom
-  (expand-region-fast-keys-enabled nil))
+    "C-=" #'expreg-expand
+    "C-+" #'expreg-contract))
 
 ;;;;; Whitespace
 
@@ -2160,7 +2157,7 @@ as there appears to be a bug in the current version."
 ;;;;;; Bazel
 
 (use-package bazel-mode
-  :straight (bazel-mode :host github :repo "bazelbuild/emacs-bazel-mode")
+  :straight (:host github :repo "bazelbuild/emacs-bazel-mode")
   :mode
   ("\\.BUILD\\'" . bazel-mode)
   ("\\.bazel\\'" . bazel-mode)

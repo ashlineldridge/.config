@@ -30,7 +30,7 @@
  ("emacsmirror-mirror" . "1ce066d81c64f0b3c03f6cd3550634d9ef012ac6")
  ("emacsql" . "64012261f65fcdd7ea137d1973ef051af1dced42")
  ("embark" . "9a44418c349e41020cdc5ad1bd21e8c77a429062")
- ("expand-region.el" . "b70feaa644310dc2d599dc277cd20a1f2b6446ac")
+ ("expreg" . "81803d84a00be21d5701b19ede637a2523d846e3")
  ("external-completion" . "d717c138623aeecc8e0a0312e0576e98604c43f2")
  ("f.el" . "19e1da061e759b05e8c480b426287a063ca39484")
  ("flymake" . "6950c8099e3ee7cafc701b1f86797b2a1b466067")
