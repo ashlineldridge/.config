@@ -700,7 +700,7 @@
     [remap describe-variable] #'helpful-variable
     [remap describe-command] #'helpful-command
     [remap describe-key] #'helpful-key)
-  (general-def 'emacs-lisp-mode-map
+  (general-def '(emacs-lisp-mode-map lisp-interaction-mode-map)
     ;; Replace `display-local-help' with Helpful.
     "C-h ." #'helpful-at-point)
 
