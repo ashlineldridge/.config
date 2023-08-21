@@ -1710,6 +1710,7 @@
 
   :custom
   (eglot-autoshutdown t)
+  (eglot-confirm-server-initiated-edits nil)
   ;; Tree-sitter produces a better imenu.
   (eglot-stay-out-of '(imenu))
 
