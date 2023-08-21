@@ -291,17 +291,15 @@
   (defvar my/fixed-font "Iosevka Comfy")
   (defvar my/variable-font "Iosevka Comfy Duo")
 
-  (setq my/font-configs
-        '((:name "Laptop"
-           :fixed-font-height 140
-           :variable-font-height 140
-           :line-number-font-height 120
-           :mode-line-font-height 130)
-          (:name "Desktop"
-           :fixed-font-height 146
-           :variable-font-height 146
-           :line-number-font-height 124
-           :mode-line-font-height 138)))
+  (defvar my/font-configs
+    '((:fixed-font-height 140
+       :variable-font-height 140
+       :line-number-font-height 120
+       :mode-line-font-height 130)
+      (:fixed-font-height 146
+       :variable-font-height 146
+       :line-number-font-height 126
+       :mode-line-font-height 136)))
 
   ;; Create faces used in `consult-imenu-config' as extension points from
   ;; the default faces used in programming language buffers. Use C-u C-x =
@@ -362,7 +360,6 @@
     "Apply the INDEX'th font configuration from `my/font-configs'."
     (let* ((index (or index my/font-config-index))
            (config (nth index my/font-configs))
-           (name (plist-get config :name))
            (fixed-font-height (plist-get config :fixed-font-height))
            (variable-font-height (plist-get config :variable-font-height))
            (line-number-font-height (plist-get config :line-number-font-height))
