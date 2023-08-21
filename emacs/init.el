@@ -1549,7 +1549,7 @@
   :straight nil
   :general
   (general-def 'project-prefix-map
-    "u" #'my/project-refresh-list)
+    "u" #'my/project-update-list)
 
   :custom
   (project-switch-commands
@@ -1567,38 +1567,22 @@
     (if-let* ((proj (project-current)))
         (project-root proj)))
 
-  (defun my/project-refresh-list ()
-    "Refresh list of known projects."
+  (defun my/project-update-list ()
+    "Update list of known projects."
     (interactive)
     (project-forget-zombie-projects)
-    (my/project-index-under "~/dev/home")
-    (my/project-index-under "~/dev/work"))
+    (my/project-remember-projects-under '("~/dev/home" "~/dev/work")))
 
-  (defun my/project-index-under (dir)
-    "Index all projects below directory DIR.
-This is an adaptation of a previous version of `project-remember-projects-under'
-as there appears to be a bug in the current version."
-    (interactive "DDirectory: \nP")
-    (project--ensure-read-project-list)
-    (let ((queue (directory-files dir t nil t)) (count 0)
-          (known (make-hash-table
-                  :size (* 2 (length project--list))
-                  :test #'equal )))
-      (dolist (project (mapcar #'car project--list))
-        (puthash project t known))
-      (while queue
-        (when-let ((subdir (pop queue))
-                   ((file-directory-p subdir))
-                   ((not (gethash subdir known))))
-          (when-let (pr (project--find-in-directory subdir))
-            (project-remember-project pr t)
-            (message "Found %s..." (project-root pr))
-            (setq count (1+ count)))))
-      (if (zerop count)
-          (message "No projects were found")
-        (project--write-project-list)
-        (message "%d project%s were found"
-                 count (if (= count 1) "" "s")))))
+  (defun my/project-remember-projects-under (dirs)
+    "Remember all projects one level under each of DIRS."
+    (let ((found 0)
+          (files (mapcan (lambda (dir) (directory-files dir t)) dirs)))
+      (dolist (file files)
+        (when (and (file-directory-p file)
+                   (not (member file '("." ".."))))
+          (setq found (+ found
+                         (project-remember-projects-under file)))))
+      (message "Found %d new projects" found)))
 
   (defun my/project-detached-shell-command ()
     "Run `detached-shell-command' in the project's root directory."
