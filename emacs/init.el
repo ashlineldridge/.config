@@ -842,14 +842,12 @@
   :commands vertico-multiform-mode
   :custom
   (vertico-multiform-categories
-   '((consult-grep buffer)
-     (imenu buffer)
+   '((imenu buffer)
      (file (vertico-sort-function . my/vertico-sort-dirs-first))))
 
-  ;; Some things work better via commands than categories.
+  ;; Sometimes commands are better when the category is too broad.
   (vertico-multiform-commands
-   '((xref-find-references buffer)
-     (consult-outline buffer)))
+   '((consult-outline buffer)))
 
   :init
   (vertico-multiform-mode 1)
@@ -1054,6 +1052,8 @@
    consult-mark
    consult-global-mark
    consult-flymake
+   xref-find-references
+   xref-find-definitions
    :preview-key 'any))
 
 (use-package consult-dir
