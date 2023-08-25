@@ -1052,6 +1052,7 @@
    consult-mark
    consult-global-mark
    consult-flymake
+   consult-ripgrep
    xref-find-references
    xref-find-definitions
    :preview-key 'any))
@@ -1094,6 +1095,7 @@
                  embark-command-map
                  embark-function-map
                  embark-identifier-map
+                 embark-region-map
                  embark-symbol-map)
     "s]" #'embark-isearch-forward
     "s[" #'embark-isearch-backward
