@@ -13,24 +13,24 @@
 
 ;; In Emacs 29+, we can change the eln-cache directory.
 ;; See https://github.com/emacscollective/no-littering#native-compilation-cache.
-;; TODO: This doesn't completely work yet as ~/.config/emacs/eln-cache will
-;; still accumulate some files due to Flycheck.
-;; See: https://github.com/emacscollective/no-littering/discussions/206.
-;; (when (fboundp 'startup-redirect-eln-cache)
-;;   (startup-redirect-eln-cache
-;;    (expand-file-name "var/eln-cache/" user-emacs-directory)))
+(when (fboundp 'startup-redirect-eln-cache)
+  (startup-redirect-eln-cache
+   (expand-file-name "var/eln-cache/" user-emacs-directory)))
 
 (custom-set-variables
  ;; Quieten Emacs 29+ compilation warnings.
  '(native-comp-async-report-warnings-errors nil)
 
- ;; Disable package.el as we'll use straight.el for package management.
+ ;; Disable package.el as Elpaca is used for package management.
  '(package-enable-at-startup nil)
 
  ;; Follow recommended lsp-mode performance settings.
  ;; See: https://emacs-lsp.github.io/lsp-mode/page/performance.
  `(gc-cons-threshold ,(* 100 1024 1024))
- `(read-process-output-max ,(* 1 1024 1024)))
+ `(read-process-output-max ,(* 1 1024 1024))
+
+ ;; Enable `use-package''s imenu support.
+ '(use-package-enable-imenu-support t))
 
 ;; Keep track of start up time.
 (add-hook 'emacs-startup-hook
@@ -84,43 +84,63 @@
 	(mapconcat #'identity
                    '("/opt/homebrew/opt/gcc/lib/gcc/13"
                      "/opt/homebrew/opt/libgccjit/lib/gcc/13"
-                     "/opt/homebrew/opt/gcc/lib/gcc/13/gcc/aarch64-apple-darwin22/13")
-                   ":"))
+                     "/opt/homebrew/opt/gcc/lib/gcc/13/gcc/aarch64-apple-darwin22/13") ":"))
 
-;; Configure straight.el (use `defvar' to make Flycheck happy).
-(defvar straight-base-dir (expand-file-name "var" user-emacs-directory))
-(defvar straight-use-package-by-default t)
+;; Declarations to quieten Flymake down.
+(declare-function elpaca-generate-autoloads nil)
+(declare-function elpaca-process-queues nil)
+(declare-function elpaca-wait nil)
+(declare-function elpaca-use-package-mode nil)
+(defvar elpaca-use-package-by-default)
 
-;; Bootstrap straight.el.
-;; See: https://github.com/raxod502/straight.el#bootstrapping-straightel
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name
-        "straight/repos/straight.el/bootstrap.el" straight-base-dir))
-      (bootstrap-version 6))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
+;; Bootstrap Elpaca (https://github.com/progfolio/elpaca).
+(defvar elpaca-installer-version 0.5)
+(defvar elpaca-directory (expand-file-name "var/elpaca/" user-emacs-directory))
+(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+(defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                              :ref nil
+                              :files (:defaults (:exclude "extensions"))
+                              :build (:not elpaca--activate-package)))
+(let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+       (build (expand-file-name "elpaca/" elpaca-builds-directory))
+       (order (cdr elpaca-order))
+       (default-directory repo))
+  (add-to-list 'load-path (if (file-exists-p build) build repo))
+  (unless (file-exists-p repo)
+    (make-directory repo t)
+    (when (< emacs-major-version 28) (require 'subr-x))
+    (condition-case-unless-debug err
+        (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                 ((zerop (call-process "git" nil buffer t "clone"
+                                       (plist-get order :repo) repo)))
+                 ((zerop (call-process "git" nil buffer t "checkout"
+                                       (or (plist-get order :ref) "--"))))
+                 (emacs (concat invocation-directory invocation-name))
+                 ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                       "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                 ((require 'elpaca))
+                 ((elpaca-generate-autoloads "elpaca" repo)))
+            (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+          (error "%s" (with-current-buffer buffer (buffer-string))))
+      ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+  (unless (require 'elpaca-autoloads nil t)
+    (require 'elpaca)
+    (elpaca-generate-autoloads "elpaca" repo)
+    (load "./elpaca-autoloads")))
+(add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca `(,@elpaca-order))
 
-;; Declare `straight-use-package' to make Flycheck happy.
-(declare-function straight-use-package nil)
-
-;; Install Org as early as possible after straight so that the built-in version
-;; of Org doesn't get loaded.
-(straight-use-package 'org)
+;; Install use-package support.
+(elpaca elpaca-use-package
+  (elpaca-use-package-mode)
+  (setq elpaca-use-package-by-default t))
 
 ;; Install no-littering early so that it can manage config/data files.
-(straight-use-package 'no-littering)
-(require 'no-littering)
+(elpaca no-littering)
 
-;; Install use-package (with imenu support).
-(defvar use-package-enable-imenu-support t)
-(straight-use-package 'use-package)
+;; Block until current queue is processed.
+(elpaca-wait)
 
 ;; If an early-init-private.el file exists, load it. I use this file to manage
 ;; configuration I don't want to make public. Typically, it's just environment

@@ -20,6 +20,7 @@
 ;;;; Keybinding Management
 
 (use-package general
+  :demand t
   :commands
   (general-auto-unbind-keys
    general-define-key)
@@ -33,11 +34,15 @@
   (general-create-definer my/bind-c-c :prefix "C-c")    ;; C-c prefix.
   (general-create-definer my/bind-c-x :prefix "C-x"))   ;; C-x prefixes.
 
+;; Packages that modify the syntax of `use-package' need to be waited on.
+(declare-function elpaca-wait nil)
+(elpaca-wait)
+
 (use-package transient
   :commands transient-get-value)
 
 (use-package repeat
-  :straight nil
+  :elpaca nil
   :commands my/repeatize
   :config
   ;; See: https://karthinks.com/software/it-bears-repeating.
@@ -52,7 +57,7 @@
 ;;;; Base Settings
 
 (use-package emacs
-  :straight nil
+  :elpaca nil
   :hook
   ;; Display line numbers in certain modes.
   ((prog-mode config-mode text-mode) . display-line-numbers-mode)
@@ -257,8 +262,8 @@
   (my/bind-visual
     "M-0" #'modus-themes-toggle)
   :hook
-  (emacs-startup . (lambda ()
-                     (modus-themes-load-theme (car modus-themes-to-toggle))))
+  (elpaca-after-init . (lambda ()
+                         (modus-themes-load-theme (car modus-themes-to-toggle))))
   :custom
   (modus-themes-to-toggle '(modus-operandi-tinted modus-vivendi))
   (modus-themes-italic-constructs t)
@@ -276,7 +281,7 @@
 ;;;;; Fonts
 
 (use-package faces
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-visual
     "M-9" #'my/cycle-font-config)
@@ -417,7 +422,7 @@
 (use-package nerd-icons-completion
   ;; For some reason, this only seems to work when `nerd-icons-completion-mode.'
   ;; is called very late in the startup cycle.
-  :hook (emacs-startup . nerd-icons-completion-mode))
+  :hook (elpaca-after-init . nerd-icons-completion-mode))
 
 ;;;;; Mode Line
 
@@ -452,7 +457,7 @@
 ;;;;; Other Visuals
 
 (use-package hl-line
-  :straight nil
+  :elpaca nil
   :hook
   (after-change-major-mode . my/hl-line-mode-maybe)
   :general
@@ -537,14 +542,14 @@
 ;;;;; Window History
 
 (use-package winner
-  :straight nil
+  :elpaca nil
   :init
   (winner-mode 1))
 
 ;;;;; General Window Commands
 
 (use-package window
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-window
     "=" #'balance-windows
@@ -685,7 +690,7 @@
 ;;;; Help System
 
 (use-package help-fns
-  :straight nil
+  :elpaca nil
   :general
   (general-def
     "C-h F" #'describe-face))
@@ -724,7 +729,7 @@
 ;;;; Completion System
 
 (use-package corfu
-  :straight (:host github :repo "minad/corfu")
+  :elpaca (:host github :repo "minad/corfu")
   :commands (corfu-mode global-corfu-mode)
   :functions consult-completion-in-region
 
@@ -785,7 +790,7 @@
 ;; Documentation shown alongside Corfu completion popups.
 (use-package corfu-popupinfo
   :after corfu
-  :straight
+  :elpaca
   (:host github :repo "minad/corfu" :files ("extensions/corfu-popupinfo.el"))
   :general
   (general-def 'corfu-map
@@ -820,14 +825,14 @@
 ;; M-RET which calls `vertico-exit-input' to cancel the completion and use the
 ;; new value.
 (use-package vertico
-  :straight (:files (:defaults "extensions/*.el"))
+  :elpaca (:files (:defaults "extensions/*.el"))
   :commands vertico-mode
   :init
   (vertico-mode 1))
 
 (use-package vertico-directory
   :after vertico
-  :straight nil
+  :elpaca nil
   :general
   (general-def 'vertico-map
     ;; More convenient directory navigation commands.
@@ -838,7 +843,7 @@
 
 (use-package vertico-multiform
   :after vertico
-  :straight nil
+  :elpaca nil
   :commands vertico-multiform-mode
   :custom
   (vertico-multiform-categories
@@ -866,7 +871,7 @@
 ;; Vertico buffers are shown (otherwise they reuse the current window).
 (use-package vertico-buffer
   :after vertico
-  :straight nil
+  :elpaca nil
   :custom
   (vertico-buffer-display-action
    '(display-buffer-in-direction
@@ -1283,7 +1288,7 @@
 ;;;;; Region Expansion
 
 (use-package expreg
-  :straight (:host github :repo "casouri/expreg")
+  :elpaca (:host github :repo "casouri/expreg")
   :general
   (general-def
     "C-=" #'expreg-expand
@@ -1298,7 +1303,7 @@
 ;;;;; Special Characters
 
 (use-package iso-transl
-  :straight nil
+  :elpaca nil
   :general
   ;; Bind C-x 8 0 to insert a zero-width space character which can be used to
   ;; escape org mode emphasis markers.
@@ -1383,7 +1388,7 @@
      (?. . my/avy-action-embark-act))))
 
 (use-package isearch
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-search
     "]" #'isearch-forward
@@ -1398,7 +1403,7 @@
 ;;;;; Highlighting
 
 (use-package hi-lock
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-search
     "h." #'highlight-symbol-at-point
@@ -1409,7 +1414,7 @@
 ;;;; Buffer Management
 
 (use-package ibuffer
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-c-x
     ;; Replace `list-buffers' with `ibuffer'.
@@ -1427,7 +1432,7 @@
 ;;;;; File Browsing
 
 (use-package dired
-  :straight nil
+  :elpaca nil
   :general
   (general-def 'dired-mode-map
     "C-o" nil
@@ -1539,7 +1544,7 @@
 ;;;;; File History
 
 (use-package recentf
-  :straight nil
+  :elpaca nil
   :custom
   (recentf-max-saved-items 300)
   :config
@@ -1548,7 +1553,7 @@
 ;;;;; Project Management
 
 (use-package project
-  :straight nil
+  :elpaca nil
   :general
   (general-def 'project-prefix-map
     "u" #'my/project-update-list)
@@ -1610,7 +1615,7 @@
 ;;;;; Outline
 
 (use-package outline
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-c-c :keymaps 'outline-minor-mode-map
     "C-n" #'outline-next-visible-heading
@@ -1655,7 +1660,7 @@
 ;;;;;; Tree-Sitter
 
 (use-package treesit
-  :straight nil
+  :elpaca nil
   :custom
   (treesit-extra-load-path (list (no-littering-expand-var-file-name "tree-sitter")))
   (treesit-font-lock-level 4) ;; Be extra.
@@ -1678,6 +1683,8 @@
           (rustic-mode . rust-ts-mode)
           (sh-mode . bash-ts-mode)
           (conf-toml-mode . toml-ts-mode))))
+
+(elpaca-wait)
 
 ;;;;;; LSP
 
@@ -1782,12 +1789,7 @@
 ;;;;;; Xref
 
 (use-package xref
-  :straight nil
-  :general
-  (my/bind-search
-    "t" #'xref-find-definitions ;; Think: "source of [t]ruth".
-    "u" #'xref-find-references) ;; Think: "[u]sages".
-
+  :elpaca nil
   :custom
   ;; Don't prompt by default (invoke with prefix arg to prompt).
   (xref-prompt-for-identifier nil)
@@ -1798,7 +1800,7 @@
 ;;;;;; Eldoc
 
 (use-package eldoc
-  :straight nil
+  :elpaca nil
   :general
   (general-def
     "C-h t" #'eldoc-mode)
@@ -1839,7 +1841,7 @@
 
 ;; See also: https://github.com/seagle0128/.emacs.d/blob/85554195f81c5eb403b564d29e3fd3324bafecba/lisp/init-flymake.el.
 (use-package flymake
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-ide 'flymake-mode-map
     "ld" #'flymake-show-buffer-diagnostics
@@ -1849,7 +1851,7 @@
 
   :hook
   (prog-mode . flymake-mode)
-  (after-init . my/flymake-global-init)
+  (elpaca-after-init . my/flymake-global-init)
 
   :config
   (defun my/flymake-global-init ()
@@ -1870,7 +1872,7 @@
 ;;;;;; General
 
 (use-package prog-mode
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-ide
     ;; Build.
@@ -1962,7 +1964,7 @@
 ;;;;;; Rust
 
 (use-package rust-ts-mode
-  :straight nil
+  :elpaca nil
   ;; Demand to register .rs files in `auto-mode-alist'.
   :demand t
   :hook
@@ -2032,7 +2034,7 @@
 ;;;;;; Go
 
 (use-package go-ts-mode
-  :straight nil
+  :elpaca nil
   ;; Demand to register .go files in `auto-mode-alist'.
   :demand t
   :hook
@@ -2098,7 +2100,7 @@
 ;;;;;; Python
 
 (use-package python
-  :straight nil
+  :elpaca nil
   :init
   (setq python-shell-interpreter "python3"))
 
@@ -2122,7 +2124,7 @@
 ;;;;;; Shell
 
 (use-package sh-script
-  :straight nil
+  :elpaca nil
   :custom
   (sh-basic-offset 2))
 
@@ -2141,7 +2143,7 @@
 ;;;;;; Bazel
 
 (use-package bazel-mode
-  :straight (:host github :repo "bazelbuild/emacs-bazel-mode")
+  :elpaca (:host github :repo "bazelbuild/emacs-bazel-mode")
   :mode
   ("\\.BUILD\\'" . bazel-mode)
   ("\\.bazel\\'" . bazel-mode)
@@ -2165,7 +2167,8 @@
 
 ;;;;;; C/C++
 
-(use-package cc-mode)
+(use-package cc-mode
+  :elpaca nil)
 
 (use-package clang-format
   :custom
@@ -2173,11 +2176,13 @@
 
 ;;;;;; YAML
 
-(use-package yaml-ts-mode)
+(use-package yaml-ts-mode
+  :elpaca nil)
 
 ;;;;;; JSON
 
-(use-package json-ts-mode)
+(use-package json-ts-mode
+  :elpaca nil)
 
 ;;;;;; Jsonnet
 
@@ -2186,7 +2191,7 @@
 ;;;;;; Lisp
 
 (use-package elisp-mode
-  :straight nil
+  :elpaca nil
   :hook
   (emacs-lisp-mode . my/elisp-init)
 
@@ -2251,14 +2256,14 @@
 
 ;; Custom Elisp indentation function - see code comments in package.
 (use-package emacs-lisp-indent
-  :straight (:host github :repo "ashlineldridge/emacs-lisp-indent")
+  :elpaca (:host github :repo "ashlineldridge/emacs-lisp-indent")
   :init
   (emacs-lisp-indent-install))
 
 ;;;;;; SGML/HTML
 
 (use-package sgml-mode
-  :straight nil
+  :elpaca nil
   :general
   (general-def 'html-mode-map
     ;; Unbind M-o as I want that for ace-window.
@@ -2296,7 +2301,7 @@
 ;;;; Shell/Terminal
 
 (use-package eshell
-  :straight nil
+  :elpaca nil
   :hook
   (eshell-mode . my/eshell-init)
   (eshell-pre-command . my/eshell-pre-command)
@@ -2400,7 +2405,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       buf)))
 
 (use-package sh-script
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-c-c :keymaps 'sh-mode-map
     "C-o" nil))
@@ -2435,6 +2440,9 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 ;;;; Org Mode
 
 (use-package org
+  ;; Use built-in for now as latest has bugs. When Elpaca supports lockfiles
+  ;; I'll just pin it. See: https://github.com/progfolio/elpaca/issues/151.
+  :elpaca nil
   :preface
   ;; GTD (agenda) & PKM (notes) paths.
   (defvar my/gtd-dir (expand-file-name "~/dev/home/gtd/"))
@@ -2817,7 +2825,7 @@ specified then a task category will be determined by the item's tags."
 ;;;; Process Management
 
 (use-package proced
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-c-x
     "C-p" #'proced)
@@ -2829,7 +2837,7 @@ specified then a task category will be determined by the item's tags."
 (use-package pass)
 
 (use-package auth-source-pass
-  :straight nil
+  :elpaca nil
   :custom
   (auth-source-do-cache nil)
   :init
