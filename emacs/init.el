@@ -29,8 +29,6 @@
   (general-auto-unbind-keys)
   (general-create-definer my/bind-search :prefix "M-s") ;; Search prefix.
   (general-create-definer my/bind-goto :prefix "M-g")   ;; Goto prefix.
-  (general-create-definer my/bind-ide :prefix "M-i")    ;; IDE prefix.
-  (general-create-definer my/bind-visual :prefix "M-0") ;; Visual prefix.
   (general-create-definer my/bind-window :prefix "C-o") ;; Window prefix.
   (general-create-definer my/bind-c-c :prefix "C-c")    ;; C-c prefix.
   (general-create-definer my/bind-c-x :prefix "C-x"))   ;; C-x prefixes.
@@ -80,31 +78,31 @@
     [remap query-replace-regexp] #'my/query-replace-regexp-wrap)
 
   (my/bind-c-x
-    "m" nil
     "C-k" #'kill-this-buffer
-    "C-x" #'exchange-point-and-mark
-    "ww" #'my/toggle-show-trailing-whitespace
-    "wk" #'delete-trailing-whitespace)
+    "C-x" #'exchange-point-and-mark)
 
   (my/bind-search
     ;; Add search prefix descriptions.
     "h" '(:ignore t :which-key "highlight"))
 
-  (my/bind-ide
-    ;; Add IDE prefix descriptions.
-    "a" '(:ignore t :which-key "actions")
+  (my/bind-c-c
+    "-" '(:ignore t :which-key "outline")
     "b" '(:ignore t :which-key "build")
-    "h" '(:ignore t :which-key "help")
-    "l" '(:ignore t :which-key "lint")
-    "r" '(:ignore t :which-key "refactor")
-    "t" '(:ignore t :which-key "test")
-    "w" '(:ignore t :which-key "workspaces")
     "b1" #'compile
-    "b2" #'recompile)
-
-  (my/bind-visual
-    "|" #'display-fill-column-indicator-mode
-    "l" #'toggle-truncate-lines)
+    "b2" #'recompile
+    "d" '(:ignore t :which-key "detached")
+    "f" '(:ignore t :which-key "flymake")
+    "g" '(:ignore t :which-key "magit")
+    "n" '(:ignore t :which-key "notes")
+    "o" '(:ignore t :which-key "org")
+    "p" '(:ignore t :which-key "cape")
+    "r" '(:ignore t :which-key "refactor")
+    "rw" #'delete-trailing-whitespace
+    "t" '(:ignore t :which-key "test")
+    "v" '(:ignore t :which-key "visual")
+    "v|" #'display-fill-column-indicator-mode
+    "vl" #'toggle-truncate-lines
+    "vw" #'my/toggle-show-trailing-whitespace)
 
   :custom
   (confirm-kill-emacs #'yes-or-no-p)
@@ -229,9 +227,11 @@
     "Around advice to add wrapping behaviour to `query-replace' and friends."
     (save-excursion
       (let ((point-start (point))
-            (point-min (point-min)))
+            (point-min (point-min))
+            (region-active (use-region-p)))
         (apply orig-fun args)
         (when (and
+               (not region-active)
                (/= point-start point-min)
                (yes-or-no-p "Wrap to beginning of buffer? "))
           (beginning-of-buffer)
@@ -257,10 +257,6 @@
 
 (use-package modus-themes
   :commands modus-themes-load-theme
-  :general
-  ;; Easy keybindings for when the mood changes.
-  (my/bind-visual
-    "M-0" #'modus-themes-toggle)
   :hook
   (elpaca-after-init . (lambda ()
                          (modus-themes-load-theme (car modus-themes-to-toggle))))
@@ -283,8 +279,8 @@
 (use-package faces
   :elpaca nil
   :general
-  (my/bind-visual
-    "M-9" #'my/cycle-font-config)
+  (my/bind-c-c
+    "vf" #'my/cycle-font-config)
 
   :hook
   ;; Update fonts after theme is loaded so changes take effect.
@@ -461,8 +457,8 @@
   :hook
   (after-change-major-mode . my/hl-line-mode-maybe)
   :general
-  (my/bind-visual
-    "h" #'hl-line-mode)
+  (my/bind-c-c
+    "vh" #'hl-line-mode)
   :config
   ;; Provides the functionality of `global-hl-line-mode' with the ability
   ;; to disable for specific modes.
@@ -543,6 +539,8 @@
 
 (use-package winner
   :elpaca nil
+  :custom
+  (winner-dont-bind-my-keys t)
   :init
   (winner-mode 1))
 
@@ -969,23 +967,20 @@
     "=" #'consult-focus-lines)
 
   (my/bind-goto
+    "-" #'consult-outline
     "f" #'consult-flymake
     "g" #'consult-goto-line
     "M-g" #'consult-goto-line
     "i" #'consult-imenu
     "I" #'consult-imenu-multi
     "m" #'consult-mark
-    "M" #'consult-global-mark
-    "-" #'consult-outline)
+    "M" #'consult-global-mark)
 
-  (my/bind-ide 'flymake-mode-map
+  (my/bind-c-c 'flymake-mode-map
     "ff" #'consult-flymake)
 
-  (my/bind-visual
-    "M--" #'consult-theme)
-
   (my/bind-c-c
-    "os" #'consult-org-agenda)
+    "vv" #'consult-theme)
 
   (my/bind-c-x
     "b" #'consult-buffer
@@ -1218,7 +1213,7 @@
 (use-package wgrep
   :general
   (my/bind-c-c
-    "C-w" #'wgrep-change-to-wgrep-mode)
+    "w" #'wgrep-change-to-wgrep-mode)
   :custom
   (wgrep-auto-save-buffer t))
 
@@ -1508,14 +1503,7 @@
     "u" #'my/project-update-list)
 
   :custom
-  (project-switch-commands
-   '((project-find-file "Find file" ?f)
-     (project-find-dir "Find directory" ?d)
-     (project-dired "Dired" ?j)
-     (consult-ripgrep "Search" ?s)
-     (magit-project-status "Magit" ?g)
-     (project-eshell "Eshell" ?e)
-     (my/project-detached-shell-command "Detached Shell" ?&)))
+  (project-switch-commands #'magit-project-status)
 
   :config
   (defun my/project-current-root ()
@@ -1565,19 +1553,8 @@
 
 (use-package outline
   :elpaca nil
-  :general
-  (my/bind-c-c :keymaps 'outline-minor-mode-map
-    "C-n" #'outline-next-visible-heading
-    "C-p" #'outline-previous-visible-heading
-    "C-f" #'outline-forward-same-level
-    "C-b" #'outline-backward-same-level
-    "C-a" #'outline-show-all
-    "C-h" #'outline-hide-other
-    "C-u" #'outline-up-heading)
-  ;; TODO: Find better keybindings as these are taken by Paredit.
-  ;; ("M-<down>" . outline-move-subtree-down)
-  ;; ("M-<up>" . outline-move-subtree-up))
   :custom
+  (outline-minor-mode-prefix "\C-c-")
   (outline-minor-mode-cycle t))
 
 ;;;;; Code Templating
@@ -1655,17 +1632,14 @@
   (my/bind-goto :keymaps 'eglot-mode-map
     "^" #'eglot-find-implementation)
 
-  (my/bind-ide :keymaps 'eglot-mode-map
-    ;; Actions.
-    "aa" #'eglot-code-actions
-    "ao" #'eglot-code-action-organize-imports
-    "ar" #'eglot-rename
-    ;; Help.
-    "ho" #'my/eglot-open-external-docs)
+  (my/bind-c-c :keymaps 'eglot-mode-map
+    "ra" #'eglot-code-actions
+    "ro" #'eglot-code-action-organize-imports
+    "rr" #'eglot-rename
+    "O" #'my/eglot-open-external-docs)
 
-  ;; Easy keybindings for when the mood changes.
-  (my/bind-visual :keymaps 'eglot-mode-map
-    "i" #'eglot-inlay-hints-mode)
+  (my/bind-c-c :keymaps 'eglot-mode-map
+    "vi" #'eglot-inlay-hints-mode)
 
   :custom
   (eglot-autoshutdown t)
@@ -1754,8 +1728,6 @@
   :general
   (general-def
     "C-h t" #'eldoc-mode)
-  (my/bind-ide
-    "hh" #'eldoc-doc-buffer)
   :custom
   (global-eldoc-mode 1)
   (eldoc-idle-delay 0)
@@ -1793,7 +1765,7 @@
 (use-package flymake
   :elpaca nil
   :general
-  (my/bind-ide 'flymake-mode-map
+  (my/bind-c-c 'flymake-mode-map
     "fd" #'flymake-show-buffer-diagnostics
     "fD" #'flymake-show-project-diagnostics
     "fn" #'flymake-goto-next-error
@@ -1824,7 +1796,7 @@
 (use-package prog-mode
   :elpaca nil
   :general
-  (my/bind-ide
+  (my/bind-c-c
     ;; Build.
     "ba" #'my/build-system-add
     "bb" #'my/build-system-build
@@ -1976,7 +1948,7 @@
   ;; However, `rustic-mode' should not be run as it is mapped to `rust-ts-mode'
   ;; in `major-mode-remap-alist'. See: https://github.com/brotzeit/rustic/issues/475.
   :general
-  (my/bind-ide :keymaps 'rust-ts-mode-map
+  (my/bind-c-c :keymaps 'rust-ts-mode-map
     "tt" #'rustic-cargo-current-test)
   :custom
   (rustic-lsp-client 'eglot))
@@ -2034,13 +2006,13 @@
 
 (use-package gotest
   :general
-  (my/bind-ide :keymaps 'go-ts-mode-map
+  (my/bind-c-c :keymaps 'go-ts-mode-map
     "tf" #'go-test-current-file
     "tt" #'go-test-current-test))
 
 (use-package go-gen-test
   :general
-  (my/bind-ide :keymaps 'go-ts-mode-map
+  (my/bind-c-c :keymaps 'go-ts-mode-map
     "rg" #'go-gen-test-dwim))
 
 ;;;;;; Terraform
@@ -2098,13 +2070,6 @@
   ("\\.BUILD\\'" . bazel-mode)
   ("\\.bazel\\'" . bazel-mode)
   ("\\.star\\'" . bazel-starlark-mode)
-  :general
-  (my/bind-ide :keymaps 'bazel-mode-map
-    "zb" #'bazel-build
-    "zf" #'bazel-buildifier
-    "zr" #'bazel-run
-    "zt" #'bazel-test
-    "zc" #'bazel-coverage)
   :custom
   (bazel-buildifier-before-save t)
   :init
@@ -2144,10 +2109,12 @@
   :elpaca nil
   :hook
   (emacs-lisp-mode . my/elisp-init)
-
   :general
   (my/bind-c-x
     "C-r" #'eval-region)
+
+  ;; Keep C-c clean. http://google.com
+  (general-unbind 'emacs-lisp-mode-map "C-c")
 
   :config
   (defun my/elisp-init ()
@@ -2184,6 +2151,7 @@
   ;; Unbind Paredit keybindings I don't use that can cause collisions. This
   ;; doesn't work unless I do it under :config rather than :general.
   (general-unbind 'paredit-mode-map
+    "C-c C-M-l"
     "C-<left>"
     "C-<right>"
     "C-M-<left>"
@@ -2202,7 +2170,9 @@
   :hook
   ((lisp-mode
     emacs-lisp-mode
-    inferior-emacs-lisp-mode) . aggressive-indent-mode))
+    inferior-emacs-lisp-mode) . aggressive-indent-mode)
+  :general
+  (general-unbind 'aggressive-indent-mode-map "C-c C-q"))
 
 ;; Custom Elisp indentation function - see code comments in package.
 (use-package emacs-lisp-indent
@@ -2236,8 +2206,6 @@
     "gd" #'magit-dispatch
     "gf" #'magit-file-dispatch)
   :custom
-  ;; Tell Magit not to add the C-x bindings as we'll use the ones above.
-  (magit-define-global-key-bindings nil)
   ;; Otherwise Magit shows a read-only diff screen when you press C-c C-c and
   ;; you've already had a chance to look at the diff when you stage the files.
   (magit-commit-show-diff nil))
@@ -2430,11 +2398,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "ol" #'org-store-link
     "oa" #'org-agenda
     "om" #'org-capture
-    "oS" #'org-save-all-org-buffers
+    "os" #'org-save-all-org-buffers
     "oi" #'my/org-capture-inbox
     "ob" #'my/org-capture-bookmark
     "oc" #'my/org-capture-coffee
-    "C-o" #'org-open-at-point-global)
+    "O" #'org-open-at-point-global)
   (my/bind-c-c :keymaps 'org-mode-map
     "C-S-l" #'org-cliplink)
   (general-def 'org-agenda-mode-map
@@ -2728,14 +2696,7 @@ specified then a task category will be determined by the item's tags."
     "ng" #'org-roam-graph
     "ni" #'org-roam-node-insert
     "nc" #'org-roam-capture
-    "nt" #'org-roam-tag-add
-    "j." #'org-roam-dailies-find-directory
-    "jj" #'org-roam-dailies-capture-today
-    "jJ" #'org-roam-dailies-goto-today
-    "jy" #'org-roam-dailies-capture-yesterday
-    "jY" #'org-roam-dailies-goto-yesterday
-    "jd" #'org-roam-dailies-capture-date
-    "jD" #'org-roam-dailies-goto-date)
+    "nt" #'org-roam-tag-add)
 
   :custom
   (org-roam-directory (expand-file-name "notes/" my/pkm-dir))

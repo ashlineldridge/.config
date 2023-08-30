@@ -93,6 +93,9 @@
 (declare-function elpaca-use-package-mode nil)
 (defvar elpaca-use-package-by-default)
 
+;; Elpaca loads Magit so this needs to be set here.
+(defvar magit-define-global-key-bindings nil)
+
 ;; Bootstrap Elpaca (https://github.com/progfolio/elpaca).
 (defvar elpaca-installer-version 0.5)
 (defvar elpaca-directory (expand-file-name "var/elpaca/" user-emacs-directory))
