@@ -28,6 +28,7 @@
   ;; Automatically unbind non-prefix keys when used.
   (general-auto-unbind-keys)
   (general-create-definer my/bind-search :prefix "M-s") ;; Search prefix.
+  (general-create-definer my/bind-goto :prefix "M-g")   ;; Goto prefix.
   (general-create-definer my/bind-ide :prefix "M-i")    ;; IDE prefix.
   (general-create-definer my/bind-visual :prefix "M-0") ;; Visual prefix.
   (general-create-definer my/bind-window :prefix "C-o") ;; Window prefix.
@@ -68,14 +69,15 @@
   (general-def
     "<escape>" #'keyboard-escape-quit
     "C-;" #'comment-line
-    [remap quit-window] #'kill-this-buffer
-    "C-q" #'kill-this-buffer
     "C-S-k" #'my/copy-to-eol
     "C-M-k" #'my/delete-to-eol
     "C-h C-h" nil
     "M-[" #'previous-buffer
     "M-]" #'next-buffer
-    "M-<backspace>" #'my/delete-to-bol)
+    "M-<backspace>" #'my/delete-to-bol
+    [remap quit-window] #'kill-this-buffer
+    [remap query-replace] #'my/query-replace-wrap
+    [remap query-replace-regexp] #'my/query-replace-regexp-wrap)
 
   (my/bind-c-x
     "m" nil
@@ -86,9 +88,7 @@
 
   (my/bind-search
     ;; Add search prefix descriptions.
-    "h" '(:ignore t :which-key "highlight")
-    "r" #'my/query-replace-wrap
-    "R" #'my/query-replace-regexp-wrap)
+    "h" '(:ignore t :which-key "highlight"))
 
   (my/bind-ide
     ;; Add IDE prefix descriptions.
@@ -265,7 +265,7 @@
   (elpaca-after-init . (lambda ()
                          (modus-themes-load-theme (car modus-themes-to-toggle))))
   :custom
-  (modus-themes-to-toggle '(modus-operandi-tinted modus-vivendi))
+  (modus-themes-to-toggle '(modus-vivendi modus-operandi-tinted))
   (modus-themes-italic-constructs t)
   (modus-themes-custom-auto-reload t)
   (modus-themes-prompts '(bold))
@@ -624,7 +624,8 @@
    '(("*eldoc" :select nil :other t :regexp t)
      ("*helpful" :select t :other t :regexp t)
      ("*rg*" :select t :other t)
-     ("*Occur*" :select t :other t)))
+     ("*Occur*" :select t :other t)
+     ("*Pp" :select nil :other t :regexp t)))
   :init
   (shackle-mode 1))
 
@@ -637,7 +638,7 @@
     "C-'" #'popper-toggle-latest
     "M-'" #'popper-cycle
     "C-M-'" #'popper-toggle-type)
-  (general-def popper-mode-map
+  (general-def 'popper-mode-map
     "M-k" #'my/popper-kill-popup-stay-open
     "M-K" #'popper-kill-latest-popup)
 
@@ -651,7 +652,6 @@
      "\\*Warnings\\*"
      "\\*Backtrace\\*"
      "\\*Breakpoints\\*"
-     "\\*Pp Macroexpand Output\\*"
      "\\*Flymake "
      "\\*eshell-output\\*"
      "CAPTURE-.*\\.org"
@@ -885,7 +885,6 @@
 
 ;; Dedicated completion commands.
 (use-package cape
-  :commands cape-super-capf
   :general
   (general-def
     "C-r" #'my/cape-history)
@@ -894,7 +893,7 @@
     "ph" #'cape-history
     "pf" #'cape-file
     "pk" #'cape-keyword
-    "ps" #'cape-symbol
+    "po" #'cape-elisp-symbol
     "pa" #'cape-abbrev
     "pl" #'cape-line
     "pw" #'cape-dict)
@@ -925,7 +924,7 @@
 (use-package marginalia
   :commands marginalia-mode
   :general
-  (general-def minibuffer-local-map
+  (general-def 'minibuffer-local-map
     "M-A" #'marginalia-cycle)
   :init
   (marginalia-mode 1))
@@ -940,19 +939,50 @@
 
   :general
   (general-def
-    "C-s" #'consult-line
-    "C-S-s" #'my/consult-line-strict
-    "M-g M-g" #'consult-goto-line
     "M-y" #'consult-yank-pop)
 
-  (general-def minibuffer-local-map
+  (general-def 'minibuffer-local-map
     "M-s" nil
     "C-r" #'consult-history)
 
-  (general-def consult-narrow-map
+  (general-def 'isearch-mode-map
+    ;; Replace `isearch-edit-string' to get history completion.
+    "M-e" #'consult-isearch-history
+    ;; Allow `consult-line' functions to "take over" from `isearch'.
+    "M-s l" #'consult-line
+    "M-s L" #'consult-line-multi
+    ;; Another option for back/forward.
+    "C-n" #'isearch-repeat-forward
+    "C-p" #'isearch-repeat-backward)
+
+  (general-def 'consult-narrow-map
     "C-<" #'consult-narrow-help
     ;; Remove if this becomes annoying due to needing a '?' character.
     "?" #'consult-narrow-help)
+
+  (my/bind-search
+    "a" #'consult-org-agenda
+    "f" #'consult-find
+    "l" #'consult-line
+    "L" #'consult-line-multi
+    "s" #'consult-ripgrep
+    "=" #'consult-focus-lines)
+
+  (my/bind-goto
+    "f" #'consult-flymake
+    "g" #'consult-goto-line
+    "M-g" #'consult-goto-line
+    "i" #'consult-imenu
+    "I" #'consult-imenu-multi
+    "m" #'consult-mark
+    "M" #'consult-global-mark
+    "-" #'consult-outline)
+
+  (my/bind-ide 'flymake-mode-map
+    "ff" #'consult-flymake)
+
+  (my/bind-visual
+    "M--" #'consult-theme)
 
   (my/bind-c-c
     "os" #'consult-org-agenda)
@@ -962,23 +992,6 @@
     "rr" #'consult-register
     "rl" #'consult-register-load
     "rs" #'consult-register-store)
-
-  (my/bind-search
-    "a" #'consult-org-agenda
-    "f" #'consult-find
-    "l" #'consult-flymake
-    "s" #'consult-ripgrep
-    "i" #'consult-imenu
-    "I" #'consult-imenu-multi
-    "m" #'consult-bookmark
-    "g" #'consult-goto-line
-    "-" #'consult-outline
-    "=" #'consult-focus-lines
-    "SPC" #'consult-mark
-    "S-SPC" #'consult-global-mark)
-
-  (my/bind-visual
-    "M--" #'consult-theme)
 
   :custom
   (register-preview-delay 0.5)
@@ -1074,16 +1087,10 @@
 (use-package embark
   :commands
   (embark-prefix-help-command
-   embark-target-identifier-at-point)
+   embark-target-identifier-at-point
+   my/goto-consult-xref)
 
   :general
-  ;; I want Embark action keymaps to have a symmetry with the relevant parts of
-  ;; my other major prefixes (e.g. "M-s" and "M-i"). E.g. if I can rename a
-  ;; symbol using "M-i a r" then I want to be able to do the same thing using
-  ;; `embark-act' + "a r". Similarly, for "M-s s" for; searching; `embark-act' +
-  ;; "s s" should search for the text being acted upon. This is a balancing act
-  ;; between practicality and my OCD (even the above example isn't truly
-  ;; symmetrical).
   (general-def
     "C-." #'embark-act
     "M-." #'embark-dwim
@@ -1092,41 +1099,11 @@
   (general-def 'minibuffer-local-map
     "C-M-." #'embark-become)
 
-  ;; Ideally, I'd just put these in the general map but "s" is bound into
-  ;; multiple child maps. When I unbind it it is replaced with nil which
-  ;; still takes precedence over the general map. At some point I'll fully
-  ;; switch over to my own custom maps and this won't be a problem.
-  (general-def '(embark-general-map
-                 embark-command-map
-                 embark-function-map
-                 embark-identifier-map
-                 embark-region-map
-                 embark-symbol-map)
-    "s]" #'embark-isearch-forward
-    "s[" #'embark-isearch-backward
-    "s^" #'eglot-find-implementation
-    "sh" #'embark-toggle-highlight
-    "sl" #'consult-line
-    "so" #'consult-eglot-symbols
-    "sr" #'my/query-replace-wrap
-    "sR" #'my/query-replace-regexp-wrap
-    "ss" #'consult-ripgrep
-    "st" #'xref-find-definitions
-    "su" #'xref-find-references
-    "sP" #'my/rg-dwim-project-dir
-    "sD" #'my/rg-dwim-current-dir
-    "sF" #'rg-dwim-current-file)
-
-  (general-def 'embark-identifier-map
-    "aa" #'eglot-code-actions
-    "ar" #'eglot-rename)
-
-  (general-def 'embark-file-map
-    "o" (my/embark-ace-window-action find-file))
-  (general-def 'embark-buffer-map
-    "o" (my/embark-ace-window-action switch-to-buffer))
-  (general-def 'embark-bookmark-map
-    "o" (my/embark-ace-window-action bookmark-jump))
+  (general-def 'embark-file-map "o" #'my/ace-find-file)
+  (general-def 'embark-buffer-map "o" #'my/ace-switch-to-buffer)
+  (general-def 'embark-bookmark-map "o" #'my/ace-bookmark-jump)
+  (general-def 'my/embark-org-roam-node-map "o" #'my/ace-org-roam-node-find)
+  (general-def 'my/embark-consult-xref-map "o" #'my/ace-goto-consult-xref)
 
   :custom
   ;; Just show the minimal "Act" prompt (the default starts with minimal
@@ -1154,36 +1131,6 @@
       (embark-prefix-help-command)))
 
   :config
-  ;; Adapt the associated commands so that they are usable as Embark actions.
-  ;; If commands don't behave properly with Embark, play with this. Look at
-  ;; similar commands already in `embark-target-injection-hooks' and mimic.
-  (add-to-list 'embark-target-injection-hooks '(eglot-code-actions embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(eglot-rename embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(my/query-replace-wrap embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(my/query-replace-regexp-wrap embark--allow-edit))
-
-  ;; Macro for defining an Embark action that executes FN using an `ace-window'
-  ;; selected window. Taken from:
-  ;; https://github.com/karthink/.emacs.d/blob/f0514340039502b79a306a77624a604de8a1b546/lisp/setup-embark.el#L93.
-  (eval-when-compile
-    (defmacro my/embark-ace-window-action (fn)
-      `(defun ,(intern (concat
-                        "my/ace-window-"
-                        (string-remove-prefix "my/" (symbol-name fn)))) ()
-         "Execute Embark action after jumping with `ace-window'."
-         (interactive)
-         (with-demoted-errors "%s"
-           (require 'ace-window)
-           (let ((aw-dispatch-always t))
-             (aw-switch-to-window (aw-select nil))
-             (call-interactively (symbol-function ',fn)))))))
-
-  ;; This function is used as the argument to `my/embark-ace-window-action' for
-  ;; opening a `consult-xref' candidate in an `ace-window' selected window.
   ;; TODO: What is the more idiomatic way to do this? This way is flawed as it
   ;; only navigates to the line rather than where the symbol is on the line.
   (defun my/goto-consult-xref ()
@@ -1198,61 +1145,75 @@
         (goto-char (point-min))
         (forward-line (1- (string-to-number line))))))
 
-  ;; Org-roam nodes have their own Embark category and hence need their own
-  ;; keymap to act on them.
+  (defun my/ace-find-file ()
+    "Switch window and run `find-file'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'find-file))
+
+  (defun my/ace-switch-to-buffer ()
+    "Switch window and run `switch-to-buffer'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'switch-to-buffer))
+
+  (defun my/ace-bookmark-jump ()
+    "Switch window and run `bookmark-jump'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'bookmark-jump))
+
+  (defun my/ace-org-roam-node-find ()
+    "Switch window and run `org-roam-node-find'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'org-roam-node-find))
+
+  (defun my/ace-goto-consult-xref ()
+    "Switch window and run `my/goto-consult-xref'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'my/goto-consult-xref))
+
   (defvar-keymap my/embark-org-roam-node-map
     :doc "Keymap for Embark `org-roam-node' actions."
-    :parent embark-general-map
-    "o" (my/embark-ace-window-action org-roam-node-find))
+    :parent embark-general-map)
 
   (defvar-keymap my/embark-consult-xref-map
     :doc "Keymap for Embark `consult-xref' actions."
-    :parent embark-general-map
-    "o" (my/embark-ace-window-action my/goto-consult-xref))
+    :parent embark-general-map)
 
   (add-to-list 'embark-keymap-alist '(org-roam-node . my/embark-org-roam-node-map))
   (add-to-list 'embark-keymap-alist '(consult-xref . my/embark-consult-xref-map))
-  (add-to-list 'embark-keymap-alist '(xref . my/embark-consult-xref-map)))
+  (add-to-list 'embark-keymap-alist '(xref . my/embark-consult-xref-map))
+
+  ;; Adapt the associated commands so that they are usable as Embark actions.
+  ;; If commands don't behave properly with Embark, play with this. Look at
+  ;; similar commands already in `embark-target-injection-hooks' and mimic.
+  (add-to-list 'embark-target-injection-hooks '(eglot-code-actions embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(eglot-rename embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(my/query-replace-wrap embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(my/query-replace-regexp-wrap embark--allow-edit)))
 
 (use-package embark-consult)
 
 (use-package rg
-  :commands
-  (rg-menu
-   rg-run
-   rg-project-root
-   rg-read-pattern
-   rg-tag-default)
+  :commands rg-menu
   :functions popper--bury-all
   :general
   (my/bind-search
-    "M-s" #'my/rg-menu
-    "P" #'my/rg-dwim-project-dir
-    "D" #'my/rg-dwim-current-dir
-    "F" #'rg-dwim-current-file)
+    "M-s" #'my/rg-menu)
 
   :config
   (defun my/rg-menu ()
     "Bury any popups before calling `rg-menu'."
     (interactive)
     (popper--bury-all)
-    (call-interactively #'rg-menu))
-
-  ;; DWIM project search across all file extensions (used by Embark).
-  (rg-define-search my/rg-dwim-project-dir
-    "Search for thing at point under the project root directory."
-    :query point
-    :format literal
-    :files "*"
-    :dir project)
-
-  ;; DWIM CWD search across all file extensions (used by Embark).
-  (rg-define-search my/rg-dwim-current-dir
-    "Search for thing at point under the current directory."
-    :query point
-    :format literal
-    :files "*"
-    :dir current))
+    (call-interactively #'rg-menu)))
 
 (use-package wgrep
   :general
@@ -1260,14 +1221,6 @@
     "C-w" #'wgrep-change-to-wgrep-mode)
   :custom
   (wgrep-auto-save-buffer t))
-
-(use-package replace
-  :straight nil
-  :general
-  (my/bind-search
-    ;; Move the binding for `occur' as I want "M-s o" for symbol search.
-    "o" nil
-    "M-o" #'occur))
 
 ;;;; General Editing
 
@@ -1391,10 +1344,6 @@
   :elpaca nil
   :general
   (my/bind-search
-    "]" #'isearch-forward
-    "[" #'isearch-backward
-    "}" #'isearch-forward-regexp
-    "{" #'isearch-backward-regexp
     "." #'isearch-forward-thing-at-point)
   (general-def 'isearch-mode-map
     "C-n" #'isearch-repeat-forward
@@ -1423,9 +1372,9 @@
     ;; Keep M-o binding for ace-window.
     "M-o" nil
     ;; Group buffers by VC project.
-    "/p" #'ibuffer-vc-set-filter-groups-by-vc-root)
-  :init
-  (use-package ibuffer-vc))
+    "/p" #'ibuffer-vc-set-filter-groups-by-vc-root))
+
+(use-package ibuffer-vc)
 
 ;;;; File System
 
@@ -1564,8 +1513,8 @@
      (project-find-dir "Find directory" ?d)
      (project-dired "Dired" ?j)
      (consult-ripgrep "Search" ?s)
-     (magit-project-status "Magit" ?m)
-     (project-eshell "Eshell" ?$)
+     (magit-project-status "Magit" ?g)
+     (project-eshell "Eshell" ?e)
      (my/project-detached-shell-command "Detached Shell" ?&)))
 
   :config
@@ -1662,8 +1611,9 @@
 (use-package treesit
   :elpaca nil
   :custom
-  (treesit-extra-load-path (list (no-littering-expand-var-file-name "tree-sitter")))
   (treesit-font-lock-level 4) ;; Be extra.
+  (treesit-extra-load-path
+   (list (no-littering-expand-var-file-name "tree-sitter")))
   :config
   (setq treesit-language-source-alist
         '((bash "https://github.com/tree-sitter/tree-sitter-bash")
@@ -1702,7 +1652,7 @@
   (eglot-managed-mode . my/eglot-init)
 
   :general
-  (my/bind-search :keymaps 'eglot-mode-map
+  (my/bind-goto :keymaps 'eglot-mode-map
     "^" #'eglot-find-implementation)
 
   (my/bind-ide :keymaps 'eglot-mode-map
@@ -1783,7 +1733,7 @@
 (use-package consult-eglot
   :after eglot
   :general
-  (my/bind-search :keymaps 'eglot-mode-map
+  (my/bind-goto :keymap 'eglot-mode-map
     "o" #'consult-eglot-symbols))
 
 ;;;;;; Xref
@@ -1844,10 +1794,10 @@
   :elpaca nil
   :general
   (my/bind-ide 'flymake-mode-map
-    "ld" #'flymake-show-buffer-diagnostics
-    "lD" #'flymake-show-project-diagnostics
-    "ln" #'flymake-goto-next-error
-    "lp" #'flymake-goto-prev-error)
+    "fd" #'flymake-show-buffer-diagnostics
+    "fD" #'flymake-show-project-diagnostics
+    "fn" #'flymake-goto-next-error
+    "fp" #'flymake-goto-prev-error)
 
   :hook
   (prog-mode . flymake-mode)
