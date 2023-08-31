@@ -20,6 +20,7 @@
 ;;;; Keybinding Management
 
 (use-package general
+  :demand t
   :commands
   (general-auto-unbind-keys
    general-define-key)
@@ -27,17 +28,20 @@
   ;; Automatically unbind non-prefix keys when used.
   (general-auto-unbind-keys)
   (general-create-definer my/bind-search :prefix "M-s") ;; Search prefix.
-  (general-create-definer my/bind-ide :prefix "M-i")    ;; IDE prefix.
-  (general-create-definer my/bind-visual :prefix "M-0") ;; Visual prefix.
+  (general-create-definer my/bind-goto :prefix "M-g")   ;; Goto prefix.
   (general-create-definer my/bind-window :prefix "C-o") ;; Window prefix.
   (general-create-definer my/bind-c-c :prefix "C-c")    ;; C-c prefix.
-  (general-create-definer my/bind-c-x :prefix "C-x"))   ;; C-x prefixes.
+  (general-create-definer my/bind-c-x :prefix "C-x"))   ;; C-x prefix.
+
+;; Packages that modify the syntax of `use-package' need to be waited on.
+(declare-function elpaca-wait nil)
+(elpaca-wait)
 
 (use-package transient
   :commands transient-get-value)
 
 (use-package repeat
-  :straight nil
+  :elpaca nil
   :commands my/repeatize
   :config
   ;; See: https://karthinks.com/software/it-bears-repeating.
@@ -52,7 +56,7 @@
 ;;;; Base Settings
 
 (use-package emacs
-  :straight nil
+  :elpaca nil
   :hook
   ;; Display line numbers in certain modes.
   ((prog-mode config-mode text-mode) . display-line-numbers-mode)
@@ -63,43 +67,41 @@
   (general-def
     "<escape>" #'keyboard-escape-quit
     "C-;" #'comment-line
-    [remap quit-window] #'kill-this-buffer
-    "C-q" #'kill-this-buffer
     "C-S-k" #'my/copy-to-eol
     "C-M-k" #'my/delete-to-eol
     "C-h C-h" nil
     "M-[" #'previous-buffer
     "M-]" #'next-buffer
-    "M-<backspace>" #'my/delete-to-bol)
+    "M-<backspace>" #'my/delete-to-bol
+    [remap quit-window] #'kill-this-buffer
+    [remap query-replace] #'my/query-replace-wrap
+    [remap query-replace-regexp] #'my/query-replace-regexp-wrap)
 
   (my/bind-c-x
-    "m" nil
-    "C-k" #'kill-this-buffer
-    "C-x" #'exchange-point-and-mark
-    "ww" #'my/toggle-show-trailing-whitespace
-    "wk" #'delete-trailing-whitespace)
+    "C-k" #'kill-this-buffer)
 
   (my/bind-search
     ;; Add search prefix descriptions.
-    "h" '(:ignore t :which-key "highlight")
-    "r" #'my/query-replace-wrap
-    "R" #'my/query-replace-regexp-wrap)
+    "h" '(:ignore t :which-key "highlight"))
 
-  (my/bind-ide
-    ;; Add IDE prefix descriptions.
-    "a" '(:ignore t :which-key "actions")
+  (my/bind-c-c
+    "-" '(:ignore t :which-key "outline")
     "b" '(:ignore t :which-key "build")
-    "h" '(:ignore t :which-key "help")
-    "l" '(:ignore t :which-key "lint")
-    "r" '(:ignore t :which-key "refactor")
-    "t" '(:ignore t :which-key "test")
-    "w" '(:ignore t :which-key "workspaces")
     "b1" #'compile
-    "b2" #'recompile)
-
-  (my/bind-visual
-    "|" #'display-fill-column-indicator-mode
-    "l" #'toggle-truncate-lines)
+    "b2" #'recompile
+    "d" '(:ignore t :which-key "detached")
+    "f" '(:ignore t :which-key "flymake")
+    "g" '(:ignore t :which-key "magit")
+    "n" '(:ignore t :which-key "notes")
+    "o" '(:ignore t :which-key "org")
+    "p" '(:ignore t :which-key "cape")
+    "r" '(:ignore t :which-key "refactor")
+    "rw" #'delete-trailing-whitespace
+    "t" '(:ignore t :which-key "test")
+    "v" '(:ignore t :which-key "visual")
+    "v|" #'display-fill-column-indicator-mode
+    "vl" #'toggle-truncate-lines
+    "vw" #'my/toggle-show-trailing-whitespace)
 
   :custom
   (confirm-kill-emacs #'yes-or-no-p)
@@ -224,9 +226,11 @@
     "Around advice to add wrapping behaviour to `query-replace' and friends."
     (save-excursion
       (let ((point-start (point))
-            (point-min (point-min)))
+            (point-min (point-min))
+            (region-active (use-region-p)))
         (apply orig-fun args)
         (when (and
+               (not region-active)
                (/= point-start point-min)
                (yes-or-no-p "Wrap to beginning of buffer? "))
           (beginning-of-buffer)
@@ -252,15 +256,11 @@
 
 (use-package modus-themes
   :commands modus-themes-load-theme
-  :general
-  ;; Easy keybindings for when the mood changes.
-  (my/bind-visual
-    "M-0" #'modus-themes-toggle)
   :hook
-  (emacs-startup . (lambda ()
-                     (modus-themes-load-theme (car modus-themes-to-toggle))))
+  (elpaca-after-init . (lambda ()
+                         (modus-themes-load-theme (car modus-themes-to-toggle))))
   :custom
-  (modus-themes-to-toggle '(modus-operandi-tinted modus-vivendi))
+  (modus-themes-to-toggle '(modus-vivendi modus-operandi-tinted))
   (modus-themes-italic-constructs t)
   (modus-themes-custom-auto-reload t)
   (modus-themes-prompts '(bold))
@@ -276,10 +276,10 @@
 ;;;;; Fonts
 
 (use-package faces
-  :straight nil
+  :elpaca nil
   :general
-  (my/bind-visual
-    "M-9" #'my/cycle-font-config)
+  (my/bind-c-c
+    "vf" #'my/cycle-font-config)
 
   :hook
   ;; Update fonts after theme is loaded so changes take effect.
@@ -417,7 +417,7 @@
 (use-package nerd-icons-completion
   ;; For some reason, this only seems to work when `nerd-icons-completion-mode.'
   ;; is called very late in the startup cycle.
-  :hook (emacs-startup . nerd-icons-completion-mode))
+  :hook (elpaca-after-init . nerd-icons-completion-mode))
 
 ;;;;; Mode Line
 
@@ -452,12 +452,12 @@
 ;;;;; Other Visuals
 
 (use-package hl-line
-  :straight nil
+  :elpaca nil
   :hook
   (after-change-major-mode . my/hl-line-mode-maybe)
   :general
-  (my/bind-visual
-    "h" #'hl-line-mode)
+  (my/bind-c-c
+    "vh" #'hl-line-mode)
   :config
   ;; Provides the functionality of `global-hl-line-mode' with the ability
   ;; to disable for specific modes.
@@ -537,14 +537,16 @@
 ;;;;; Window History
 
 (use-package winner
-  :straight nil
+  :elpaca nil
+  :custom
+  (winner-dont-bind-my-keys t)
   :init
   (winner-mode 1))
 
 ;;;;; General Window Commands
 
 (use-package window
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-window
     "=" #'balance-windows
@@ -619,7 +621,8 @@
    '(("*eldoc" :select nil :other t :regexp t)
      ("*helpful" :select t :other t :regexp t)
      ("*rg*" :select t :other t)
-     ("*Occur*" :select t :other t)))
+     ("*Occur*" :select t :other t)
+     ("*Pp" :select nil :other t :regexp t)))
   :init
   (shackle-mode 1))
 
@@ -632,7 +635,7 @@
     "C-'" #'popper-toggle-latest
     "M-'" #'popper-cycle
     "C-M-'" #'popper-toggle-type)
-  (general-def popper-mode-map
+  (general-def 'popper-mode-map
     "M-k" #'my/popper-kill-popup-stay-open
     "M-K" #'popper-kill-latest-popup)
 
@@ -646,7 +649,6 @@
      "\\*Warnings\\*"
      "\\*Backtrace\\*"
      "\\*Breakpoints\\*"
-     "\\*Pp Macroexpand Output\\*"
      "\\*Flymake "
      "\\*eshell-output\\*"
      "CAPTURE-.*\\.org"
@@ -685,7 +687,7 @@
 ;;;; Help System
 
 (use-package help-fns
-  :straight nil
+  :elpaca nil
   :general
   (general-def
     "C-h F" #'describe-face))
@@ -724,7 +726,7 @@
 ;;;; Completion System
 
 (use-package corfu
-  :straight (:host github :repo "minad/corfu")
+  :elpaca (:host github :repo "minad/corfu")
   :commands (corfu-mode global-corfu-mode)
   :functions consult-completion-in-region
 
@@ -785,7 +787,7 @@
 ;; Documentation shown alongside Corfu completion popups.
 (use-package corfu-popupinfo
   :after corfu
-  :straight
+  :elpaca
   (:host github :repo "minad/corfu" :files ("extensions/corfu-popupinfo.el"))
   :general
   (general-def 'corfu-map
@@ -820,14 +822,16 @@
 ;; M-RET which calls `vertico-exit-input' to cancel the completion and use the
 ;; new value.
 (use-package vertico
-  :straight (:files (:defaults "extensions/*.el"))
+  :elpaca (:files (:defaults "extensions/*.el"))
   :commands vertico-mode
+  :custom
+  (vertico-count 20)
   :init
   (vertico-mode 1))
 
 (use-package vertico-directory
   :after vertico
-  :straight nil
+  :elpaca nil
   :general
   (general-def 'vertico-map
     ;; More convenient directory navigation commands.
@@ -838,7 +842,7 @@
 
 (use-package vertico-multiform
   :after vertico
-  :straight nil
+  :elpaca nil
   :commands vertico-multiform-mode
   :custom
   (vertico-multiform-categories
@@ -866,7 +870,7 @@
 ;; Vertico buffers are shown (otherwise they reuse the current window).
 (use-package vertico-buffer
   :after vertico
-  :straight nil
+  :elpaca nil
   :custom
   (vertico-buffer-display-action
    '(display-buffer-in-direction
@@ -880,7 +884,6 @@
 
 ;; Dedicated completion commands.
 (use-package cape
-  :commands cape-super-capf
   :general
   (general-def
     "C-r" #'my/cape-history)
@@ -889,7 +892,7 @@
     "ph" #'cape-history
     "pf" #'cape-file
     "pk" #'cape-keyword
-    "ps" #'cape-symbol
+    "po" #'cape-elisp-symbol
     "pa" #'cape-abbrev
     "pl" #'cape-line
     "pw" #'cape-dict)
@@ -920,7 +923,7 @@
 (use-package marginalia
   :commands marginalia-mode
   :general
-  (general-def minibuffer-local-map
+  (general-def 'minibuffer-local-map
     "M-A" #'marginalia-cycle)
   :init
   (marginalia-mode 1))
@@ -935,45 +938,53 @@
 
   :general
   (general-def
-    "C-s" #'consult-line
-    "C-S-s" #'my/consult-line-strict
-    "M-g M-g" #'consult-goto-line
     "M-y" #'consult-yank-pop)
 
-  (general-def minibuffer-local-map
+  (general-def 'minibuffer-local-map
     "M-s" nil
     "C-r" #'consult-history)
 
-  (general-def consult-narrow-map
+  (general-def 'isearch-mode-map
+    ;; Replace `isearch-edit-string' to get history completion.
+    "M-e" #'consult-isearch-history
+    ;; Allow `consult-line' functions to "take over" from `isearch'.
+    "M-s l" #'consult-line
+    "M-s L" #'consult-line-multi)
+
+  (general-def 'consult-narrow-map
     "C-<" #'consult-narrow-help
     ;; Remove if this becomes annoying due to needing a '?' character.
     "?" #'consult-narrow-help)
 
+  (my/bind-search
+    "a" #'consult-org-agenda
+    "f" #'consult-find
+    "l" #'consult-line
+    "L" #'consult-line-multi
+    "s" #'consult-ripgrep
+    "=" #'consult-focus-lines)
+
+  (my/bind-goto
+    "-" #'consult-outline
+    "f" #'consult-flymake
+    "g" #'consult-goto-line
+    "M-g" #'consult-goto-line
+    "i" #'consult-imenu
+    "I" #'consult-imenu-multi
+    "m" #'consult-mark
+    "M" #'consult-global-mark)
+
+  (my/bind-c-c 'flymake-mode-map
+    "ff" #'consult-flymake)
+
   (my/bind-c-c
-    "os" #'consult-org-agenda)
+    "vv" #'consult-theme)
 
   (my/bind-c-x
     "b" #'consult-buffer
     "rr" #'consult-register
     "rl" #'consult-register-load
     "rs" #'consult-register-store)
-
-  (my/bind-search
-    "a" #'consult-org-agenda
-    "f" #'consult-find
-    "l" #'consult-flymake
-    "s" #'consult-ripgrep
-    "i" #'consult-imenu
-    "I" #'consult-imenu-multi
-    "m" #'consult-bookmark
-    "g" #'consult-goto-line
-    "-" #'consult-outline
-    "=" #'consult-focus-lines
-    "SPC" #'consult-mark
-    "S-SPC" #'consult-global-mark)
-
-  (my/bind-visual
-    "M--" #'consult-theme)
 
   :custom
   (register-preview-delay 0.5)
@@ -990,11 +1001,14 @@
 
   ;; Customise the list of sources shown by consult-buffer.
   (consult-buffer-sources
-   '(consult--source-buffer          ;; Narrow: ?b
-     consult--source-project-buffer  ;; Narrow: ?p
-     my/consult-source-eshell-buffer ;; Narrow: ?e
-     consult--source-recent-file     ;; Narrow: ?r
-     consult--source-bookmark))      ;; Narrow: ?m
+   '(consult--source-buffer            ;; Narrow: ?b
+     consult--source-modified-buffer   ;; Narrow: ?*
+     consult--source-project-buffer    ;; Narrow: ?p
+     consult--source-recent-file       ;; Narrow: ?f
+     consult--source-bookmark          ;; Narrow: ?m
+     consult--source-file-register     ;; Narrow: ?r
+     my/consult-source-dired-buffer    ;; Narrow: ?d
+     my/consult-source-eshell-buffer)) ;; Narrow: ?e
 
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
   (consult-ripgrep-args
@@ -1022,15 +1036,26 @@
     (let ((completion-styles '(substring)))
       (consult-line initial start)))
 
+  (defvar my/consult-source-dired-buffer
+    `(:name "Dired Buffer"
+      :narrow ?d
+      :category buffer
+      :face consult-buffer
+      :history buffer-name-history
+      :state ,#'consult--buffer-state
+      :items ,(lambda ()
+                (consult--buffer-query
+                 :sort 'visibility
+                 :as #'buffer-name
+                 :mode 'dired-mode))))
+
   (defvar my/consult-source-eshell-buffer
     `(:name "Eshell Buffer"
       :narrow ?e
-      :category eshell-buffer
+      :category buffer
       :face consult-buffer
       :history buffer-name-history
-      ;; https://github.com/jwiegley/use-package/issues/795#issuecomment-673077162
       :state ,#'consult--buffer-state
-      :action ,#'consult--buffer-action
       :items ,(lambda ()
                 (consult--buffer-query
                  :sort 'visibility
@@ -1041,7 +1066,7 @@
    ;; Source name and narrow key customization.
    consult--source-buffer :name "Open Buffer" :narrow ?b
    consult--source-project-buffer :name "Project Buffer" :narrow ?p
-   consult--source-recent-file :name "Recent File" :narrow ?r
+   consult--source-recent-file :name "Recent File" :narrow ?f
 
    ;; Show preview immediately for the following commands.
    consult-goto-line
@@ -1069,16 +1094,10 @@
 (use-package embark
   :commands
   (embark-prefix-help-command
-   embark-target-identifier-at-point)
+   embark-target-identifier-at-point
+   my/goto-consult-xref)
 
   :general
-  ;; I want Embark action keymaps to have a symmetry with the relevant parts of
-  ;; my other major prefixes (e.g. "M-s" and "M-i"). E.g. if I can rename a
-  ;; symbol using "M-i a r" then I want to be able to do the same thing using
-  ;; `embark-act' + "a r". Similarly, for "M-s s" for; searching; `embark-act' +
-  ;; "s s" should search for the text being acted upon. This is a balancing act
-  ;; between practicality and my OCD (even the above example isn't truly
-  ;; symmetrical).
   (general-def
     "C-." #'embark-act
     "M-." #'embark-dwim
@@ -1087,41 +1106,11 @@
   (general-def 'minibuffer-local-map
     "C-M-." #'embark-become)
 
-  ;; Ideally, I'd just put these in the general map but "s" is bound into
-  ;; multiple child maps. When I unbind it it is replaced with nil which
-  ;; still takes precedence over the general map. At some point I'll fully
-  ;; switch over to my own custom maps and this won't be a problem.
-  (general-def '(embark-general-map
-                 embark-command-map
-                 embark-function-map
-                 embark-identifier-map
-                 embark-region-map
-                 embark-symbol-map)
-    "s]" #'embark-isearch-forward
-    "s[" #'embark-isearch-backward
-    "s^" #'eglot-find-implementation
-    "sh" #'embark-toggle-highlight
-    "sl" #'consult-line
-    "so" #'consult-eglot-symbols
-    "sr" #'my/query-replace-wrap
-    "sR" #'my/query-replace-regexp-wrap
-    "ss" #'consult-ripgrep
-    "st" #'xref-find-definitions
-    "su" #'xref-find-references
-    "sP" #'my/rg-dwim-project-dir
-    "sD" #'my/rg-dwim-current-dir
-    "sF" #'rg-dwim-current-file)
-
-  (general-def 'embark-identifier-map
-    "aa" #'eglot-code-actions
-    "ar" #'eglot-rename)
-
-  (general-def 'embark-file-map
-    "o" (my/embark-ace-window-action find-file))
-  (general-def 'embark-buffer-map
-    "o" (my/embark-ace-window-action switch-to-buffer))
-  (general-def 'embark-bookmark-map
-    "o" (my/embark-ace-window-action bookmark-jump))
+  (general-def 'embark-file-map "o" #'my/ace-find-file)
+  (general-def 'embark-buffer-map "o" #'my/ace-switch-to-buffer)
+  (general-def 'embark-bookmark-map "o" #'my/ace-bookmark-jump)
+  (general-def 'my/embark-org-roam-node-map "o" #'my/ace-org-roam-node-find)
+  (general-def 'my/embark-consult-xref-map "o" #'my/ace-goto-consult-xref)
 
   :custom
   ;; Just show the minimal "Act" prompt (the default starts with minimal
@@ -1149,36 +1138,6 @@
       (embark-prefix-help-command)))
 
   :config
-  ;; Adapt the associated commands so that they are usable as Embark actions.
-  ;; If commands don't behave properly with Embark, play with this. Look at
-  ;; similar commands already in `embark-target-injection-hooks' and mimic.
-  (add-to-list 'embark-target-injection-hooks '(eglot-code-actions embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(eglot-rename embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(my/query-replace-wrap embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(my/query-replace-regexp-wrap embark--allow-edit))
-
-  ;; Macro for defining an Embark action that executes FN using an `ace-window'
-  ;; selected window. Taken from:
-  ;; https://github.com/karthink/.emacs.d/blob/f0514340039502b79a306a77624a604de8a1b546/lisp/setup-embark.el#L93.
-  (eval-when-compile
-    (defmacro my/embark-ace-window-action (fn)
-      `(defun ,(intern (concat
-                        "my/ace-window-"
-                        (string-remove-prefix "my/" (symbol-name fn)))) ()
-         "Execute Embark action after jumping with `ace-window'."
-         (interactive)
-         (with-demoted-errors "%s"
-           (require 'ace-window)
-           (let ((aw-dispatch-always t))
-             (aw-switch-to-window (aw-select nil))
-             (call-interactively (symbol-function ',fn)))))))
-
-  ;; This function is used as the argument to `my/embark-ace-window-action' for
-  ;; opening a `consult-xref' candidate in an `ace-window' selected window.
   ;; TODO: What is the more idiomatic way to do this? This way is flawed as it
   ;; only navigates to the line rather than where the symbol is on the line.
   (defun my/goto-consult-xref ()
@@ -1193,76 +1152,82 @@
         (goto-char (point-min))
         (forward-line (1- (string-to-number line))))))
 
-  ;; Org-roam nodes have their own Embark category and hence need their own
-  ;; keymap to act on them.
+  (defun my/ace-find-file ()
+    "Switch window and run `find-file'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'find-file))
+
+  (defun my/ace-switch-to-buffer ()
+    "Switch window and run `switch-to-buffer'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'switch-to-buffer))
+
+  (defun my/ace-bookmark-jump ()
+    "Switch window and run `bookmark-jump'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'bookmark-jump))
+
+  (defun my/ace-org-roam-node-find ()
+    "Switch window and run `org-roam-node-find'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'org-roam-node-find))
+
+  (defun my/ace-goto-consult-xref ()
+    "Switch window and run `my/goto-consult-xref'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'my/goto-consult-xref))
+
   (defvar-keymap my/embark-org-roam-node-map
     :doc "Keymap for Embark `org-roam-node' actions."
-    :parent embark-general-map
-    "o" (my/embark-ace-window-action org-roam-node-find))
+    :parent embark-general-map)
 
   (defvar-keymap my/embark-consult-xref-map
     :doc "Keymap for Embark `consult-xref' actions."
-    :parent embark-general-map
-    "o" (my/embark-ace-window-action my/goto-consult-xref))
+    :parent embark-general-map)
 
   (add-to-list 'embark-keymap-alist '(org-roam-node . my/embark-org-roam-node-map))
   (add-to-list 'embark-keymap-alist '(consult-xref . my/embark-consult-xref-map))
-  (add-to-list 'embark-keymap-alist '(xref . my/embark-consult-xref-map)))
+  (add-to-list 'embark-keymap-alist '(xref . my/embark-consult-xref-map))
+
+  ;; Adapt the associated commands so that they are usable as Embark actions.
+  ;; If commands don't behave properly with Embark, play with this. Look at
+  ;; similar commands already in `embark-target-injection-hooks' and mimic.
+  (add-to-list 'embark-target-injection-hooks '(eglot-code-actions embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(eglot-rename embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(my/query-replace-wrap embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(my/query-replace-regexp-wrap embark--allow-edit)))
 
 (use-package embark-consult)
 
 (use-package rg
-  :commands
-  (rg-menu
-   rg-run
-   rg-project-root
-   rg-read-pattern
-   rg-tag-default)
+  :commands rg-menu
   :functions popper--bury-all
   :general
   (my/bind-search
-    "M-s" #'my/rg-menu
-    "P" #'my/rg-dwim-project-dir
-    "D" #'my/rg-dwim-current-dir
-    "F" #'rg-dwim-current-file)
+    "M-s" #'my/rg-menu)
 
   :config
   (defun my/rg-menu ()
     "Bury any popups before calling `rg-menu'."
     (interactive)
     (popper--bury-all)
-    (call-interactively #'rg-menu))
-
-  ;; DWIM project search across all file extensions (used by Embark).
-  (rg-define-search my/rg-dwim-project-dir
-    "Search for thing at point under the project root directory."
-    :query point
-    :format literal
-    :files "*"
-    :dir project)
-
-  ;; DWIM CWD search across all file extensions (used by Embark).
-  (rg-define-search my/rg-dwim-current-dir
-    "Search for thing at point under the current directory."
-    :query point
-    :format literal
-    :files "*"
-    :dir current))
+    (call-interactively #'rg-menu)))
 
 (use-package wgrep
   :general
   (my/bind-c-c
-    "C-w" #'wgrep-change-to-wgrep-mode)
+    "w" #'wgrep-change-to-wgrep-mode)
   :custom
   (wgrep-auto-save-buffer t))
-
-(use-package replace
-  :straight nil
-  :general
-  (my/bind-search
-    ;; Move the binding for `occur' as I want "M-s o" for symbol search.
-    "o" nil
-    "M-o" #'occur))
 
 ;;;; General Editing
 
@@ -1283,7 +1248,7 @@
 ;;;;; Region Expansion
 
 (use-package expreg
-  :straight (:host github :repo "casouri/expreg")
+  :elpaca (:host github :repo "casouri/expreg")
   :general
   (general-def
     "C-=" #'expreg-expand
@@ -1298,7 +1263,7 @@
 ;;;;; Special Characters
 
 (use-package iso-transl
-  :straight nil
+  :elpaca nil
   :general
   ;; Bind C-x 8 0 to insert a zero-width space character which can be used to
   ;; escape org mode emphasis markers.
@@ -1383,13 +1348,9 @@
      (?. . my/avy-action-embark-act))))
 
 (use-package isearch
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-search
-    "]" #'isearch-forward
-    "[" #'isearch-backward
-    "}" #'isearch-forward-regexp
-    "{" #'isearch-backward-regexp
     "." #'isearch-forward-thing-at-point)
   (general-def 'isearch-mode-map
     "C-n" #'isearch-repeat-forward
@@ -1398,7 +1359,7 @@
 ;;;;; Highlighting
 
 (use-package hi-lock
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-search
     "h." #'highlight-symbol-at-point
@@ -1409,7 +1370,7 @@
 ;;;; Buffer Management
 
 (use-package ibuffer
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-c-x
     ;; Replace `list-buffers' with `ibuffer'.
@@ -1418,23 +1379,24 @@
     ;; Keep M-o binding for ace-window.
     "M-o" nil
     ;; Group buffers by VC project.
-    "/p" #'ibuffer-vc-set-filter-groups-by-vc-root)
-  :init
-  (use-package ibuffer-vc))
+    "/p" #'ibuffer-vc-set-filter-groups-by-vc-root))
+
+(use-package ibuffer-vc)
 
 ;;;; File System
 
 ;;;;; File Browsing
 
 (use-package dired
-  :straight nil
+  :elpaca nil
   :general
   (general-def 'dired-mode-map
     "C-o" nil
     "N" #'dired-create-empty-file
     "?" #'which-key-show-major-mode
     "i" #'dired-subtree-insert
-    ";" #'dired-subtree-remove)
+    ";" #'dired-subtree-remove
+    "M-s" nil)
   :hook
   (dired-mode . auto-revert-mode)
   :custom
@@ -1487,15 +1449,15 @@
   :commands
   (treemacs
    treemacs-select-window
-   ;; TODO: Why is Flymake complaining if these aren't declared?
+   ;; Used by the inline function `treemacs-current-visibility' below.
    treemacs-get-local-buffer
    treemacs-get-local-window)
   :general
   (general-def
     "M-t" #'my/treemacs-stay)
-  (treemacs-mode-map
-   ;; Otherwise it takes two clicks to open a directory.
-   [mouse-1] #'treemacs-single-click-expand-action)
+  (general-def 'treemacs-mode-map
+    ;; Otherwise it takes two clicks to open a directory.
+    [mouse-1] #'treemacs-single-click-expand-action)
 
   :hook
   ;; Don't wrap long lines in Treemacs.
@@ -1539,7 +1501,7 @@
 ;;;;; File History
 
 (use-package recentf
-  :straight nil
+  :elpaca nil
   :custom
   (recentf-max-saved-items 300)
   :config
@@ -1548,20 +1510,13 @@
 ;;;;; Project Management
 
 (use-package project
-  :straight nil
+  :elpaca nil
   :general
   (general-def 'project-prefix-map
     "u" #'my/project-update-list)
 
   :custom
-  (project-switch-commands
-   '((project-find-file "Find file" ?f)
-     (project-find-dir "Find directory" ?d)
-     (project-dired "Dired" ?j)
-     (consult-ripgrep "Search" ?s)
-     (magit-project-status "Magit" ?m)
-     (project-eshell "Eshell" ?$)
-     (my/project-detached-shell-command "Detached Shell" ?&)))
+  (project-switch-commands #'project-dired)
 
   :config
   (defun my/project-current-root ()
@@ -1610,20 +1565,9 @@
 ;;;;; Outline
 
 (use-package outline
-  :straight nil
-  :general
-  (my/bind-c-c :keymaps 'outline-minor-mode-map
-    "C-n" #'outline-next-visible-heading
-    "C-p" #'outline-previous-visible-heading
-    "C-f" #'outline-forward-same-level
-    "C-b" #'outline-backward-same-level
-    "C-a" #'outline-show-all
-    "C-h" #'outline-hide-other
-    "C-u" #'outline-up-heading)
-  ;; TODO: Find better keybindings as these are taken by Paredit.
-  ;; ("M-<down>" . outline-move-subtree-down)
-  ;; ("M-<up>" . outline-move-subtree-up))
+  :elpaca nil
   :custom
+  (outline-minor-mode-prefix "\C-c-")
   (outline-minor-mode-cycle t))
 
 ;;;;; Code Templating
@@ -1655,10 +1599,11 @@
 ;;;;;; Tree-Sitter
 
 (use-package treesit
-  :straight nil
+  :elpaca nil
   :custom
-  (treesit-extra-load-path (list (no-littering-expand-var-file-name "tree-sitter")))
   (treesit-font-lock-level 4) ;; Be extra.
+  (treesit-extra-load-path
+   (list (no-littering-expand-var-file-name "tree-sitter")))
   :config
   (setq treesit-language-source-alist
         '((bash "https://github.com/tree-sitter/tree-sitter-bash")
@@ -1679,6 +1624,8 @@
           (sh-mode . bash-ts-mode)
           (conf-toml-mode . toml-ts-mode))))
 
+(elpaca-wait)
+
 ;;;;;; LSP
 
 (use-package eglot
@@ -1695,20 +1642,17 @@
   (eglot-managed-mode . my/eglot-init)
 
   :general
-  (my/bind-search :keymaps 'eglot-mode-map
+  (my/bind-goto :keymaps 'eglot-mode-map
     "^" #'eglot-find-implementation)
 
-  (my/bind-ide :keymaps 'eglot-mode-map
-    ;; Actions.
-    "aa" #'eglot-code-actions
-    "ao" #'eglot-code-action-organize-imports
-    "ar" #'eglot-rename
-    ;; Help.
-    "ho" #'my/eglot-open-external-docs)
+  (my/bind-c-c :keymaps 'eglot-mode-map
+    "ra" #'eglot-code-actions
+    "ro" #'eglot-code-action-organize-imports
+    "rr" #'eglot-rename
+    "O" #'my/eglot-open-external-docs)
 
-  ;; Easy keybindings for when the mood changes.
-  (my/bind-visual :keymaps 'eglot-mode-map
-    "i" #'eglot-inlay-hints-mode)
+  (my/bind-c-c :keymaps 'eglot-mode-map
+    "vi" #'eglot-inlay-hints-mode)
 
   :custom
   (eglot-autoshutdown t)
@@ -1776,18 +1720,13 @@
 (use-package consult-eglot
   :after eglot
   :general
-  (my/bind-search :keymaps 'eglot-mode-map
+  (my/bind-goto :keymap 'eglot-mode-map
     "o" #'consult-eglot-symbols))
 
 ;;;;;; Xref
 
 (use-package xref
-  :straight nil
-  :general
-  (my/bind-search
-    "t" #'xref-find-definitions ;; Think: "source of [t]ruth".
-    "u" #'xref-find-references) ;; Think: "[u]sages".
-
+  :elpaca nil
   :custom
   ;; Don't prompt by default (invoke with prefix arg to prompt).
   (xref-prompt-for-identifier nil)
@@ -1798,12 +1737,10 @@
 ;;;;;; Eldoc
 
 (use-package eldoc
-  :straight nil
+  :elpaca nil
   :general
   (general-def
     "C-h t" #'eldoc-mode)
-  (my/bind-ide
-    "hh" #'eldoc-doc-buffer)
   :custom
   (global-eldoc-mode 1)
   (eldoc-idle-delay 0)
@@ -1839,17 +1776,17 @@
 
 ;; See also: https://github.com/seagle0128/.emacs.d/blob/85554195f81c5eb403b564d29e3fd3324bafecba/lisp/init-flymake.el.
 (use-package flymake
-  :straight nil
+  :elpaca nil
   :general
-  (my/bind-ide 'flymake-mode-map
-    "ld" #'flymake-show-buffer-diagnostics
-    "lD" #'flymake-show-project-diagnostics
-    "ln" #'flymake-goto-next-error
-    "lp" #'flymake-goto-prev-error)
+  (my/bind-c-c 'flymake-mode-map
+    "fd" #'flymake-show-buffer-diagnostics
+    "fD" #'flymake-show-project-diagnostics
+    "fn" #'flymake-goto-next-error
+    "fp" #'flymake-goto-prev-error)
 
   :hook
   (prog-mode . flymake-mode)
-  (after-init . my/flymake-global-init)
+  (elpaca-after-init . my/flymake-global-init)
 
   :config
   (defun my/flymake-global-init ()
@@ -1870,9 +1807,9 @@
 ;;;;;; General
 
 (use-package prog-mode
-  :straight nil
+  :elpaca nil
   :general
-  (my/bind-ide
+  (my/bind-c-c
     ;; Build.
     "ba" #'my/build-system-add
     "bb" #'my/build-system-build
@@ -1962,7 +1899,7 @@
 ;;;;;; Rust
 
 (use-package rust-ts-mode
-  :straight nil
+  :elpaca nil
   ;; Demand to register .rs files in `auto-mode-alist'.
   :demand t
   :hook
@@ -2024,7 +1961,7 @@
   ;; However, `rustic-mode' should not be run as it is mapped to `rust-ts-mode'
   ;; in `major-mode-remap-alist'. See: https://github.com/brotzeit/rustic/issues/475.
   :general
-  (my/bind-ide :keymaps 'rust-ts-mode-map
+  (my/bind-c-c :keymaps 'rust-ts-mode-map
     "tt" #'rustic-cargo-current-test)
   :custom
   (rustic-lsp-client 'eglot))
@@ -2032,7 +1969,7 @@
 ;;;;;; Go
 
 (use-package go-ts-mode
-  :straight nil
+  :elpaca nil
   ;; Demand to register .go files in `auto-mode-alist'.
   :demand t
   :hook
@@ -2082,13 +2019,13 @@
 
 (use-package gotest
   :general
-  (my/bind-ide :keymaps 'go-ts-mode-map
+  (my/bind-c-c :keymaps 'go-ts-mode-map
     "tf" #'go-test-current-file
     "tt" #'go-test-current-test))
 
 (use-package go-gen-test
   :general
-  (my/bind-ide :keymaps 'go-ts-mode-map
+  (my/bind-c-c :keymaps 'go-ts-mode-map
     "rg" #'go-gen-test-dwim))
 
 ;;;;;; Terraform
@@ -2098,7 +2035,7 @@
 ;;;;;; Python
 
 (use-package python
-  :straight nil
+  :elpaca nil
   :init
   (setq python-shell-interpreter "python3"))
 
@@ -2122,7 +2059,7 @@
 ;;;;;; Shell
 
 (use-package sh-script
-  :straight nil
+  :elpaca nil
   :custom
   (sh-basic-offset 2))
 
@@ -2141,18 +2078,11 @@
 ;;;;;; Bazel
 
 (use-package bazel-mode
-  :straight (:host github :repo "bazelbuild/emacs-bazel-mode")
+  :elpaca (:host github :repo "bazelbuild/emacs-bazel-mode")
   :mode
   ("\\.BUILD\\'" . bazel-mode)
   ("\\.bazel\\'" . bazel-mode)
   ("\\.star\\'" . bazel-starlark-mode)
-  :general
-  (my/bind-ide :keymaps 'bazel-mode-map
-    "zb" #'bazel-build
-    "zf" #'bazel-buildifier
-    "zr" #'bazel-run
-    "zt" #'bazel-test
-    "zc" #'bazel-coverage)
   :custom
   (bazel-buildifier-before-save t)
   :init
@@ -2165,7 +2095,8 @@
 
 ;;;;;; C/C++
 
-(use-package cc-mode)
+(use-package cc-mode
+  :elpaca nil)
 
 (use-package clang-format
   :custom
@@ -2173,11 +2104,13 @@
 
 ;;;;;; YAML
 
-(use-package yaml-ts-mode)
+(use-package yaml-ts-mode
+  :elpaca nil)
 
 ;;;;;; JSON
 
-(use-package json-ts-mode)
+(use-package json-ts-mode
+  :elpaca nil)
 
 ;;;;;; Jsonnet
 
@@ -2186,10 +2119,9 @@
 ;;;;;; Lisp
 
 (use-package elisp-mode
-  :straight nil
+  :elpaca nil
   :hook
   (emacs-lisp-mode . my/elisp-init)
-
   :general
   (my/bind-c-x
     "C-r" #'eval-region)
@@ -2229,6 +2161,7 @@
   ;; Unbind Paredit keybindings I don't use that can cause collisions. This
   ;; doesn't work unless I do it under :config rather than :general.
   (general-unbind 'paredit-mode-map
+    "C-c C-M-l"
     "C-<left>"
     "C-<right>"
     "C-M-<left>"
@@ -2247,18 +2180,20 @@
   :hook
   ((lisp-mode
     emacs-lisp-mode
-    inferior-emacs-lisp-mode) . aggressive-indent-mode))
+    inferior-emacs-lisp-mode) . aggressive-indent-mode)
+  :general
+  (general-unbind 'aggressive-indent-mode-map "C-c C-q"))
 
 ;; Custom Elisp indentation function - see code comments in package.
 (use-package emacs-lisp-indent
-  :straight (:host github :repo "ashlineldridge/emacs-lisp-indent")
+  :elpaca (:host github :repo "ashlineldridge/emacs-lisp-indent")
   :init
   (emacs-lisp-indent-install))
 
 ;;;;;; SGML/HTML
 
 (use-package sgml-mode
-  :straight nil
+  :elpaca nil
   :general
   (general-def 'html-mode-map
     ;; Unbind M-o as I want that for ace-window.
@@ -2281,8 +2216,6 @@
     "gd" #'magit-dispatch
     "gf" #'magit-file-dispatch)
   :custom
-  ;; Tell Magit not to add the C-x bindings as we'll use the ones above.
-  (magit-define-global-key-bindings nil)
   ;; Otherwise Magit shows a read-only diff screen when you press C-c C-c and
   ;; you've already had a chance to look at the diff when you stage the files.
   (magit-commit-show-diff nil))
@@ -2296,7 +2229,7 @@
 ;;;; Shell/Terminal
 
 (use-package eshell
-  :straight nil
+  :elpaca nil
   :hook
   (eshell-mode . my/eshell-init)
   (eshell-pre-command . my/eshell-pre-command)
@@ -2400,7 +2333,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       buf)))
 
 (use-package sh-script
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-c-c :keymaps 'sh-mode-map
     "C-o" nil))
@@ -2435,6 +2368,9 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 ;;;; Org Mode
 
 (use-package org
+  ;; Use built-in for now as latest has bugs. When Elpaca supports lockfiles
+  ;; I'll just pin it. See: https://github.com/progfolio/elpaca/issues/151.
+  :elpaca nil
   :preface
   ;; GTD (agenda) & PKM (notes) paths.
   (defvar my/gtd-dir (expand-file-name "~/dev/home/gtd/"))
@@ -2472,11 +2408,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "ol" #'org-store-link
     "oa" #'org-agenda
     "om" #'org-capture
-    "oS" #'org-save-all-org-buffers
+    "os" #'org-save-all-org-buffers
     "oi" #'my/org-capture-inbox
     "ob" #'my/org-capture-bookmark
     "oc" #'my/org-capture-coffee
-    "C-o" #'org-open-at-point-global)
+    "O" #'org-open-at-point-global)
   (my/bind-c-c :keymaps 'org-mode-map
     "C-S-l" #'org-cliplink)
   (general-def 'org-agenda-mode-map
@@ -2770,14 +2706,7 @@ specified then a task category will be determined by the item's tags."
     "ng" #'org-roam-graph
     "ni" #'org-roam-node-insert
     "nc" #'org-roam-capture
-    "nt" #'org-roam-tag-add
-    "j." #'org-roam-dailies-find-directory
-    "jj" #'org-roam-dailies-capture-today
-    "jJ" #'org-roam-dailies-goto-today
-    "jy" #'org-roam-dailies-capture-yesterday
-    "jY" #'org-roam-dailies-goto-yesterday
-    "jd" #'org-roam-dailies-capture-date
-    "jD" #'org-roam-dailies-goto-date)
+    "nt" #'org-roam-tag-add)
 
   :custom
   (org-roam-directory (expand-file-name "notes/" my/pkm-dir))
@@ -2817,7 +2746,7 @@ specified then a task category will be determined by the item's tags."
 ;;;; Process Management
 
 (use-package proced
-  :straight nil
+  :elpaca nil
   :general
   (my/bind-c-x
     "C-p" #'proced)
@@ -2829,7 +2758,7 @@ specified then a task category will be determined by the item's tags."
 (use-package pass)
 
 (use-package auth-source-pass
-  :straight nil
+  :elpaca nil
   :custom
   (auth-source-do-cache nil)
   :init
