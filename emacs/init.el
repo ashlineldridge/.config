@@ -31,7 +31,7 @@
   (general-create-definer my/bind-goto :prefix "M-g")   ;; Goto prefix.
   (general-create-definer my/bind-window :prefix "C-o") ;; Window prefix.
   (general-create-definer my/bind-c-c :prefix "C-c")    ;; C-c prefix.
-  (general-create-definer my/bind-c-x :prefix "C-x"))   ;; C-x prefixes.
+  (general-create-definer my/bind-c-x :prefix "C-x"))   ;; C-x prefix.
 
 ;; Packages that modify the syntax of `use-package' need to be waited on.
 (declare-function elpaca-wait nil)
@@ -78,8 +78,7 @@
     [remap query-replace-regexp] #'my/query-replace-regexp-wrap)
 
   (my/bind-c-x
-    "C-k" #'kill-this-buffer
-    "C-x" #'exchange-point-and-mark)
+    "C-k" #'kill-this-buffer)
 
   (my/bind-search
     ;; Add search prefix descriptions.
@@ -825,6 +824,8 @@
 (use-package vertico
   :elpaca (:files (:defaults "extensions/*.el"))
   :commands vertico-mode
+  :custom
+  (vertico-count 20)
   :init
   (vertico-mode 1))
 
@@ -948,10 +949,7 @@
     "M-e" #'consult-isearch-history
     ;; Allow `consult-line' functions to "take over" from `isearch'.
     "M-s l" #'consult-line
-    "M-s L" #'consult-line-multi
-    ;; Another option for back/forward.
-    "C-n" #'isearch-repeat-forward
-    "C-p" #'isearch-repeat-backward)
+    "M-s L" #'consult-line-multi)
 
   (general-def 'consult-narrow-map
     "C-<" #'consult-narrow-help
@@ -1003,11 +1001,14 @@
 
   ;; Customise the list of sources shown by consult-buffer.
   (consult-buffer-sources
-   '(consult--source-buffer          ;; Narrow: ?b
-     consult--source-project-buffer  ;; Narrow: ?p
-     my/consult-source-eshell-buffer ;; Narrow: ?e
-     consult--source-recent-file     ;; Narrow: ?r
-     consult--source-bookmark))      ;; Narrow: ?m
+   '(consult--source-buffer            ;; Narrow: ?b
+     consult--source-modified-buffer   ;; Narrow: ?*
+     consult--source-project-buffer    ;; Narrow: ?p
+     consult--source-recent-file       ;; Narrow: ?f
+     consult--source-bookmark          ;; Narrow: ?m
+     consult--source-file-register     ;; Narrow: ?r
+     my/consult-source-dired-buffer    ;; Narrow: ?d
+     my/consult-source-eshell-buffer)) ;; Narrow: ?e
 
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
   (consult-ripgrep-args
@@ -1035,15 +1036,26 @@
     (let ((completion-styles '(substring)))
       (consult-line initial start)))
 
+  (defvar my/consult-source-dired-buffer
+    `(:name "Dired Buffer"
+      :narrow ?d
+      :category buffer
+      :face consult-buffer
+      :history buffer-name-history
+      :state ,#'consult--buffer-state
+      :items ,(lambda ()
+                (consult--buffer-query
+                 :sort 'visibility
+                 :as #'buffer-name
+                 :mode 'dired-mode))))
+
   (defvar my/consult-source-eshell-buffer
     `(:name "Eshell Buffer"
       :narrow ?e
-      :category eshell-buffer
+      :category buffer
       :face consult-buffer
       :history buffer-name-history
-      ;; https://github.com/jwiegley/use-package/issues/795#issuecomment-673077162
       :state ,#'consult--buffer-state
-      :action ,#'consult--buffer-action
       :items ,(lambda ()
                 (consult--buffer-query
                  :sort 'visibility
@@ -1054,7 +1066,7 @@
    ;; Source name and narrow key customization.
    consult--source-buffer :name "Open Buffer" :narrow ?b
    consult--source-project-buffer :name "Project Buffer" :narrow ?p
-   consult--source-recent-file :name "Recent File" :narrow ?r
+   consult--source-recent-file :name "Recent File" :narrow ?f
 
    ;; Show preview immediately for the following commands.
    consult-goto-line
@@ -1383,7 +1395,8 @@
     "N" #'dired-create-empty-file
     "?" #'which-key-show-major-mode
     "i" #'dired-subtree-insert
-    ";" #'dired-subtree-remove)
+    ";" #'dired-subtree-remove
+    "M-s" nil)
   :hook
   (dired-mode . auto-revert-mode)
   :custom
@@ -1436,15 +1449,15 @@
   :commands
   (treemacs
    treemacs-select-window
-   ;; TODO: Why is Flymake complaining if these aren't declared?
+   ;; Used by the inline function `treemacs-current-visibility' below.
    treemacs-get-local-buffer
    treemacs-get-local-window)
   :general
   (general-def
     "M-t" #'my/treemacs-stay)
-  (treemacs-mode-map
-   ;; Otherwise it takes two clicks to open a directory.
-   [mouse-1] #'treemacs-single-click-expand-action)
+  (general-def 'treemacs-mode-map
+    ;; Otherwise it takes two clicks to open a directory.
+    [mouse-1] #'treemacs-single-click-expand-action)
 
   :hook
   ;; Don't wrap long lines in Treemacs.
@@ -1503,7 +1516,7 @@
     "u" #'my/project-update-list)
 
   :custom
-  (project-switch-commands #'magit-project-status)
+  (project-switch-commands #'project-dired)
 
   :config
   (defun my/project-current-root ()
@@ -2112,9 +2125,6 @@
   :general
   (my/bind-c-x
     "C-r" #'eval-region)
-
-  ;; Keep C-c clean. http://google.com
-  (general-unbind 'emacs-lisp-mode-map "C-c")
 
   :config
   (defun my/elisp-init ()
