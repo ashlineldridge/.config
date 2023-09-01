@@ -161,7 +161,8 @@
   ;; Display a small "[n]" that shows the minibuffer recursive depth. Another
   ;; option is to use https://github.com/minad/recursion-indicator.
   (minibuffer-depth-indicate-mode 1)
-  ;; Timezones to be displayed by `world-clock'.
+  ;; Timezones to be displayed by `world-clock'. Zones names can be found
+  ;; here: https://www.timezoneconverter.com/cgi-bin/tzc.
   (world-clock-list
    '(("Australia/Melbourne" "Melbourne")
      ("America/Los_Angeles" "Seattle")
@@ -169,7 +170,8 @@
      ("Europe/London" "London")
      ("Europe/Paris" "Paris")
      ("Europe/Vilnius" "Lithuania")
-     ("Asia/Tokyo" "Tokyo")))
+     ("Asia/Tokyo" "Tokyo")
+     ("Canada/Eastern" "Toronto")))
 
   :init
   ;; Use y/n rather than yes/no.
