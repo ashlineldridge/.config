@@ -245,12 +245,7 @@
   (fset 'my/query-replace-wrap #'query-replace)
   (fset 'my/query-replace-regexp-wrap #'query-replace-regexp)
   (advice-add #'my/query-replace-wrap :around #'my/query-replace-advice)
-  (advice-add #'my/query-replace-regexp-wrap :around #'my/query-replace-advice)
-
-  ;; Prefer running a single instance of Emacs in server mode.
-  (require 'server)
-  (unless (server-running-p)
-    (server-start)))
+  (advice-add #'my/query-replace-regexp-wrap :around #'my/query-replace-advice))
 
 ;;;; Appearance
 
@@ -504,9 +499,11 @@
     (aw-switch-to-window window)
     (consult-buffer))
 
-  (defun my/ace-delete-window-kill-buffer (window)
+  (defun my/ace-delete-frame (window)
     "Ace Window action that deletes WINDOW and kills its buffer."
-    (aw-delete-window window t))
+    (aw-switch-to-window window)
+    (delete-frame)
+    (other-frame 1))
 
   (defun my/ace-split-window-vertically (window)
     "Ace Window action that splits WINDOW vertically and selects the new one."
@@ -522,7 +519,7 @@
   ;; the :custom block so need to do via `setq' here).
   (setq aw-dispatch-alist
         '((?k aw-delete-window "Delete Window")
-          (?K my/ace-delete-window-kill-buffer "Delete Window and Kill Buffer")
+          (?K my/ace-delete-frame "Delete Frame")
           (?1 delete-other-windows "Delete Other Windows")
           (?w aw-swap-window "Swap Windows")
           (?m aw-move-window "Move Window")
@@ -556,9 +553,12 @@
     "[" #'rotate-frame-anticlockwise
     "1" #'delete-other-windows
     "o" #'other-window
+    "C-o" #'other-frame
     "b" #'shrink-window-horizontally
     "f" #'enlarge-window-horizontally
     "n" #'enlarge-window
+    "N" #'make-frame
+    "K" #'delete-frame
     "p" #'shrink-window
     "u" #'winner-undo
     "r" #'winner-redo
@@ -584,6 +584,7 @@
   (defvar-keymap my/window-repeat-map
     :doc "Keymap for repeatable window commands."
     "o" #'other-window
+    "C-o" #'other-frame
     "b" #'shrink-window-horizontally
     "f" #'enlarge-window-horizontally
     "n" #'enlarge-window
