@@ -886,8 +886,6 @@
 ;; Dedicated completion commands.
 (use-package cape
   :general
-  (general-def
-    "C-r" #'my/cape-history)
   (my/bind-c-c
     "pd" #'cape-dabbrev
     "ph" #'cape-history
@@ -897,19 +895,14 @@
     "pa" #'cape-abbrev
     "pl" #'cape-line
     "pw" #'cape-dict)
+  (general-def 'eshell-mode-map
+    "C-r" #'cape-history)
 
   :custom
   ;; Only show dabbrev candidates of a minimum length to avoid being annoying.
   (cape-dabbrev-min-length 5)
   ;; Only show dabbrev completions for words in the current buffer.
-  (cape-dabbrev-check-other-buffers nil)
-
-  :init
-  (defun my/cape-history ()
-    "Version of `cape-history' that runs as an in-buffer completion."
-    (interactive)
-    (let ((completion-at-point-functions (list #'cape-history)))
-      (completion-at-point))))
+  (cape-dabbrev-check-other-buffers nil))
 
 ;; Orderless configuration mostly taken from:
 ;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
@@ -923,11 +916,8 @@
 
 (use-package marginalia
   :commands marginalia-mode
-  :general
-  (general-def 'minibuffer-local-map
-    "M-A" #'marginalia-cycle)
-  :init
-  (marginalia-mode 1))
+  :custom
+  (marginalia-mode t))
 
 (use-package consult
   :commands
@@ -1105,7 +1095,7 @@
     "C-h b" #'embark-bindings)
 
   (general-def 'minibuffer-local-map
-    "C-M-." #'embark-become)
+    "M-b" #'embark-become)
 
   (general-def 'embark-file-map "o" #'my/ace-find-file)
   (general-def 'embark-buffer-map "o" #'my/ace-switch-to-buffer)
