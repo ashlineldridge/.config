@@ -27,11 +27,11 @@
   :config
   ;; Automatically unbind non-prefix keys when used.
   (general-auto-unbind-keys)
-  (general-create-definer my/bind-search :prefix "M-s") ;; Search prefix.
-  (general-create-definer my/bind-goto :prefix "M-g")   ;; Goto prefix.
-  (general-create-definer my/bind-window :prefix "C-o") ;; Window prefix.
-  (general-create-definer my/bind-c-c :prefix "C-c")    ;; C-c prefix.
-  (general-create-definer my/bind-c-x :prefix "C-x"))   ;; C-x prefix.
+  (general-create-definer my/bind-search :prefix "M-s")
+  (general-create-definer my/bind-goto :prefix "M-g")
+  (general-create-definer my/bind-window :prefix "C-o")
+  (general-create-definer my/bind-c-c :prefix "C-c")
+  (general-create-definer my/bind-c-x :prefix "C-x"))
 
 ;; Packages that modify the syntax of `use-package' need to be waited on.
 (declare-function elpaca-wait nil)
@@ -89,7 +89,6 @@
     "b" '(:ignore t :which-key "build")
     "b1" #'compile
     "b2" #'recompile
-    "d" '(:ignore t :which-key "detached")
     "f" '(:ignore t :which-key "flymake")
     "g" '(:ignore t :which-key "magit")
     "n" '(:ignore t :which-key "notes")
@@ -133,6 +132,7 @@
   (column-number-mode t)
   (global-auto-revert-mode t)
   (async-shell-command-buffer 'new-buffer)
+  (shell-command-switch "-ic")
   (savehist-mode t)
   (electric-pair-mode t)
   (electric-pair-inhibit-predicate #'my/electric-pair-inhibit)
@@ -658,8 +658,6 @@
      "\\*Call Hierarchy\\*"
      "\\*Shell Command Output\\*"
      "\\*Async Shell Command\\*"
-     "\\*detached-list\\*"
-     "\\*Detached Shell Command\\*"
 
      ;; Match all modes that derive from compilation-mode but do not derive
      ;; from a member of `my/popper-ignore-modes'.
@@ -1542,13 +1540,7 @@
                    (not (member file '("." ".."))))
           (setq found (+ found
                          (project-remember-projects-under file)))))
-      (message "Found %d new projects" found)))
-
-  (defun my/project-detached-shell-command ()
-    "Run `detached-shell-command' in the project's root directory."
-    (interactive)
-    (let ((default-directory (project-root (project-current t))))
-      (call-interactively #'detached-shell-command))))
+      (message "Found %d new projects" found))))
 
 ;;;;; Auto-Save
 
@@ -2340,33 +2332,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   :general
   (my/bind-c-c :keymaps 'sh-mode-map
     "C-o" nil))
-
-(use-package detached
-  :commands detached-init
-  :general
-  (general-def
-    [remap shell-command] #'detached-shell-command
-    [remap async-shell-command] #'detached-shell-command
-    [remap compile] #'detached-compile
-    [remap recompile] #'detached-compile-recompile
-    ;; TODO: Disable consult integration until this issue is resolved:
-    ;; https://lists.sr.ht/~niklaseklund/detached.el/%3CCAM-j%3Dqsnjw4%3D9kYbYGGR1oqC7BGxmZphN5Jq2gHdO3p8nQYdTw%40mail.gmail.com%3E.
-    ;; [remap detached-open-session] #'detached-consult-session
-    )
-  (my/bind-c-c
-    "dd" #'detached-open-session
-    "dl" #'detached-list-sessions)
-  :custom
-  (detached-detach-key "C-c d x")
-  (detached-terminal-data-command system-type)
-  ;; TODO: Would prefer to use D-Bus or `alert' but haven't been able to
-  ;; to get either working properly on macOS.
-  (detached-notification-function #'detached-state-transitionion-echo-message)
-  :init
-  (detached-init)
-  :config
-  ;; Display git branch information in `detached-list-sessions'.
-  (setq detached-metadata-annotators-alist '((branch . detached--metadata-git-branch))))
 
 ;;;; Org Mode
 
