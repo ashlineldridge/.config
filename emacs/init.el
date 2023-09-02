@@ -133,7 +133,10 @@
   (global-auto-revert-mode t)
   (async-shell-command-buffer 'new-buffer)
   (shell-command-switch "-ic")
+  (history-length 1000)
   (savehist-mode t)
+  (savehist-additional-variables
+   '(search-ring regexp-search-ring extended-command-history))
   (electric-pair-mode t)
   (electric-pair-inhibit-predicate #'my/electric-pair-inhibit)
   (repeat-mode t)
@@ -161,6 +164,11 @@
   ;; Display a small "[n]" that shows the minibuffer recursive depth. Another
   ;; option is to use https://github.com/minad/recursion-indicator.
   (minibuffer-depth-indicate-mode 1)
+  ;; Don't allow the cursor in the minibuffer prompt text.
+  (minibuffer-prompt-properties
+   '(read-only t cursor-intangible t face minibuffer-prompt))
+  ;; Don't show M-x commands which don't work in the current mode.
+  (read-extended-command-predicate #'command-completion-default-include-p)
   ;; Timezones to be displayed by `world-clock'. Zones names can be found
   ;; here: https://www.timezoneconverter.com/cgi-bin/tzc.
   (world-clock-list
@@ -882,6 +890,18 @@
      ;; search window too large when the frame is split vertically into
      ;; multiple windows. So 50% is fine for now.
      (direction . right))))
+
+(use-package vertico-repeat
+  :after vertico
+  :elpaca nil
+  :hook (minibuffer-setup . vertico-repeat-save)
+  :general
+  (general-def
+    ;; Use prefix arg to select from list.
+    "M-R" #'vertico-repeat)
+  :init
+  ;; Persist Vertico history between Emacs sessions.
+  (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
 
 ;; Dedicated completion commands.
 (use-package cape
