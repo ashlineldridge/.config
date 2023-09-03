@@ -91,6 +91,7 @@
 (declare-function elpaca-process-queues nil)
 (declare-function elpaca-wait nil)
 (declare-function elpaca-use-package-mode nil)
+(declare-function no-littering-theme-backups nil)
 (defvar elpaca-use-package-by-default)
 
 ;; Elpaca loads Magit so this needs to be set here.
@@ -139,11 +140,15 @@
   (elpaca-use-package-mode)
   (setq elpaca-use-package-by-default t))
 
-;; Install no-littering early so that it can manage config/data files.
+;; Install no-littering.
 (elpaca no-littering)
 
 ;; Block until current queue is processed.
 (elpaca-wait)
+
+;; Configure no-littering.
+(require 'no-littering)
+(no-littering-theme-backups)
 
 ;; If an early-init-private.el file exists, load it. I use this file to manage
 ;; configuration I don't want to make public. Typically, it's just environment

@@ -144,19 +144,6 @@
   (fringe-mode 5)
   ;; Ignore any changes made via the customization UI.
   (custom-file (make-temp-file "emacs-custom-"))
-  ;; Recommended no-littering settings for backup files.
-  ;; See https://github.com/emacscollective/no-littering#backup-files.
-  (backup-directory-alist
-   `(("\\`/tmp/" . nil)
-     ("\\`/dev/shm/" . nil)
-     ("." . ,(no-littering-expand-var-file-name "backup/"))))
-  ;; Recommended no-littering settings for auto-save files.
-  ;; See https://github.com/emacscollective/no-littering#auto-save-files.
-  (auto-save-file-name-transforms
-   `(("\\`/[^/]*:\\([^/]*/\\)*\\([^/]*\\)\\'"
-      ,(concat temporary-file-directory "\\2") t)
-     ("\\`\\(/tmp\\|/dev/shm\\)\\([^/]*/\\)*\\(.*\\)\\'" "\\3")
-     (".*" ,(no-littering-expand-var-file-name "auto-save/") t)))
   ;; Enable recursive editing to allow multiple minibuffers to be opened on top
   ;; of each other. E.g., this allows starting a query-replace, then open a
   ;; file to look at something, then go back to the query-replace minibuffer.
@@ -1610,15 +1597,16 @@
   (treesit-extra-load-path
    (list (no-littering-expand-var-file-name "tree-sitter")))
   :config
-  (setq treesit-language-source-alist
-        '((bash "https://github.com/tree-sitter/tree-sitter-bash")
-          (go "https://github.com/tree-sitter/tree-sitter-go")
-          (gomod "https://github.com/camdencheek/tree-sitter-gomod")
-          (json "https://github.com/tree-sitter/tree-sitter-json")
-          (proto "https://github.com/mitchellh/tree-sitter-proto")
-          (rust "https://github.com/tree-sitter/tree-sitter-rust")
-          (toml "https://github.com/tree-sitter/tree-sitter-toml")
-          (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+  (defvar my/treesit-language-source-alist
+    '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+      (go "https://github.com/tree-sitter/tree-sitter-go")
+      (gomod "https://github.com/camdencheek/tree-sitter-gomod")
+      (json "https://github.com/tree-sitter/tree-sitter-json")
+      (proto "https://github.com/mitchellh/tree-sitter-proto")
+      (rust "https://github.com/tree-sitter/tree-sitter-rust")
+      (toml "https://github.com/tree-sitter/tree-sitter-toml")
+      (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+  (setq treesit-language-source-alist my/treesit-language-source-alist)
   (setq major-mode-remap-alist
         '((conf-toml-mode . toml-ts-mode)
           (bash-mode . bash-ts-mode)
@@ -1627,7 +1615,23 @@
           (rust-mode . rust-ts-mode)
           (rustic-mode . rust-ts-mode)
           (sh-mode . bash-ts-mode)
-          (conf-toml-mode . toml-ts-mode))))
+          (conf-toml-mode . toml-ts-mode)))
+
+  (defun my/treesit-update-language-grammars ()
+    "Update all Tree Sitter language grammars."
+    (interactive)
+    ;; Calling `treesit-install-language-grammar' modifies the source alist so
+    ;; so it needs to be reset if called multiple times in the same session.
+    (setq treesit-language-source-alist my/treesit-language-source-alist)
+    ;; Download the latest grammars to the default directory and then move them
+    ;; into the directory managed by no-littering.
+    (let ((old-dir (expand-file-name "tree-sitter"  user-emacs-directory))
+          (new-dir (car treesit-extra-load-path)))
+      (delete-directory old-dir t)
+      (mapc #'treesit-install-language-grammar
+            (mapcar #'car treesit-language-source-alist))
+      (delete-directory new-dir t)
+      (rename-file old-dir new-dir))))
 
 (elpaca-wait)
 
@@ -1732,6 +1736,10 @@
 
 (use-package xref
   :elpaca nil
+  :general
+  (my/bind-goto
+    "." #'xref-find-definitions
+    "?" #'xref-find-references)
   :custom
   ;; Don't prompt by default (invoke with prefix arg to prompt).
   (xref-prompt-for-identifier nil)
