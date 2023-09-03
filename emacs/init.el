@@ -1665,9 +1665,7 @@
 
   :custom
   (eglot-autoshutdown t)
-  (eglot-confirm-server-initiated-edits nil)
-  ;; Tree-sitter produces a better imenu.
-  (eglot-stay-out-of '(imenu))
+  (eglot-confirm-server-edits nil)
 
   :config
   (defun my/eglot-init ()
@@ -1682,6 +1680,17 @@
                  #'tempel-complete
                  #'eglot-completion-at-point
                  #'cape-file)))
+
+  (defun my/eglot-open-external-docs ()
+    "Open external documentation for the symbol at point (rust-analyzer only)."
+    (interactive)
+    (let ((url (eglot--request (eglot--current-server-or-lose)
+                               :experimental/externalDocs
+                               `(,@(eglot--TextDocumentPositionParams)))))
+      (browse-url url)))
+
+  ;; Tree-sitter produces a better imenu.
+  (setq eglot-stay-out-of '(imenu))
 
   ;; See: https://github.com/minad/corfu/wiki#filter-list-of-all-possible-completions-with-completion-style-like-orderless.
   (add-to-list 'completion-category-overrides '(eglot (styles orderless)))
@@ -1716,15 +1725,7 @@
                :assignVariableTypes t
                :compositeLiteralFields t
                :compositeLiteralTypes t
-               :constantValues t)))))
-
-  (defun my/eglot-open-external-docs ()
-    "Open external documentation for the symbol at point (rust-analyzer only)."
-    (interactive)
-    (let ((url (eglot--request (eglot--current-server-or-lose)
-                               :experimental/externalDocs
-                               `(,@(eglot--TextDocumentPositionParams)))))
-      (browse-url url))))
+               :constantValues t))))))
 
 (use-package consult-eglot
   :after eglot
