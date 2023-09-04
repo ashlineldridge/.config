@@ -995,18 +995,17 @@
   (consult-narrow-key "<")
 
   ;; By default, only show previews when M-. is pressed.
-  (consult-preview-key "M-.")
+  (consult-preview-key 'any)
 
   ;; Customise the list of sources shown by consult-buffer.
   (consult-buffer-sources
-   '(consult--source-buffer            ;; Narrow: ?b
-     consult--source-modified-buffer   ;; Narrow: ?*
-     consult--source-project-buffer    ;; Narrow: ?p
-     consult--source-recent-file       ;; Narrow: ?f
-     consult--source-bookmark          ;; Narrow: ?m
-     consult--source-file-register     ;; Narrow: ?r
-     my/consult-source-dired-buffer    ;; Narrow: ?d
-     my/consult-source-eshell-buffer)) ;; Narrow: ?e
+   '(consult--source-buffer          ;; Narrow: ?b
+     consult--source-modified-buffer ;; Narrow: ?*
+     my/consult-source-dired-buffer  ;; Narrow: ?d
+     my/consult-source-eshell-buffer ;; Narrow: ?e
+     consult--source-project-buffer  ;; Narrow: ?p
+     consult--source-recent-file     ;; Narrow: ?r
+     consult--source-bookmark))      ;; Narrow: ?m
 
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
   (consult-ripgrep-args
@@ -1064,21 +1063,7 @@
    ;; Source name and narrow key customization.
    consult--source-buffer :name "Open Buffer" :narrow ?b
    consult--source-project-buffer :name "Project Buffer" :narrow ?p
-   consult--source-recent-file :name "Recent File" :narrow ?f
-
-   ;; Show preview immediately for the following commands.
-   consult-goto-line
-   consult-imenu
-   consult-imenu-multi
-   consult-line
-   my/consult-line-strict
-   consult-mark
-   consult-global-mark
-   consult-flymake
-   consult-ripgrep
-   xref-find-references
-   xref-find-definitions
-   :preview-key 'any))
+   consult--source-recent-file :name "Recent File" :narrow ?r))
 
 (use-package consult-dir
   :commands consult-dir
@@ -1658,7 +1643,8 @@
     "ra" #'eglot-code-actions
     "ro" #'eglot-code-action-organize-imports
     "rr" #'eglot-rename
-    "O" #'my/eglot-open-external-docs)
+    ;; Override `org-open-at-point-global' keybinding.
+    "C-o" #'my/eglot-open-external-docs)
 
   (my/bind-c-c :keymaps 'eglot-mode-map
     "vi" #'eglot-inlay-hints-mode)
@@ -1697,6 +1683,7 @@
 
   ;; Customize configuration of LSP servers via `eglot-server-programs' below.
   ;; Note that `:json-false' is used to disable features rather than `nil'.
+  ;; Run `eglot-stderr-buffer' when debugging LSP server errors.
 
   ;; See: https://rust-analyzer.github.io/manual.html#configuration.
   (add-to-list
@@ -2399,7 +2386,8 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "oi" #'my/org-capture-inbox
     "ob" #'my/org-capture-bookmark
     "oc" #'my/org-capture-coffee
-    "O" #'org-open-at-point-global)
+    ;; Use same keybinding given to `org-open-at-point' in Org mode.
+    "C-o" #'org-open-at-point-global)
   (my/bind-c-c :keymaps 'org-mode-map
     "C-S-l" #'org-cliplink)
   (general-def 'org-agenda-mode-map
