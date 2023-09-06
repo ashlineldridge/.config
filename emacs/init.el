@@ -616,11 +616,12 @@
   :custom
   (shackle-default-rule nil)
   (shackle-rules
-   '(("*eldoc" :select nil :other t :regexp t)
-     ("*helpful" :select t :other t :regexp t)
-     ("*rg*" :select t :other t)
-     ("*Occur*" :select t :other t)
-     ("*Pp" :select nil :other t :regexp t)))
+   '(("\\*eldoc" :select nil :other t :regexp t)
+     ("\\*eshell-output\\*" :select t :other t :regexp t)
+     ("\\*helpful" :select t :other t :regexp t)
+     ("\\*rg\\*" :select t :other t :regexp t)
+     ("\\*Occur\\*" :select t :other t :regexp t)
+     ("\\*Pp" :select nil :other t :regexp t)))
   :init
   (shackle-mode 1))
 
@@ -643,13 +644,12 @@
   :custom
   (popper-window-height 15)
   (popper-reference-buffers
-   '("\\*Messages\\*"
+   '("CAPTURE-.*\\.org"
+     "\\*Messages\\*"
      "\\*Warnings\\*"
      "\\*Backtrace\\*"
      "\\*Breakpoints\\*"
-     "\\*Flymake "
-     "\\*eshell-output\\*"
-     "CAPTURE-.*\\.org"
+     "\\*Flymake"
      "\\*Call Hierarchy\\*"
      "\\*Shell Command Output\\*"
      "\\*Async Shell Command\\*"
@@ -1745,10 +1745,14 @@
   :custom
   (global-eldoc-mode 1)
   (eldoc-idle-delay 0)
-  ;; Following allows Eldoc to compose both documentation and Flymake messages.
-  (eldoc-echo-area-use-multiline-p t)
+  ;; Tell Eldoc to compose multiple docs (includes Flymake messages).
   (eldoc-documentation-strategy #'eldoc-documentation-compose)
+  ;; If an `eldoc-doc-buffer' buffer is visible then prefer that, otherwise
+  ;; fall back to the modeline. Also limit the number of lines shown in the
+  ;; modeline and don't display the message about using `eldoc-doc-buffer'.
   (eldoc-echo-area-prefer-doc-buffer t)
+  (eldoc-echo-area-use-multiline-p 3)
+  (eldoc-echo-area-display-truncation-message nil)
   :init
   ;; Print Eldoc documentation in echo area when Paredit commands are run.
   (eldoc-add-command-completions "paredit-"))
