@@ -11,12 +11,6 @@
 
 ;;; Code:
 
-;;;; System Check
-
-;; For now, this config doesn't support terminals.
-(unless window-system
-  (error "This Emacs configuration doesn't support terminals"))
-
 ;;;; Keybinding Management
 
 (use-package general
