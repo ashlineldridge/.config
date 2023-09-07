@@ -1,5 +1,10 @@
 ;; ~/.config/emacs/etc/tempel/templates
 
+;; Note that templates associated with Tree Sitter-powered modes often result
+;; in odd-looking indentation. Hopefully this is fixed as Tree Sitter
+;; integration matures. In the meantime, just let Apheleia fix the indentation
+;; when you save.
+
 fundamental-mode ;; Available everywhere
 
 (today (format-time-string "%Y-%m-%d"))
@@ -13,92 +18,49 @@ prog-mode
 
 emacs-lisp-mode
 
-(var "(defvar " p "\n  \"" p "\")")
-(fun "(defun " p " (" p ")\n  \"" p "\"" n> r> ")")
-(let "(let (" p ")" n> r> ")")
-(let* "(let* (" p ")" n> r> ")")
-(iflet "(if-let (" p ")" n> r> ")")
-(iflet* "(if-let* (" p ")" n> r> ")")
-(whenlet "(when-let (" p ")" n> r> ")")
-(whenlet* "(when-let* (" p ")" n> r> ")")
-(cond "(cond" n "(" q "))" >)
-(pcase "(pcase " (p "scrutinee") n "(" q "))" >)
-(dolist "(dolist (" p ")" n> r> ")")
+(defvar "(defvar " (p "NAME") " " (p "VALUE") n> "\"" (p "DOCSTRING") "\")" q)
+(defconst "(defvar " (p "NAME") " " (p "VALUE") n> "\"" (p "DOCSTRING") "\")" q)
+(defun "(defun " (p "NAME") " (" (p "ARGS") ")" n> "\"" (p "DOCSTRING") "\"" n> (r> "BODY") ")")
+(let "(let (" (p "CONDITION") ")" n> (r> "BODY") ")")
+(let* "(let* (" (p "CONDITION") ")" n> (r> "BODY") ")")
+(if-let "(if-let (" (p "CONDITION") ")" n> (r> "BODY") ")")
+(if-let* "(if-let* (" (p "CONDITION") ")" n> (r> "BODY") ")")
+(when-let "(when-let (" (p "CONDITION") ")" n> (r> "BODY") ")")
+(when-let* "(when-let* (" (p "CONDITION") ")" n> (r> "BODY") ")")
+(dolist "(dolist (" (p "CONDITION") ")" n> (r> "BODY") ")")
 
 eshell-mode
 
-(for "for " (p "i") " in " p " { " q " }")
-(while "while { " p " } { " q " }")
-(until "until { " p " } { " q " }")
-(if "if { " p " } { " q " }")
-(ife "if { " p " } { " p " } { " q " }")
-(unl "unless { " p " } { " q " }")
-(unle "unless { " p " } { " p " } { " q " }")
+(sink (p "COMMAND") " > (my/eshell-sink)" q)
+(sink-named (p "COMMAND") " > (my/eshell-sink \"" (p "BUFFER-NAME") "\")" q)
 
 org-mode
 
-(caption "#+caption: ")
-(drawer ":" p ":" n r ":end:")
-(begin "#+begin_" (s name) n> r> n "#+end_" name)
-(quote "#+begin_quote" n> r> n "#+end_quote")
-(sidenote "#+begin_sidenote" n> r> n "#+end_sidenote")
-(marginnote "#+begin_marginnote" n> r> n "#+end_marginnote")
-(example "#+begin_example" n> r> n "#+end_example")
-(center "#+begin_center" n> r> n "#+end_center")
-(ascii "#+begin_export ascii" n> r> n "#+end_export")
-(html "#+begin_export html" n> r> n "#+end_export")
-(latex "#+begin_export latex" n> r> n "#+end_export")
-(comment "#+begin_comment" n> r> n "#+end_comment")
-(verse "#+begin_verse" n> r> n "#+end_verse")
-(src "#+begin_src " q n> r> n "#+end_src")
-(gnuplot "#+begin_src gnuplot :var data=" (p "table") " :file " (p "plot.png") n> r> n "#+end_src" :post (org-edit-src-code))
-(elisp "#+begin_src emacs-lisp" n> r> n "#+end_src" :post (org-edit-src-code))
-(inlsrc "src_" p "{" q "}")
-(title "#+title: " p n "#+author: Daniel Mendler" n "#+language: en")
+(begin "#+begin_" (s name) n> (r> "BODY") n "#+end_" name)
+(quote "#+begin_quote" n> (r> "BODY") n> "#+end_quote")
+(example "#+begin_example" n> (r> "BODY") n> "#+end_example")
+(comment "#+begin_comment" n> (r> "BODY") n> "#+end_comment")
+(src "#+begin_src " (p "LANGUAGE") n> (r> "BODY") n> "#+end_src")
 
 go-mode go-ts-mode
 
-;; See https://github.com/AndreaCrotti/yasnippet-snippets/tree/master/snippets/go-mode
-(imp "import " q)
-(impn "import (" n> q n ")")
-(pr "fmt.Printf(\"\\n" p "\\n%#v\\n\", " q ")")
-(pl "fmt.Println(" q ")")
-(db "Debug.Printf(\"\\n" p "\\n\\n%#v\\n\", " q ")")
-(dl "Debug.Println(" q ")")
-(lf "log.Printf(\"\\n%#v\\n\", " q ")")
-(ln "log.Println(" q ")")
-(stt "type " p " struct {" n> q n "}")
-(inf "type " p " interface {" n> q n "}")
-(cnt "const " p " = " q )
-(cnst "const (" n> p " = " q n ")")
-(vr "var " p " " q)
-(mp "map[" p "]" q)
-(if "if " p " {" n> p n> "}" q)
-(el "if " p " {" n> p n> "} else {" n> p n> "}" q)
-(elif "if " p " {" n> p n> "} else if " p " {" n> p n> "}" q)
-(ifen "if err != nil {" n> q n> "}")
-(ifer "if err != " p " {" n> q n> "}")
-(sel "select {" n> "case " p ":" n> q n> "}")
-(swch "switch " p " {" n> "case " p ":" q n> "}")
-(fr "for " p "{" n> q n> "}")
-(rng "for " p ", " p " := range " p " {" n> q n> "}")
-(fnc "func " p "(" p ") {" n> q n "}")
-(mn "func main() {" n> q n "}")
-(in "func init() {" n> q n "}")
-(tst "func Test" p " (t *testing.T) { " n> q n "}")
+(if "if " (p "CONDITION") " {" n> (r> "BODY") n> "}" q)
+(if-else "if " (p "CONDITION") " {" n> (r> "BODY") n> "} else {" n> (p "BODY") n> "}" q)
+(if-else-if "if " (p "CONDITION") " {" n> (r> "BODY") n> "} else if " (p "BODY") " {" n> (p "BODY") n> "}" q)
+(if-err "if err != nil {" n> (r> "BODY") n> "}" q)
 
 rust-mode rust-ts-mode
 
-;; See https://github.com/AndreaCrotti/yasnippet-snippets/tree/master/snippets/rust-mode
-(if "if " p " {" n> q n> "}" q)
-(el "if " p " {" n> p n> "} else {" n> p n> "}" q)
-(elif "if " p " {" n> p n> "} else if " p " {" n> p n> "}" q)
-(fn "fn " p "(" p ") {" n> p n "}" q)
-(fnr "fn " p "(" p ") -> " p " {" n> p n "}" q)
-(crt "extern crate " q ";")
-(drv "#[derive(" p ")]" q)
-(d "dbg!(" p ")" q)
-(lp "loop {" n> q n> "}" q)
+(dbg "dbg!(" (r> "EXPRESSION") ")" q)
+(derive "#[derive(" (r> "TYPE") ")]" q)
+(fn "fn " (p "NAME") "(" (p "ARGS") ") {" n> (r> "BODY") n> "}" q)
+(fn-return "fn " (p "NAME") "(" (p "ARGS") ") -> " (p "TYPE") " {" n> (r> "BODY") n> "}" q)
+(if "if " (p "CONDITION") " {" n> (r> "BODY") n> "}" q)
+(if-else "if " (p "CONDITION") " {" n> (r> "BODY") n> "} else {" n> (p "BODY") n> "}" q)
+(if-else-if "if " (p "CONDITION") " {" n> (r> "BODY") n> "} else if " (p "BODY") " {" n> (p "BODY") n> "}" q)
+(loop "loop {" n> (r> "BODY") n> "}" q)
+(main "fn main() {" n> (r> "BODY") n> "}")
+(main-tokio "#[tokio::main]" n> "async fn main() {" n> (r> "BODY") n> "}")
 
 ;; Local Variables:
 ;; mode: lisp-data

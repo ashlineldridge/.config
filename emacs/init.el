@@ -647,6 +647,7 @@
      "\\*Call Hierarchy\\*"
      "\\*Shell Command Output\\*"
      "\\*Async Shell Command\\*"
+     "\\*apheleia-"
 
      ;; Match all modes that derive from compilation-mode but do not derive
      ;; from a member of `my/popper-ignore-modes'.
@@ -1548,12 +1549,16 @@
   :general
   (general-def
     "M-+" #'tempel-insert)
+  ;; Keymap used by navigating across template fields.
   (general-def 'tempel-map
     "<tab>" #'tempel-next
     "S-<tab>" #'tempel-previous
     [remap keyboard-quit] #'tempel-done)
 
   :custom
+  ;; Tempel completions will only appear when prefixed with "<". The function
+  ;; `tempel-complete' should be added to `completion-at-point-functions' of
+  ;; relevant modes to facilitate this.
   (tempel-trigger-prefix "<")
   (tempel-path (no-littering-expand-etc-file-name "tempel/templates")))
 
@@ -2322,7 +2327,7 @@
     (interactive)
     (eshell-read-aliases-list))
 
-  (defun my/sink (&optional name)
+  (defun my/eshell-sink (&optional name)
     "Return a reference to a buffer for sinking eshell command output.
 If NAME is specified, a reference to that buffer will be returned, creating the
 buffer if necessary. If NAME is not specified, a buffer name will be generated."
