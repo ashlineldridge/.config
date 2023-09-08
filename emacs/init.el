@@ -445,19 +445,9 @@
 
 (use-package hl-line
   :elpaca nil
-  :hook
-  (after-change-major-mode . my/hl-line-mode-maybe)
   :general
   (my/bind-c-c
-    "vh" #'hl-line-mode)
-  :config
-  ;; Provides the functionality of `global-hl-line-mode' with the ability
-  ;; to disable for specific modes.
-  (defvar my/hl-line-ignore-modes '(eshell-mode))
-  (defun my/hl-line-mode-maybe ()
-    "Enable `hl-line-mode' if appropriate."
-    (unless (apply #'derived-mode-p my/hl-line-ignore-modes)
-      (hl-line-mode 1))))
+    "vh" #'hl-line-mode))
 
 ;;;; Window Management
 
@@ -1661,11 +1651,7 @@
   :config
   (defun my/eglot-init ()
     "Init function for `eglot--managed-mode'."
-    ;; For cleaner visuals, leave inlay hints off by default and toggle them
-    ;; on when you want to see something. They don't interact well with
-    ;; `hl-line-mode' so when one is on the other is better toggled off.
-    ;; Try to preference using Eldoc instead of inlay hints.
-    (eglot-inlay-hints-mode -1)
+    (eglot-inlay-hints-mode 1)
     (setq-local completion-at-point-functions
                 (list
                  #'tempel-complete
