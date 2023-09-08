@@ -370,6 +370,12 @@
                           :height line-number-font-height
                           :slant 'italic)
 
+      ;; Make the inlay face a bit bigger and italic.
+      (with-eval-after-load 'eglot
+        (set-face-attribute 'eglot-inlay-hint-face nil
+                            :height 0.9
+                            :slant 'italic))
+
       ;; Use fixed pitch for appropriate org elements (use C-u C-x = to
       ;; determine the font face of the character under point). Note that
       ;; `modus-themes-mixed-fonts' can also be used to achieve this.
