@@ -543,6 +543,7 @@
     "f" #'enlarge-window-horizontally
     "n" #'enlarge-window
     "N" #'make-frame
+    "k" #'delete-window
     "K" #'delete-frame
     "p" #'shrink-window
     "u" #'winner-undo
