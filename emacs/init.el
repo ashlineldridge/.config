@@ -1233,7 +1233,9 @@
 
 (use-package ws-butler
   :hook
-  ((text-mode prog-mode) . ws-butler-mode))
+  ((text-mode prog-mode) . ws-butler-mode)
+  :custom
+  (ws-butler-keep-whitespace-before-point nil))
 
 ;;;;; Special Characters
 
@@ -2248,7 +2250,7 @@
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
   ;; The following commands will be started in `term-mode'.
-  (eshell-visual-commands '("vi" "vim" "htop" "ktop" "watch"))
+  (eshell-visual-commands '("vi" "vim" "htop" "watch"))
 
   :config
   ;; Needed so that `eshell-mode-map' is available above.
