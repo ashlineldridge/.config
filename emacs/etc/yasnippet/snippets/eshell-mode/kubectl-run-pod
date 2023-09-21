@@ -1,5 +1,0 @@
-# -*- mode: snippet -*-
-# name: kubectl-run-pod
-# key: kubectl-run-pod
-# --
-kubectl run util-shell --rm -it --image digitalocean/doks-debug:latest -n ${0:your-namespace} -- bash
