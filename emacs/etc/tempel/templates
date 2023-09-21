@@ -37,10 +37,10 @@ eshell-mode
 org-mode
 
 (begin "#+begin_" (s name) n> (r> "BODY") n "#+end_" name)
-(quote "#+begin_quote" n> (r> "BODY") n> "#+end_quote")
-(example "#+begin_example" n> (r> "BODY") n> "#+end_example")
-(comment "#+begin_comment" n> (r> "BODY") n> "#+end_comment")
-(src "#+begin_src " (p "LANGUAGE") n> (r> "BODY") n> "#+end_src")
+(quote "#+begin_quote" n> (r> "BODY") n> "#+end_quote" q)
+(example "#+begin_example" n> (r> "BODY") n> "#+end_example" q)
+(comment "#+begin_comment" n> (r> "BODY") n> "#+end_comment" q)
+(src "#+begin_src " (p "LANGUAGE") n> (r> "BODY") n> "#+end_src" q)
 
 go-mode go-ts-mode
 
