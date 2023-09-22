@@ -1075,7 +1075,7 @@
   :general
   (general-def
     "C-." #'embark-act
-    "M-." #'embark-dwim
+    "C-M-." #'embark-dwim
     "C-h b" #'embark-bindings)
 
   (general-def 'minibuffer-local-map
