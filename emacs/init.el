@@ -1610,6 +1610,7 @@
    eglot--current-server-or-lose
    eglot--request
    eglot--TextDocumentPositionParams)
+  :functions my/flymake-eldoc-show-first
 
   :hook
   ((bash-ts-mode
@@ -1624,9 +1625,7 @@
   (my/bind-c-c :keymaps 'eglot-mode-map
     "ra" #'eglot-code-actions
     "ro" #'eglot-code-action-organize-imports
-    "rr" #'eglot-rename
-    ;; Override `org-open-at-point-global' keybinding.
-    "C-o" #'my/eglot-open-external-docs)
+    "rr" #'eglot-rename)
 
   (my/bind-c-c :keymaps 'eglot-mode-map
     "vi" #'eglot-inlay-hints-mode)
@@ -1643,10 +1642,12 @@
                 (list
                  #'tempel-complete
                  #'eglot-completion-at-point
-                 #'cape-file)))
+                 #'cape-file))
+    (my/flymake-eldoc-show-first))
 
   (defun my/eglot-open-external-docs ()
-    "Open external documentation for the symbol at point (rust-analyzer only)."
+    "Open external documentation for the symbol at point."
+    ;; This currently only works with rust-analyzer and is buggy.
     (interactive)
     (let ((url (eglot--request (eglot--current-server-or-lose)
                                :experimental/externalDocs
@@ -1708,8 +1709,8 @@
   :custom
   (global-eldoc-mode 1)
   (eldoc-idle-delay 0)
-  ;; Tell Eldoc to compose multiple docs (includes Flymake messages).
-  (eldoc-documentation-strategy #'eldoc-documentation-compose)
+  ;; Compose docs from multiple sources and display as soon as available.
+  (eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
   ;; If an `eldoc-doc-buffer' buffer is visible then prefer that, otherwise
   ;; fall back to the modeline. Also limit the number of lines shown in the
   ;; modeline and don't display the message about using `eldoc-doc-buffer'.
@@ -1742,7 +1743,6 @@
 
 ;;;;;; Flymake
 
-;; See also: https://github.com/seagle0128/.emacs.d/blob/85554195f81c5eb403b564d29e3fd3324bafecba/lisp/init-flymake.el.
 (use-package flymake
   :elpaca nil
   :general
@@ -1762,6 +1762,12 @@
     ;; Tell Flymake about the value of `load-path' late in the startup sequence.
     ;; See: https://emacs.stackexchange.com/a/72754.
     (setq elisp-flymake-byte-compile-load-path load-path))
+
+  (defun my/flymake-eldoc-show-first ()
+    "Prioritize Flymake messages when Eldoc composes documentation."
+    ;; This ensures Flymake messages are always visible in the minibuffer.
+    (remove-hook 'eldoc-documentation-functions #'flymake-eldoc-function t)
+    (add-hook 'eldoc-documentation-functions #'flymake-eldoc-function nil t))
 
   (defvar-keymap my/flymake-repeat-map
     :doc "Keymap for repeatable Flymake commands."
@@ -2123,6 +2129,7 @@
   :elpaca nil
   :hook
   (emacs-lisp-mode . my/elisp-init)
+
   :general
   (my/bind-c-x
     "C-r" #'eval-region)
@@ -2137,7 +2144,8 @@
                 (list
                  #'tempel-complete
                  #'elisp-completion-at-point
-                 #'cape-file)))
+                 #'cape-file))
+    (my/flymake-eldoc-show-first))
 
   ;; This configuration is from consult-imenu.el with the fonts changed.
   (with-eval-after-load 'consult-imenu
