@@ -1344,6 +1344,26 @@
     "hl" #'highlight-lines-matching-regexp
     "hu" #'unhighlight-regexp))
 
+;;;;; Templating
+
+(use-package tempel
+  :commands tempel-complete
+  :general
+  (general-def
+    "M-+" #'tempel-insert)
+  ;; Keymap used by navigating across template fields.
+  (general-def 'tempel-map
+    "<tab>" #'tempel-next
+    "S-<tab>" #'tempel-previous
+    [remap keyboard-quit] #'tempel-done)
+
+  :custom
+  ;; Tempel completions will only appear when prefixed with "<". The function
+  ;; `tempel-complete' should be added to `completion-at-point-functions' of
+  ;; relevant modes to facilitate this.
+  (tempel-trigger-prefix "<")
+  (tempel-path (no-littering-expand-etc-file-name "tempel/templates")))
+
 ;;;; Buffer Management
 
 (use-package ibuffer
@@ -1533,43 +1553,7 @@
 
 ;;;; Programming
 
-;;;;; Outline
-
-(use-package outline
-  :elpaca nil
-  :custom
-  (outline-minor-mode-prefix "\C-c-")
-  (outline-minor-mode-cycle t))
-
-;;;;; Code Templating
-
-(use-package tempel
-  :commands tempel-complete
-  :general
-  (general-def
-    "M-+" #'tempel-insert)
-  ;; Keymap used by navigating across template fields.
-  (general-def 'tempel-map
-    "<tab>" #'tempel-next
-    "S-<tab>" #'tempel-previous
-    [remap keyboard-quit] #'tempel-done)
-
-  :custom
-  ;; Tempel completions will only appear when prefixed with "<". The function
-  ;; `tempel-complete' should be added to `completion-at-point-functions' of
-  ;; relevant modes to facilitate this.
-  (tempel-trigger-prefix "<")
-  (tempel-path (no-littering-expand-etc-file-name "tempel/templates")))
-
-;;;;; Code Formatting and Linting
-
-(use-package apheleia
-  :commands apheleia-global-mode
-  :init
-  (apheleia-global-mode 1)
-  :config
-  ;; Use goimports rather than gofmt so that imports get optimized.
-  (setf (alist-get 'go-ts-mode apheleia-mode-alist) 'goimports))
+;;;;; General Programming
 
 ;;;;;; Tree-Sitter
 
@@ -1618,7 +1602,7 @@
 
 (elpaca-wait)
 
-;;;;;; LSP
+;;;;;; Eglot
 
 (use-package eglot
   :commands
@@ -1714,21 +1698,6 @@
   (my/bind-goto :keymap 'eglot-mode-map
     "o" #'consult-eglot-symbols))
 
-;;;;;; Xref
-
-(use-package xref
-  :elpaca nil
-  :general
-  (my/bind-goto
-    "." #'xref-find-definitions
-    "?" #'xref-find-references)
-  :custom
-  ;; Don't prompt by default (invoke with prefix arg to prompt).
-  (xref-prompt-for-identifier nil)
-  ;; Use consult to select xref locations with preview.
-  (xref-show-xrefs-function #'consult-xref)
-  (xref-show-definitions-function #'consult-xref))
-
 ;;;;;; Eldoc
 
 (use-package eldoc
@@ -1800,6 +1769,39 @@
     "p" #'flymake-goto-prev-error)
 
   (my/repeatize 'my/flymake-repeat-map))
+
+;;;;;; Xref
+
+(use-package xref
+  :elpaca nil
+  :general
+  (my/bind-goto
+    "." #'xref-find-definitions
+    "?" #'xref-find-references)
+  :custom
+  ;; Don't prompt by default (invoke with prefix arg to prompt).
+  (xref-prompt-for-identifier nil)
+  ;; Use consult to select xref locations with preview.
+  (xref-show-xrefs-function #'consult-xref)
+  (xref-show-definitions-function #'consult-xref))
+
+;;;;;; Outline
+
+(use-package outline
+  :elpaca nil
+  :custom
+  (outline-minor-mode-prefix "\C-c-")
+  (outline-minor-mode-cycle t))
+
+;;;;;; Code Formatting
+
+(use-package apheleia
+  :commands apheleia-global-mode
+  :init
+  (apheleia-global-mode 1)
+  :config
+  ;; Use goimports rather than gofmt so that imports get optimized.
+  (setf (alist-get 'go-ts-mode apheleia-mode-alist) 'goimports))
 
 ;;;;; Programming Languages
 
