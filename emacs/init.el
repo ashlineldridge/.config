@@ -622,7 +622,7 @@
   (popper-mode popper-echo-mode popper-kill-latest-popup popper-open-latest)
   :general
   (general-def
-    "C-'" #'popper-toggle-latest
+    "C-'" #'popper-toggle
     "M-'" #'popper-cycle
     "C-M-'" #'popper-toggle-type)
   (general-def 'popper-mode-map
