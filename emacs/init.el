@@ -714,7 +714,6 @@
 ;;;; Completion System
 
 (use-package corfu
-  :elpaca (:host github :repo "minad/corfu")
   :commands (corfu-mode global-corfu-mode)
   :functions consult-completion-in-region
 
@@ -1718,8 +1717,14 @@
   (eldoc-echo-area-use-multiline-p 3)
   (eldoc-echo-area-display-truncation-message nil)
   :init
-  ;; Print Eldoc documentation in echo area when Paredit commands are run.
-  (eldoc-add-command-completions "paredit-"))
+  ;; Register commands and command prefixes that can move point to a symbol
+  ;; where Eldoc documentation should be shown.
+  (eldoc-add-command "embark-dwim")
+  (eldoc-add-command-completions "avy-goto-")
+  (eldoc-add-command-completions "paredit-")
+  (eldoc-add-command-completions "xref-find-")
+  (eldoc-add-command-completions "xref-go-")
+  (eldoc-add-command-completions "xref-goto-"))
 
 (use-package eldoc-box
   :commands
