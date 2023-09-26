@@ -2341,6 +2341,14 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (display-buffer buf)
       buf)))
 
+(use-package mistty
+  :elpaca (:host github :repo "szermatt/mistty")
+  :general
+  (my/bind-c-c
+    "s" #'mistty)
+  (general-def 'mistty-prompt-map
+    "C-r" #'mistty-send-C-r))
+
 (use-package sh-script
   :elpaca nil
   :general

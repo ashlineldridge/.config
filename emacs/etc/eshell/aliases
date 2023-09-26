@@ -1,21 +1,4 @@
-alias d dired $1
-alias do dired-other-window $1
-alias ff find-file $1
-alias ffo find-file-other-window $1
-alias ffs SUDO_EDITOR=emacsclient sudo -e $*
-
-alias g git $*
-alias l exa $*
-alias ll exa -l $*
-alias l. exa -d .* $*
-alias ll. exa -ld .* $*
-alias la exa -a $*
-alias lla exa -la $*
-
-;; Scrub out `less' and `more' as they don't work properly in eshell.
-alias less echo
-alias more echo
-
+;; Development directories.
 alias dev cd ~/dev
 alias devh cd ~/dev/home
 alias devw cd ~/dev/work
@@ -23,38 +6,45 @@ alias devc cd $XDG_CONFIG_HOME
 alias devg cd $GOPATH
 alias devb cd ~/dev/home/borgorg
 
+;; Emacs aliases.
+alias d dired $1
+alias do dired-other-window $1
+alias ff find-file $1
+alias ffo find-file-other-window $1
+
+;; Scrub out `less' and `more' as they don't work properly in eshell.
+alias less echo
+alias more echo
+
+;; Common tools.
+alias g git $*
 alias bz bazel $*
 alias tf terraform $*
-alias tg terragrunt $*
-
 alias k kubectl $*
 alias kctx kubectx $1
 alias kns kubens $1
 alias h helm $*
-alias hf helmfile $*
-alias kb kubebuilder $*
 alias ku kustomize $*
-alias prom prometheus --config.file=/opt/homebrew/etc/prometheus.yml $*
-alias am alertmanager --config.file=/opt/homebrew/etc/alertmanager.yml $*
 
+;; Replace ls with exa.
+alias l exa $*
+alias ll exa -l $*
+alias l. exa -d .* $*
+alias ll. exa -ld .* $*
+alias la exa -a $*
+alias lla exa -la $*
+
+;; Search hidden files/directories except .git.
+alias rg rg --hidden --glob !.git $*
+
+;; Google Cloud.
+alias gshell gcloud beta interactive
+
+;; Grafana/Prometheus/Alertmanager.
 ;; Following alias starts Grafana in the same way that it gets started when
 ;; running `brew services start grafana' (recommended way of running Grafana
 ;; on macOS: https://grafana.com/docs/grafana/latest/installation/mac/). See
 ;; /opt/homebrew/opt/grafana/homebrew.grafana.service.
 alias grafana grafana-server --config=/opt/homebrew/etc/grafana/grafana.ini --homepath /opt/homebrew/share/grafana --packaging=brew cfg:default.paths.logs=/opt/homebrew/var/log/grafana cfg:default.paths.data=/opt/homebrew/var/lib/grafana cfg:default.paths.plugins=/opt/homebrew/var/lib/grafana/plugins $*
-
-;; Following deletes LSP/DAP session files and prevents zsh complaining if none exist.
-alias lsp-clean zsh -c setopt +o nomatch; rm -f ~/.config/emacs/.lsp-session-*
-alias dap-clean zsh -c setopt +o nomatch; rm -f ~/.config/emacs/.dap-*
-
-;; Search hidden files/directories except .git.
-alias rg rg --hidden --glob !.git $*
-
-;; Opinionated shfmt diff.
-alias shfmt_diff shfmt -i 2 -ci -sr -bn -d $*
-
-;; Dockerfile linting.
-alias dockerfile_lint docker run -it --rm -v "$PWD:/root" projectatomic/dockerfile-lint dockerfile_lint -p -f $*
-
-;; Google Cloud.
-alias gshell gcloud beta interactive
+alias prom prometheus --config.file=/opt/homebrew/etc/prometheus.yml $*
+alias am alertmanager --config.file=/opt/homebrew/etc/alertmanager.yml $*

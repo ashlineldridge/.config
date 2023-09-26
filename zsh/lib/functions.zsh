@@ -52,30 +52,7 @@ function aws_clear_role() {
   printf "Cleared role: ${role}"
 }
 
-function macdown() {
-  "$(mdfind kMDItemCFBundleIdentifier=com.uranusjr.macdown | head -n1)/Contents/SharedSupport/bin/macdown" $@
-}
-
-# Installs the latest rust-analyzer into ~/bin which overrides the one installed by Homebrew.
-# Sometimes useful if I perhaps temporarily want a different version than the one managed by Homebrew.
-function update_rust_analyzer() {
-  # Use URL below to switch to nightly.
-  # https://github.com/rust-lang/rust-analyzer/releases/download/nightly/rust-analyzer-aarch64-apple-darwin.gz
-
-  curl -Lsf \
-    https://github.com/rust-lang/rust-analyzer/releases/latest/download/rust-analyzer-aarch64-apple-darwin.gz \
-    | gunzip -c - > ~/bin/rust-analyzer
-  chmod +x ~/bin/rust-analyzer
-  rust-analyzer --version
-}
-
 # Show all processes listening on open ports.
 function open_ports() {
   sudo lsof -iTCP -sTCP:LISTEN -n -P
-}
-
-# Enable tre editor aliasing. See: https://github.com/dduan/tre#editor-aliasing.
-function tre() {
-  command tre "$@" -e 'emacsclient --no-wait'
-  source "/tmp/tre_aliases_${USER}" 2> /dev/null
 }
