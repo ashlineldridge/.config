@@ -1,3 +1,5 @@
+### ZSH aliases.
+
 # Development directories.
 alias dev='cd ~/dev'
 alias devh='cd ~/dev/home'

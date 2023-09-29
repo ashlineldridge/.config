@@ -1,5 +1,7 @@
-# AWS auths using the credentials in the specified file
-function aws_auth_with() {
+### ZSH functions.
+
+# AWS auths using the credentials in the specified file.
+aws_auth_with() {
   if [ $# -ne 1 ]; then
     printf "You must specify the AWS credentials CSV file.\n"
     return
@@ -19,18 +21,11 @@ function aws_auth_with() {
   printf "Done.\n"
 }
 
-function aws-vault() {
-  if [[ "${1}" == exec ]]; then
-    unset AWS_VAULT
-  fi
-  command aws-vault "$@"
-}
-
 # Uses https://github.com/remind101/assume-role to assume the AWS IAM role
 # that corresponds to the specified profile name within the context of the
 # current shell. If no argument is specified, the function prints the profile
 # name associated with the currently assumed role.
-function aws_assume_role() {
+aws_assume_role() {
   if [[ $# == 0 ]]; then
     echo "Current role: ${ASSUMED_ROLE}"
   else
@@ -41,7 +36,7 @@ function aws_assume_role() {
 }
 
 # Clears any assumed role environment credentials.
-function aws_clear_role() {
+aws_clear_role() {
   local role="${ASSUMED_ROLE}"
   unset AWS_ACCESS_KEY_ID
   unset AWS_SECRET_ACCESS_KEY
@@ -53,6 +48,6 @@ function aws_clear_role() {
 }
 
 # Show all processes listening on open ports.
-function open_ports() {
+open_ports() {
   sudo lsof -iTCP -sTCP:LISTEN -n -P
 }

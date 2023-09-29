@@ -1,6 +1,6 @@
-# ZSH configuration
+### ZSH top-level configuration.
 
-# Shell options
+# Shell options.
 setopt extended_glob
 setopt extended_history
 setopt hist_find_no_dups
@@ -14,6 +14,11 @@ libs=(
   completion.zsh
 )
 
+# Configure vterm if we're running it.
+if [[ "${INSIDE_EMACS:-}" == vterm ]]; then
+  libs+=(vterm.zsh)
+fi
+
 # Load zsh configuration files. Note: this intentionally sources lib/env.zsh
 # even though it will have already been sourced via the ~/.zshenv symlink as
 # some variables such as HISTFILE don't carry across (quite annoying).
@@ -25,9 +30,3 @@ for f in "${libs[@]}"; do
   fi
   source "${lib}"
 done
-
-if [[ -v INSIDE_EMACS ]]; then
-  # Mirror the Eshell welcome message.
-  echo "Welcome to the Emacs terminal"
-  echo
-fi

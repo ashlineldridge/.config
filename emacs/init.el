@@ -531,6 +531,7 @@
 
 (use-package window
   :elpaca nil
+  :functions my/repeatize
   :general
   (my/bind-window
     "=" #'balance-windows
@@ -993,7 +994,7 @@
    '(consult--source-buffer          ;; Narrow: ?b
      consult--source-modified-buffer ;; Narrow: ?*
      my/consult-source-dired-buffer  ;; Narrow: ?d
-     my/consult-source-eshell-buffer ;; Narrow: ?e
+     my/consult-source-shell-buffer  ;; Narrow: ?s
      consult--source-project-buffer  ;; Narrow: ?p
      consult--source-recent-file     ;; Narrow: ?r
      consult--source-bookmark))      ;; Narrow: ?m
@@ -1037,9 +1038,9 @@
                  :as #'buffer-name
                  :mode 'dired-mode))))
 
-  (defvar my/consult-source-eshell-buffer
-    `(:name "Eshell Buffer"
-      :narrow ?e
+  (defvar my/consult-source-shell-buffer
+    `(:name "Shell Buffer"
+      :narrow ?s
       :category buffer
       :face consult-buffer
       :history buffer-name-history
@@ -1048,7 +1049,10 @@
                 (consult--buffer-query
                  :sort 'visibility
                  :as #'buffer-name
-                 :mode 'eshell-mode))))
+                 :predicate
+                 (lambda (buf)
+                   (with-current-buffer buf
+                     (derived-mode-p 'eshell-mode 'vterm-mode)))))))
 
   (consult-customize
    ;; Source name and narrow key customization.
@@ -1512,7 +1516,15 @@
     "u" #'my/project-update-list)
 
   :custom
-  (project-switch-commands #'project-dired)
+  (project-prompt-project-dir)
+  (project-switch-commands
+   '((consult-project-buffer "File" ?f)
+     (project-find-dir "Dired" ?d)
+     (consult-ripgrep "Ripgrep" ?s)
+     (magit-project-status "Magit" ?m)
+     (project-eshell "Eshell" ?e)
+     (my/project-vterm "Vterm" ?v)
+     (project-async-shell-command "Async shell" ?&)))
 
   :config
   (defun my/project-current-root ()
@@ -1535,7 +1547,17 @@
                    (not (member file '("." ".."))))
           (setq found (+ found
                          (project-remember-projects-under file)))))
-      (message "Found %d new projects" found))))
+      (message "Found %d new projects" found)))
+
+  (defun my/project-vterm ()
+    "Start a Vterm in the current project's root directory."
+    (interactive)
+    (let* ((default-directory (project-root (project-current t)))
+           (term-buffer-name (project-prefixed-buffer-name "vterm"))
+           (term-buffer (get-buffer term-buffer-name)))
+      (if (and term-buffer (not current-prefix-arg))
+          (pop-to-buffer term-buffer (bound-and-true-p display-comint-buffer-action))
+        (vterm term-buffer-name)))))
 
 ;;;;; Auto-Save
 
@@ -1750,6 +1772,7 @@
 
 (use-package flymake
   :elpaca nil
+  :functions my/repeatize
   :general
   (my/bind-c-c 'flymake-mode-map
     "fd" #'flymake-show-buffer-diagnostics
@@ -2264,6 +2287,7 @@
   (eshell-buffer-maximum-lines 10000)
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
+  (eshell-banner-message "Welcome to Eshell\n\n")
   ;; The following commands will be started in `term-mode'.
   (eshell-visual-commands '("vi" "vim" "htop" "watch"))
 
@@ -2346,13 +2370,36 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (display-buffer buf)
       buf)))
 
-(use-package mistty
-  :elpaca (:host github :repo "szermatt/mistty")
+(use-package vterm
+  :commands (vterm-next-prompt vterm-previous-prompt)
+  :functions my/repeatize
   :general
   (my/bind-c-c
-    "s" #'mistty)
-  (general-def 'mistty-prompt-map
-    "C-r" #'mistty-send-C-r))
+    "s" #'vterm)
+  (general-unbind 'vterm-mode-map
+    "C-s"
+    "C-SPC"
+    "M-s"
+    "M-:")
+
+  :custom
+  (vterm-always-compile-module t)
+  ;; I'd much prefer to NOT clear scrollback but I can't rely on it due to
+  ;; https://github.com/akermu/emacs-libvterm/issues/546.
+  (vterm-clear-scrollback-when-clearing t)
+  (vterm-max-scrollback 10000)
+
+  :config
+  ;; Allow find-file-other-window to be called from Vterm.
+  (add-to-list 'vterm-eval-cmds
+               '("find-file-other-window" find-file-other-window))
+
+  (defvar-keymap my/vterm-repeat-map
+    :doc "Keymap for repeatable Vterm commands."
+    "C-n" #'vterm-next-prompt
+    "C-p" #'vterm-previous-prompt)
+
+  (my/repeatize 'my/vterm-repeat-map))
 
 (use-package sh-script
   :elpaca nil

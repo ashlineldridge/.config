@@ -1,3 +1,5 @@
+### ZSH environment variables.
+
 # This file must be symlinked to ~/.zshenv to bootstrap zsh to follow XDG.
 
 # XDG base directories.
@@ -42,7 +44,7 @@ export EDITOR=emacs
 # Prompt.
 # See prompt sequences here: https://zsh.sourceforge.io/Doc/Release/Prompt-Expansion.html.
 # See hex colors here: https://www.ditig.com/256-colors-cheat-sheet.
-export PS1='%B%F{#ffafaf}%~ ❯ %f%b'
+export PROMPT='%B%F{#ffafaf}%~ ❯ %f%b'
 
 # Undo Emacs-specific overrides (for when zsh is run from within Emacs).
 unset PAGER

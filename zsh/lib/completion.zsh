@@ -1,3 +1,5 @@
+### ZSH completion configuration.
+
 # Enable completion system. The fpath array variable stores the names of the
 # directories that contain completion scripts (e.g., run `echo "${fpath[@]}"`).
 # By default, Homebrew seems to install zsh completion scripts under
