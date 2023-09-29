@@ -31,6 +31,8 @@ basic-init:
 # Bazel doesn't follow XDG conventions and adding --bazelrc to the bz alias is not an
 # option as it breaks completion.
 	@ln -sf ~/.config/bazel/bazelrc ~/.bazelrc
+	@mkdir -p /Users/ae/Library/Application\ Support/nushell
+	@ln -s ~/.config/nushell/*.nu /Users/ae/Library/Application\ Support/nushell
 	@echo Done.
 
 .PHONY: dump-all

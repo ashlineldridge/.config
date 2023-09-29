@@ -39,7 +39,6 @@ gnupg/*.kbx
 iterm2/AppSupport
 k9s/config.yml
 ngrok/
-nushell/history.txt
 nvim/bundle/*/doc/tags
 raycast/extensions/
 target/
