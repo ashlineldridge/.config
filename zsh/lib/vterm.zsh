@@ -12,13 +12,12 @@ source "${EMACS_VTERM_PATH}/etc/emacs-vterm-zsh.sh"
 
 # Call the Emacs find-file command.
 ff() {
-  # vterm_cmd find-file "$(realpath "${@:-.}")"
   vterm_cmd find-file "${@:-.}"
 }
 
 # Call the Emacs find-file-other-window command.
 ffo() {
-    vterm_cmd find-file-other-window "$(realpath "${@:-.}")"
+    vterm_cmd find-file-other-window "${@:-.}"
 }
 
 printf "Welcome to Vterm\n\n"

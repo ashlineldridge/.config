@@ -234,7 +234,18 @@
   (fset 'my/query-replace-wrap #'query-replace)
   (fset 'my/query-replace-regexp-wrap #'query-replace-regexp)
   (advice-add #'my/query-replace-wrap :around #'my/query-replace-advice)
-  (advice-add #'my/query-replace-regexp-wrap :around #'my/query-replace-advice))
+  (advice-add #'my/query-replace-regexp-wrap :around #'my/query-replace-advice)
+
+  ;; Create a theme-agnostic hook that is run after a theme is enabled.
+  ;; See: https://www.gnu.org/software/emacs/manual/html_node/modus-themes/A-theme_002dagnostic-hook-for-theme-loading.html.
+  (defvar after-enable-theme-hook nil
+    "Hook run after enabling a theme.")
+
+  (defun run-after-enable-theme-hook (&rest _args)
+    "Run `after-enable-theme-hook'."
+    (run-hooks 'after-enable-theme-hook))
+
+  (advice-add 'enable-theme :after #'run-after-enable-theme-hook))
 
 ;;;; Appearance
 
@@ -269,8 +280,7 @@
 
   :hook
   ;; Update fonts after theme is loaded so changes take effect.
-  ((modus-themes-post-load
-    standard-themes-post-load) . my/apply-font-config)
+  (after-enable-theme . my/apply-font-config)
 
   :config
   (defvar my/font-config-index 0)
@@ -350,25 +360,24 @@
            (variable-font-height (plist-get config :variable-font-height))
            (line-number-font-height (plist-get config :line-number-font-height))
            (mode-line-font-height (plist-get config :mode-line-font-height)))
-      (set-face-attribute 'default nil
-                          :font my/fixed-font
-                          :height fixed-font-height)
-      (set-face-attribute 'fixed-pitch nil
-                          :font my/fixed-font
-                          :height fixed-font-height)
-      (set-face-attribute 'variable-pitch nil
-                          :font my/variable-font
-                          :height variable-font-height)
-      (set-face-attribute 'mode-line nil
-                          :font my/fixed-font
-                          :height mode-line-font-height)
-      (set-face-attribute 'mode-line-inactive nil
-                          :font my/fixed-font
-                          :height mode-line-font-height)
-      (set-face-attribute 'line-number nil
-                          :font my/fixed-font
-                          :height line-number-font-height
-                          :slant 'italic)
+
+      (dolist (face '(default fixed-pitch))
+        (set-face-attribute face nil
+                            :font my/fixed-font
+                            :height fixed-font-height))
+      (dolist (face '(variable-pitch))
+        (set-face-attribute face nil
+                            :font my/variable-font
+                            :height variable-font-height))
+      (dolist (face '(mode-line mode-line-inactive))
+        (set-face-attribute face nil
+                            :font my/fixed-font
+                            :height mode-line-font-height))
+      (dolist (face '(line-number line-number-current-line))
+        (set-face-attribute face nil
+                            :font my/fixed-font
+                            :height line-number-font-height
+                            :slant 'italic))
 
       ;; Make the inlay face a bit bigger and italic.
       (with-eval-after-load 'eglot
