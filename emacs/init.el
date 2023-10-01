@@ -1553,11 +1553,11 @@
     "Start a Vterm in the current project's root directory."
     (interactive)
     (let* ((default-directory (project-root (project-current t)))
-           (term-buffer-name (project-prefixed-buffer-name "vterm"))
-           (term-buffer (get-buffer term-buffer-name)))
-      (if (and term-buffer (not current-prefix-arg))
-          (pop-to-buffer term-buffer (bound-and-true-p display-comint-buffer-action))
-        (vterm term-buffer-name)))))
+           (buffer-name (project-prefixed-buffer-name "vterm"))
+           (existing-buffer (get-buffer buffer-name)))
+      (if (and existing-buffer (not current-prefix-arg))
+          (pop-to-buffer existing-buffer)
+        (vterm buffer-name)))))
 
 ;;;;; Auto-Save
 
@@ -2375,8 +2375,10 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   :functions my/repeatize
   :general
   (my/bind-c-c
-    "s" #'vterm)
+    "s" #'vterm
+    "C-s" #'my/vterm-nushell)
   (general-unbind 'vterm-mode-map
+    "C-o"
     "C-s"
     "C-SPC"
     "M-s"
@@ -2399,7 +2401,17 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "C-n" #'vterm-next-prompt
     "C-p" #'vterm-previous-prompt)
 
-  (my/repeatize 'my/vterm-repeat-map))
+  (my/repeatize 'my/vterm-repeat-map)
+
+  (defun my/vterm-nushell ()
+    "Launch Nushell in a Vterm buffer."
+    (interactive)
+    (let* ((vterm-shell "/opt/homebrew/bin/nu --config ~/.config/nushell/emacs-config.nu")
+           (buffer-name "*nushell-vterm*")
+           (existing-buffer (get-buffer buffer-name)))
+      (if (and existing-buffer (not current-prefix-arg))
+          (pop-to-buffer existing-buffer)
+        (vterm buffer-name)))))
 
 (use-package sh-script
   :elpaca nil
