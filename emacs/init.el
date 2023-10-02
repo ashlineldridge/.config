@@ -91,10 +91,10 @@
     "r" '(:ignore t :which-key "refactor")
     "rw" #'delete-trailing-whitespace
     "t" '(:ignore t :which-key "test")
-    "v" '(:ignore t :which-key "visual")
-    "v|" #'display-fill-column-indicator-mode
-    "vl" #'toggle-truncate-lines
-    "vw" #'my/toggle-show-trailing-whitespace)
+    "u" '(:ignore t :which-key "ux")
+    "u|" #'display-fill-column-indicator-mode
+    "ul" #'toggle-truncate-lines
+    "uw" #'my/toggle-show-trailing-whitespace)
 
   :custom
   (confirm-kill-emacs #'yes-or-no-p)
@@ -276,7 +276,7 @@
   :elpaca nil
   :general
   (my/bind-c-c
-    "vf" #'my/cycle-font-config)
+    "uf" #'my/cycle-font-config)
 
   :hook
   ;; Update fonts after theme is loaded so changes take effect.
@@ -456,7 +456,7 @@
   :elpaca nil
   :general
   (my/bind-c-c
-    "vh" #'hl-line-mode))
+    "uh" #'hl-line-mode))
 
 ;;;; Window Management
 
@@ -977,7 +977,7 @@
     "ff" #'consult-flymake)
 
   (my/bind-c-c
-    "vv" #'consult-theme)
+    "ut" #'consult-theme)
 
   (my/bind-c-x
     "b" #'consult-buffer
@@ -1658,7 +1658,7 @@
     "rr" #'eglot-rename)
 
   (my/bind-c-c :keymaps 'eglot-mode-map
-    "vi" #'eglot-inlay-hints-mode)
+    "ui" #'eglot-inlay-hints-mode)
 
   :custom
   (eglot-autoshutdown t)
@@ -2384,8 +2384,8 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   :functions my/repeatize
   :general
   (my/bind-c-c
-    "s" #'vterm
-    "C-s" #'my/vterm-nushell)
+    "v" #'vterm
+    "C-v" #'my/vterm-nushell)
   (general-unbind 'vterm-mode-map
     "C-o"
     "C-s"
