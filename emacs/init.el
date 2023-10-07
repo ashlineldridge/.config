@@ -11,7 +11,16 @@
 
 ;;; Code:
 
-;;;; Keybinding Management
+;;;; Bootstrap
+
+(load (expand-file-name "elpaca-bootstrap.el" user-emacs-directory))
+(declare-function elpaca-wait nil)
+
+(use-package no-littering
+  :demand t
+  :commands no-littering-theme-backups
+  :config
+  (no-littering-theme-backups))
 
 (use-package general
   :demand t
@@ -27,25 +36,19 @@
   (general-create-definer my/bind-c-c :prefix "C-c")
   (general-create-definer my/bind-c-x :prefix "C-x"))
 
-;; Packages that modify the syntax of `use-package' need to be waited on.
-(declare-function elpaca-wait nil)
 (elpaca-wait)
 
-(use-package transient
-  :commands transient-get-value)
-
-(use-package repeat
+(use-package elpaca
   :elpaca nil
-  :commands my/repeatize
-  :config
-  ;; See: https://karthinks.com/software/it-bears-repeating.
-  (defun my/repeatize (keymap)
-    "Add `repeat-mode'-like support to KEYMAP (passed by symbol)."
-    (map-keymap
-     (lambda (_key cmd)
-       (when (symbolp cmd)
-         (put cmd 'repeat-map keymap)))
-     (symbol-value keymap))))
+  :general
+  (my/bind-c-c
+    "pU" #'elpaca-update-all
+    "pb" #'elpaca-browse
+    "pd" #'elpaca-delete
+    "pi" #'elpaca-try
+    "pr" #'elpaca-rebuild
+    "pu" #'elpaca-update
+    "pv" #'elpaca-visit))
 
 ;;;; Base Settings
 
@@ -212,6 +215,15 @@
     "Return whether C should be excluded from pairing."
     ;; Exclude '<' as I want that for triggering Tempel.
     (if (char-equal c ?<) t (electric-pair-default-inhibit c)))
+
+  ;; See: https://karthinks.com/software/it-bears-repeating.
+  (defun my/repeatize (keymap)
+    "Add `repeat-mode'-like support to KEYMAP (passed by symbol)."
+    (map-keymap
+     (lambda (_key cmd)
+       (when (symbolp cmd)
+         (put cmd 'repeat-map keymap)))
+     (symbol-value keymap)))
 
   (defun my/query-replace-advice (orig-fun &rest args)
     "Around advice to add wrapping behaviour to `query-replace' and friends."
@@ -895,14 +907,14 @@
 (use-package cape
   :general
   (my/bind-c-c
-    "pd" #'cape-dabbrev
-    "ph" #'cape-history
-    "pf" #'cape-file
-    "pk" #'cape-keyword
-    "po" #'cape-elisp-symbol
-    "pa" #'cape-abbrev
-    "pl" #'cape-line
-    "pw" #'cape-dict)
+    "cd" #'cape-dabbrev
+    "ch" #'cape-history
+    "cf" #'cape-file
+    "ck" #'cape-keyword
+    "co" #'cape-elisp-symbol
+    "ca" #'cape-abbrev
+    "cl" #'cape-line
+    "cw" #'cape-dict)
   (general-def 'eshell-mode-map
     "C-r" #'cape-history)
 
@@ -1527,7 +1539,7 @@
   :custom
   (project-prompt-project-dir)
   (project-switch-commands
-   '((consult-project-buffer "File" ?f)
+   '((project-find-file "File" ?f)
      (project-find-dir "Dired" ?d)
      (consult-ripgrep "Ripgrep" ?s)
      (magit-project-status "Magit" ?m)
@@ -1630,11 +1642,11 @@
       (delete-directory new-dir t)
       (rename-file old-dir new-dir))))
 
-(elpaca-wait)
-
 ;;;;;; Eglot
 
 (use-package eglot
+  ;; Use latest. See: https://www.reddit.com/r/emacs/comments/16yny40/how_to_use_the_latest_version_of_eglot_with_elpaca.
+  :elpaca (:inherit elpaca-menu-gnu-devel-elpa)
   :commands
   (eglot-completion-at-point
    eglot--current-server-or-lose
@@ -1724,7 +1736,6 @@
                :constantValues t))))))
 
 (use-package consult-eglot
-  :after eglot
   :general
   (my/bind-goto :keymap 'eglot-mode-map
     "o" #'consult-eglot-symbols))
@@ -1798,7 +1809,8 @@
     "Global init function for `flymake-mode'."
     ;; Tell Flymake about the value of `load-path' late in the startup sequence.
     ;; See: https://emacs.stackexchange.com/a/72754.
-    (setq elisp-flymake-byte-compile-load-path load-path))
+    (setq elisp-flymake-byte-compile-load-path
+          (append elisp-flymake-byte-compile-load-path load-path)))
 
   (defun my/flymake-eldoc-show-first ()
     "Prioritize Flymake messages when Eldoc composes documentation."
