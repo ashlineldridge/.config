@@ -24,10 +24,11 @@
  ;; Disable package.el as Elpaca is used for package management.
  '(package-enable-at-startup nil)
 
- ;; Follow recommended lsp-mode performance settings.
- ;; See: https://emacs-lsp.github.io/lsp-mode/page/performance.
- `(gc-cons-threshold ,(* 100 1024 1024))
- `(read-process-output-max ,(* 1 1024 1024))
+ ;; Garbage collection is started later using GCMH.
+ `(gc-cons-threshold ,most-positive-fixnum)
+
+ ;; Disable JIT compilation.
+ '(native-comp-jit-compilation nil)
 
  ;; Enable `use-package''s imenu support.
  '(use-package-enable-imenu-support t))

@@ -14,7 +14,7 @@
 ;;;; Bootstrap
 
 (load (expand-file-name "elpaca-bootstrap.el" user-emacs-directory))
-(declare-function elpaca-wait nil)
+(declare-function elpaca-wait "elpaca")
 
 (use-package no-littering
   :demand t
@@ -36,7 +36,15 @@
   (general-create-definer my/bind-c-c :prefix "C-c")
   (general-create-definer my/bind-c-x :prefix "C-x"))
 
+;; Packages that modify the syntax of `use-package' need to be waited on.
 (elpaca-wait)
+
+(use-package gcmh
+  :hook (elpaca-after-init . gcmh-mode)
+  :custom
+  (gcmh-idle-delay 'auto)
+  (gcmh-auto-idle-delay-factor 10)
+  (gcmh-high-cons-threshold (* 16 1024 1024)))
 
 (use-package elpaca
   :elpaca nil
