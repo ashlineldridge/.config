@@ -1,12 +1,13 @@
 ;;; elpaca-bootstrap.el --- Elpaca Bootstrap -*- lexical-binding: t -*-
 
 ;; Author: Ashlin Eldridge <ashlin.eldridge@gmail.com>
-;; Version: 0.1.0
-;; Package-Requires: ((emacs "29.0"))
+;; URL: https://github.com/ashlineldridge/.config
+;; Version: 1.0.0
+;; Package-Requires: ((emacs "29.1"))
 
 ;;; Commentary:
 ;;
-;; Bootstraps the Elpaca package manager.
+;; Bootstrap the Elpaca package manager.
 ;; See: https://github.com/progfolio/elpaca.
 
 ;;; Code:
