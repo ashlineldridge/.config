@@ -2286,6 +2286,17 @@
   ;; you've already had a chance to look at the diff when you stage the files.
   (magit-commit-show-diff nil))
 
+(use-package magit-delta
+  :hook (magit-mode . magit-delta-mode)
+  :custom
+  (magit-delta-hide-plus-minus-markers nil)
+  (magit-delta-delta-args '("--max-line-distance" "0.6"
+                            "--true-color" "always"
+                            "--no-gitconfig"
+                            "--diff-so-fancy")))
+
+(use-package difftastic)
+
 (use-package browse-at-remote
   :general
   (my/bind-c-c
