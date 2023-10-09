@@ -2318,7 +2318,7 @@
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "Welcome to Eshell\n\n")
   ;; The following commands will be started in `term-mode'.
-  (eshell-visual-commands '("vi" "vim" "htop" "watch"))
+  (eshell-visual-commands '("vi" "vim" "htop" "btm" "watch"))
 
   :config
   ;; Needed so that `eshell-mode-map' is available above.
@@ -2407,11 +2407,8 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "v" #'vterm
     "C-v" #'my/vterm-nushell)
   (general-unbind 'vterm-mode-map
-    "C-o"
-    "C-s"
-    "C-SPC"
-    "M-s"
-    "M-:")
+    "C-o" "C-s" "C-SPC"
+    "M-s" "M-:" "M-&")
 
   :custom
   (vterm-always-compile-module t)
