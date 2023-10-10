@@ -1089,30 +1089,17 @@
                    (with-current-buffer buf
                      (derived-mode-p 'eshell-mode 'vterm-mode)))))))
 
+  ;; Configure names and narrow keys for `consult-buffer' sources.
   (consult-customize
-   ;; Source name and narrow key customization.
    consult--source-buffer :name "Open Buffer" :narrow ?o
    consult--source-project-buffer :name "Project Buffer" :narrow ?b
    consult--source-recent-file :name "Recent File" :narrow ?f
    consult--source-project-recent-file :name "Recent Project File" :narrow ?r)
 
+  ;; Configure preview for file finding (disabled by default).
   (consult-customize
-   ;; Configure manual preview for file finding (preview is disabled for
-   ;; these commands by default). As `consult-fd' is also called via
-   ;; `project-switch-project' it also needs to be customized.
    consult-find consult-fd
-   :state (consult--file-preview) :preview-key 'any))
-
-(use-package consult-project-extra
-  :general
-  (general-def 'project-prefix-map
-    "f" #'consult-project-extra-find
-    "o" #'consult-project-extra-find-other-window)
-  :custom
-  (consult-project-extra-sources
-   '(consult--source-project-buffer
-     consult--source-project-recent-file
-     consult-project-extra--source-file)))
+   :state (consult--file-preview) :preview-key 'auto))
 
 (use-package consult-dir
   :commands consult-dir
@@ -1573,7 +1560,7 @@
   :custom
   (project-prompt-project-dir)
   (project-switch-commands
-   '((consult-project-extra-find "File" ?f)
+   '((project-find-file "File" ?f)
      (project-find-dir "Dir" ?d)
      (project-dired "Jump" ?j)
      (consult-ripgrep "Ripgrep" ?s)
