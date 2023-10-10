@@ -1015,18 +1015,19 @@
   ;; and display a completing prefix help.
   (consult-narrow-key "<")
 
-  ;; By default, only show previews when M-. is pressed.
+  ;; Auto-preview by default.
   (consult-preview-key 'any)
 
   ;; Customise the list of sources shown by consult-buffer.
   (consult-buffer-sources
-   '(consult--source-buffer          ;; Narrow: ?b
-     consult--source-modified-buffer ;; Narrow: ?*
-     my/consult-source-dired-buffer  ;; Narrow: ?d
-     my/consult-source-shell-buffer  ;; Narrow: ?s
-     consult--source-project-buffer  ;; Narrow: ?p
-     consult--source-recent-file     ;; Narrow: ?r
-     consult--source-bookmark))      ;; Narrow: ?m
+   '(consult--source-project-buffer      ;; Narrow: ?b
+     consult--source-buffer              ;; Narrow: ?o
+     my/consult-source-dired-buffer      ;; Narrow: ?d
+     my/consult-source-shell-buffer      ;; Narrow: ?s
+     consult--source-project-recent-file ;; Narrow: ?r
+     consult--source-recent-file         ;; Narrow: ?f
+     consult--source-bookmark))          ;; Narrow: ?m
+
 
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
   (consult-ripgrep-args
@@ -1090,9 +1091,28 @@
 
   (consult-customize
    ;; Source name and narrow key customization.
-   consult--source-buffer :name "Open Buffer" :narrow ?b
-   consult--source-project-buffer :name "Project Buffer" :narrow ?p
-   consult--source-recent-file :name "Recent File" :narrow ?r))
+   consult--source-buffer :name "Open Buffer" :narrow ?o
+   consult--source-project-buffer :name "Project Buffer" :narrow ?b
+   consult--source-recent-file :name "Recent File" :narrow ?f
+   consult--source-project-recent-file :name "Recent Project File" :narrow ?r)
+
+  (consult-customize
+   ;; Configure manual preview for file finding (preview is disabled for
+   ;; these commands by default). As `consult-fd' is also called via
+   ;; `project-switch-project' it also needs to be customized.
+   consult-find consult-fd
+   :state (consult--file-preview) :preview-key 'any))
+
+(use-package consult-project-extra
+  :general
+  (general-def 'project-prefix-map
+    "f" #'consult-project-extra-find
+    "o" #'consult-project-extra-find-other-window)
+  :custom
+  (consult-project-extra-sources
+   '(consult--source-project-buffer
+     consult--source-project-recent-file
+     consult-project-extra--source-file)))
 
 (use-package consult-dir
   :commands consult-dir
@@ -1547,13 +1567,15 @@
   :elpaca nil
   :general
   (general-def 'project-prefix-map
-    "u" #'my/project-update-list)
+    "u" #'my/project-update-list
+    "j" #'project-dired)
 
   :custom
   (project-prompt-project-dir)
   (project-switch-commands
-   '((project-find-file "File" ?f)
-     (project-find-dir "Dired" ?d)
+   '((consult-project-extra-find "File" ?f)
+     (project-find-dir "Dir" ?d)
+     (project-dired "Jump" ?j)
      (consult-ripgrep "Ripgrep" ?s)
      (magit-project-status "Magit" ?m)
      (project-eshell "Eshell" ?e)
