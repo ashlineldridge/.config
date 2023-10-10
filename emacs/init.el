@@ -977,7 +977,7 @@
 
   (my/bind-search
     "a" #'consult-org-agenda
-    "f" #'consult-find
+    "f" #'consult-fd
     "l" #'consult-line
     "L" #'consult-line-multi
     "s" #'consult-ripgrep
@@ -1044,8 +1044,13 @@
      "--hidden"
      "--glob=!.git/"))
 
-  ;; Tell `consult-find' to search hidden dirs/files but ignore .git/.
-  (consult-find-args "find . -not ( -name .git -type d -prune )")
+  ;; Configure both `config-find' and `consult-fd' to follow, symlinks, include
+  ;; hidden files, and ignore the .git directory. The fd command needs to be
+  ;; specifically told to allow matching across the full path (e.g. so you
+  ;; can search for "src/foo"). In general, I prefer `consult-fd' as it obeys
+  ;; the .gitignore file if present.
+  (consult-find-args "find -L . -not ( -name .git -type d -prune )")
+  (consult-fd-args "fd --full-path --follow --hidden --exclude .git/*")
 
   :config
   (defun my/consult-line-strict (&optional initial start)
