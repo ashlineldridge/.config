@@ -47,4 +47,4 @@ zsh/.zcompcache
 zsh/.zcompdump
 zsh/.zsh_history
 zsh/.zsh_sessions/
-zsh/lib/private-*.zsh
+zsh/lib/private*.zsh

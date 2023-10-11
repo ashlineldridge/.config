@@ -7,6 +7,10 @@ alias devw='cd ~/dev/work'
 alias devc='cd ${XDG_CONFIG_HOME}'
 alias devg='cd ${GOPATH}'
 
+# Emacs aliases.
+alias ec=emacsclient
+alias ecsudo='SUDO_EDITOR=emacsclient sudo -e'
+
 # Reload the shell.
 alias reload='exec $(which zsh)'
 

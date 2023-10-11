@@ -39,7 +39,7 @@ export JAVA_HOME="/Library/Java/JavaVirtualMachines/current/Contents/Home"
 export PATH="${HOME}/bin:/opt/homebrew/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:${JAVA_HOME}/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.krew/bin:${HOME}/.local/bin"
 
 # Make Emacs the default editor.
-export EDITOR=emacs
+export EDITOR=emacsclient
 
 # Prompt.
 # See prompt sequences here: https://zsh.sourceforge.io/Doc/Release/Prompt-Expansion.html.

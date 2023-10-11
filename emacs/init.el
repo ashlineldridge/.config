@@ -67,6 +67,8 @@
   ((prog-mode config-mode text-mode) . display-line-numbers-mode)
   ;; Don't wrap long lines in programming modes.
   (prog-mode . my/truncate-lines)
+  ;; Run Emacs in server mode.
+  (elpaca-after-init . my/server-start)
 
   :general
   (general-def
@@ -181,6 +183,12 @@
   (put 'narrow-to-region 'disabled nil)
   (put 'upcase-region 'disabled nil)
   (put 'downcase-region 'disabled nil)
+
+  (defun my/server-start ()
+    "Start Emacs in server mode if it is not already."
+    (require 'server)
+    (unless (server-running-p)
+      (server-start)))
 
   (defun my/truncate-lines ()
     "Truncate long lines rather than wrapping."

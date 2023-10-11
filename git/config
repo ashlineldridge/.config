@@ -84,7 +84,7 @@
 	autocrlf = input
 
 	# Use Emacs as the default editor
-	editor = emacs
+	editor = emacsclient
 	hooksPath = /Users/ae/.config/git/hooks
 
 [color]
