@@ -30,3 +30,8 @@ for f in "${libs[@]}"; do
   fi
   source "${lib}"
 done
+
+# Load private.zsh if it exists. This is where I keep work-specific config.
+if [[ -f "${XDG_CONFIG_HOME}/zsh/lib/private.zsh" ]]; then
+  source "${XDG_CONFIG_HOME}/zsh/lib/private.zsh"
+fi
