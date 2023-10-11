@@ -1089,17 +1089,28 @@
                    (with-current-buffer buf
                      (derived-mode-p 'eshell-mode 'vterm-mode)))))))
 
+  (defconst my/preview-delayed '(:debounce 0.3 any))
+
   ;; Configure names and narrow keys for `consult-buffer' sources.
   (consult-customize
-   consult--source-buffer :name "Open Buffer" :narrow ?o
-   consult--source-project-buffer :name "Project Buffer" :narrow ?b
-   consult--source-recent-file :name "Recent File" :narrow ?f
-   consult--source-project-recent-file :name "Recent Project File" :narrow ?r)
-
-  ;; Configure preview for file finding (disabled by default).
-  (consult-customize
+   consult--source-buffer
+   :name "Open Buffer" :narrow ?o
+   consult--source-project-buffer
+   :name "Project Buffer" :narrow ?b
+   ;; Due to the value of `consult-preview-key' configured above, the preview
+   ;; will be displayed immediately for most commands. This is generally fine,
+   ;; but for commands that access unopened files I prefer to delay the preview
+   ;; so I can skip past candidates without incurring the preview.
+   consult--source-recent-file
+   :name "Recent File" :narrow ?f :preview-key my/preview-delayed
+   consult--source-project-recent-file
+   :name "Recent Project File" :narrow ?r :preview-key my/preview-delayed
+   ;; Configure delayed preview for grep commands (automatic by default).
+   consult-ripgrep consult-grep consult-git-grep
+   :preview-key my/preview-delayed
+   ;; Configure delayed preview for file finding (disabled by default).
    consult-find consult-fd
-   :state (consult--file-preview) :preview-key 'auto))
+   :state (consult--file-preview) :preview-key my/preview-delayed))
 
 (use-package consult-dir
   :commands consult-dir
