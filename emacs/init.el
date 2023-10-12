@@ -1645,8 +1645,6 @@
   :general
   (my/bind-c-x
     "pj" #'project-dired
-    "pp" #'my/project-quick-switch
-    "ps" #'project-switch-project
     "pu" #'my/project-update-list)
 
   :custom
@@ -1662,12 +1660,6 @@
      (project-async-shell-command "Async shell" ?&)))
 
   :config
-  (defun my/project-quick-switch ()
-    "Switch project and jump straight to `consult-project-buffer'."
-    (interactive)
-    (let ((project-switch-commands #'consult-project-buffer))
-      (call-interactively #'project-switch-project)))
-
   (defun my/project-current-root ()
     "Return the root directory of the current or nil."
     (if-let* ((proj (project-current)))
