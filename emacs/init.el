@@ -85,7 +85,8 @@
     [remap query-replace-regexp] #'my/query-replace-regexp-wrap)
 
   (my/bind-c-x
-    "C-k" #'kill-this-buffer)
+    "C-k" #'kill-this-buffer
+    "rK" #'my/clear-registers)
 
   (my/bind-search
     ;; Add search prefix descriptions.
@@ -231,6 +232,15 @@
     "Return whether C should be excluded from pairing."
     ;; Exclude '<' as I want that for triggering Tempel.
     (if (char-equal c ?<) t (electric-pair-default-inhibit c)))
+
+  (defun my/clear-registers ()
+    "Clear all registers."
+    (interactive)
+    (if register-alist
+        (let ((len (length register-alist)))
+          (setq register-alist nil)
+          (message "Cleared %d registers" len))
+      (message "No registers to clear")))
 
   ;; See: https://karthinks.com/software/it-bears-repeating.
   (defun my/repeatize (keymap)
@@ -956,12 +966,26 @@
   (marginalia-mode t))
 
 (use-package consult
-  :commands
-  (consult--buffer-state
-   consult--buffer-action
-   consult--buffer-query
-   consult--customize-put)
-  :defines consult-imenu-config
+  :defines
+  (consult-imenu-config
+   xref-show-xrefs-function
+   xref-show-definitions-function)
+
+  :preface
+  ;; For some reason, declaring some of these functions under :functions
+  ;; doesn't satisfy Flymake so they are declared here instead.
+  (declare-function consult--buffer-file-hash "consult")
+  (declare-function consult--buffer-query "consult")
+  (declare-function consult--buffer-state "consult")
+  (declare-function consult--customize-put "consult")
+  (declare-function consult--file-action "consult")
+  (declare-function consult--file-state "consult")
+  (declare-function consult--project-root "consult")
+  (declare-function consult-register-format "consult")
+  (declare-function consult-register-window "consult")
+  (declare-function consult-xref "consult")
+  (declare-function project--find-in-directory "project")
+  (declare-function project-files "project")
 
   :general
   (general-def
@@ -1009,14 +1033,12 @@
 
   (my/bind-c-x
     "b" #'consult-buffer
+    "pf" #'consult-project-buffer
     "rr" #'consult-register
     "rl" #'consult-register-load
     "rs" #'consult-register-store)
 
   :custom
-  (register-preview-delay 0.5)
-  (register-preview-function #'consult-register-format)
-
   ;; Type < followed by a prefix key to narrow the available candidates.
   ;; Type C-< (defined above) to display prefix help. Alternatively, type
   ;; < followed by C-h (or ?) to make `embark-prefix-help-command' kick in
@@ -1025,17 +1047,6 @@
 
   ;; Auto-preview by default.
   (consult-preview-key 'any)
-
-  ;; Customise the list of sources shown by consult-buffer.
-  (consult-buffer-sources
-   '(consult--source-project-buffer      ;; Narrow: ?b
-     consult--source-buffer              ;; Narrow: ?o
-     my/consult-source-dired-buffer      ;; Narrow: ?d
-     my/consult-source-shell-buffer      ;; Narrow: ?s
-     consult--source-project-recent-file ;; Narrow: ?r
-     consult--source-recent-file         ;; Narrow: ?f
-     consult--source-bookmark))          ;; Narrow: ?m
-
 
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
   (consult-ripgrep-args
@@ -1061,12 +1072,20 @@
   (consult-find-args "find -L . -not ( -name .git -type d -prune )")
   (consult-fd-args "fd --full-path --follow --hidden --exclude .git/*")
 
+  :init
+  ;; Configure how registers are previewed and displayed.
+  ;; See: https://github.com/minad/consult#use-package-example.
+  (setq register-preview-delay 0.3)
+  (setq register-preview-function #'consult-register-format)
+  (advice-add #'register-preview :override #'consult-register-window)
+
+  ;; Use consult to select xref locations with preview.
+  (with-eval-after-load 'xref
+    (setq xref-show-xrefs-function #'consult-xref)
+    (setq xref-show-definitions-function #'consult-xref))
+
   :config
-  (defun my/consult-line-strict (&optional initial start)
-    "Version of `consult-line' that uses a strict substring completion style."
-    (interactive (list nil (not (not current-prefix-arg))))
-    (let ((completion-styles '(substring)))
-      (consult-line initial start)))
+  (defconst my/preview-delayed '(:debounce 0.3 any))
 
   (defvar my/consult-source-dired-buffer
     `(:name "Dired Buffer"
@@ -1075,11 +1094,12 @@
       :face consult-buffer
       :history buffer-name-history
       :state ,#'consult--buffer-state
-      :items ,(lambda ()
-                (consult--buffer-query
-                 :sort 'visibility
-                 :as #'buffer-name
-                 :mode 'dired-mode))))
+      :items
+      ,(lambda ()
+         (consult--buffer-query
+          :sort 'visibility
+          :as #'buffer-name
+          :mode 'dired-mode))))
 
   (defvar my/consult-source-shell-buffer
     `(:name "Shell Buffer"
@@ -1088,29 +1108,80 @@
       :face consult-buffer
       :history buffer-name-history
       :state ,#'consult--buffer-state
-      :items ,(lambda ()
-                (consult--buffer-query
-                 :sort 'visibility
-                 :as #'buffer-name
-                 :predicate
-                 (lambda (buf)
-                   (with-current-buffer buf
-                     (derived-mode-p 'eshell-mode 'vterm-mode)))))))
+      :items
+      ,(lambda ()
+         (consult--buffer-query
+          :sort 'visibility
+          :as #'buffer-name
+          :predicate
+          (lambda (buf)
+            (with-current-buffer buf
+              (derived-mode-p 'eshell-mode 'vterm-mode)))))))
 
-  (defconst my/preview-delayed '(:debounce 0.3 any))
+  ;; Consult source for all project files. This has largely been adapted from
+  ;; the implementation of `consult--source-project-recent-file'.
+  ;; See: https://github.com/minad/consult/blob/e5406f282f76076d10440037ecd3460fb280706c/consult.el#L4508.
+  (defvar my/consult-source-project-file
+    `(:name "Project File"
+      :narrow ?f
+      :preview-key ,my/preview-delayed
+      :category file
+      :face consult-file
+      :history file-name-history
+      :state ,#'consult--file-state
+      :new
+      ,(lambda (file)
+         (consult--file-action
+          (expand-file-name file (consult--project-root))))
+      :enabled
+      ,(lambda () consult-project-function)
+      :items
+      ,(lambda ()
+         (when-let (root (consult--project-root))
+           (let* ((project (project--find-in-directory root))
+                  (project-files (project-files project))
+                  (len (length root))
+                  (ht (consult--buffer-file-hash))
+                  items)
+             (dolist (file project-files (nreverse items))
+               (unless (eq (aref file 0) ?/)
+                 (let (file-name-handler-alist) ;; No Tramp slowdown please.
+                   (setq file (expand-file-name file))))
+               (when (and (not (gethash file ht)) (string-prefix-p root file))
+                 (let ((part (substring file len)))
+                   (when (equal part "") (setq part "./"))
+                   (put-text-property 0 1 'multi-category `(file . ,file) part)
+                   (push part items)))))))))
 
-  ;; Configure names and narrow keys for `consult-buffer' sources.
+  ;; Customize the list of sources shown by `consult-buffer'.
+  (setq consult-buffer-sources
+        '(consult--source-buffer              ;; Narrow: ?b
+          my/consult-source-dired-buffer      ;; Narrow: ?d
+          my/consult-source-shell-buffer      ;; Narrow: ?s
+          consult--source-file-register       ;; Narrow: ?g
+          consult--source-bookmark            ;; Narrow: ?m
+          consult--source-recent-file))       ;; Narrow: ?r
+
+  ;; Customize the list of sources shown by `consult-project-buffer'.
+  (setq consult-project-buffer-sources
+        '(consult--source-project-buffer      ;; Narrow: ?b
+          consult--source-project-recent-file ;; Narrow: ?r
+          my/consult-source-project-file))    ;; Narrow: ?f
+
+  ;; Customize individual consult sources.
   (consult-customize
    consult--source-buffer
-   :name "Open Buffer" :narrow ?o
+   :name "Open Buffer" :narrow ?b
    consult--source-project-buffer
    :name "Project Buffer" :narrow ?b
+   consult--source-file-register
+   :name "Register" :narrow ?g
    ;; Due to the value of `consult-preview-key' configured above, the preview
    ;; will be displayed immediately for most commands. This is generally fine,
    ;; but for commands that access unopened files I prefer to delay the preview
    ;; so I can skip past candidates without incurring the preview.
    consult--source-recent-file
-   :name "Recent File" :narrow ?f :preview-key my/preview-delayed
+   :name "Recent File" :narrow ?r :preview-key my/preview-delayed
    consult--source-project-recent-file
    :name "Recent Project File" :narrow ?r :preview-key my/preview-delayed
    ;; Configure delayed preview for grep commands (automatic by default).
@@ -1563,7 +1634,7 @@
 (use-package recentf
   :elpaca nil
   :custom
-  (recentf-max-saved-items 300)
+  (recentf-max-saved-items 60)
   :config
   (recentf-mode 1))
 
@@ -1572,16 +1643,18 @@
 (use-package project
   :elpaca nil
   :general
-  (general-def 'project-prefix-map
-    "u" #'my/project-update-list
-    "j" #'project-dired)
+  (my/bind-c-x
+    "pj" #'project-dired
+    "pp" #'my/project-quick-switch
+    "ps" #'project-switch-project
+    "pu" #'my/project-update-list)
 
   :custom
   (project-prompt-project-dir)
   (project-switch-commands
-   '((project-find-file "File" ?f)
+   '((consult-project-buffer "File" ?f)
      (project-find-dir "Dir" ?d)
-     (project-dired "Jump" ?j)
+     (project-dired "Dired" ?j)
      (consult-ripgrep "Ripgrep" ?s)
      (magit-project-status "Magit" ?m)
      (project-eshell "Eshell" ?e)
@@ -1589,6 +1662,12 @@
      (project-async-shell-command "Async shell" ?&)))
 
   :config
+  (defun my/project-quick-switch ()
+    "Switch project and jump straight to `consult-project-buffer'."
+    (interactive)
+    (let ((project-switch-commands #'consult-project-buffer))
+      (call-interactively #'project-switch-project)))
+
   (defun my/project-current-root ()
     "Return the root directory of the current or nil."
     (if-let* ((proj (project-current)))
@@ -1876,10 +1955,7 @@
     "?" #'xref-find-references)
   :custom
   ;; Don't prompt by default (invoke with prefix arg to prompt).
-  (xref-prompt-for-identifier nil)
-  ;; Use consult to select xref locations with preview.
-  (xref-show-xrefs-function #'consult-xref)
-  (xref-show-definitions-function #'consult-xref))
+  (xref-prompt-for-identifier nil))
 
 ;;;;;; Outline
 
