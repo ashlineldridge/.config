@@ -1070,7 +1070,7 @@
   ;; can search for "src/foo"). In general, I prefer `consult-fd' as it obeys
   ;; the .gitignore file if present.
   (consult-find-args "find -L . -not ( -name .git -type d -prune )")
-  (consult-fd-args "fd --full-path --follow --hidden --exclude .git/*")
+  (consult-fd-args "fd -p -L -H -E '.git/*'")
 
   :init
   ;; Configure how registers are previewed and displayed.
@@ -1137,30 +1137,75 @@
       ,(lambda () consult-project-function)
       :items
       ,(lambda ()
-         (when-let (root (consult--project-root))
-           (let* ((project (project--find-in-directory root))
-                  (project-files (project-files project))
-                  (len (length root))
+         (when-let (project-dir (my/project-current-root))
+           (let* ((project (project--find-in-directory project-dir))
+                  (project-files (seq-filter #'file-exists-p (project-files project)))
+                  (len (length project-dir))
                   (ht (consult--buffer-file-hash))
                   items)
+
+             ;; (when-let (project-dir (my/project-current-root))
+             ;;   (let* ((project-files (my/project-files))
+             ;;          (len (length project-dir))
+             ;;          (ht (consult--buffer-file-hash))
+             ;;          items)
              (dolist (file project-files (nreverse items))
                (unless (eq (aref file 0) ?/)
                  (let (file-name-handler-alist) ;; No Tramp slowdown please.
                    (setq file (expand-file-name file))))
-               (when (and (not (gethash file ht)) (string-prefix-p root file))
+               (when (and (not (gethash file ht)) (string-prefix-p project-dir file))
                  (let ((part (substring file len)))
                    (when (equal part "") (setq part "./"))
                    (put-text-property 0 1 'multi-category `(file . ,file) part)
                    (push part items)))))))))
 
+  (defun my/b1 ()
+    (interactive)
+    (message "B1 time: %f"
+             (benchmark-elapse
+               (when-let (project-dir (my/project-current-root))
+                 (let* ((project (project--find-in-directory project-dir))
+                        (project-files (seq-filter #'file-exists-p (project-files project)))
+                        (len (length project-dir))
+                        (ht (consult--buffer-file-hash))
+                        items)
+                   (dolist (file project-files (nreverse items))
+                     (unless (eq (aref file 0) ?/)
+                       (let (file-name-handler-alist) ;; No Tramp slowdown please.
+                         (setq file (expand-file-name file))))
+                     (when (and (not (gethash file ht)) (string-prefix-p project-dir file))
+                       (let ((part (substring file len)))
+                         (when (equal part "") (setq part "./"))
+                         (put-text-property 0 1 'multi-category `(file . ,file) part)
+                         (push part items)))))))))
+
+  (defun my/b2 ()
+    (interactive)
+    (message "B2 time: %f"
+             (benchmark-elapse
+               (when-let (project-dir (my/project-current-root))
+                 (let* ((project-files (my/project-files))
+                        (len (length project-dir))
+                        (ht (consult--buffer-file-hash))
+                        items)
+                   (dolist (file project-files (nreverse items))
+                     (unless (eq (aref file 0) ?/)
+                       (let (file-name-handler-alist) ;; No Tramp slowdown please.
+                         (setq file (expand-file-name file))))
+                     (when (and (not (gethash file ht)) (string-prefix-p project-dir file))
+                       (let ((part (substring file len)))
+                         (when (equal part "") (setq part "./"))
+                         (put-text-property 0 1 'multi-category `(file . ,file) part)
+                         (push part items)))))))))
+
   ;; Customize the list of sources shown by `consult-buffer'.
   (setq consult-buffer-sources
-        '(consult--source-buffer              ;; Narrow: ?b
-          my/consult-source-dired-buffer      ;; Narrow: ?d
-          my/consult-source-shell-buffer      ;; Narrow: ?s
-          consult--source-file-register       ;; Narrow: ?g
-          consult--source-bookmark            ;; Narrow: ?m
-          consult--source-recent-file))       ;; Narrow: ?r
+        '(consult--source-buffer         ;; Narrow: ?b
+          my/consult-source-dired-buffer ;; Narrow: ?d
+          my/consult-source-shell-buffer ;; Narrow: ?s
+          consult--source-file-register  ;; Narrow: ?g
+          consult--source-bookmark       ;; Narrow: ?m
+          consult--source-recent-file))  ;; Narrow: ?r
 
   ;; Customize the list of sources shown by `consult-project-buffer'.
   (setq consult-project-buffer-sources
@@ -1659,12 +1704,43 @@
      (my/project-vterm "Vterm" ?v)
      (project-async-shell-command "Async shell" ?&)))
 
-  :config
+  :init
   (defun my/project-current-root ()
     "Return the root directory of the current or nil."
     (if-let* ((proj (project-current)))
-        (project-root proj)))
+        (expand-file-name (project-root proj))))
 
+  (defun my/project-files ()
+    (when-let (project-dir (my/project-current-root))
+      (let* ((default-directory project-dir)
+             (local-dir (file-name-unquote (file-local-name (expand-file-name project-dir))))
+             (dfn (directory-file-name local-dir))
+             (command "fd -L -H -E '.git/*' -0 -c=never")
+             res)
+        (with-temp-buffer
+          (let ((status
+                 (process-file-shell-command command nil t))
+                (pt (point-min)))
+            (unless (zerop status)
+              (goto-char (point-min))
+              (if (and
+                   (not (eql status 127))
+                   (search-forward "Permission denied\n" nil t))
+                  (let ((end (1- (point))))
+                    (re-search-backward "\\`\\|\0")
+                    (error "File listing failed: %s"
+                           (buffer-substring (1+ (point)) end)))
+                (error "File listing failed: %s" (buffer-string))))
+            (goto-char pt)
+            (while (search-forward "\0" nil t)
+              (push (buffer-substring-no-properties (1+ pt) (1- (point)))
+                    res)
+              (setq pt (point)))))
+        (project--remote-file-names
+         (mapcar (lambda (s) (concat dfn s))
+                 (sort res #'string<))))))
+
+  :config
   (defun my/project-update-list ()
     "Update list of known projects."
     (interactive)
@@ -1680,17 +1756,7 @@
                    (not (member file '("." ".."))))
           (setq found (+ found
                          (project-remember-projects-under file)))))
-      (message "Found %d new projects" found)))
-
-  (defun my/project-vterm ()
-    "Start a Vterm in the current project's root directory."
-    (interactive)
-    (let* ((default-directory (project-root (project-current t)))
-           (buffer-name (project-prefixed-buffer-name "vterm"))
-           (existing-buffer (get-buffer buffer-name)))
-      (if (and existing-buffer (not current-prefix-arg))
-          (pop-to-buffer existing-buffer)
-        (vterm buffer-name)))))
+      (message "Found %d new projects" found))))
 
 ;;;;; Auto-Save
 
@@ -2540,6 +2606,16 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "C-p" #'vterm-previous-prompt)
 
   (my/repeatize 'my/vterm-repeat-map)
+
+  (defun my/vterm-project ()
+    "Start a Vterm in the current project's root directory."
+    (interactive)
+    (let* ((default-directory (project-root (project-current t)))
+           (buffer-name (project-prefixed-buffer-name "vterm"))
+           (existing-buffer (get-buffer buffer-name)))
+      (if (and existing-buffer (not current-prefix-arg))
+          (pop-to-buffer existing-buffer)
+        (vterm buffer-name))))
 
   (defun my/vterm-nushell ()
     "Launch Nushell in a Vterm buffer."
