@@ -759,630 +759,6 @@
   :init
   (which-key-mode 1))
 
-;;;; Completion System
-
-(use-package corfu
-  :commands (corfu-mode global-corfu-mode)
-  :functions consult-completion-in-region
-
-  :general
-  (general-def 'corfu-map
-    ;; We S-SPC to keep completion going and include the space.
-    "S-SPC" #'corfu-insert-separator
-    ;; Move the completion session to the minibuffer.
-    "M-m" #'my/corfu-move-to-minibuffer)
-
-  :hook
-  (minibuffer-setup . my/corfu-enable-in-minibuffer)
-
-  :custom
-  ;; Show the Corfu pop-up without requiring tab to be pressed (but after the
-  ;; delay configured below).
-  (corfu-auto t)
-  ;; Number of typed characters before Corfu will display its pop-up.
-  (corfu-auto-prefix 3)
-  ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This
-  ;; setting only applies after the minimum number of prefix characters have
-  ;; been entered. This is really useful to keep so that short words that you
-  ;; don't want autocompleted don't trigger the Corfu pop-up (and subsequent
-  ;; completion which inserts a space after the completed word).
-  (corfu-auto-delay 0.2)
-  ;; Automatically select the first candidate if it does not reference a
-  ;; directory. This makes the eshell experience a little more natural.
-  (corfu-preselect 'directory)
-  ;; Modes which shouldn't use Corfu as I found the completions annoying.
-  (corfu-excluded-modes
-   '(bazel-build-mode
-     bazel-workspace-mode
-     bazel-starlark-mode))
-
-  :init
-  ;; Enable Corfu mode globally by default. Exclusions are captured
-  ;; individually in `corfu-excluded-modes'.
-  (global-corfu-mode)
-
-  ;; From: https://github.com/minad/corfu#completing-in-the-minibuffer.
-  (defun my/corfu-enable-in-minibuffer ()
-    "Enable Corfu in the minibuffer if `completion-at-point' is bound."
-    (when (where-is-internal #'completion-at-point (list (current-local-map)))
-      ;; Disable automatic documentation echo and popup (if enabled).
-      (setq-local corfu-echo-delay nil
-                  corfu-popupinfo-delay nil)
-      (corfu-mode 1)))
-
-  ;; From: https://github.com/minad/corfu#transfer-completion-to-the-minibuffer.
-  (defun my/corfu-move-to-minibuffer ()
-    "Transfer the Corfu completion session to the minibuffer."
-    (interactive)
-    (when completion-in-region--data
-      (let ((completion-extra-properties corfu--extra)
-            completion-cycle-threshold completion-cycling)
-        (apply #'consult-completion-in-region completion-in-region--data)))))
-
-;; Documentation shown alongside Corfu completion popups.
-(use-package corfu-popupinfo
-  :after corfu
-  :elpaca
-  (:host github :repo "minad/corfu" :files ("extensions/corfu-popupinfo.el"))
-  :general
-  (general-def 'corfu-map
-    "M-d" #'corfu-popupinfo-toggle
-    "<up>" #'corfu-popupinfo-scroll-down
-    "<down>" #'corfu-popupinfo-scroll-up)
-  :hook
-  (corfu-mode . corfu-popupinfo-mode)
-  :custom
-  (corfu-popupinfo-delay 1.0))
-
-;; Corfu icons.
-(use-package kind-icon
-  :after corfu
-  :commands kind-icon-margin-formatter
-  :defines corfu-margin-formatters
-  :hook
-  ;; After toggling between themes the icon cache needs to be reset.
-  ((modus-themes-post-load
-    standard-themes-post-load) . kind-icon-reset-cache)
-  :custom
-  (kind-icon-default-face 'corfu-default)
-  :init
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
-
-;; Vertico provides the vertical completion minibuffer and Orderless provides
-;; the "completion style". Some commands that make use of Vertico's selection
-;; list also allow a new non-matched value to be entered. For example,
-;; `org-roam-node-insert' will create a new note when given a new note name.
-;; However, if the new value matches part of an existing value in the selection
-;; list (which is more likely when using Orderless) then you will need to press
-;; M-RET which calls `vertico-exit-input' to cancel the completion and use the
-;; new value.
-(use-package vertico
-  :elpaca (:files (:defaults "extensions/*.el"))
-  :commands vertico-mode
-  :custom
-  (vertico-count 20)
-  :init
-  (vertico-mode 1))
-
-(use-package vertico-directory
-  :after vertico
-  :elpaca nil
-  :general
-  (general-def 'vertico-map
-    ;; More convenient directory navigation commands.
-    "RET" #'vertico-directory-enter
-    "DEL" #'vertico-directory-delete-char)
-  ;; Tidy shadowed file names.
-  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
-
-(use-package vertico-multiform
-  :after vertico
-  :elpaca nil
-  :commands vertico-multiform-mode
-  :custom
-  (vertico-multiform-categories
-   '((imenu buffer)
-     (file (vertico-sort-function . my/vertico-sort-dirs-first))))
-
-  ;; Sometimes commands are better when the category is too broad.
-  (vertico-multiform-commands
-   '((consult-outline buffer)))
-
-  :init
-  (vertico-multiform-mode 1)
-
-  :config
-  (defun my/vertico-sort-dirs-first (files)
-    "Sorts FILES by directories then alphanumerically."
-    (setq files (vertico-sort-history-length-alpha files))
-    (nconc (seq-filter (lambda (x) (string-suffix-p "/" x)) files)
-           (seq-remove (lambda (x) (string-suffix-p "/" x)) files))))
-
-;; I don't enable `vertico-buffer-mode' directly since this makes Vertico
-;; always run in a buffer. Instead, `vertico-multiform' is used to toggle
-;; buffer display on a per-category or per-command basis. The configuration
-;; of `vertico-buffer-display-action' below changes the default way that
-;; Vertico buffers are shown (otherwise they reuse the current window).
-(use-package vertico-buffer
-  :after vertico
-  :elpaca nil
-  :custom
-  (vertico-buffer-display-action
-   '(display-buffer-in-direction
-     ;; Below results in the search buffer being displayed to the right of the
-     ;; current window with both the windows being shown at 50% width. Trying
-     ;; to control the % via (window-width . 0.3) seems to set the width based
-     ;; on the frame width rather than the current window which makes the
-     ;; search window too large when the frame is split vertically into
-     ;; multiple windows. So 50% is fine for now.
-     (direction . right))))
-
-(use-package vertico-repeat
-  :after vertico
-  :elpaca nil
-  :hook (minibuffer-setup . vertico-repeat-save)
-  :general
-  (general-def
-    ;; Use prefix arg to select from list.
-    "M-R" #'vertico-repeat)
-  :init
-  ;; Persist Vertico history between Emacs sessions.
-  (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
-
-;; Dedicated completion commands.
-(use-package cape
-  :general
-  (my/bind-c-c
-    "cd" #'cape-dabbrev
-    "ch" #'cape-history
-    "cf" #'cape-file
-    "ck" #'cape-keyword
-    "co" #'cape-elisp-symbol
-    "ca" #'cape-abbrev
-    "cl" #'cape-line
-    "cw" #'cape-dict)
-  (general-def 'eshell-mode-map
-    "C-r" #'cape-history)
-
-  :custom
-  ;; Only show dabbrev candidates of a minimum length to avoid being annoying.
-  (cape-dabbrev-min-length 5)
-  ;; Only show dabbrev completions for words in the current buffer.
-  (cape-dabbrev-check-other-buffers nil))
-
-;; Orderless configuration mostly taken from:
-;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
-(use-package orderless
-  :custom
-  (completion-styles '(orderless basic))
-  (completion-category-defaults nil)
-  (completion-category-overrides nil)
-  ;; Allow backslash to escape the space to search for literal spaces.
-  (orderless-component-separator #'orderless-escapable-split-on-space))
-
-(use-package marginalia
-  :commands marginalia-mode
-  :custom
-  (marginalia-mode t))
-
-(use-package consult
-  :defines
-  (consult-imenu-config
-   xref-show-xrefs-function
-   xref-show-definitions-function)
-
-  :preface
-  ;; For some reason, declaring some of these functions under :functions
-  ;; doesn't satisfy Flymake so they are declared here instead.
-  (declare-function consult--buffer-file-hash "consult")
-  (declare-function consult--buffer-query "consult")
-  (declare-function consult--buffer-state "consult")
-  (declare-function consult--customize-put "consult")
-  (declare-function consult--file-action "consult")
-  (declare-function consult--file-state "consult")
-  (declare-function consult--project-root "consult")
-  (declare-function consult-register-format "consult")
-  (declare-function consult-register-window "consult")
-  (declare-function consult-xref "consult")
-  (declare-function project--find-in-directory "project")
-  (declare-function project-files "project")
-
-  :general
-  (general-def
-    "M-y" #'consult-yank-pop)
-
-  (general-def 'minibuffer-local-map
-    "M-s" nil
-    "C-r" #'consult-history)
-
-  (general-def 'isearch-mode-map
-    ;; Replace `isearch-edit-string' to get history completion.
-    "M-e" #'consult-isearch-history
-    ;; Allow `consult-line' functions to "take over" from `isearch'.
-    "M-s l" #'consult-line
-    "M-s L" #'consult-line-multi)
-
-  (general-def 'consult-narrow-map
-    "C-<" #'consult-narrow-help
-    ;; Remove if this becomes annoying due to needing a '?' character.
-    "?" #'consult-narrow-help)
-
-  (my/bind-search
-    "a" #'consult-org-agenda
-    "f" #'consult-fd
-    "l" #'consult-line
-    "L" #'consult-line-multi
-    "s" #'consult-ripgrep
-    "=" #'consult-focus-lines)
-
-  (my/bind-goto
-    "-" #'consult-outline
-    "f" #'consult-flymake
-    "g" #'consult-goto-line
-    "M-g" #'consult-goto-line
-    "i" #'consult-imenu
-    "I" #'consult-imenu-multi
-    "m" #'consult-mark
-    "M" #'consult-global-mark)
-
-  (my/bind-c-c 'flymake-mode-map
-    "ff" #'consult-flymake)
-
-  (my/bind-c-c
-    "ut" #'consult-theme)
-
-  (my/bind-c-x
-    "b" #'consult-buffer
-    "pf" #'consult-project-buffer
-    "rr" #'consult-register
-    "rl" #'consult-register-load
-    "rs" #'consult-register-store)
-
-  :custom
-  ;; Type < followed by a prefix key to narrow the available candidates.
-  ;; Type C-< (defined above) to display prefix help. Alternatively, type
-  ;; < followed by C-h (or ?) to make `embark-prefix-help-command' kick in
-  ;; and display a completing prefix help.
-  (consult-narrow-key "<")
-
-  ;; Auto-preview by default.
-  (consult-preview-key 'any)
-
-  ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
-  (consult-ripgrep-args
-   '("rg"
-     "--null"
-     "--line-buffered"
-     "--color=never"
-     "--max-columns=1000"
-     "--path-separator=/"
-     "--smart-case"
-     "--no-heading"
-     "--with-filename"
-     "--line-number"
-     "--search-zip"
-     "--hidden"
-     "--glob=!.git/"))
-
-  ;; Configure both `config-find' and `consult-fd' to follow, symlinks, include
-  ;; hidden files, and ignore the .git directory. The fd command needs to be
-  ;; specifically told to allow matching across the full path (e.g. so you
-  ;; can search for "src/foo"). In general, I prefer `consult-fd' as it obeys
-  ;; the .gitignore file if present.
-  (consult-find-args "find -L . -not ( -name .git -type d -prune )")
-  (consult-fd-args "fd -p -L -H -E '.git/*'")
-
-  :init
-  ;; Configure how registers are previewed and displayed.
-  ;; See: https://github.com/minad/consult#use-package-example.
-  (setq register-preview-delay 0.3)
-  (setq register-preview-function #'consult-register-format)
-  (advice-add #'register-preview :override #'consult-register-window)
-
-  ;; Use consult to select xref locations with preview.
-  (with-eval-after-load 'xref
-    (setq xref-show-xrefs-function #'consult-xref)
-    (setq xref-show-definitions-function #'consult-xref))
-
-  :config
-  (defconst my/preview-delayed '(:debounce 0.3 any))
-
-  (defvar my/consult-source-dired-buffer
-    `(:name "Dired Buffer"
-      :narrow ?d
-      :category buffer
-      :face consult-buffer
-      :history buffer-name-history
-      :state ,#'consult--buffer-state
-      :items
-      ,(lambda ()
-         (consult--buffer-query
-          :sort 'visibility
-          :as #'buffer-name
-          :mode 'dired-mode))))
-
-  (defvar my/consult-source-shell-buffer
-    `(:name "Shell Buffer"
-      :narrow ?s
-      :category buffer
-      :face consult-buffer
-      :history buffer-name-history
-      :state ,#'consult--buffer-state
-      :items
-      ,(lambda ()
-         (consult--buffer-query
-          :sort 'visibility
-          :as #'buffer-name
-          :predicate
-          (lambda (buf)
-            (with-current-buffer buf
-              (derived-mode-p 'eshell-mode 'vterm-mode)))))))
-
-  ;; Consult source for all project files. This has largely been adapted from
-  ;; the implementation of `consult--source-project-recent-file'.
-  ;; See: https://github.com/minad/consult/blob/e5406f282f76076d10440037ecd3460fb280706c/consult.el#L4508.
-  (defvar my/consult-source-project-file
-    `(:name "Project File"
-      :narrow ?f
-      :preview-key ,my/preview-delayed
-      :category file
-      :face consult-file
-      :history file-name-history
-      :state ,#'consult--file-state
-      :new
-      ,(lambda (file)
-         (consult--file-action
-          (expand-file-name file (consult--project-root))))
-      :enabled
-      ,(lambda () consult-project-function)
-      :items
-      ,(lambda ()
-         (when-let (project-dir (my/project-current-root))
-           (let* ((project (project--find-in-directory project-dir))
-                  (project-files (seq-filter #'file-exists-p (project-files project)))
-                  (len (length project-dir))
-                  (ht (consult--buffer-file-hash))
-                  items)
-
-             ;; (when-let (project-dir (my/project-current-root))
-             ;;   (let* ((project-files (my/project-files))
-             ;;          (len (length project-dir))
-             ;;          (ht (consult--buffer-file-hash))
-             ;;          items)
-             (dolist (file project-files (nreverse items))
-               (unless (eq (aref file 0) ?/)
-                 (let (file-name-handler-alist) ;; No Tramp slowdown please.
-                   (setq file (expand-file-name file))))
-               (when (and (not (gethash file ht)) (string-prefix-p project-dir file))
-                 (let ((part (substring file len)))
-                   (when (equal part "") (setq part "./"))
-                   (put-text-property 0 1 'multi-category `(file . ,file) part)
-                   (push part items)))))))))
-
-  (defun my/b1 ()
-    (interactive)
-    (message "B1 time: %f"
-             (benchmark-elapse
-               (when-let (project-dir (my/project-current-root))
-                 (let* ((project (project--find-in-directory project-dir))
-                        (project-files (seq-filter #'file-exists-p (project-files project)))
-                        (len (length project-dir))
-                        (ht (consult--buffer-file-hash))
-                        items)
-                   (dolist (file project-files (nreverse items))
-                     (unless (eq (aref file 0) ?/)
-                       (let (file-name-handler-alist) ;; No Tramp slowdown please.
-                         (setq file (expand-file-name file))))
-                     (when (and (not (gethash file ht)) (string-prefix-p project-dir file))
-                       (let ((part (substring file len)))
-                         (when (equal part "") (setq part "./"))
-                         (put-text-property 0 1 'multi-category `(file . ,file) part)
-                         (push part items)))))))))
-
-  (defun my/b2 ()
-    (interactive)
-    (message "B2 time: %f"
-             (benchmark-elapse
-               (when-let (project-dir (my/project-current-root))
-                 (let* ((project-files (my/project-files))
-                        (len (length project-dir))
-                        (ht (consult--buffer-file-hash))
-                        items)
-                   (dolist (file project-files (nreverse items))
-                     (unless (eq (aref file 0) ?/)
-                       (let (file-name-handler-alist) ;; No Tramp slowdown please.
-                         (setq file (expand-file-name file))))
-                     (when (and (not (gethash file ht)) (string-prefix-p project-dir file))
-                       (let ((part (substring file len)))
-                         (when (equal part "") (setq part "./"))
-                         (put-text-property 0 1 'multi-category `(file . ,file) part)
-                         (push part items)))))))))
-
-  ;; Customize the list of sources shown by `consult-buffer'.
-  (setq consult-buffer-sources
-        '(consult--source-buffer         ;; Narrow: ?b
-          my/consult-source-dired-buffer ;; Narrow: ?d
-          my/consult-source-shell-buffer ;; Narrow: ?s
-          consult--source-file-register  ;; Narrow: ?g
-          consult--source-bookmark       ;; Narrow: ?m
-          consult--source-recent-file))  ;; Narrow: ?r
-
-  ;; Customize the list of sources shown by `consult-project-buffer'.
-  (setq consult-project-buffer-sources
-        '(consult--source-project-buffer      ;; Narrow: ?b
-          consult--source-project-recent-file ;; Narrow: ?r
-          my/consult-source-project-file))    ;; Narrow: ?f
-
-  ;; Customize individual consult sources.
-  (consult-customize
-   consult--source-buffer
-   :name "Open Buffer" :narrow ?b
-   consult--source-project-buffer
-   :name "Project Buffer" :narrow ?b
-   consult--source-file-register
-   :name "Register" :narrow ?g
-   ;; Due to the value of `consult-preview-key' configured above, the preview
-   ;; will be displayed immediately for most commands. This is generally fine,
-   ;; but for commands that access unopened files I prefer to delay the preview
-   ;; so I can skip past candidates without incurring the preview.
-   consult--source-recent-file
-   :name "Recent File" :narrow ?r :preview-key my/preview-delayed
-   consult--source-project-recent-file
-   :name "Recent Project File" :narrow ?r :preview-key my/preview-delayed
-   ;; Configure delayed preview for grep commands (automatic by default).
-   consult-ripgrep consult-grep consult-git-grep
-   :preview-key my/preview-delayed
-   ;; Configure delayed preview for file finding (disabled by default).
-   consult-find consult-fd
-   :state (consult--file-preview) :preview-key my/preview-delayed))
-
-(use-package consult-dir
-  :commands consult-dir
-  :general
-  (my/bind-search
-    "d" #'consult-dir)
-  :custom
-  (consult-dir-shadow-filenames nil)
-  (consult-dir-default-command #'consult-dir-dired))
-
-(use-package embark
-  :commands
-  (embark-prefix-help-command
-   embark-target-identifier-at-point
-   my/goto-consult-xref)
-
-  :general
-  (general-def
-    "C-." #'embark-act
-    "C-M-." #'embark-dwim
-    "C-h b" #'embark-bindings)
-
-  (general-def 'minibuffer-local-map
-    "M-b" #'embark-become)
-
-  (general-def 'embark-file-map "o" #'my/ace-find-file)
-  (general-def 'embark-buffer-map "o" #'my/ace-switch-to-buffer)
-  (general-def 'embark-bookmark-map "o" #'my/ace-bookmark-jump)
-  (general-def 'my/embark-org-roam-node-map "o" #'my/ace-org-roam-node-find)
-  (general-def 'my/embark-consult-xref-map "o" #'my/ace-goto-consult-xref)
-
-  :custom
-  ;; Just show the minimal "Act" prompt (the default starts with minimal
-  ;; and then `embark-mixed-indicator-delay' kicks in and the verbose screen
-  ;; is shown). Shortcut keys can immediately be used. C-h can be pressed to
-  ;; bring up the completing read prompter.
-  (embark-indicators (list #'embark-minimal-indicator))
-  ;; Use this key to switch Embark to the keymap prompter.
-  (embark-keymap-prompter-key ",")
-
-  :init
-  ;; Use Embark to prompt for and run commands under a specified prefix
-  ;; when C-h is pressed (e.g. C-x C-h) rather than `describe-prefix-bindings'.
-  (with-eval-after-load 'help
-    ;; It should be possible to just set `prefix-help-command' to
-    ;; `embark-prefix-help-command' as specified (and commented out below)
-    ;; in the Embark documentation but somehow it keeps getting reverted to
-    ;; `describe-prefix-bindings'. Even when I use `with-eval-after-load' to
-    ;; set it after the help package is loaded, it will still get reverted. I
-    ;; haven't been able to figure out what is reverting it so this hacks
-    ;; `describe-prefix-bindings' to proxy `embark-prefix-help-command'.
-    ;; (setq prefix-help-command #'embark-prefix-help-command)
-    (defun describe-prefix-bindings ()
-      (interactive)
-      (embark-prefix-help-command)))
-
-  :config
-  ;; TODO: What is the more idiomatic way to do this? This way is flawed as it
-  ;; only navigates to the line rather than where the symbol is on the line.
-  (defun my/goto-consult-xref ()
-    "Embark action function for opening a `consult-xref' candidate."
-    (interactive)
-    (let ((location (read-from-minibuffer "")))
-      (message "The location is: %s" location)
-      (let* ((parts (string-split location ":"))
-             (file (nth 0 parts))
-             (line (nth 1 parts)))
-        (find-file file)
-        (goto-char (point-min))
-        (forward-line (1- (string-to-number line))))))
-
-  (defun my/ace-find-file ()
-    "Switch window and run `find-file'."
-    (interactive)
-    (aw-switch-to-window (aw-select nil))
-    (call-interactively #'find-file))
-
-  (defun my/ace-switch-to-buffer ()
-    "Switch window and run `switch-to-buffer'."
-    (interactive)
-    (aw-switch-to-window (aw-select nil))
-    (call-interactively #'switch-to-buffer))
-
-  (defun my/ace-bookmark-jump ()
-    "Switch window and run `bookmark-jump'."
-    (interactive)
-    (aw-switch-to-window (aw-select nil))
-    (call-interactively #'bookmark-jump))
-
-  (defun my/ace-org-roam-node-find ()
-    "Switch window and run `org-roam-node-find'."
-    (interactive)
-    (aw-switch-to-window (aw-select nil))
-    (call-interactively #'org-roam-node-find))
-
-  (defun my/ace-goto-consult-xref ()
-    "Switch window and run `my/goto-consult-xref'."
-    (interactive)
-    (aw-switch-to-window (aw-select nil))
-    (call-interactively #'my/goto-consult-xref))
-
-  (defvar-keymap my/embark-org-roam-node-map
-    :doc "Keymap for Embark `org-roam-node' actions."
-    :parent embark-general-map)
-
-  (defvar-keymap my/embark-consult-xref-map
-    :doc "Keymap for Embark `consult-xref' actions."
-    :parent embark-general-map)
-
-  (add-to-list 'embark-keymap-alist '(org-roam-node . my/embark-org-roam-node-map))
-  (add-to-list 'embark-keymap-alist '(consult-xref . my/embark-consult-xref-map))
-  (add-to-list 'embark-keymap-alist '(xref . my/embark-consult-xref-map))
-
-  ;; Adapt the associated commands so that they are usable as Embark actions.
-  ;; If commands don't behave properly with Embark, play with this. Look at
-  ;; similar commands already in `embark-target-injection-hooks' and mimic.
-  (add-to-list 'embark-target-injection-hooks '(eglot-code-actions embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(eglot-rename embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(my/query-replace-wrap embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(my/query-replace-regexp-wrap embark--allow-edit)))
-
-(use-package embark-consult)
-
-(use-package rg
-  :commands rg-menu
-  :functions popper--bury-all
-  :general
-  (my/bind-search
-    "M-s" #'my/rg-menu)
-
-  :config
-  (defun my/rg-menu ()
-    "Bury any popups before calling `rg-menu'."
-    (interactive)
-    (popper--bury-all)
-    (call-interactively #'rg-menu)))
-
-(use-package wgrep
-  :general
-  (my/bind-c-c
-    "w" #'wgrep-change-to-wgrep-mode)
-  :custom
-  (wgrep-auto-save-buffer t))
-
 ;;;; General Editing
 
 ;;;;; Undo/Redo
@@ -1704,43 +1080,12 @@
      (my/project-vterm "Vterm" ?v)
      (project-async-shell-command "Async shell" ?&)))
 
-  :init
+  :config
   (defun my/project-current-root ()
     "Return the root directory of the current or nil."
     (if-let* ((proj (project-current)))
         (expand-file-name (project-root proj))))
 
-  (defun my/project-files ()
-    (when-let (project-dir (my/project-current-root))
-      (let* ((default-directory project-dir)
-             (local-dir (file-name-unquote (file-local-name (expand-file-name project-dir))))
-             (dfn (directory-file-name local-dir))
-             (command "fd -L -H -E '.git/*' -0 -c=never")
-             res)
-        (with-temp-buffer
-          (let ((status
-                 (process-file-shell-command command nil t))
-                (pt (point-min)))
-            (unless (zerop status)
-              (goto-char (point-min))
-              (if (and
-                   (not (eql status 127))
-                   (search-forward "Permission denied\n" nil t))
-                  (let ((end (1- (point))))
-                    (re-search-backward "\\`\\|\0")
-                    (error "File listing failed: %s"
-                           (buffer-substring (1+ (point)) end)))
-                (error "File listing failed: %s" (buffer-string))))
-            (goto-char pt)
-            (while (search-forward "\0" nil t)
-              (push (buffer-substring-no-properties (1+ pt) (1- (point)))
-                    res)
-              (setq pt (point)))))
-        (project--remote-file-names
-         (mapcar (lambda (s) (concat dfn s))
-                 (sort res #'string<))))))
-
-  :config
   (defun my/project-update-list ()
     "Update list of known projects."
     (interactive)
@@ -1770,6 +1115,587 @@
   (super-save-max-buffer-size 100000)
   :init
   (super-save-mode 1))
+
+;;;; Completion System
+
+(use-package corfu
+  :commands (corfu-mode global-corfu-mode)
+  :functions consult-completion-in-region
+
+  :general
+  (general-def 'corfu-map
+    ;; We S-SPC to keep completion going and include the space.
+    "S-SPC" #'corfu-insert-separator
+    ;; Move the completion session to the minibuffer.
+    "M-m" #'my/corfu-move-to-minibuffer)
+
+  :hook
+  (minibuffer-setup . my/corfu-enable-in-minibuffer)
+
+  :custom
+  ;; Show the Corfu pop-up without requiring tab to be pressed (but after the
+  ;; delay configured below).
+  (corfu-auto t)
+  ;; Number of typed characters before Corfu will display its pop-up.
+  (corfu-auto-prefix 3)
+  ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This
+  ;; setting only applies after the minimum number of prefix characters have
+  ;; been entered. This is really useful to keep so that short words that you
+  ;; don't want autocompleted don't trigger the Corfu pop-up (and subsequent
+  ;; completion which inserts a space after the completed word).
+  (corfu-auto-delay 0.2)
+  ;; Automatically select the first candidate if it does not reference a
+  ;; directory. This makes the eshell experience a little more natural.
+  (corfu-preselect 'directory)
+  ;; Modes which shouldn't use Corfu as I found the completions annoying.
+  (corfu-excluded-modes
+   '(bazel-build-mode
+     bazel-workspace-mode
+     bazel-starlark-mode))
+
+  :init
+  ;; Enable Corfu mode globally by default. Exclusions are captured
+  ;; individually in `corfu-excluded-modes'.
+  (global-corfu-mode)
+
+  ;; From: https://github.com/minad/corfu#completing-in-the-minibuffer.
+  (defun my/corfu-enable-in-minibuffer ()
+    "Enable Corfu in the minibuffer if `completion-at-point' is bound."
+    (when (where-is-internal #'completion-at-point (list (current-local-map)))
+      ;; Disable automatic documentation echo and popup (if enabled).
+      (setq-local corfu-echo-delay nil
+                  corfu-popupinfo-delay nil)
+      (corfu-mode 1)))
+
+  ;; From: https://github.com/minad/corfu#transfer-completion-to-the-minibuffer.
+  (defun my/corfu-move-to-minibuffer ()
+    "Transfer the Corfu completion session to the minibuffer."
+    (interactive)
+    (when completion-in-region--data
+      (let ((completion-extra-properties corfu--extra)
+            completion-cycle-threshold completion-cycling)
+        (apply #'consult-completion-in-region completion-in-region--data)))))
+
+;; Documentation shown alongside Corfu completion popups.
+(use-package corfu-popupinfo
+  :after corfu
+  :elpaca
+  (:host github :repo "minad/corfu" :files ("extensions/corfu-popupinfo.el"))
+  :general
+  (general-def 'corfu-map
+    "M-d" #'corfu-popupinfo-toggle
+    "<up>" #'corfu-popupinfo-scroll-down
+    "<down>" #'corfu-popupinfo-scroll-up)
+  :hook
+  (corfu-mode . corfu-popupinfo-mode)
+  :custom
+  (corfu-popupinfo-delay 1.0))
+
+;; Corfu icons.
+(use-package kind-icon
+  :after corfu
+  :commands kind-icon-margin-formatter
+  :defines corfu-margin-formatters
+  :hook
+  ;; After toggling between themes the icon cache needs to be reset.
+  ((modus-themes-post-load
+    standard-themes-post-load) . kind-icon-reset-cache)
+  :custom
+  (kind-icon-default-face 'corfu-default)
+  :init
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+
+;; Vertico provides the vertical completion minibuffer and Orderless provides
+;; the "completion style". Some commands that make use of Vertico's selection
+;; list also allow a new non-matched value to be entered. For example,
+;; `org-roam-node-insert' will create a new note when given a new note name.
+;; However, if the new value matches part of an existing value in the selection
+;; list (which is more likely when using Orderless) then you will need to press
+;; M-RET which calls `vertico-exit-input' to cancel the completion and use the
+;; new value.
+(use-package vertico
+  :elpaca (:files (:defaults "extensions/*.el"))
+  :commands vertico-mode
+  :custom
+  (vertico-count 20)
+  :init
+  (vertico-mode 1))
+
+(use-package vertico-directory
+  :after vertico
+  :elpaca nil
+  :general
+  (general-def 'vertico-map
+    ;; More convenient directory navigation commands.
+    "RET" #'vertico-directory-enter
+    "DEL" #'vertico-directory-delete-char)
+  ;; Tidy shadowed file names.
+  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+
+(use-package vertico-multiform
+  :after vertico
+  :elpaca nil
+  :commands vertico-multiform-mode
+  :custom
+  (vertico-multiform-categories
+   '((imenu buffer)
+     (file (vertico-sort-function . my/vertico-sort-dirs-first))))
+
+  ;; Sometimes commands are better when the category is too broad.
+  (vertico-multiform-commands
+   '((consult-outline buffer)))
+
+  :init
+  (vertico-multiform-mode 1)
+
+  :config
+  (defun my/vertico-sort-dirs-first (files)
+    "Sorts FILES by directories then alphanumerically."
+    (setq files (vertico-sort-history-length-alpha files))
+    (nconc (seq-filter (lambda (x) (string-suffix-p "/" x)) files)
+           (seq-remove (lambda (x) (string-suffix-p "/" x)) files))))
+
+;; I don't enable `vertico-buffer-mode' directly since this makes Vertico
+;; always run in a buffer. Instead, `vertico-multiform' is used to toggle
+;; buffer display on a per-category or per-command basis. The configuration
+;; of `vertico-buffer-display-action' below changes the default way that
+;; Vertico buffers are shown (otherwise they reuse the current window).
+(use-package vertico-buffer
+  :after vertico
+  :elpaca nil
+  :custom
+  (vertico-buffer-display-action
+   '(display-buffer-in-direction
+     ;; Below results in the search buffer being displayed to the right of the
+     ;; current window with both the windows being shown at 50% width. Trying
+     ;; to control the % via (window-width . 0.3) seems to set the width based
+     ;; on the frame width rather than the current window which makes the
+     ;; search window too large when the frame is split vertically into
+     ;; multiple windows. So 50% is fine for now.
+     (direction . right))))
+
+(use-package vertico-repeat
+  :after vertico
+  :elpaca nil
+  :hook (minibuffer-setup . vertico-repeat-save)
+  :general
+  (general-def
+    ;; Use prefix arg to select from list.
+    "M-R" #'vertico-repeat)
+  :init
+  ;; Persist Vertico history between Emacs sessions.
+  (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
+
+;; Dedicated completion commands.
+(use-package cape
+  :general
+  (my/bind-c-c
+    "cd" #'cape-dabbrev
+    "ch" #'cape-history
+    "cf" #'cape-file
+    "ck" #'cape-keyword
+    "co" #'cape-elisp-symbol
+    "ca" #'cape-abbrev
+    "cl" #'cape-line
+    "cw" #'cape-dict)
+  (general-def 'eshell-mode-map
+    "C-r" #'cape-history)
+
+  :custom
+  ;; Only show dabbrev candidates of a minimum length to avoid being annoying.
+  (cape-dabbrev-min-length 5)
+  ;; Only show dabbrev completions for words in the current buffer.
+  (cape-dabbrev-check-other-buffers nil))
+
+;; Orderless configuration mostly taken from:
+;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
+(use-package orderless
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides nil)
+  ;; Allow backslash to escape the space to search for literal spaces.
+  (orderless-component-separator #'orderless-escapable-split-on-space))
+
+(use-package marginalia
+  :commands marginalia-mode
+  :custom
+  (marginalia-mode t))
+
+(use-package consult
+  :defines
+  (consult-imenu-config
+   xref-show-xrefs-function
+   xref-show-definitions-function)
+
+  :preface
+  ;; For some reason, declaring some of these functions under :functions
+  ;; doesn't satisfy Flymake so they are declared here instead.
+  (declare-function consult--buffer-file-hash "consult")
+  (declare-function consult--buffer-query "consult")
+  (declare-function consult--buffer-state "consult")
+  (declare-function consult--customize-put "consult")
+  (declare-function consult--file-action "consult")
+  (declare-function consult--file-state "consult")
+  (declare-function consult--project-root "consult")
+  (declare-function consult-register-format "consult")
+  (declare-function consult-register-window "consult")
+  (declare-function consult-xref "consult")
+  (declare-function my/project-current-root nil)
+  (declare-function project--find-in-directory "project")
+  (declare-function project-files "project")
+
+  :general
+  (general-def
+    "M-y" #'consult-yank-pop)
+
+  (general-def 'minibuffer-local-map
+    "M-s" nil
+    "C-r" #'consult-history)
+
+  (general-def 'isearch-mode-map
+    ;; Replace `isearch-edit-string' to get history completion.
+    "M-e" #'consult-isearch-history
+    ;; Allow `consult-line' functions to "take over" from `isearch'.
+    "M-s l" #'consult-line
+    "M-s L" #'consult-line-multi)
+
+  (general-def 'consult-narrow-map
+    "C-<" #'consult-narrow-help
+    ;; Remove if this becomes annoying due to needing a '?' character.
+    "?" #'consult-narrow-help)
+
+  (my/bind-search
+    "a" #'consult-org-agenda
+    "f" #'consult-fd
+    "l" #'consult-line
+    "L" #'consult-line-multi
+    "s" #'consult-ripgrep
+    "=" #'consult-focus-lines)
+
+  (my/bind-goto
+    "-" #'consult-outline
+    "f" #'consult-flymake
+    "g" #'consult-goto-line
+    "M-g" #'consult-goto-line
+    "i" #'consult-imenu
+    "I" #'consult-imenu-multi
+    "m" #'consult-mark
+    "M" #'consult-global-mark)
+
+  (my/bind-c-c 'flymake-mode-map
+    "ff" #'consult-flymake)
+
+  (my/bind-c-c
+    "ut" #'consult-theme)
+
+  (my/bind-c-x
+    "b" #'consult-buffer
+    "pf" #'consult-project-buffer
+    "rr" #'consult-register
+    "rl" #'consult-register-load
+    "rs" #'consult-register-store)
+
+  :custom
+  ;; Type < followed by a prefix key to narrow the available candidates.
+  ;; Type C-< (defined above) to display prefix help. Alternatively, type
+  ;; < followed by C-h (or ?) to make `embark-prefix-help-command' kick in
+  ;; and display a completing prefix help.
+  (consult-narrow-key "<")
+
+  ;; Auto-preview by default.
+  (consult-preview-key 'any)
+
+  ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
+  (consult-ripgrep-args
+   '("rg"
+     "--null"
+     "--line-buffered"
+     "--color=never"
+     "--max-columns=1000"
+     "--path-separator=/"
+     "--smart-case"
+     "--no-heading"
+     "--with-filename"
+     "--line-number"
+     "--search-zip"
+     "--hidden"
+     "--glob=!.git/"))
+
+  ;; Configure both `config-find' and `consult-fd' to follow, symlinks, include
+  ;; hidden files, and ignore the .git directory. The fd command needs to be
+  ;; specifically told to allow matching across the full path (e.g. so you
+  ;; can search for "src/foo"). In general, I prefer `consult-fd' as it obeys
+  ;; the .gitignore file if present.
+  (consult-find-args "find -L . -not ( -name .git -type d -prune )")
+  (consult-fd-args "fd -p -L -H -E '.git/*'")
+
+  :init
+  ;; Configure how registers are previewed and displayed.
+  ;; See: https://github.com/minad/consult#use-package-example.
+  (setq register-preview-delay 0.3)
+  (setq register-preview-function #'consult-register-format)
+  (advice-add #'register-preview :override #'consult-register-window)
+
+  ;; Use consult to select xref locations with preview.
+  (with-eval-after-load 'xref
+    (setq xref-show-xrefs-function #'consult-xref)
+    (setq xref-show-definitions-function #'consult-xref))
+
+  :config
+  (defconst my/preview-delayed '(:debounce 0.3 any))
+
+  (defvar my/consult-source-dired-buffer
+    `(:name "Dired Buffer"
+      :narrow ?d
+      :category buffer
+      :face consult-buffer
+      :history buffer-name-history
+      :state ,#'consult--buffer-state
+      :items
+      ,(lambda ()
+         (consult--buffer-query
+          :sort 'visibility
+          :as #'buffer-name
+          :mode 'dired-mode))))
+
+  (defvar my/consult-source-shell-buffer
+    `(:name "Shell Buffer"
+      :narrow ?s
+      :category buffer
+      :face consult-buffer
+      :history buffer-name-history
+      :state ,#'consult--buffer-state
+      :items
+      ,(lambda ()
+         (consult--buffer-query
+          :sort 'visibility
+          :as #'buffer-name
+          :predicate
+          (lambda (buf)
+            (with-current-buffer buf
+              (derived-mode-p 'eshell-mode 'vterm-mode)))))))
+
+  ;; Consult source for all project files. This has largely been adapted from
+  ;; the implementation of `consult--source-project-recent-file'.
+  ;; See: https://github.com/minad/consult/blob/e5406f282f76076d10440037ecd3460fb280706c/consult.el#L4508.
+  (defvar my/consult-source-project-file
+    `(:name "Project File"
+      :narrow ?f
+      :preview-key ,my/preview-delayed
+      :category file
+      :face consult-file
+      :history file-name-history
+      :state ,#'consult--file-state
+      :new
+      ,(lambda (file)
+         (consult--file-action
+          (expand-file-name file (consult--project-root))))
+      :enabled
+      ,(lambda () consult-project-function)
+      :items
+      ,(lambda ()
+         (when-let (project-dir (my/project-current-root))
+           (let* ((project (project--find-in-directory project-dir))
+                  (project-files (seq-filter #'file-exists-p (project-files project)))
+                  (len (length project-dir))
+                  (ht (consult--buffer-file-hash))
+                  items)
+
+             (dolist (file project-files (nreverse items))
+               (unless (eq (aref file 0) ?/)
+                 (let (file-name-handler-alist)
+                   (setq file (expand-file-name file))))
+               (when (and (not (gethash file ht)) (string-prefix-p project-dir file))
+                 (let ((part (substring file len)))
+                   (when (equal part "") (setq part "./"))
+                   (put-text-property 0 1 'multi-category `(file . ,file) part)
+                   (push part items)))))))))
+
+  ;; Customize the list of sources shown by `consult-buffer'.
+  (setq consult-buffer-sources
+        '(consult--source-buffer         ;; Narrow: ?b
+          my/consult-source-dired-buffer ;; Narrow: ?d
+          my/consult-source-shell-buffer ;; Narrow: ?s
+          consult--source-file-register  ;; Narrow: ?g
+          consult--source-bookmark       ;; Narrow: ?m
+          consult--source-recent-file))  ;; Narrow: ?r
+
+  ;; Customize the list of sources shown by `consult-project-buffer'.
+  (setq consult-project-buffer-sources
+        '(consult--source-project-buffer      ;; Narrow: ?b
+          consult--source-project-recent-file ;; Narrow: ?r
+          my/consult-source-project-file))    ;; Narrow: ?f
+
+  ;; Customize individual consult sources.
+  (consult-customize
+   consult--source-buffer
+   :name "Open Buffer" :narrow ?b
+   consult--source-project-buffer
+   :name "Project Buffer" :narrow ?b
+   consult--source-file-register
+   :name "Register" :narrow ?g
+   ;; Due to the value of `consult-preview-key' configured above, the preview
+   ;; will be displayed immediately for most commands. This is generally fine,
+   ;; but for commands that access unopened files I prefer to delay the preview
+   ;; so I can skip past candidates without incurring the preview.
+   consult--source-recent-file
+   :name "Recent File" :narrow ?r :preview-key my/preview-delayed
+   consult--source-project-recent-file
+   :name "Recent Project File" :narrow ?r :preview-key my/preview-delayed
+   ;; Configure delayed preview for grep commands (automatic by default).
+   consult-ripgrep consult-grep consult-git-grep
+   :preview-key my/preview-delayed
+   ;; Configure delayed preview for file finding (disabled by default).
+   consult-find consult-fd
+   :state (consult--file-preview) :preview-key my/preview-delayed))
+
+(use-package consult-dir
+  :commands consult-dir
+  :general
+  (my/bind-search
+    "d" #'consult-dir)
+  :custom
+  (consult-dir-shadow-filenames nil)
+  (consult-dir-default-command #'consult-dir-dired))
+
+(use-package embark
+  :commands
+  (embark-prefix-help-command
+   embark-target-identifier-at-point
+   my/goto-consult-xref)
+
+  :general
+  (general-def
+    "C-." #'embark-act
+    "C-M-." #'embark-dwim
+    "C-h b" #'embark-bindings)
+
+  (general-def 'minibuffer-local-map
+    "M-b" #'embark-become)
+
+  (general-def 'embark-file-map "o" #'my/ace-find-file)
+  (general-def 'embark-buffer-map "o" #'my/ace-switch-to-buffer)
+  (general-def 'embark-bookmark-map "o" #'my/ace-bookmark-jump)
+  (general-def 'my/embark-org-roam-node-map "o" #'my/ace-org-roam-node-find)
+  (general-def 'my/embark-consult-xref-map "o" #'my/ace-goto-consult-xref)
+
+  :custom
+  ;; Just show the minimal "Act" prompt (the default starts with minimal
+  ;; and then `embark-mixed-indicator-delay' kicks in and the verbose screen
+  ;; is shown). Shortcut keys can immediately be used. C-h can be pressed to
+  ;; bring up the completing read prompter.
+  (embark-indicators (list #'embark-minimal-indicator))
+  ;; Use this key to switch Embark to the keymap prompter.
+  (embark-keymap-prompter-key ",")
+
+  :init
+  ;; Use Embark to prompt for and run commands under a specified prefix
+  ;; when C-h is pressed (e.g. C-x C-h) rather than `describe-prefix-bindings'.
+  (with-eval-after-load 'help
+    ;; It should be possible to just set `prefix-help-command' to
+    ;; `embark-prefix-help-command' as specified (and commented out below)
+    ;; in the Embark documentation but somehow it keeps getting reverted to
+    ;; `describe-prefix-bindings'. Even when I use `with-eval-after-load' to
+    ;; set it after the help package is loaded, it will still get reverted. I
+    ;; haven't been able to figure out what is reverting it so this hacks
+    ;; `describe-prefix-bindings' to proxy `embark-prefix-help-command'.
+    ;; (setq prefix-help-command #'embark-prefix-help-command)
+    (defun describe-prefix-bindings ()
+      (interactive)
+      (embark-prefix-help-command)))
+
+  :config
+  ;; TODO: What is the more idiomatic way to do this? This way is flawed as it
+  ;; only navigates to the line rather than where the symbol is on the line.
+  (defun my/goto-consult-xref ()
+    "Embark action function for opening a `consult-xref' candidate."
+    (interactive)
+    (let ((location (read-from-minibuffer "")))
+      (message "The location is: %s" location)
+      (let* ((parts (string-split location ":"))
+             (file (nth 0 parts))
+             (line (nth 1 parts)))
+        (find-file file)
+        (goto-char (point-min))
+        (forward-line (1- (string-to-number line))))))
+
+  (defun my/ace-find-file ()
+    "Switch window and run `find-file'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'find-file))
+
+  (defun my/ace-switch-to-buffer ()
+    "Switch window and run `switch-to-buffer'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'switch-to-buffer))
+
+  (defun my/ace-bookmark-jump ()
+    "Switch window and run `bookmark-jump'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'bookmark-jump))
+
+  (defun my/ace-org-roam-node-find ()
+    "Switch window and run `org-roam-node-find'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'org-roam-node-find))
+
+  (defun my/ace-goto-consult-xref ()
+    "Switch window and run `my/goto-consult-xref'."
+    (interactive)
+    (aw-switch-to-window (aw-select nil))
+    (call-interactively #'my/goto-consult-xref))
+
+  (defvar-keymap my/embark-org-roam-node-map
+    :doc "Keymap for Embark `org-roam-node' actions."
+    :parent embark-general-map)
+
+  (defvar-keymap my/embark-consult-xref-map
+    :doc "Keymap for Embark `consult-xref' actions."
+    :parent embark-general-map)
+
+  (add-to-list 'embark-keymap-alist '(org-roam-node . my/embark-org-roam-node-map))
+  (add-to-list 'embark-keymap-alist '(consult-xref . my/embark-consult-xref-map))
+  (add-to-list 'embark-keymap-alist '(xref . my/embark-consult-xref-map))
+
+  ;; Adapt the associated commands so that they are usable as Embark actions.
+  ;; If commands don't behave properly with Embark, play with this. Look at
+  ;; similar commands already in `embark-target-injection-hooks' and mimic.
+  (add-to-list 'embark-target-injection-hooks '(eglot-code-actions embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(eglot-rename embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
+  (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(my/query-replace-wrap embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(my/query-replace-regexp-wrap embark--allow-edit)))
+
+(use-package embark-consult)
+
+(use-package rg
+  :commands rg-menu
+  :functions popper--bury-all
+  :general
+  (my/bind-search
+    "M-s" #'my/rg-menu)
+
+  :config
+  (defun my/rg-menu ()
+    "Bury any popups before calling `rg-menu'."
+    (interactive)
+    (popper--bury-all)
+    (call-interactively #'rg-menu)))
+
+(use-package wgrep
+  :general
+  (my/bind-c-c
+    "w" #'wgrep-change-to-wgrep-mode)
+  :custom
+  (wgrep-auto-save-buffer t))
 
 ;;;; Programming
 
@@ -2579,7 +2505,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 
 (use-package vterm
   :commands (vterm-next-prompt vterm-previous-prompt)
-  :functions my/repeatize
+  :functions (my/repeatize project-prefixed-buffer-name)
   :general
   (my/bind-c-c
     "v" #'vterm
