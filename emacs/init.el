@@ -1478,7 +1478,6 @@
 
   ;; Consult source for all project files. This has largely been adapted from
   ;; the implementation of `consult--source-project-recent-file'.
-  ;; See: https://github.com/minad/consult/blob/e5406f282f76076d10440037ecd3460fb280706c/consult.el#L4508.
   (defvar my/consult-source-project-file
     `(:name "Project File"
       :narrow ?f
@@ -1501,7 +1500,6 @@
                   (len (length project-dir))
                   (ht (consult--buffer-file-hash))
                   items)
-
              (dolist (file project-files (nreverse items))
                (unless (eq (aref file 0) ?/)
                  (let (file-name-handler-alist)
@@ -1606,20 +1604,6 @@
       (embark-prefix-help-command)))
 
   :config
-  ;; TODO: What is the more idiomatic way to do this? This way is flawed as it
-  ;; only navigates to the line rather than where the symbol is on the line.
-  (defun my/goto-consult-xref ()
-    "Embark action function for opening a `consult-xref' candidate."
-    (interactive)
-    (let ((location (read-from-minibuffer "")))
-      (message "The location is: %s" location)
-      (let* ((parts (string-split location ":"))
-             (file (nth 0 parts))
-             (line (nth 1 parts)))
-        (find-file file)
-        (goto-char (point-min))
-        (forward-line (1- (string-to-number line))))))
-
   (defun my/ace-find-file ()
     "Switch window and run `find-file'."
     (interactive)
@@ -1644,11 +1628,24 @@
     (aw-switch-to-window (aw-select nil))
     (call-interactively #'org-roam-node-find))
 
+  ;; TODO: Is there a better way to do this? This way is flawed as it only
+  ;; navigates to the line rather than where the symbol is on the line.
+  ;; To jump to the actual symbol location, I think `consult-xref' would need
+  ;; to be updated to provide additional info.
   (defun my/ace-goto-consult-xref ()
-    "Switch window and run `my/goto-consult-xref'."
+    "Switch window and jump to the xref location (read from the minibuffer)."
     (interactive)
-    (aw-switch-to-window (aw-select nil))
-    (call-interactively #'my/goto-consult-xref))
+    (let ((project-dir (my/project-current-root)))
+      (aw-switch-to-window (aw-select nil))
+      (let* ((xref-location (read-from-minibuffer ""))
+             (parts (string-split xref-location ":"))
+             (file (nth 0 parts))
+             (line (nth 1 parts)))
+        (unless (file-name-absolute-p file)
+          (setq file (expand-file-name file project-dir)))
+        (find-file file)
+        (goto-char (point-min))
+        (forward-line (1- (string-to-number line))))))
 
   (defvar-keymap my/embark-org-roam-node-map
     :doc "Keymap for Embark `org-roam-node' actions."
