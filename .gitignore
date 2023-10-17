@@ -33,6 +33,7 @@ envconfig/
 exercism/
 gcloud/
 gh/
+ghc/
 git/gpg.inc
 git/hooks/
 gnupg/*.kbx

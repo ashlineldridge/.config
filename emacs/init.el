@@ -1756,9 +1756,7 @@
   :functions my/flymake-eldoc-show-first
 
   :hook
-  ((bash-ts-mode
-    go-ts-mode
-    rust-ts-mode) . eglot-ensure)
+  ((go-ts-mode rust-ts-mode bash-ts-mode haskell-mode) . eglot-ensure)
   (eglot-managed-mode . my/eglot-init)
 
   :general
@@ -1953,8 +1951,11 @@
   :init
   (apheleia-global-mode 1)
   :config
-  ;; Use goimports rather than gofmt so that imports get optimized.
-  (setf (alist-get 'go-ts-mode apheleia-mode-alist) 'goimports))
+  ;; Use goimports rather than gofmt for Go files so imports get optimized.
+  (setf (alist-get 'go-ts-mode apheleia-mode-alist) 'goimports)
+  ;; Use Ormolu for formatting Haskell files.
+  (setf (alist-get 'haskell-mode apheleia-mode-alist) 'ormolu)
+  (setf (alist-get 'ormolu apheleia-formatters) '("ormolu" "--stdin-input-file" ".")))
 
 ;;;;; Programming Languages
 
@@ -2181,6 +2182,10 @@
   :general
   (my/bind-c-c :keymaps 'go-ts-mode-map
     "rg" #'go-gen-test-dwim))
+
+;;;;;; Haskell
+
+(use-package haskell-mode)
 
 ;;;;;; Terraform
 

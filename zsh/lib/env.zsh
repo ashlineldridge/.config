@@ -36,7 +36,7 @@ export SDKROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.plat
 export JAVA_HOME="/Library/Java/JavaVirtualMachines/current/Contents/Home"
 
 # Path.
-export PATH="${HOME}/bin:/opt/homebrew/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:${JAVA_HOME}/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin:${HOME}/.cargo/bin:${HOME}/.krew/bin:${HOME}/.local/bin"
+export PATH="${HOME}/bin:${HOME}/.local/bin:${HOME}/.cargo/bin:${HOME}/.ghcup/bin:/opt/homebrew/bin:/opt/homebrew/opt/llvm/bin:${GOROOT}/bin:${GOPATH}/bin:${JAVA_HOME}/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/sbin:/usr/sbin:/sbin"
 
 # Make Emacs the default editor.
 export EDITOR=emacsclient

@@ -60,6 +60,9 @@
 (setq exec-path
       (mapcar #'expand-file-name
               `("~/bin"
+                "~/.local/bin" ;; Used by tools like Haskell's Stack.
+                "~/.cargo/bin"
+                "~/.ghcup/bin"
                 "/opt/homebrew/bin"
                 "/opt/homebrew/opt/llvm/bin"
                 ,(expand-file-name "bin" (getenv "GOROOT"))
@@ -71,9 +74,6 @@
                 "/opt/homebrew/sbin"
                 "/usr/sbin"
                 "/sbin"
-                "~/.cargo/bin"
-                "~/.krew/bin"
-                "~/.local/bin"
                 ;; Emacs expects the last value of `exec-path' to be `exec-directory'.
                 ,exec-directory)))
 (setenv "PATH" (mapconcat #'identity exec-path ":"))
