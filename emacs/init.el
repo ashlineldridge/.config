@@ -1331,13 +1331,11 @@
   :preface
   ;; For some reason, declaring some of these functions under :functions
   ;; doesn't satisfy Flymake so they are declared here instead.
-  (declare-function consult--buffer-file-hash "consult")
   (declare-function consult--buffer-query "consult")
   (declare-function consult--buffer-state "consult")
   (declare-function consult--customize-put "consult")
   (declare-function consult--file-action "consult")
   (declare-function consult--file-state "consult")
-  (declare-function consult--project-root "consult")
   (declare-function consult-register-format "consult")
   (declare-function consult-register-window "consult")
   (declare-function consult-xref "consult")
@@ -1428,7 +1426,7 @@
   ;; can search for "src/foo"). In general, I prefer `consult-fd' as it obeys
   ;; the .gitignore file if present.
   (consult-find-args "find -L . -not ( -name .git -type d -prune )")
-  (consult-fd-args "fd -p -L -H -E '.git/*'")
+  (consult-fd-args "fd -p -L -H -E .git/*")
 
   :init
   ;; Configure how registers are previewed and displayed.
@@ -1489,7 +1487,7 @@
       :new
       ,(lambda (file)
          (consult--file-action
-          (expand-file-name file (consult--project-root))))
+          (expand-file-name file (my/project-current-root))))
       :enabled
       ,(lambda () consult-project-function)
       :items
@@ -1498,17 +1496,13 @@
            (let* ((project (project--find-in-directory project-dir))
                   (project-files (seq-filter #'file-exists-p (project-files project)))
                   (len (length project-dir))
-                  (ht (consult--buffer-file-hash))
                   items)
              (dolist (file project-files (nreverse items))
-               (unless (eq (aref file 0) ?/)
-                 (let (file-name-handler-alist)
-                   (setq file (expand-file-name file))))
-               (when (and (not (gethash file ht)) (string-prefix-p project-dir file))
-                 (let ((part (substring file len)))
-                   (when (equal part "") (setq part "./"))
-                   (put-text-property 0 1 'multi-category `(file . ,file) part)
-                   (push part items)))))))))
+               (setq file (expand-file-name file))
+               (let ((part (substring file len)))
+                 (when (equal part "") (setq part "./"))
+                 (put-text-property 0 1 'multi-category `(file . ,file) part)
+                 (push part items))))))))
 
   ;; Customize the list of sources shown by `consult-buffer'.
   (setq consult-buffer-sources
@@ -1607,8 +1601,12 @@
   (defun my/ace-find-file ()
     "Switch window and run `find-file'."
     (interactive)
-    (aw-switch-to-window (aw-select nil))
-    (call-interactively #'find-file))
+    ;; Some commands like `find-file' pass the absolute file name whereas
+    ;; the Consult file finding commands pass a project-relative file name.
+    (let* ((root (my/project-current-root))
+           (file (expand-file-name (read-from-minibuffer "") root)))
+      (aw-switch-to-window (aw-select nil))
+      (find-file file)))
 
   (defun my/ace-switch-to-buffer ()
     "Switch window and run `switch-to-buffer'."
