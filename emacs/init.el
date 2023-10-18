@@ -2577,6 +2577,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (defvar my/gtd-archive-file (expand-file-name "archive.org" my/gtd-dir))
   (defvar my/gtd-bookmarks-file (expand-file-name "bookmarks.org" my/gtd-dir))
   (defvar my/gtd-coffee-file (expand-file-name "coffee.org" my/gtd-dir))
+  (defvar my/gtd-music-file (expand-file-name "music.org" my/gtd-dir))
 
   ;; Order of Org agenda items.
   (defvar my/org-agenda-todo-sort-order '("PROG" "NEXT" "TODO" "HOLD" "DONE"))
@@ -2601,11 +2602,15 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (my/bind-c-c
     "ol" #'org-store-link
     "oa" #'org-agenda
-    "om" #'org-capture
     "os" #'org-save-all-org-buffers
-    "oi" #'my/org-capture-inbox
-    "ob" #'my/org-capture-bookmark
-    "oc" #'my/org-capture-coffee
+    "oi" '((lambda () (interactive) (org-capture nil "c"))
+           :which-key "capture inbox")
+    "ob" '((lambda () (interactive) (org-capture nil "b"))
+           :which-key "capture bookmark")
+    "oc" '((lambda () (interactive) (org-capture nil "c"))
+           :which-key "capture coffee")
+    "om" '((lambda () (interactive) (org-capture nil "m"))
+           :which-key "capture music")
     ;; Use same keybinding given to `org-open-at-point' in Org mode.
     "C-o" #'org-open-at-point-global)
   (my/bind-c-c :keymaps 'org-mode-map
@@ -2736,7 +2741,13 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
         "  - Breakdown: 50g/70g/60g/60g/60g on 45s with no extra agitation\n"
         "  - Next time: Grind a bit finer\n"
         "- Taste notes:\n"
-        "  - Yum yum\n") :jump-to-captured t)))
+        "  - Yum yum\n") :jump-to-captured t)
+     ("m" "Music" entry
+      (file+olp+datetree ,my/gtd-music-file "Music" "Albums")
+      ,(concat
+	"* %?[[https://open.spotify.com/album/4VNqy9FUAFCvwE6XqrtlOn?si=r3jW-T5QSBqiygbwpzv5fQ][Tom Waits: Bone Machine]] :experimental:rock:jazz:halloffame:\n"
+        "- Rating: 5/5\n"
+        "- Notes: Gud allbum.\n"))))
   (org-catch-invisible-edits 'show-and-error)
   (org-confirm-babel-evaluate nil)
   (org-default-notes-file my/gtd-inbox-file)
@@ -2804,21 +2815,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (cond ((apply '> cmp) 1)
             ((apply '< cmp) -1)
             (t nil))))
-
-  (defun my/org-capture-inbox ()
-    "Capture an inbox item."
-    (interactive)
-    (org-capture nil "i"))
-
-  (defun my/org-capture-bookmark ()
-    "Capture a bookmark."
-    (interactive)
-    (org-capture nil "b"))
-
-  (defun my/org-capture-coffee ()
-    "Capture a coffee log entry."
-    (interactive)
-    (org-capture nil "c"))
 
   ;; Function for refiling the current agenda item under point to the specified
   ;; file and heading. `org-agenda-refile' requires a destination refloc list
