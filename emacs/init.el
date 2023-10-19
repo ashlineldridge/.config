@@ -1055,7 +1055,7 @@
 (use-package recentf
   :elpaca nil
   :custom
-  (recentf-max-saved-items 60)
+  (recentf-max-saved-items 300)
   :config
   (recentf-mode 1))
 
@@ -1071,7 +1071,7 @@
   :custom
   (project-prompt-project-dir)
   (project-switch-commands
-   '((consult-project-buffer "File" ?f)
+   '((my/consult-project-multi "File" ?f)
      (project-find-dir "Dir" ?d)
      (project-dired "Dired" ?j)
      (consult-ripgrep "Ripgrep" ?s)
@@ -1389,7 +1389,11 @@
 
   (my/bind-c-x
     "b" #'consult-buffer
-    "pf" #'consult-project-buffer
+    "4b" #'consult-buffer-other-window
+    "5b" #'consult-buffer-other-frame
+    "pb" #'consult-project-buffer
+    "pf" #'my/consult-project-file
+    "rb" #'consult-bookmark
     "rr" #'consult-register
     "rl" #'consult-register-load
     "rs" #'consult-register-store)
@@ -1446,6 +1450,7 @@
   (defvar my/consult-source-dired-buffer
     `(:name "Dired Buffer"
       :narrow ?d
+      :hidden t
       :category buffer
       :face consult-buffer
       :history buffer-name-history
@@ -1460,6 +1465,7 @@
   (defvar my/consult-source-shell-buffer
     `(:name "Shell Buffer"
       :narrow ?s
+      :hidden t
       :category buffer
       :face consult-buffer
       :history buffer-name-history
@@ -1506,25 +1512,45 @@
 
   ;; Customize the list of sources shown by `consult-buffer'.
   (setq consult-buffer-sources
-        '(consult--source-buffer         ;; Narrow: ?b
-          my/consult-source-dired-buffer ;; Narrow: ?d
-          my/consult-source-shell-buffer ;; Narrow: ?s
-          consult--source-file-register  ;; Narrow: ?g
-          consult--source-bookmark       ;; Narrow: ?m
-          consult--source-recent-file))  ;; Narrow: ?r
+        '(consult--source-project-buffer ;; Narrow: ?b (shown)
+          consult--source-buffer         ;; Narrow: ?o (shown)
+          my/consult-source-dired-buffer ;; Narrow: ?d (hidden)
+          my/consult-source-shell-buffer ;; Narrow: ?s (hidden)
+          consult--source-file-register  ;; Narrow: ?g (shown)
+          consult--source-bookmark       ;; Narrow: ?m (shown)
+          consult--source-recent-file))  ;; Narrow: ?r (hidden)
 
-  ;; Customize the list of sources shown by `consult-project-buffer'.
-  (setq consult-project-buffer-sources
-        '(consult--source-project-buffer      ;; Narrow: ?b
-          consult--source-project-recent-file ;; Narrow: ?r
-          my/consult-source-project-file))    ;; Narrow: ?f
+  ;; Designed to replace `project-find-file' (which doesn't provide preview),
+  ;; this command only shows project files by default but can show project
+  ;; buffers and project recent files if requested.
+  (defun my/consult-project-file ()
+    "Version of `project-find-file' that uses Consult sources."
+    (interactive)
+    (let ((consult-project-buffer-sources
+           '(consult--source-project-buffer-hidden      ;; Narrow: ?b (hidden)
+             consult--source-project-recent-file-hidden ;; Narrow: ?r (hidden)
+             my/consult-source-project-file)))          ;; Narrow: ?f (shown)
+      (consult-project-buffer)))
+
+  ;; Designed to be used in `project-switch-commands', this command provides
+  ;; quick insight into: what is open, what was open recently, and what is
+  ;; available for a given project.
+  (defun my/consult-project-multi ()
+    "Multi-source project finder to be used in `project-switch-commands'."
+    (interactive)
+    (let ((consult-project-buffer-sources
+           '(consult--source-project-buffer      ;; Narrow: ?b (shown)
+             consult--source-project-recent-file ;; Narrow: ?r (shown)
+             my/consult-source-project-file)))   ;; Narrow: ?f (shown)
+      (consult-project-buffer)))
 
   ;; Customize individual consult sources.
   (consult-customize
-   consult--source-buffer
-   :name "Open Buffer" :narrow ?b
    consult--source-project-buffer
+   consult--source-project-buffer-hidden
    :name "Project Buffer" :narrow ?b
+   consult--source-buffer
+   :name "Open Buffer" :narrow ?o
    consult--source-file-register
    :name "Register" :narrow ?g
    ;; Due to the value of `consult-preview-key' configured above, the preview
@@ -1532,8 +1558,9 @@
    ;; but for commands that access unopened files I prefer to delay the preview
    ;; so I can skip past candidates without incurring the preview.
    consult--source-recent-file
-   :name "Recent File" :narrow ?r :preview-key my/preview-delayed
+   :name "Recent File" :narrow ?r :hidden t :preview-key my/preview-delayed
    consult--source-project-recent-file
+   consult--source-project-recent-file-hidden
    :name "Recent Project File" :narrow ?r :preview-key my/preview-delayed
    ;; Configure delayed preview for grep commands (automatic by default).
    consult-ripgrep consult-grep consult-git-grep
@@ -2746,6 +2773,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (file+olp+datetree ,my/gtd-music-file "Music" "Albums")
       ,(concat
 	"* %?[[https://open.spotify.com/album/4VNqy9FUAFCvwE6XqrtlOn?si=r3jW-T5QSBqiygbwpzv5fQ][Tom Waits: Bone Machine]] :experimental:rock:jazz:halloffame:\n"
+        "- Year: 2023\n"
         "- Rating: 5/5\n"
         "- Notes: Gud allbum.\n"))))
   (org-catch-invisible-edits 'show-and-error)
