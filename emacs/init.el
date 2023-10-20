@@ -1368,6 +1368,7 @@
     "f" #'consult-fd
     "l" #'consult-line
     "L" #'consult-line-multi
+    "p" #'my/consult-project-file
     "s" #'consult-ripgrep
     "=" #'consult-focus-lines)
 
