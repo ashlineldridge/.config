@@ -1445,7 +1445,7 @@
     (setq xref-show-definitions-function #'consult-xref))
 
   :config
-  (defconst my/preview-delayed '(:debounce 0.3 any))
+  (defconst my/preview-key "M-.")
 
   (defvar my/consult-source-dired-buffer
     `(:name "Dired Buffer"
@@ -1485,7 +1485,7 @@
   (defvar my/consult-source-project-file
     `(:name "Project File"
       :narrow ?f
-      :preview-key ,my/preview-delayed
+      :preview-key ,my/preview-key
       :category file
       :face consult-file
       :history file-name-history
@@ -1552,22 +1552,23 @@
    consult--source-buffer
    :name "Open Buffer" :narrow ?o
    consult--source-file-register
-   :name "Register" :narrow ?g
+   :name "Register" :narrow ?g :preview-key my/preview-key
    ;; Due to the value of `consult-preview-key' configured above, the preview
    ;; will be displayed immediately for most commands. This is generally fine,
    ;; but for commands that access unopened files I prefer to delay the preview
    ;; so I can skip past candidates without incurring the preview.
    consult--source-recent-file
-   :name "Recent File" :narrow ?r :hidden t :preview-key my/preview-delayed
+   :name "Recent File" :narrow ?r :hidden t :preview-key my/preview-key
    consult--source-project-recent-file
    consult--source-project-recent-file-hidden
-   :name "Recent Project File" :narrow ?r :preview-key my/preview-delayed
-   ;; Configure delayed preview for grep commands (automatic by default).
-   consult-ripgrep consult-grep consult-git-grep
-   :preview-key my/preview-delayed
+   :name "Recent Project File" :narrow ?r :preview-key my/preview-key
    ;; Configure delayed preview for file finding (disabled by default).
    consult-find consult-fd
-   :state (consult--file-preview) :preview-key my/preview-delayed))
+   :state (consult--file-preview) :preview-key my/preview-key
+   ;; Configure delayed preview for commands/sources that relate to
+   ;; unopened files and that preview automatically by default.
+   consult-ripgrep consult-grep consult-git-grep consult--source-bookmark
+   :preview-key my/preview-key))
 
 (use-package consult-dir
   :commands consult-dir
@@ -1591,6 +1592,7 @@
     "C-h b" #'embark-bindings)
 
   (general-def 'minibuffer-local-map
+    my/preview-key #'my/embark-preview
     "M-b" #'embark-become)
 
   (general-def 'embark-file-map "o" #'my/ace-find-file)
@@ -1625,6 +1627,18 @@
       (embark-prefix-help-command)))
 
   :config
+  ;; Command used to force a preview of any Vertico completion candidate.
+  ;; If the minibuffer is being shown on behalf of a Consult command, we fall
+  ;; through to the previewing behaviour of Consult.
+  ;; See: https://github.com/minad/consult/wiki#manual-preview-for-non-consult-commands-using-embark.
+  (defun my/embark-preview ()
+    "Preview Vertico candidate unless it's a Consult command."
+    (interactive)
+    (unless (bound-and-true-p consult--preview-function)
+      (save-selected-window
+        (let ((embark-quit-after-action nil))
+          (embark-dwim)))))
+
   (defun my/ace-find-file ()
     "Switch window and run `find-file'."
     (interactive)
@@ -2459,19 +2473,24 @@
     "Hook function executed when `eshell-mode' is run."
     ;; Default to not wrapping long eshell lines.
     (my/truncate-lines)
+
     ;; Don't scroll the buffer around after it has been recentered (using C-l).
     ;; This seems to need to be done as a mode hook rather than in `:config' as
     ;; the latter results in `eshell-output-filter-functions' being set to nil.
     ;; See: https://emacs.stackexchange.com/a/45281
     (remove-hook 'eshell-output-filter-functions
                  'eshell-postoutput-scroll-to-bottom)
+
     ;; Configuration eshell completion.
     (setq-local completion-at-point-functions
                 (list
                  #'tempel-complete
                  #'pcomplete-completions-at-point
                  #'cape-file
-                 #'cape-dabbrev)))
+                 #'cape-dabbrev))
+
+    ;; Make outline work with eshell prompts.
+    (setq-local outline-regexp eshell-prompt-regexp))
 
   (defun my/eshell-pre-command ()
     "Eshell pre-command hook function."
@@ -2533,13 +2552,14 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 (use-package vterm
   :commands (vterm-next-prompt vterm-previous-prompt)
   :functions (my/repeatize project-prefixed-buffer-name)
+  :hook (vterm-mode . my/vterm-init)
   :general
   (my/bind-c-c
     "v" #'vterm
     "C-v" #'my/vterm-nushell)
   (general-unbind 'vterm-mode-map
     "C-o" "C-s" "C-SPC"
-    "M-s" "M-:" "M-&")
+    "M-s" "M-g" "M-:" "M-&")
 
   :custom
   (vterm-always-compile-module t)
@@ -2549,6 +2569,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (vterm-max-scrollback 10000)
 
   :config
+  (defun my/vterm-init ()
+    "Hook function executed when `vterm-mode' is run."
+    ;; Make outline work with vterm prompts.
+    (setq-local outline-regexp "^[^#$\n]* ❯ "))
+
   ;; Allow find-file-other-window to be called from Vterm.
   (add-to-list 'vterm-eval-cmds
                '("find-file-other-window" find-file-other-window))
