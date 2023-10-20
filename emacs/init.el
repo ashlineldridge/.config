@@ -2642,7 +2642,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "ol" #'org-store-link
     "oa" #'org-agenda
     "os" #'org-save-all-org-buffers
-    "oi" '((lambda () (interactive) (org-capture nil "c"))
+    "oi" '((lambda () (interactive) (org-capture nil "i"))
            :which-key "capture inbox")
     "ob" '((lambda () (interactive) (org-capture nil "b"))
            :which-key "capture bookmark")
