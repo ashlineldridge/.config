@@ -1592,7 +1592,6 @@
     "C-h b" #'embark-bindings)
 
   (general-def 'minibuffer-local-map
-    my/preview-key #'my/embark-preview
     "M-b" #'embark-become)
 
   (general-def 'embark-file-map "o" #'my/ace-find-file)
@@ -1627,18 +1626,6 @@
       (embark-prefix-help-command)))
 
   :config
-  ;; Command used to force a preview of any Vertico completion candidate.
-  ;; If the minibuffer is being shown on behalf of a Consult command, we fall
-  ;; through to the previewing behaviour of Consult.
-  ;; See: https://github.com/minad/consult/wiki#manual-preview-for-non-consult-commands-using-embark.
-  (defun my/embark-preview ()
-    "Preview Vertico candidate unless it's a Consult command."
-    (interactive)
-    (unless (bound-and-true-p consult--preview-function)
-      (save-selected-window
-        (let ((embark-quit-after-action nil))
-          (embark-dwim)))))
-
   (defun my/ace-find-file ()
     "Switch window and run `find-file'."
     (interactive)
