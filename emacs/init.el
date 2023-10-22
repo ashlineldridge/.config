@@ -1569,6 +1569,7 @@
    ;; Configure delayed preview for commands/sources that relate to
    ;; unopened files and that preview automatically by default.
    consult-ripgrep consult-grep consult-git-grep consult--source-bookmark
+   xref-find-references xref-find-references
    :preview-key my/preview-key))
 
 (use-package consult-dir
