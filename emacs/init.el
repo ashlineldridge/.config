@@ -1072,7 +1072,6 @@
   (project-prompt-project-dir)
   (project-switch-commands
    '((my/consult-project-multi "File" ?f)
-     (project-find-dir "Dir" ?d)
      (project-dired "Dired" ?j)
      (consult-ripgrep "Ripgrep" ?s)
      (magit-project-status "Magit" ?m)
@@ -1184,8 +1183,8 @@
   :general
   (general-def 'corfu-map
     "M-d" #'corfu-popupinfo-toggle
-    "<up>" #'corfu-popupinfo-scroll-down
-    "<down>" #'corfu-popupinfo-scroll-up)
+    "M-p" #'corfu-popupinfo-scroll-down
+    "M-n" #'corfu-popupinfo-scroll-up)
   :hook
   (corfu-mode . corfu-popupinfo-mode)
   :custom
