@@ -2027,10 +2027,15 @@
        (test . go-test-current-project))))
 
   (defun my/build-system-run-action (action)
-    "Execute ACTION using the project's build sytem."
+    "Execute ACTION using the project's build sytem.
+If a prefix argument has been specified, the command is run from the root of
+the current project, otherwise it is run from the current directory."
     (if-let* ((type (my/build-system-type))
               (commands (alist-get type my/build-system-command-alist))
-              (command (alist-get action commands)))
+              (command (alist-get action commands))
+              (default-directory (if current-prefix-arg
+                                     (my/project-current-root)
+                                   default-directory)))
         (funcall command)
       (message "Action %s is not known for this build system" action)))
 
