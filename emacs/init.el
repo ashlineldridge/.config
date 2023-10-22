@@ -1545,7 +1545,7 @@
              my/consult-source-project-file)))   ;; Narrow: ?f (shown)
       (consult-project-buffer)))
 
-  ;; Customize individual consult sources.
+  ;; Customize individual Consult sources.
   (consult-customize
    consult--source-project-buffer
    consult--source-project-buffer-hidden
