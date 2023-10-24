@@ -80,9 +80,7 @@
     "M-[" #'previous-buffer
     "M-]" #'next-buffer
     "M-<backspace>" #'my/delete-to-bol
-    [remap quit-window] #'kill-this-buffer
-    [remap query-replace] #'my/query-replace-wrap
-    [remap query-replace-regexp] #'my/query-replace-regexp-wrap)
+    [remap quit-window] #'kill-this-buffer)
 
   (my/bind-c-x
     "C-k" #'kill-this-buffer
@@ -250,29 +248,6 @@
        (when (symbolp cmd)
          (put cmd 'repeat-map keymap)))
      (symbol-value keymap)))
-
-  (defun my/query-replace-advice (orig-fun &rest args)
-    "Around advice to add wrapping behaviour to `query-replace' and friends."
-    (save-excursion
-      (let ((point-start (point))
-            (point-min (point-min))
-            (region-active (use-region-p)))
-        (apply orig-fun args)
-        (when (and
-               (not region-active)
-               (/= point-start point-min)
-               (yes-or-no-p "Wrap to beginning of buffer? "))
-          (beginning-of-buffer)
-          (setf (nth 3 args) point-min)
-          (setf (nth 4 args) point-start)
-          (apply orig-fun args)))))
-
-  ;; My versions of `query-replace' and `query-replace-regexp' that provide
-  ;; an option to wrap the buffer and return point its starting position.
-  (fset 'my/query-replace-wrap #'query-replace)
-  (fset 'my/query-replace-regexp-wrap #'query-replace-regexp)
-  (advice-add #'my/query-replace-wrap :around #'my/query-replace-advice)
-  (advice-add #'my/query-replace-regexp-wrap :around #'my/query-replace-advice)
 
   ;; Create a theme-agnostic hook that is run after a theme is enabled.
   ;; See: https://www.gnu.org/software/emacs/manual/html_node/modus-themes/A-theme_002dagnostic-hook-for-theme-loading.html.
