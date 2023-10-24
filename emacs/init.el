@@ -1546,13 +1546,66 @@
    :preview-key my/preview-key))
 
 (use-package consult-dir
+  :autoload my/find-subdirs
   :commands consult-dir
   :general
   (my/bind-search
     "d" #'consult-dir)
   :custom
   (consult-dir-shadow-filenames nil)
-  (consult-dir-default-command #'consult-dir-dired))
+  (consult-dir-default-command #'find-file)
+
+  :config
+  (defun my/find-subdirs (&optional dir)
+    "Return a list of all subdirectories of DIR (else `default-directory')."
+    (when-let ((default-directory (or dir default-directory)))
+      (let ((command "fd -L -H -E .git/ -t=d -a -0 -c=never")
+            res)
+        (with-temp-buffer
+          (let ((status (process-file-shell-command command nil t))
+                (pt (point-min)))
+            (unless (zerop status)
+              (error "Error running command '%s' in directory '%s'" command default-directory))
+            (goto-char pt)
+            (while (search-forward "\0" nil t)
+              (push (buffer-substring-no-properties pt (1- (point)))
+                    res)
+              (setq pt (point)))))
+        (mapcar #'abbreviate-file-name (nreverse res)))))
+
+  (defvar my/consult-dir-source-local-subdir
+    `(:name "Local Subdir"
+      :narrow ?l
+      :hidden t
+      :category file
+      :face consult-file
+      :history file-name-history
+      :enabled ,#'my/project-current-root
+      :items ,(lambda () (my/find-subdirs))))
+
+  (defvar my/consult-dir-source-project-subdir
+    `(:name "Project Subdir"
+      :narrow ?p
+      :hidden t
+      :category file
+      :face consult-file
+      :history file-name-history
+      :enabled ,#'my/project-current-root
+      :items ,(lambda () (my/find-subdirs (my/project-current-root)))))
+
+  (consult-customize
+   consult-dir--source-bookmark :name "Bookmark" :narrow ?m
+   consult-dir--source-default :name "Current" :narrow ?.
+   consult-dir--source-project :name "Project" :narrow ?P
+   consult-dir--source-recentf :name "Recent" :narrow ?r :hidden t)
+
+  (setq consult-dir-sources
+        '(consult-dir--source-default
+          my/consult-dir-source-local-subdir
+          my/consult-dir-source-project-subdir
+          consult-dir--source-bookmark
+          consult-dir--source-project
+          consult-dir--source-recentf)))
 
 (use-package embark
   :commands
