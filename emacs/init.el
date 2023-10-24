@@ -1419,7 +1419,7 @@
     (setq xref-show-definitions-function #'consult-xref))
 
   :config
-  (defconst my/preview-key "M-.")
+  (defconst my/preview-key '(:debounce 0.3 any))
 
   (defvar my/consult-source-dired-buffer
     `(:name "Dired Buffer"
