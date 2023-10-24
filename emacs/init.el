@@ -138,7 +138,6 @@
   (column-number-mode t)
   (global-auto-revert-mode t)
   (async-shell-command-buffer 'new-buffer)
-  (shell-command-switch "-ic")
   (history-length 1000)
   (savehist-mode t)
   (savehist-additional-variables
