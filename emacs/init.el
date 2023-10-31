@@ -103,7 +103,7 @@
     "r" '(:ignore t :which-key "refactor")
     "rw" #'delete-trailing-whitespace
     "t" '(:ignore t :which-key "test")
-    "u" '(:ignore t :which-key "ux")
+    "u" '(:ignore t :which-key "util")
     "u|" #'display-fill-column-indicator-mode
     "ul" #'toggle-truncate-lines
     "uw" #'my/toggle-show-trailing-whitespace)
@@ -1252,9 +1252,9 @@
   :elpaca nil
   :hook (minibuffer-setup . vertico-repeat-save)
   :general
-  (general-def
-    ;; Use prefix arg to select from list.
-    "M-R" #'vertico-repeat)
+  (my/bind-c-c
+    "ur" #'vertico-repeat-last
+    "uR" #'vertico-repeat-select)
   :init
   ;; Persist Vertico history between Emacs sessions.
   (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
@@ -1368,7 +1368,7 @@
     "pb" #'consult-project-buffer
     "pf" #'my/consult-project-file
     "rb" #'consult-bookmark
-    "rr" #'consult-register
+    "rj" #'consult-register
     "rl" #'consult-register-load
     "rs" #'consult-register-store)
 
@@ -1522,9 +1522,9 @@
   (consult-customize
    consult--source-project-buffer
    consult--source-project-buffer-hidden
-   :name "Project Buffer" :narrow ?b
+   :name "Project Buffer" :narrow ?p
    consult--source-buffer
-   :name "Open Buffer" :narrow ?o
+   :name "Open Buffer" :narrow ?b
    consult--source-file-register
    :name "Register" :narrow ?g :preview-key my/preview-key
    ;; Due to the value of `consult-preview-key' configured above, the preview
@@ -2381,14 +2381,8 @@ the current project, otherwise it is run from the current directory."
   ;; Unbind Paredit keybindings I don't use that can cause collisions. This
   ;; doesn't work unless I do it under :config rather than :general.
   (general-unbind 'paredit-mode-map
-    "C-c C-M-l"
-    "C-<left>"
-    "C-<right>"
-    "C-M-<left>"
-    "C-M-<right>"
-    "M-S"
-    "M-s"
-    "M-?"))
+    "C-c C-M-l" "C-<left>" "C-<right>" "C-M-<left>" "C-M-<right>"
+    "M-S" "M-r" "M-s" "M-?"))
 
 (use-package rainbow-delimiters
   :hook
@@ -2471,10 +2465,12 @@ the current project, otherwise it is run from the current directory."
     "e" #'eshell)
   (my/bind-c-c :keymaps 'eshell-mode-map
     ;; Needed for `org-open-at-point-global'.
-    "C-o" nil)
-  (eshell-hist-mode-map
-   ;; Needed for search key prefix.
-   "M-s" nil)
+    "C-o" nil
+    "C-<backspace>" #'eshell-kill-output
+    "C-SPC" #'eshell-mark-output)
+  (general-def 'eshell-hist-mode-map
+    ;; Needed for search key prefix.
+    "M-s" nil)
 
   :custom
   (eshell-history-size 10000)
