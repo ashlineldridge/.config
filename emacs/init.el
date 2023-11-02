@@ -72,6 +72,7 @@
 
   :general
   (general-def
+    [remap quit-window] #'kill-this-buffer
     "<escape>" #'keyboard-escape-quit
     "C-;" #'comment-line
     "C-S-k" #'my/copy-to-eol
@@ -80,7 +81,11 @@
     "M-[" #'previous-buffer
     "M-]" #'next-buffer
     "M-<backspace>" #'my/delete-to-bol
-    [remap quit-window] #'kill-this-buffer)
+    ;; Use f7 for visual line-oriented commands.
+    "<f7> n" #'display-line-numbers-mode
+    "<f7> h" #'hl-line-mode
+    "<f7> t" #'toggle-truncate-lines
+    "<f7> |" #'display-fill-column-indicator-mode)
 
   (my/bind-c-x
     "C-k" #'kill-this-buffer
@@ -101,12 +106,9 @@
     "o" '(:ignore t :which-key "org")
     "p" '(:ignore t :which-key "cape")
     "r" '(:ignore t :which-key "refactor")
-    "rw" #'delete-trailing-whitespace
     "t" '(:ignore t :which-key "test")
-    "u" '(:ignore t :which-key "util")
-    "u|" #'display-fill-column-indicator-mode
-    "ul" #'toggle-truncate-lines
-    "uw" #'my/toggle-show-trailing-whitespace)
+    "z" #'delete-trailing-whitespace
+    "Z" #'my/toggle-show-trailing-whitespace)
 
   :custom
   (confirm-kill-emacs #'yes-or-no-p)
@@ -139,9 +141,16 @@
   (global-auto-revert-mode t)
   (async-shell-command-buffer 'new-buffer)
   (history-length 1000)
+  ;; Save bookmarks immediately.
+  (bookmark-save-flag 0)
   (savehist-mode t)
+  ;; Variables to persist between sessions.
   (savehist-additional-variables
-   '(search-ring regexp-search-ring extended-command-history))
+   '(kill-ring
+     search-ring
+     regexp-search-ring
+     register-alist
+     extended-command-history))
   (electric-pair-mode t)
   (electric-pair-inhibit-predicate #'my/electric-pair-inhibit)
   (repeat-mode t)
@@ -195,7 +204,9 @@
   (defun my/toggle-show-trailing-whitespace ()
     "Toggle visibility of trailing whitespace."
     (interactive)
-    (setq show-trailing-whitespace (if show-trailing-whitespace nil t)))
+    (setq show-trailing-whitespace (if show-trailing-whitespace nil t))
+    (message "%s trailing whitespace" (if show-trailing-whitespace
+                                          "Showing" "Hiding")))
 
   (defun my/copy-to-eol ()
     "Copy the text from point to the end of the line."
@@ -250,14 +261,14 @@
 
   ;; Create a theme-agnostic hook that is run after a theme is enabled.
   ;; See: https://www.gnu.org/software/emacs/manual/html_node/modus-themes/A-theme_002dagnostic-hook-for-theme-loading.html.
-  (defvar after-enable-theme-hook nil
+  (defvar my/after-enable-theme-hook nil
     "Hook run after enabling a theme.")
 
-  (defun run-after-enable-theme-hook (&rest _args)
-    "Run `after-enable-theme-hook'."
-    (run-hooks 'after-enable-theme-hook))
+  (defun my/run-after-enable-theme-hook (&rest _args)
+    "Run `my/after-enable-theme-hook' hook."
+    (run-hooks 'my/after-enable-theme-hook))
 
-  (advice-add 'enable-theme :after #'run-after-enable-theme-hook))
+  (advice-add 'enable-theme :after #'my/run-after-enable-theme-hook))
 
 ;;;; Appearance
 
@@ -286,13 +297,9 @@
 
 (use-package faces
   :elpaca nil
-  :general
-  (my/bind-c-c
-    "uf" #'my/cycle-font-config)
-
   :hook
   ;; Update fonts after theme is loaded so changes take effect.
-  (after-enable-theme . my/apply-font-config)
+  (my/after-enable-theme . my/apply-font-config)
 
   :config
   (defvar my/font-config-index 0)
@@ -461,14 +468,6 @@
   :commands minions-mode
   :init
   (minions-mode 1))
-
-;;;;; Other Visuals
-
-(use-package hl-line
-  :elpaca nil
-  :general
-  (my/bind-c-c
-    "uh" #'hl-line-mode))
 
 ;;;; Window Management
 
@@ -1171,8 +1170,7 @@
   :defines corfu-margin-formatters
   :hook
   ;; After toggling between themes the icon cache needs to be reset.
-  ((modus-themes-post-load
-    standard-themes-post-load) . kind-icon-reset-cache)
+  (my/after-enable-theme . kind-icon-reset-cache)
   :custom
   (kind-icon-default-face 'corfu-default)
   :init
@@ -1253,8 +1251,7 @@
   :hook (minibuffer-setup . vertico-repeat-save)
   :general
   (my/bind-c-c
-    "ur" #'vertico-repeat-last
-    "uR" #'vertico-repeat-select)
+    "'" #'vertico-repeat-select)
   :init
   ;; Persist Vertico history between Emacs sessions.
   (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
@@ -1358,9 +1355,6 @@
   (my/bind-c-c 'flymake-mode-map
     "ff" #'consult-flymake)
 
-  (my/bind-c-c
-    "ut" #'consult-theme)
-
   (my/bind-c-x
     "b" #'consult-buffer
     "4b" #'consult-buffer-other-window
@@ -1369,7 +1363,6 @@
     "pf" #'my/consult-project-file
     "rb" #'consult-bookmark
     "rj" #'consult-register
-    "rl" #'consult-register-load
     "rs" #'consult-register-store)
 
   :custom
@@ -1409,7 +1402,7 @@
   :init
   ;; Configure how registers are previewed and displayed.
   ;; See: https://github.com/minad/consult#use-package-example.
-  (setq register-preview-delay 0.3)
+  (setq register-preview-delay 0)
   (setq register-preview-function #'consult-register-format)
   (advice-add #'register-preview :override #'consult-register-window)
 
@@ -1821,9 +1814,6 @@
     "ra" #'eglot-code-actions
     "ro" #'eglot-code-action-organize-imports
     "rr" #'eglot-rename)
-
-  (my/bind-c-c :keymaps 'eglot-mode-map
-    "ui" #'eglot-inlay-hints-mode)
 
   :custom
   (eglot-autoshutdown t)
