@@ -136,7 +136,7 @@
   (global-mark-ring-max 10)
   (vc-follow-symlinks t)
   (compilation-ask-about-save nil)
-  (fill-column 100)
+  (fill-column 80)
   (column-number-mode t)
   (global-auto-revert-mode t)
   (async-shell-command-buffer 'new-buffer)
@@ -2338,7 +2338,6 @@ the current project, otherwise it is run from the current directory."
   :config
   (defun my/elisp-init ()
     "Init function for `emacs-lisp-mode'."
-    (setq-local fill-column 80)
     (setq-local outline-regexp ";;;+ [^\n]")
     (outline-minor-mode 1)
     (setq-local completion-at-point-functions
