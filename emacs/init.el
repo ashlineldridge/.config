@@ -1936,16 +1936,16 @@
 (use-package flymake
   :elpaca nil
   :functions my/repeatize
+  :hook
+  (prog-mode . flymake-mode)
+  (elpaca-after-init . my/flymake-global-init)
+
   :general
   (my/bind-c-c 'flymake-mode-map
     "fd" #'flymake-show-buffer-diagnostics
     "fD" #'flymake-show-project-diagnostics
     "fn" #'flymake-goto-next-error
     "fp" #'flymake-goto-prev-error)
-
-  :hook
-  (prog-mode . flymake-mode)
-  (elpaca-after-init . my/flymake-global-init)
 
   :config
   (defun my/flymake-global-init ()
