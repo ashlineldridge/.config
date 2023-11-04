@@ -1315,23 +1315,28 @@
 
   :general
   (general-def
-    "M-y" #'consult-yank-pop)
+    "M-y" #'consult-yank-pop
+    "<f8>" #'consult-theme)
+
+  (general-def 'consult-narrow-map
+    "C-<" #'consult-narrow-help
+    ;; Remove if this becomes annoying due to needing a '?' character.
+    "?" #'consult-narrow-help)
 
   (general-def 'minibuffer-local-map
     "M-s" nil
     "C-r" #'consult-history)
 
   (general-def 'isearch-mode-map
-    ;; Replace `isearch-edit-string' to get history completion.
-    "M-e" #'consult-isearch-history
-    ;; Allow `consult-line' functions to "take over" from `isearch'.
-    "M-s l" #'consult-line
-    "M-s L" #'consult-line-multi)
+    ;; Replace `isearch-edit-string' with `consult-isearch-history' which acts
+    ;; as a drop-in replacement that also provides history completion.
+    "M-e" #'consult-isearch-history)
 
-  (general-def 'consult-narrow-map
-    "C-<" #'consult-narrow-help
-    ;; Remove if this becomes annoying due to needing a '?' character.
-    "?" #'consult-narrow-help)
+  (my/bind-search 'isearch-mode-map
+    ;; Allow `consult-line' functions to "take over" from `isearch'.
+    ;; TODO: The reverse would be better as I could search by line then within.
+    "l" #'consult-line
+    "L" #'consult-line-multi)
 
   (my/bind-search
     "a" #'consult-org-agenda
