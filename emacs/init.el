@@ -257,41 +257,54 @@
      (lambda (_key cmd)
        (when (symbolp cmd)
          (put cmd 'repeat-map keymap)))
-     (symbol-value keymap)))
-
-  ;; Create a theme-agnostic hook that is run after a theme is enabled.
-  ;; See: https://www.gnu.org/software/emacs/manual/html_node/modus-themes/A-theme_002dagnostic-hook-for-theme-loading.html.
-  (defvar my/after-enable-theme-hook nil
-    "Hook run after enabling a theme.")
-
-  (defun my/run-after-enable-theme-hook (&rest _args)
-    "Run `my/after-enable-theme-hook' hook."
-    (run-hooks 'my/after-enable-theme-hook))
-
-  (advice-add 'enable-theme :after #'my/run-after-enable-theme-hook))
+     (symbol-value keymap))))
 
 ;;;; Appearance
 
 ;;;;; Themes
 
+(use-package custom
+  :elpaca nil
+  :init
+  ;; Default theme loaded by `consult-theme' after init.
+  (defvar my/default-theme 'modus-vivendi)
+
+  ;; Variable pitch headings used by Modus and Ef themes.
+  (defvar my/variable-pitch-headings
+    '((1 . (variable-pitch rainbow background 1.3))
+      (2 . (variable-pitch rainbow background semibold 1.2))
+      (3 . (variable-pitch rainbow background semibold 1.1))
+      (t . (variable-pitch rainbow semilight 1.1))))
+
+  ;; Theme-agnostic hook that is run after a theme is enabled.
+  (defvar my/after-enable-theme-hook nil
+    "Hook run after enabling a theme.")
+
+  ;; Call hooks after the theme is enabled. No need to call `disable-theme'
+  ;; before enabling to avoid "blending" (Prot mentions this in his theme docs)
+  ;; as I use `consult-theme' which does this anyway.
+  (defun my/after-enable-theme (&rest _args)
+    "Run after `enable-theme'."
+    (run-hooks 'my/after-enable-theme-hook))
+  (advice-add #'enable-theme :after #'my/after-enable-theme))
+
 (use-package modus-themes
   :commands modus-themes-load-theme
-  :hook
-  (elpaca-after-init . (lambda ()
-                         (modus-themes-load-theme (car modus-themes-to-toggle))))
   :custom
-  (modus-themes-to-toggle '(modus-vivendi modus-operandi-tinted))
   (modus-themes-italic-constructs t)
   (modus-themes-custom-auto-reload t)
   (modus-themes-prompts '(bold))
   (modus-themes-org-blocks 'gray-background)
-  (modus-themes-headings
-   '((1 . (variable-pitch rainbow background 1.3))
-     (2 . (variable-pitch rainbow background semibold 1.2))
-     (3 . (variable-pitch rainbow background semibold 1.1))
-     (t . (variable-pitch rainbow semilight 1.1)))))
+  (modus-themes-headings my/variable-pitch-headings))
 
-(use-package standard-themes)
+;; TODO: Configure ef-themes on the way home...
+;; See: https://protesilaos.com/emacs/ef-themes
+(use-package ef-themes
+  :custom
+  (ef-themes-mixed-fonts t)
+  (ef-themes-mixed-fonts t)
+  (ef-themes-variable-pitch-ui t)
+  (ef-themes-headings my/variable-pitch-headings))
 
 ;;;;; Fonts
 
@@ -1295,6 +1308,7 @@
 (use-package consult
   :defines
   (consult-imenu-config
+   my/default-theme
    xref-show-xrefs-function
    xref-show-definitions-function)
 
@@ -1308,10 +1322,14 @@
   (declare-function consult--file-state "consult")
   (declare-function consult-register-format "consult")
   (declare-function consult-register-window "consult")
+  (declare-function consult-theme "consult")
   (declare-function consult-xref "consult")
   (declare-function my/project-current-root nil)
   (declare-function project--find-in-directory "project")
   (declare-function project-files "project")
+
+  :hook
+  (elpaca-after-init . (lambda () (consult-theme my/default-theme)))
 
   :general
   (general-def
@@ -1403,6 +1421,9 @@
   ;; the .gitignore file if present.
   (consult-find-args "find -L . -not ( -name .git -type d -prune )")
   (consult-fd-args "fd -p -L -H -E .git/*")
+
+  ;; Only show Modus and Ef themes.
+  (consult-themes '("^modus-" "^ef-"))
 
   :init
   ;; Configure how registers are previewed and displayed.
