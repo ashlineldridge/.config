@@ -2577,8 +2577,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   :hook (vterm-mode . my/vterm-init)
   :general
   (my/bind-c-c
-    "v" #'vterm
-    "C-v" #'my/vterm-nushell)
+    "v" #'vterm)
   (general-unbind 'vterm-mode-map
     "C-o" "C-s" "C-SPC"
     "M-s" "M-g" "M-:" "M-&")
@@ -2612,16 +2611,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     (interactive)
     (let* ((default-directory (project-root (project-current t)))
            (buffer-name (project-prefixed-buffer-name "vterm"))
-           (existing-buffer (get-buffer buffer-name)))
-      (if (and existing-buffer (not current-prefix-arg))
-          (pop-to-buffer existing-buffer)
-        (vterm buffer-name))))
-
-  (defun my/vterm-nushell ()
-    "Launch Nushell in a Vterm buffer."
-    (interactive)
-    (let* ((vterm-shell "/opt/homebrew/bin/nu --config ~/.config/nushell/emacs-config.nu")
-           (buffer-name "*nushell-vterm*")
            (existing-buffer (get-buffer buffer-name)))
       (if (and existing-buffer (not current-prefix-arg))
           (pop-to-buffer existing-buffer)
