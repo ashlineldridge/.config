@@ -750,11 +750,8 @@
 
 (use-package undo-tree
   :commands global-undo-tree-mode
-  :general
-  (general-unbind 'undo-tree-mode-map "C-_")
   :custom
-  ;; Disable history saving for now.
-  (undo-tree-auto-save-history nil)
+  (undo-tree-auto-save-history t)
   (undo-tree-visualizer-timestamps t)
   (undo-tree-visualizer-diff t)
   :init
