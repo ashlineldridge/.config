@@ -1269,6 +1269,9 @@
 (use-package cape
   :general
   (my/bind-c-c
+    "h" #'cape-history)
+
+  (my/bind-c-c
     "cd" #'cape-dabbrev
     "ch" #'cape-history
     "cf" #'cape-file
@@ -1277,8 +1280,6 @@
     "ca" #'cape-abbrev
     "cl" #'cape-line
     "cw" #'cape-dict)
-  (general-def 'eshell-mode-map
-    "C-r" #'cape-history)
 
   :custom
   ;; Only show dabbrev candidates of a minimum length to avoid being annoying.
@@ -1328,6 +1329,8 @@
   (elpaca-after-init . (lambda () (consult-theme my/default-theme)))
 
   :general
+  (general-unbind 'minibuffer-local-map "M-s")
+
   (general-def
     "M-y" #'consult-yank-pop
     "<f8>" #'consult-theme)
@@ -1336,10 +1339,6 @@
     "C-<" #'consult-narrow-help
     ;; Remove if this becomes annoying due to needing a '?' character.
     "?" #'consult-narrow-help)
-
-  (general-def 'minibuffer-local-map
-    "M-s" nil
-    "C-r" #'consult-history)
 
   (general-def 'isearch-mode-map
     ;; Replace `isearch-edit-string' with `consult-isearch-history' which acts
@@ -1370,6 +1369,9 @@
     "I" #'consult-imenu-multi
     "m" #'consult-mark
     "M" #'consult-global-mark)
+
+  (my/bind-c-c
+    "H" #'consult-history)
 
   (my/bind-c-c 'flymake-mode-map
     "ff" #'consult-flymake)
