@@ -50,12 +50,15 @@
   :elpaca nil
   :general
   (my/bind-c-c
-    "pU" #'elpaca-update-all
+    "pp" #'elpaca-manager
+    "pf" #'elpaca-fetch
+    "pF" #'elpaca-fetch-all
+    "pm" #'elpaca-merge
+    "pM" #'elpaca-merge-all
     "pb" #'elpaca-browse
     "pd" #'elpaca-delete
-    "pi" #'elpaca-try
+    "pt" #'elpaca-try
     "pr" #'elpaca-rebuild
-    "pu" #'elpaca-update
     "pv" #'elpaca-visit))
 
 ;;;; Base Settings
