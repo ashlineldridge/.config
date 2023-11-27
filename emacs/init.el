@@ -1340,11 +1340,6 @@
     ;; Remove if this becomes annoying due to needing a '?' character.
     "?" #'consult-narrow-help)
 
-  (general-def 'isearch-mode-map
-    ;; Replace `isearch-edit-string' with `consult-isearch-history' which acts
-    ;; as a drop-in replacement that also provides history completion.
-    "M-e" #'consult-isearch-history)
-
   (my/bind-search 'isearch-mode-map
     ;; Allow `consult-line' functions to "take over" from `isearch'.
     ;; TODO: The reverse would be better as I could search by line then within.
@@ -1375,6 +1370,11 @@
 
   (my/bind-c-c 'flymake-mode-map
     "ff" #'consult-flymake)
+
+  (my/bind-c-c 'isearch-mode-map
+    ;; Use standard history keybinding for `consult-isearch-history' and
+    ;; keep `M-e' as the default keybinding for `isearch-edit-string'.
+    "h" #'consult-isearch-history)
 
   (my/bind-c-x
     "b" #'consult-buffer
