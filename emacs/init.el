@@ -2221,6 +2221,7 @@ the current project, otherwise it is run from the current directory."
   (defun my/go-ts-mode-init ()
     "Init function for `go-ts-mode'."
     (setq-local tab-width go-ts-mode-indent-offset)
+    (setq-local go-test-args "-v")
     (setq-local treesit-defun-name-function #'my/treesit-go-defun-name)
     (setq-local treesit-simple-imenu-settings
                 '(("Constant" "\\`const_spec\\'" nil nil)
