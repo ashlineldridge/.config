@@ -292,7 +292,6 @@
   (advice-add #'enable-theme :after #'my/after-enable-theme))
 
 (use-package modus-themes
-  :commands modus-themes-load-theme
   :custom
   (modus-themes-italic-constructs t)
   (modus-themes-custom-auto-reload t)
@@ -300,11 +299,8 @@
   (modus-themes-org-blocks 'gray-background)
   (modus-themes-headings my/variable-pitch-headings))
 
-;; TODO: Configure ef-themes on the way home...
-;; See: https://protesilaos.com/emacs/ef-themes
 (use-package ef-themes
   :custom
-  (ef-themes-mixed-fonts t)
   (ef-themes-mixed-fonts t)
   (ef-themes-variable-pitch-ui t)
   (ef-themes-headings my/variable-pitch-headings))
