@@ -2574,14 +2574,17 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       buf)))
 
 (use-package vterm
-  :commands (vterm-next-prompt vterm-previous-prompt)
+  :commands (vterm-next-prompt vterm-previous-prompt vterm-send-key)
   :functions (my/repeatize project-prefixed-buffer-name)
   :hook (vterm-mode . my/vterm-init)
   :general
   (my/bind-c-c
     "v" #'vterm)
+  (my/bind-c-c 'vterm-mode-map
+    ;; Same keybinding for shell history as `consult-history' + `cape-history'.
+    "h" (lambda () (interactive) (vterm-send-key (kbd "C-r"))))
   (general-unbind 'vterm-mode-map
-    "C-o" "C-s" "C-SPC"
+    "C-o" "C-r" "C-s" "C-SPC"
     "M-s" "M-g" "M-:" "M-&")
 
   :custom
