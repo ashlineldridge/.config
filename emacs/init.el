@@ -141,7 +141,6 @@
   (compilation-ask-about-save nil)
   (fill-column 80)
   (column-number-mode t)
-  (global-auto-revert-mode t)
   (async-shell-command-buffer 'new-buffer)
   (history-length 1000)
   ;; Save bookmarks immediately.
@@ -645,7 +644,8 @@
      ("\\*helpful" :select t :other t :regexp t)
      ("\\*rg\\*" :select t :other t :regexp t)
      ("\\*Occur\\*" :select t :other t :regexp t)
-     ("\\*Pp" :select nil :other t :regexp t)))
+     ("\\*Pp" :select nil :other t :regexp t)
+     ("^magit-diff:" :select nil :other t :regexp t)))
   :init
   (shackle-mode 1))
 
@@ -2444,9 +2444,12 @@ the current project, otherwise it is run from the current directory."
     "gd" #'magit-dispatch
     "gf" #'magit-file-dispatch)
   :custom
-  ;; Otherwise Magit shows a read-only diff screen when you press C-c C-c and
-  ;; you've already had a chance to look at the diff when you stage the files.
-  (magit-commit-show-diff nil))
+  ;; Show commit diff when writing commit message (Shackle will place the
+  ;; diff buffer in the other window and NOT select it).
+  (magit-commit-show-diff t)
+  ;; Based on advice from: https://magit.vc/manual/magit/Performance.html.
+  (magit-refresh-status-buffer nil)
+  (auto-revert-buffer-list-filter #'magit-auto-revert-repository-buffer-p))
 
 (use-package difftastic)
 
