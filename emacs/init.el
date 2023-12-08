@@ -2663,7 +2663,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    my/org-agenda-refile-archive
    my/org-agenda-refile-personal-ongoing
    my/org-agenda-refile-work-ongoing
-   my/org-agenda-refile-someday-ongoing
    my/org-agenda-refile-inbox)
 
   :general
@@ -2687,7 +2686,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "ra" #'my/org-agenda-refile-archive
     "rp" #'my/org-agenda-refile-personal-ongoing
     "rw" #'my/org-agenda-refile-work-ongoing
-    "rs" #'my/org-agenda-refile-someday-ongoing
     "ri" #'my/org-agenda-refile-inbox
     "k" #'org-agenda-kill
     "?" #'which-key-show-major-mode)
@@ -2927,11 +2925,6 @@ specified then a task category will be determined by the item's tags."
     "Refile the current org agenda item into the work/ongoing list."
     (interactive)
     (my/org-agenda-refile my/gtd-work-file "Projects/Ongoing/Tasks"))
-
-  (defun my/org-agenda-refile-someday-ongoing ()
-    "Refile the current org agenda item into the someday/ongoing list."
-    (interactive)
-    (my/org-agenda-refile my/gtd-someday-file "Projects/Ongoing/Tasks"))
 
   (defun my/org-agenda-refile-inbox ()
     "Refile the current org agenda item into the inbox list."
