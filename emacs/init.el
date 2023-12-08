@@ -2247,12 +2247,15 @@ the current project, otherwise it is run from the current directory."
   :general
   (my/bind-c-c :keymaps 'go-ts-mode-map
     "tf" #'go-test-current-file
-    "tt" #'go-test-current-test))
+    "tt" #'go-test-current-test
+    "tp" #'go-test-current-project
+    "tb" #'go-test-current-benchmark
+    "tc" #'go-test-current-coverage))
 
 (use-package go-gen-test
   :general
   (my/bind-c-c :keymaps 'go-ts-mode-map
-    "rg" #'go-gen-test-dwim))
+    "tg" #'go-gen-test-dwim))
 
 ;;;;;; Haskell
 
