@@ -1383,7 +1383,7 @@
     "pb" #'consult-project-buffer
     "pf" #'my/consult-project-file
     "rb" #'consult-bookmark
-    "rj" #'consult-register
+    "rr" #'consult-register
     "rs" #'consult-register-store)
 
   :custom
@@ -1635,9 +1635,6 @@
     "C-." #'embark-act
     "C-M-." #'embark-dwim
     "C-h b" #'embark-bindings)
-
-  (general-def 'minibuffer-local-map
-    "M-b" #'embark-become)
 
   (general-def 'embark-file-map "o" #'my/ace-find-file)
   (general-def 'embark-buffer-map "o" #'my/ace-switch-to-buffer)
