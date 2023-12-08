@@ -1092,7 +1092,7 @@
   ;; Disable built-in `auto-save-mode' as this replaces it.
   (auto-save-default nil)
   (super-save-auto-save-when-idle t)
-  (super-save-idle-duration 15)
+  (super-save-idle-duration 30)
   (super-save-max-buffer-size 100000)
   :init
   (super-save-mode 1))
@@ -1916,7 +1916,7 @@
     "C-h t" #'eldoc-mode)
   :custom
   (global-eldoc-mode 1)
-  (eldoc-idle-delay 0)
+  (eldoc-idle-delay 0.5)
   ;; Compose docs from multiple sources and display as soon as available.
   (eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
   ;; If an `eldoc-doc-buffer' buffer is visible then prefer that, otherwise
