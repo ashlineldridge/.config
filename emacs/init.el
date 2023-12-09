@@ -1766,53 +1766,33 @@
 
 ;;;;; General Programming
 
-;;;;;; Tree-Sitter
+;;;;;; Treesitter
 
 (use-package treesit
-  ;; Disabled for now. While the Treesitter-powered modes offer some advantages
-  ;; such as richer imenus, they still feel too beta for daily use. Aim to keep
-  ;; the rest of the init configuration such that the TS modes can be enabled
-  ;; again easily.
-  :disabled
   :elpaca nil
   :custom
-  (treesit-font-lock-level 4) ;; Be extra.
+  (treesit-font-lock-level 4)
   (treesit-extra-load-path
-   (list (no-littering-expand-var-file-name "tree-sitter")))
-  :config
-  (defvar my/treesit-language-source-alist
-    '((bash "https://github.com/tree-sitter/tree-sitter-bash")
-      (go "https://github.com/tree-sitter/tree-sitter-go")
-      (gomod "https://github.com/camdencheek/tree-sitter-gomod")
-      (json "https://github.com/tree-sitter/tree-sitter-json")
-      (proto "https://github.com/mitchellh/tree-sitter-proto")
-      (rust "https://github.com/tree-sitter/tree-sitter-rust")
-      (toml "https://github.com/tree-sitter/tree-sitter-toml")
-      (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
-  (setq treesit-language-source-alist my/treesit-language-source-alist)
-  (setq major-mode-remap-alist
-        '((conf-toml-mode . toml-ts-mode)
-          (bash-mode . bash-ts-mode)
-          (go-mode . go-ts-mode)
-          (js-json-mode . json-ts-mode)
-          (rust-mode . rust-ts-mode)
-          (rustic-mode . rust-ts-mode)
-          (sh-mode . bash-ts-mode)
-          (conf-toml-mode . toml-ts-mode)))
+   (list (no-littering-expand-var-file-name "treesit-auto"))))
 
-  (defun my/treesit-update-language-grammars ()
-    "Update all Tree Sitter language grammars."
+(use-package treesit-auto
+  :custom
+  (treesit-auto-install 'prompt)
+  ;; Use TS-powered modes for a smaller set of languages for now.
+  ;; See original value of `treesit-auto-langs' for the full set.
+  (treesit-auto-langs '(bash dockerfile go gomod proto python rust))
+  :config
+  (global-treesit-auto-mode)
+  (treesit-auto-add-to-auto-mode-alist treesit-auto-langs)
+
+  ;; For now, to upgrade grammars, delete ~/.config/emacs/var/treesit-auto,
+  ;; re-open Emacs, and then run `my/treesit-auto-install-all'.
+  (defun my/treesit-auto-install-all ()
+    "Wrapper around `treesit-auto-install-all' that respects no-littering."
     (interactive)
-    ;; Calling `treesit-install-language-grammar' modifies the source alist so
-    ;; so it needs to be reset if called multiple times in the same session.
-    (setq treesit-language-source-alist my/treesit-language-source-alist)
-    ;; Download the latest grammars to the default directory and then move them
-    ;; into the directory managed by no-littering.
+    (treesit-auto-install-all)
     (let ((old-dir (expand-file-name "tree-sitter"  user-emacs-directory))
           (new-dir (car treesit-extra-load-path)))
-      (delete-directory old-dir t)
-      (mapc #'treesit-install-language-grammar
-            (mapcar #'car treesit-language-source-alist))
       (delete-directory new-dir t)
       (rename-file old-dir new-dir))))
 
@@ -2135,18 +2115,8 @@ the current project, otherwise it is run from the current directory."
 
 ;;;;;; Rust
 
-(use-package rustic
-  :general
-  (my/bind-c-c :keymaps '(rust-mode-map rust-ts-mode-map)
-    "tt" #'rustic-cargo-current-test)
-  :custom
-  (rustic-lsp-client 'eglot))
-
 (use-package rust-ts-mode
-  :disabled
   :elpaca nil
-  ;; Demand to register .rs files in `auto-mode-alist'.
-  :demand t
   :hook
   (rust-ts-mode . my/rust-ts-mode-init)
   :config
@@ -2200,22 +2170,25 @@ the current project, otherwise it is run from the current directory."
                            (?s "Struct" my/imenu-category-struct-face)
                            (?t "Trait" my/imenu-category-trait-face))))))
 
+;; Rustic is used for its useful commands (e.g. `rustic-cargo-build'), however
+;; `rust-ts-mode' is used for the major mode for Rust files. The :demand
+;; below forces Rustic to add its entry to `auto-mode-alist' which is then
+;; removed in the :config block so that it doesn't override the entry added
+;; by `treesit-auto' for `rust-ts-mode'. There must be a better way to do this.
+(use-package rustic
+  :demand t
+  :general
+  (my/bind-c-c :keymaps '(rust-mode-map rust-ts-mode-map)
+    "tt" #'rustic-cargo-current-test)
+  :custom
+  (rustic-lsp-client 'eglot)
+  :config
+  (setq auto-mode-alist (delete '("\\.rs\\'" . rustic-mode) auto-mode-alist)))
+
 ;;;;;; Go
 
-(use-package go-mode
-  :hook
-  (go-mode . (lambda () (setq-local tab-width 4)))
-
-  :init
-  ;; Remove the default `go-mode' keybindings.
-  ;; (setq go-mode-map (make-sparse-keymap))
-  )
-
 (use-package go-ts-mode
-  :disabled
   :elpaca nil
-  ;; Demand to register .go files in `auto-mode-alist'.
-  :demand t
   :hook
   (go-ts-mode . my/go-ts-mode-init)
 
@@ -2264,8 +2237,7 @@ the current project, otherwise it is run from the current directory."
 
 (use-package gotest
   :hook
-  (go-mode . (lambda () (setq-local go-test-args "-v")))
-
+  ((go-mode go-ts-mode) . (lambda () (setq-local go-test-args "-v")))
   :general
   (my/bind-c-c :keymaps '(go-mode-map go-ts-mode-map)
     "tf" #'go-test-current-file
@@ -2294,11 +2266,6 @@ the current project, otherwise it is run from the current directory."
   :init
   (setq python-shell-interpreter "python3"))
 
-;;;;;; JavaScript
-
-(use-package js2-mode
-  :mode "\\.js\\'")
-
 ;;;;;; TypeScript
 
 (use-package typescript-mode)
@@ -2321,7 +2288,7 @@ the current project, otherwise it is run from the current directory."
 ;;;;;; Protobuf
 
 (use-package protobuf-ts-mode
-  :disabled
+  :elpaca (:host github :repo "ashlineldridge/protobuf-ts-mode")
   :config
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
@@ -2360,19 +2327,7 @@ the current project, otherwise it is run from the current directory."
 
 ;;;;;; YAML
 
-(use-package yaml-ts-mode
-  :disabled
-  :elpaca nil)
-
-;;;;;; JSON
-
-(use-package json-ts-mode
-  :disabled
-  :elpaca nil)
-
-;;;;;; Jsonnet
-
-(use-package jsonnet-mode)
+(use-package yaml-mode)
 
 ;;;;;; Lisp
 
