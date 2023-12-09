@@ -1769,6 +1769,11 @@
 ;;;;;; Tree-Sitter
 
 (use-package treesit
+  ;; Disabled for now. While the Treesitter-powered modes offer some advantages
+  ;; such as richer imenus, they still feel too beta for daily use. Aim to keep
+  ;; the rest of the init configuration such that the TS modes can be enabled
+  ;; again easily.
+  :disabled
   :elpaca nil
   :custom
   (treesit-font-lock-level 4) ;; Be extra.
@@ -1824,7 +1829,13 @@
   :functions my/flymake-eldoc-show-first
 
   :hook
-  ((go-ts-mode rust-ts-mode bash-ts-mode haskell-mode) . eglot-ensure)
+  ((go-mode
+    go-ts-mode
+    rust-mode
+    rust-ts-mode
+    sh-mode
+    bash-ts-mode
+    haskell-mode) . eglot-ensure)
   (eglot-managed-mode . my/eglot-init)
 
   :general
@@ -2017,6 +2028,7 @@
   (apheleia-global-mode 1)
   :config
   ;; Use goimports rather than gofmt for Go files so imports get optimized.
+  (setf (alist-get 'go-mode apheleia-mode-alist) 'goimports)
   (setf (alist-get 'go-ts-mode apheleia-mode-alist) 'goimports)
   ;; Use Ormolu for formatting Haskell files.
   (setf (alist-get 'haskell-mode apheleia-mode-alist) 'ormolu)
@@ -2123,7 +2135,15 @@ the current project, otherwise it is run from the current directory."
 
 ;;;;;; Rust
 
+(use-package rustic
+  :general
+  (my/bind-c-c :keymaps '(rust-mode-map rust-ts-mode-map)
+    "tt" #'rustic-cargo-current-test)
+  :custom
+  (rustic-lsp-client 'eglot))
+
 (use-package rust-ts-mode
+  :disabled
   :elpaca nil
   ;; Demand to register .rs files in `auto-mode-alist'.
   :demand t
@@ -2180,20 +2200,19 @@ the current project, otherwise it is run from the current directory."
                            (?s "Struct" my/imenu-category-struct-face)
                            (?t "Trait" my/imenu-category-trait-face))))))
 
-(use-package rustic
-  ;; TODO: Look at reintegrating Rustic when it provides tree-sitter support.
-  ;; This package is not disabled as I want to use the `rustic-*' functions.
-  ;; However, `rustic-mode' should not be run as it is mapped to `rust-ts-mode'
-  ;; in `major-mode-remap-alist'. See: https://github.com/brotzeit/rustic/issues/475.
-  :general
-  (my/bind-c-c :keymaps 'rust-ts-mode-map
-    "tt" #'rustic-cargo-current-test)
-  :custom
-  (rustic-lsp-client 'eglot))
-
 ;;;;;; Go
 
+(use-package go-mode
+  :hook
+  (go-mode . (lambda () (setq-local tab-width 4)))
+
+  :init
+  ;; Remove the default `go-mode' keybindings.
+  ;; (setq go-mode-map (make-sparse-keymap))
+  )
+
 (use-package go-ts-mode
+  :disabled
   :elpaca nil
   ;; Demand to register .go files in `auto-mode-alist'.
   :demand t
@@ -2244,8 +2263,11 @@ the current project, otherwise it is run from the current directory."
                            (?v "Variable" my/imenu-category-variable-face))))))
 
 (use-package gotest
+  :hook
+  (go-mode . (lambda () (setq-local go-test-args "-v")))
+
   :general
-  (my/bind-c-c :keymaps 'go-ts-mode-map
+  (my/bind-c-c :keymaps '(go-mode-map go-ts-mode-map)
     "tf" #'go-test-current-file
     "tt" #'go-test-current-test
     "tp" #'go-test-current-project
@@ -2254,7 +2276,7 @@ the current project, otherwise it is run from the current directory."
 
 (use-package go-gen-test
   :general
-  (my/bind-c-c :keymaps 'go-ts-mode-map
+  (my/bind-c-c :keymaps '(go-mode-map go-ts-mode-map)
     "tg" #'go-gen-test-dwim))
 
 ;;;;;; Haskell
@@ -2299,6 +2321,7 @@ the current project, otherwise it is run from the current directory."
 ;;;;;; Protobuf
 
 (use-package protobuf-ts-mode
+  :disabled
   :config
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
@@ -2338,11 +2361,13 @@ the current project, otherwise it is run from the current directory."
 ;;;;;; YAML
 
 (use-package yaml-ts-mode
+  :disabled
   :elpaca nil)
 
 ;;;;;; JSON
 
 (use-package json-ts-mode
+  :disabled
   :elpaca nil)
 
 ;;;;;; Jsonnet
