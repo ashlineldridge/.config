@@ -2437,6 +2437,9 @@ the current project, otherwise it is run from the current directory."
     "go" #'browse-at-remote
     "gk" #'browse-at-remote-kill))
 
+;; Transient is built-in but Magit requires a newer version.
+(use-package transient)
+
 ;;;; Shell/Terminal
 
 (use-package eshell
