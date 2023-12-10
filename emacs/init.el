@@ -2685,6 +2685,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 	((org-agenda-overriding-header "Inbox")
 	 (org-agenda-files '(,my/gtd-inbox-file))))
        (alltodo
+	""
+        ((org-agenda-overriding-header "Recurring")
+	 (org-agenda-files '(,my/gtd-recurring-file))
+	 (org-agenda-sorting-strategy '(priority-down))))
+       (alltodo
         ""
         ((org-agenda-overriding-header "Work")
          (org-agenda-files '(,my/gtd-work-file))
@@ -2717,6 +2722,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 	 (org-agenda-sorting-strategy '(priority-down))))
        (alltodo
 	""
+        ((org-agenda-overriding-header "Recurring")
+	 (org-agenda-files '(,my/gtd-recurring-file))
+	 (org-agenda-sorting-strategy '(priority-down))))
+       (alltodo
+	""
 	((org-agenda-overriding-header "Inbox")
 	 (org-agenda-files '(,my/gtd-inbox-file)))))
       ((org-agenda-tag-filter-preset '("-@work"))))
@@ -2740,6 +2750,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 	"TODO"
         ((org-agenda-overriding-header "Backlog")
 	 (org-agenda-files '(,my/gtd-work-file))
+	 (org-agenda-sorting-strategy '(priority-down))))
+       (alltodo
+	""
+        ((org-agenda-overriding-header "Recurring")
+	 (org-agenda-files '(,my/gtd-recurring-file))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (alltodo
 	""
