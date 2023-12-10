@@ -273,10 +273,8 @@
 
   ;; Variable pitch headings used by Modus and Ef themes.
   (defvar my/variable-pitch-headings
-    '((1 . (variable-pitch rainbow background 1.3))
-      (2 . (variable-pitch rainbow background semibold 1.2))
-      (3 . (variable-pitch rainbow background semibold 1.1))
-      (t . (variable-pitch rainbow semilight 1.1))))
+    '((1 . (variable-pitch semibold 1.2))
+      (t . (variable-pitch semibold 1.1))))
 
   ;; Theme-agnostic hook that is run after a theme is enabled.
   (defvar my/after-enable-theme-hook nil
@@ -2641,8 +2639,8 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    org-restart-font-lock
    my/org-agenda-refile
    my/org-agenda-refile-archive
-   my/org-agenda-refile-personal-ongoing
-   my/org-agenda-refile-work-ongoing
+   my/org-agenda-refile-personal
+   my/org-agenda-refile-work
    my/org-agenda-refile-inbox)
 
   :general
@@ -2663,10 +2661,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (my/bind-c-c :keymaps 'org-mode-map
     "C-S-l" #'org-cliplink)
   (general-def 'org-agenda-mode-map
-    "ra" #'my/org-agenda-refile-archive
-    "rp" #'my/org-agenda-refile-personal-ongoing
-    "rw" #'my/org-agenda-refile-work-ongoing
-    "ri" #'my/org-agenda-refile-inbox
+    "rp" '(my/org-agenda-refile-personal :which-key "personal")
+    "rw" '(my/org-agenda-refile-work :which-key "work")
+    "ra" '(my/org-agenda-refile-archive :which-key "archive")
+    "rs" '(my/org-agenda-refile-someday :which-key "someday")
+    "ri" '(my/org-agenda-refile-inbox :which-key "inbox")
     "k" #'org-agenda-kill
     "?" #'which-key-show-major-mode)
   (general-unbind 'org-mode-map
@@ -2813,12 +2812,12 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (org-pretty-entities t)
   (org-priority-default org-priority-lowest)
   (org-refile-targets
-   `((,my/gtd-archive-file :tag . "refile")
+   `((,my/gtd-archive-file :level . 1)
      (,my/gtd-inbox-file :level . 1)
-     (,my/gtd-personal-file :regexp . "Tasks")
-     (,my/gtd-work-file :regexp . "Tasks")
-     (,my/gtd-someday-file :tag . "refile")
-     (,my/gtd-recurring-file :level . 2)))
+     (,my/gtd-personal-file :level . 1)
+     (,my/gtd-work-file :level . 1)
+     (,my/gtd-someday-file :level . 1)
+     (,my/gtd-recurring-file :level . 1)))
   ;; Show refile headlines as nested paths.
   (org-refile-use-outline-path t)
   (org-special-ctrl-a/e t)
@@ -2878,38 +2877,48 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
                            (string= file (nth 1 refloc))))
                         (org-refile-get-targets)) nil))
 
-  (defun my/org-agenda-refile-archive (&optional category)
-    "Refile the current org agenda item into the appropriate archive.
+  (defun my/org-agenda-refile-personal-or-work (file &optional category)
+    "Refile the current org agenda item into FILE under Personal/ or Work/.
 If CATEGORY is specified it must equal \\='personal or \\='work; if it is not
 specified then a task category will be determined by the item's tags."
     (interactive)
     (let* ((hdm  (org-get-at-bol 'org-hd-marker))
 	   (tags (with-current-buffer (marker-buffer hdm) (org-get-tags hdm))))
       (cond ((or (eq 'personal category) (member "@personal" tags))
-             (my/org-agenda-refile my/gtd-archive-file
-                                   "Personal/Projects/Ongoing/Tasks"))
+             (my/org-agenda-refile file "Personal"))
             ((or (eq 'work category) (member "@work" tags))
-             (my/org-agenda-refile my/gtd-archive-file
-                                   "Work/Projects/Ongoing/Tasks"))
-            (t (cl-case (read-char "Archive as [p]ersonal or [w]ork?")
-                 (?p (my/org-agenda-refile-archive 'personal))
-                 (?w (my/org-agenda-refile-archive 'work))
+             (my/org-agenda-refile file "Work"))
+            (t (cl-case (read-char
+                         (format "Refile into %s as [p]ersonal or [w]ork?"
+                                 (file-name-nondirectory file)))
+                 (?p (my/org-agenda-refile-personal-or-work file 'personal))
+                 (?w (my/org-agenda-refile-personal-or-work file 'work))
                  (t (message "Bad selection")))))))
 
-  (defun my/org-agenda-refile-personal-ongoing ()
-    "Refile the current org agenda item into the personal/ongoing list."
+  (defun my/org-agenda-refile-personal ()
+    "Refile the current org agenda item into the personal list."
     (interactive)
-    (my/org-agenda-refile my/gtd-personal-file "Projects/Ongoing/Tasks"))
+    (my/org-agenda-refile my/gtd-personal-file "Personal"))
 
-  (defun my/org-agenda-refile-work-ongoing ()
-    "Refile the current org agenda item into the work/ongoing list."
+  (defun my/org-agenda-refile-work ()
+    "Refile the current org agenda item into the work list."
     (interactive)
-    (my/org-agenda-refile my/gtd-work-file "Projects/Ongoing/Tasks"))
+    (my/org-agenda-refile my/gtd-work-file "Work"))
 
   (defun my/org-agenda-refile-inbox ()
-    "Refile the current org agenda item into the inbox list."
+    "Refile the current org agenda item into the inbox."
     (interactive)
     (my/org-agenda-refile my/gtd-inbox-file "Inbox"))
+
+  (defun my/org-agenda-refile-archive ()
+    "Refile the current org agenda item into the archive."
+    (interactive)
+    (my/org-agenda-refile-personal-or-work my/gtd-archive-file))
+
+  (defun my/org-agenda-refile-someday ()
+    "Refile the current org agenda item into the someday."
+    (interactive)
+    (my/org-agenda-refile-personal-or-work my/gtd-someday-file))
 
   (defun my/org-toggle-emphasis-markers ()
     "Toggle the display of org emphasis markers."
