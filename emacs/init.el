@@ -32,7 +32,6 @@
   (general-auto-unbind-keys)
   (general-create-definer my/bind-search :prefix "M-s")
   (general-create-definer my/bind-goto :prefix "M-g")
-  (general-create-definer my/bind-window :prefix "C-o")
   (general-create-definer my/bind-c-c :prefix "C-c")
   (general-create-definer my/bind-c-x :prefix "C-x"))
 
@@ -488,22 +487,13 @@
    aw-delete-window
    aw-select)
 
-  :functions
-  (my/split-window-vertically
-   my/split-window-horizontally)
-
   :general
-  (my/bind-window
-    ;; Add `ace-window' to the primary window prefix for completeness; though
-    ;; I pretty much always use the shorter M-o defined below.
-    "a" #'ace-window)
-
   (general-def
     "M-o" #'ace-window)
 
   :custom
   (aw-display-mode-overlay t)
-  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?l ?m))
+  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   (aw-dispatch-always t)
   (aw-background t)
 
@@ -519,28 +509,28 @@
     (delete-frame)
     (other-frame 1))
 
-  (defun my/ace-split-window-vertically (window)
+  (defun my/ace-split-window-below (window)
     "Ace Window action that splits WINDOW vertically and selects the new one."
     (select-window window)
-    (my/split-window-vertically))
+    (split-window-below))
 
-  (defun my/ace-split-window-horizontally (window)
+  (defun my/ace-split-window-right (window)
     "Split WINDOW horizontally."
     (select-window window)
-    (my/split-window-horizontally))
+    (split-window-right))
 
   ;; Personalize Ace Window's dispatch menu (doesn't work when customized via
   ;; the :custom block so need to do via `setq' here).
   (setq aw-dispatch-alist
-        '((?k aw-delete-window "Delete Window")
-          (?K my/ace-delete-frame "Delete Frame")
+        '((?0 aw-delete-window "Delete Window")
           (?1 delete-other-windows "Delete Other Windows")
+          (?2 my/ace-split-window-below "Split Below")
+          (?3 my/ace-split-window-right "Split Right")
+          (?K my/ace-delete-frame "Delete Frame")
           (?w aw-swap-window "Swap Windows")
           (?m aw-move-window "Move Window")
           (?c aw-copy-window "Copy Window")
           (?b my/ace-open-buffer "Open Buffer")
-          (?x my/ace-split-window-vertically "Split Vertical")
-          (?y my/ace-split-window-horizontally "Split Horizontal")
           (?? aw-show-dispatch-help))))
 
 ;; Brings in useful functions such as `transpose-frame', `flip-frame', etc.
@@ -562,31 +552,10 @@
   :elpaca nil
   :functions my/repeatize
   :general
-  (my/bind-window
-    "=" #'balance-windows
-    "]" #'rotate-frame-clockwise
-    "[" #'rotate-frame-anticlockwise
-    "1" #'delete-other-windows
-    "o" #'other-window
-    "C-o" #'other-frame
-    "b" #'shrink-window-horizontally
-    "f" #'enlarge-window-horizontally
-    "n" #'enlarge-window
-    "N" #'make-frame
-    "k" #'delete-window
-    "K" #'delete-frame
-    "p" #'shrink-window
-    "u" #'winner-undo
-    "r" #'winner-redo
-    "x" #'my/split-window-vertically
-    "y" #'my/split-window-horizontally
-    "X" #'flip-frame
-    "Y" #'flop-frame)
-
-  (my/bind-c-x
-    ;; Replace existing splitting bindings.
-    "2" #'my/split-window-vertically
-    "3" #'my/split-window-horizontally)
+  (general-def
+    "M-q" #'bury-buffer)
+  (general-def "C-o"
+    '(:keymap my/window-map))
 
   :custom
   ;; The following provides the default `display-buffer' behaviour for buffers
@@ -597,32 +566,31 @@
   (even-window-sizes nil)
 
   :config
-  (defvar-keymap my/window-repeat-map
-    :doc "Keymap for repeatable window commands."
+  (defvar-keymap my/window-map
+    :doc "Keymap for window commands."
+    "=" #'balance-windows
+    ">" #'rotate-frame-clockwise
+    "<" #'rotate-frame-anticlockwise
+    "<left>" #'shrink-window-horizontally
+    "<right>" #'enlarge-window-horizontally
+    "<up>" #'enlarge-window
+    "<down>" #'shrink-window
+    "0" #'delete-window
+    "1" #'delete-other-windows
+    "2" #'split-window-below
+    "3" #'split-window-right
+    "a" #'ace-window
+    "f" #'flop-frame
+    "F" #'flip-frame
     "o" #'other-window
     "C-o" #'other-frame
-    "b" #'shrink-window-horizontally
-    "f" #'enlarge-window-horizontally
-    "n" #'enlarge-window
-    "p" #'shrink-window
-    "]" #'rotate-frame-clockwise
-    "[" #'rotate-frame-anticlockwise
+    "N" #'make-frame
+    "K" #'delete-frame
     "u" #'winner-undo
     "r" #'winner-redo)
 
-  (my/repeatize 'my/window-repeat-map)
-
-  (defun my/split-window-vertically ()
-    "Split window vertically and select the other window."
-    (interactive)
-    (split-window-vertically)
-    (other-window 1))
-
-  (defun my/split-window-horizontally ()
-    "Split window horizontally and select the other window."
-    (interactive)
-    (split-window-horizontally)
-    (other-window 1)))
+  ;; Make all window commands repeatable.
+  (my/repeatize 'my/window-map))
 
 ;;;;; Window Orchestration
 
@@ -2374,7 +2342,7 @@ the current project, otherwise it is run from the current directory."
   ;; doesn't work unless I do it under :config rather than :general.
   (general-unbind 'paredit-mode-map
     "C-c C-M-l" "C-<left>" "C-<right>" "C-M-<left>" "C-M-<right>"
-    "M-S" "M-r" "M-s" "M-?"))
+    "M-S" "M-q" "M-r" "M-s" "M-?"))
 
 (use-package rainbow-delimiters
   :hook
@@ -2664,6 +2632,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (my/bind-c-c :keymaps 'org-mode-map
     "C-S-l" #'org-cliplink)
   (general-def 'org-agenda-mode-map
+    "rr" '(org-agenda-refile :which-key "refile (select)")
     "rp" '(my/org-agenda-refile-personal :which-key "personal")
     "rw" '(my/org-agenda-refile-work :which-key "work")
     "ra" '(my/org-agenda-refile-archive :which-key "archive")
