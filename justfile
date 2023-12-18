@@ -44,17 +44,17 @@ clean-emacs:
     rm -rf emacs/var/eln-cache
     rm -rf emacs/eln-cache
 
-dump-go-bins:
-    @echo ">>> Saving list of Go binaries"
-    ls -1 $(go-bin-dir) > go-bins.txt
-
 dump-brew-pkgs:
     @echo ">>> Saving list of Brew packages"
     brew bundle dump -f
 
 dump-cargo-bins:
     @echo ">>> Saving list of Cargo binaries"
-    ls -1 $(cargo-bin-dir) > cargo-bins.txt
+    ls -1 {{cargo-bin-dir}} > cargo-bins.txt
+
+dump-go-bins:
+    @echo ">>> Saving list of Go binaries"
+    ls -1 {{go-bin-dir}} > go-bins.txt
 
 # As not all programs respect XDG conventions, this recipe creates symlinks
 # back to files in this repo so that they get source controlled.
@@ -65,4 +65,4 @@ create-symlinks:
     ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
 
 dump-all: dump-cargo-bins dump-go-bins dump-brew-pkgs
-install-alls: create-symlinks install-brew-pkgs install-emacs install-go-bins install-cargo-bins-bins
+install-all: create-symlinks install-brew-pkgs install-cargo-bins install-go-bins install-emacs
