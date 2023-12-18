@@ -82,16 +82,14 @@
     "C-h C-h" nil
     "M-[" #'previous-buffer
     "M-]" #'next-buffer
-    "M-<backspace>" #'my/delete-to-bol
-    ;; Use f7 for visual line-oriented commands.
-    "<f7> n" #'display-line-numbers-mode
-    "<f7> h" #'hl-line-mode
-    "<f7> t" #'toggle-truncate-lines
-    "<f7> |" #'display-fill-column-indicator-mode)
+    "M-<backspace>" #'my/delete-to-bol)
 
   (my/bind-c-x
     "C-k" #'kill-this-buffer
-    "rK" #'my/clear-registers)
+    "rK" #'my/clear-registers
+    "x|" #'display-fill-column-indicator-mode
+    "xh" #'hl-line-mode
+    "xn" #'display-line-numbers-mode)
 
   (my/bind-search
     ;; Add search prefix descriptions.
@@ -1298,8 +1296,7 @@
   (general-unbind 'minibuffer-local-map "M-s")
 
   (general-def
-    "M-y" #'consult-yank-pop
-    "<f8>" #'consult-theme)
+    "M-y" #'consult-yank-pop)
 
   (general-def 'consult-narrow-map
     "C-<" #'consult-narrow-help
@@ -1505,9 +1502,9 @@
   (consult-customize
    consult--source-project-buffer
    consult--source-project-buffer-hidden
-   :name "Project Buffer" :narrow ?p
+   :name "Project Buffer" :narrow ?b
    consult--source-buffer
-   :name "Open Buffer" :narrow ?b
+   :name "Open Buffer" :narrow ?o
    consult--source-file-register
    :name "Register" :narrow ?g :preview-key my/preview-key
    ;; Due to the value of `consult-preview-key' configured above, the preview
@@ -2444,9 +2441,6 @@ the current project, otherwise it is run from the current directory."
 
   (defun my/eshell-init ()
     "Hook function executed when `eshell-mode' is run."
-    ;; Default to not wrapping long eshell lines.
-    (my/truncate-lines)
-
     ;; Don't scroll the buffer around after it has been recentered (using C-l).
     ;; This seems to need to be done as a mode hook rather than in `:config' as
     ;; the latter results in `eshell-output-filter-functions' being set to nil.
