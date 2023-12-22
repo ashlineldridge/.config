@@ -153,6 +153,8 @@
   (electric-pair-mode t)
   (electric-pair-inhibit-predicate #'my/electric-pair-inhibit)
   (repeat-mode t)
+  (repeat-exit-timeout 10)
+  (repeat-echo-function #'my/repeat-echo-mode-line)
   ;; Increase margins slightly.
   (fringe-mode 5)
   ;; Ignore any changes made via the customization UI.
@@ -163,7 +165,7 @@
   (enable-recursive-minibuffers t)
   ;; Display a small "[n]" that shows the minibuffer recursive depth. Another
   ;; option is to use https://github.com/minad/recursion-indicator.
-  (minibuffer-depth-indicate-mode 1)
+  (minibuffer-depth-indicate-mode t)
   ;; Don't allow the cursor in the minibuffer prompt text.
   (minibuffer-prompt-properties
    '(read-only t cursor-intangible t face minibuffer-prompt))
@@ -248,6 +250,13 @@
           (setq register-alist nil)
           (message "Cleared %d registers" len))
       (message "No registers to clear")))
+
+  (defun my/repeat-echo-mode-line (keymap)
+    "Display a repeat mode-line indicator for KEYMAP."
+    ;; The provided `repeat-echo-mode-line' doesn't work for me as it tries
+    ;; to represent an in-progress repeat as an additional mode which I think
+    ;; gets hidden my Minions. This looks nicer anyway.
+    (setq global-mode-string (if keymap repeat-echo-mode-line-string "")))
 
   ;; See: https://karthinks.com/software/it-bears-repeating.
   (defun my/repeatize (keymap)
@@ -448,12 +457,12 @@
 ;;;;; Mode Line
 
 (use-package doom-modeline
-  :commands doom-modeline-mode
   :custom
   ;; Mode line height is determined by the smaller of `doom-modeline-height'
   ;; and the mode line font. The function `doom-modeline--font-height' can be
   ;; called to determine the font height that will be used to calculate the
   ;; height of the mode line.
+  (doom-modeline-mode t)
   (doom-modeline-height 1)
   (doom-modeline-bar-width 4)
   (doom-modeline-lsp t)
@@ -466,14 +475,11 @@
   (doom-modeline-major-mode-icon nil)
   (doom-modeline-buffer-encoding nil)
   (doom-modeline-buffer-state-icon t)
-  (doom-modeline-column-zero-based nil)
-  :init
-  (doom-modeline-mode 1))
+  (doom-modeline-column-zero-based nil))
 
 (use-package minions
-  :commands minions-mode
-  :init
-  (minions-mode 1))
+  :custom
+  (minions-mode t))
 
 ;;;; Window Management
 
@@ -540,9 +546,8 @@
 (use-package winner
   :elpaca nil
   :custom
-  (winner-dont-bind-my-keys t)
-  :init
-  (winner-mode 1))
+  (winner-mode t)
+  (winner-dont-bind-my-keys t))
 
 ;;;;; General Window Commands
 
@@ -599,8 +604,8 @@
 ;; latter gets priority in `display-buffer-alist'; that way, any buffer not
 ;; claimed by Popper will be subject to Shackle's rules.
 (use-package shackle
-  :commands shackle-mode
   :custom
+  (shackle-mode t)
   (shackle-default-rule nil)
   (shackle-rules
    '(("\\*eldoc" :select nil :other t :regexp t)
@@ -609,9 +614,7 @@
      ("\\*rg\\*" :select t :other t :regexp t)
      ("\\*Occur\\*" :select t :other t :regexp t)
      ("\\*Pp" :select nil :other t :regexp t)
-     ("^magit-diff:" :select nil :other t :regexp t)))
-  :init
-  (shackle-mode 1))
+     ("^magit-diff:" :select nil :other t :regexp t))))
 
 (use-package popper
   :after shackle
@@ -630,6 +633,8 @@
   (defvar my/popper-ignore-modes '(grep-mode rg-mode))
 
   :custom
+  (popper-mode t)
+  (popper-echo-mode t)
   (popper-window-height 15)
   (popper-reference-buffers
    '("CAPTURE-.*\\.org"
@@ -659,10 +664,7 @@
                          'mode-line-inactive)))
              (format " %s " (nerd-icons-octicon "nf-oct-pin" :face face)))))
 
-  :init
-  (popper-mode 1)
-  (popper-echo-mode 1)
-
+  :config
   (defun my/popper-kill-popup-stay-open ()
     "Kill the current popup but stay open if there are others."
     (interactive)
@@ -696,30 +698,26 @@
   (helpful-switch-buffer-function #'display-buffer))
 
 (use-package which-key
-  :commands (which-key-mode which-key-add-key-based-replacements)
   :custom
+  (which-key-mode t)
   ;; Use Embark for `prefix-help-command' as it is searchable.
   (which-key-show-early-on-C-h nil)
   (which-key-use-C-h-commands nil)
   (which-key-idle-delay 1.0)
   (which-key-idle-secondary-delay 0.05)
   (which-key-popup-type 'side-window)
-  (which-key-side-window-location '(bottom right))
-  :init
-  (which-key-mode 1))
+  (which-key-side-window-location '(bottom right)))
 
 ;;;; General Editing
 
 ;;;;; Undo/Redo
 
 (use-package undo-tree
-  :commands global-undo-tree-mode
   :custom
+  (global-undo-tree-mode t)
   (undo-tree-auto-save-history t)
   (undo-tree-visualizer-timestamps t)
-  (undo-tree-visualizer-diff t)
-  :init
-  (global-undo-tree-mode 1))
+  (undo-tree-visualizer-diff t))
 
 ;;;;; Region Expansion
 
@@ -1001,9 +999,8 @@
 (use-package recentf
   :elpaca nil
   :custom
-  (recentf-max-saved-items 300)
-  :config
-  (recentf-mode 1))
+  (recentf-mode t)
+  (recentf-max-saved-items 300))
 
 ;;;;; Project Management
 
@@ -1055,11 +1052,10 @@
   :custom
   ;; Disable built-in `auto-save-mode' as this replaces it.
   (auto-save-default nil)
+  (super-save-mode t)
   (super-save-auto-save-when-idle t)
   (super-save-idle-duration 30)
-  (super-save-max-buffer-size 100000)
-  :init
-  (super-save-mode 1))
+  (super-save-max-buffer-size 100000))
 
 ;;;; Completion System
 
@@ -1159,11 +1155,9 @@
 ;; new value.
 (use-package vertico
   :elpaca (:files (:defaults "extensions/*.el"))
-  :commands vertico-mode
   :custom
-  (vertico-count 20)
-  :init
-  (vertico-mode 1))
+  (vertico-mode t)
+  (vertico-count 20))
 
 (use-package vertico-directory
   :after vertico
@@ -1179,8 +1173,8 @@
 (use-package vertico-multiform
   :after vertico
   :elpaca nil
-  :commands vertico-multiform-mode
   :custom
+  (vertico-multiform-mode t)
   (vertico-multiform-categories
    '((imenu buffer)
      (file (vertico-sort-function . my/vertico-sort-dirs-first))))
@@ -1188,9 +1182,6 @@
   ;; Sometimes commands are better when the category is too broad.
   (vertico-multiform-commands
    '((consult-outline buffer)))
-
-  :init
-  (vertico-multiform-mode 1)
 
   :config
   (defun my/vertico-sort-dirs-first (files)
@@ -1739,15 +1730,16 @@
    (list (no-littering-expand-var-file-name "treesit-auto"))))
 
 (use-package treesit-auto
+  :commands (treesit-auto-install-all treesit-auto-add-to-auto-mode-alist)
   :custom
+  (global-treesit-auto-mode t)
   (treesit-auto-install 'prompt)
   ;; Use TS-powered modes for a smaller set of languages for now.
   ;; See original value of `treesit-auto-langs' for the full set.
   (treesit-auto-langs '(bash dockerfile go gomod proto python rust))
-  :config
-  (global-treesit-auto-mode)
-  (treesit-auto-add-to-auto-mode-alist treesit-auto-langs)
 
+  :init
+  (treesit-auto-add-to-auto-mode-alist treesit-auto-langs)
   ;; For now, to upgrade grammars, delete ~/.config/emacs/var/treesit-auto,
   ;; re-open Emacs, and then run `my/treesit-auto-install-all'.
   (defun my/treesit-auto-install-all ()
@@ -1866,7 +1858,7 @@
   (general-def
     "C-h t" #'eldoc-mode)
   :custom
-  (global-eldoc-mode 1)
+  (global-eldoc-mode t)
   (eldoc-idle-delay 0.5)
   ;; Compose docs from multiple sources and display as soon as available.
   (eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
@@ -1966,9 +1958,8 @@
 ;;;;;; Code Formatting
 
 (use-package apheleia
-  :commands apheleia-global-mode
-  :init
-  (apheleia-global-mode 1)
+  :custom
+  (apheleia-global-mode t)
   :config
   ;; Use goimports rather than gofmt for Go files so imports get optimized.
   (setf (alist-get 'go-mode apheleia-mode-alist) 'goimports)
@@ -2932,6 +2923,7 @@ specified then a task category will be determined by the item's tags."
     "nt" #'org-roam-tag-add)
 
   :custom
+  (org-roam-db-autosync-mode 1)
   (org-roam-directory (expand-file-name "notes/" my/pkm-dir))
   ;; Disable `org-roam' completion as it's a bit annoying.
   (org-roam-completion-everywhere nil)
@@ -2963,8 +2955,7 @@ specified then a task category will be determined by the item's tags."
 
   :config
   (require 'org-roam-protocol)
-  (require 'org-roam-dailies)
-  (org-roam-db-autosync-mode 1))
+  (require 'org-roam-dailies))
 
 ;;;; Process Management
 
