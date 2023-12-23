@@ -229,7 +229,7 @@
     (let ((point (point))
           (begin (line-beginning-position)))
       (if (eq point begin)
-          (delete-backward-char 1 nil)
+          (delete-char -1)
         (delete-region (line-beginning-position) (point)))))
 
   (defun my/flash-mode-line ()
@@ -338,55 +338,68 @@
   ;; to discover the font face under point.
   (defface my/imenu-category-constant-face
     '((t :inherit font-lock-constant-face))
-    "Face for displaying constant symbols in imenu.")
+    "Face for displaying constant symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-enum-face
     '((t :inherit font-lock-type-face))
-    "Face for displaying enumeration symbols in imenu.")
+    "Face for displaying enumeration symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-function-face
     '((t :inherit font-lock-function-name-face))
-    "Face for displaying function symbols in imenu.")
+    "Face for displaying function symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-impl-face
     '((t :inherit font-lock-type-face))
-    "Face for displaying implementation symbols in imenu.")
+    "Face for displaying implementation symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-package-face
     '((t :inherit font-lock-constant-face))
-    "Face for displaying package symbols in imenu.")
+    "Face for displaying package symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-macro-face
     '((t :inherit font-lock-preprocessor-face))
-    "Face for displaying macro symbols in imenu.")
+    "Face for displaying macro symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-method-face
     '((t :inherit font-lock-function-name-face))
-    "Face for displaying method symbols in imenu.")
+    "Face for displaying method symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-module-face
     '((t :inherit font-lock-constant-face))
-    "Face for displaying module symbols in imenu.")
+    "Face for displaying module symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-static-face
     '((t :inherit font-lock-constant-face))
-    "Face for displaying static symbols in imenu.")
+    "Face for displaying static symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-struct-face
     '((t :inherit font-lock-type-face))
-    "Face for displaying struct symbols in imenu.")
+    "Face for displaying struct symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-trait-face
     '((t :inherit font-lock-type-face))
-    "Face for displaying trait/interface symbols in imenu.")
+    "Face for displaying trait/interface symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-type-face
     '((t :inherit font-lock-type-face))
-    "Face for displaying type-centric symbols in imenu.")
+    "Face for displaying type-centric symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defface my/imenu-category-variable-face
     '((t :inherit font-lock-variable-name-face))
-    "Face for displaying variable symbols in imenu.")
+    "Face for displaying variable symbols in imenu."
+    :group 'my/imenu-faces)
 
   (defun my/apply-font-config (&optional index)
     "Apply the INDEX'th font configuration from `my/font-configs'."
