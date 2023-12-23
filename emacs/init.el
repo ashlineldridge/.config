@@ -153,7 +153,7 @@
   (electric-pair-mode t)
   (electric-pair-inhibit-predicate #'my/electric-pair-inhibit)
   (repeat-mode t)
-  (repeat-exit-timeout 10)
+  (repeat-exit-timeout 5)
   (repeat-echo-function #'my/repeat-echo-mode-line)
   ;; Increase margins slightly.
   (fringe-mode 5)
@@ -255,8 +255,10 @@
     "Display a repeat mode-line indicator for KEYMAP."
     ;; The provided `repeat-echo-mode-line' doesn't work for me as it tries
     ;; to represent an in-progress repeat as an additional mode which I think
-    ;; gets hidden my Minions. This looks nicer anyway.
-    (setq global-mode-string (if keymap repeat-echo-mode-line-string "")))
+    ;; gets hidden by Minions. This looks cleaner anyway.
+    (setq global-mode-string
+          (when keymap (propertize "↻ " 'face 'mode-line-emphasis)))
+    (force-mode-line-update t))
 
   ;; See: https://karthinks.com/software/it-bears-repeating.
   (defun my/repeatize (keymap)
@@ -465,6 +467,7 @@
   (doom-modeline-mode t)
   (doom-modeline-height 1)
   (doom-modeline-bar-width 4)
+  (doom-modeline-window-width-limit nil)
   (doom-modeline-lsp t)
   (doom-modeline-github nil)
   (doom-modeline-mu4e nil)
