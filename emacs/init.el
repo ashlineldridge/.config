@@ -1076,6 +1076,7 @@
 ;;;; Completion System
 
 (use-package corfu
+  :elpaca (:files (:defaults "extensions/*.el"))
   :commands (corfu-mode global-corfu-mode)
   :functions consult-completion-in-region
 
@@ -1101,6 +1102,8 @@
   ;; don't want autocompleted don't trigger the Corfu pop-up (and subsequent
   ;; completion which inserts a space after the completed word).
   (corfu-auto-delay 0.2)
+  ;; Maximum number of completion candidates.
+  (corfu-count 16)
   ;; Automatically select the first candidate if it does not reference a
   ;; directory. This makes the eshell experience a little more natural.
   (corfu-preselect 'directory)
@@ -1117,11 +1120,9 @@
 
   ;; From: https://github.com/minad/corfu#completing-in-the-minibuffer.
   (defun my/corfu-enable-in-minibuffer ()
-    "Enable Corfu in the minibuffer if `completion-at-point' is bound."
-    (when (where-is-internal #'completion-at-point (list (current-local-map)))
-      ;; Disable automatic documentation echo and popup (if enabled).
-      (setq-local corfu-echo-delay nil
-                  corfu-popupinfo-delay nil)
+    "Enable Corfu in the minibuffer if appropriate."
+    (when (local-variable-p 'completion-at-point-functions)
+      (setq-local corfu-auto nil)
       (corfu-mode 1)))
 
   ;; From: https://github.com/minad/corfu#transfer-completion-to-the-minibuffer.
@@ -1133,33 +1134,51 @@
             completion-cycle-threshold completion-cycling)
         (apply #'consult-completion-in-region completion-in-region--data)))))
 
-;; Documentation shown alongside Corfu completion popups.
 (use-package corfu-popupinfo
   :after corfu
-  :elpaca
-  (:host github :repo "minad/corfu" :files ("extensions/corfu-popupinfo.el"))
+  :elpaca nil
   :general
   (general-def 'corfu-map
-    "M-d" #'corfu-popupinfo-toggle
+    "M-t" #'corfu-popupinfo-toggle)
+  (general-def 'corfu-popupinfo-map
+    "M-d" #'corfu-popupinfo-documentation
+    ;; Unfortunately, Eglot doesn't seem to support :company-location which
+    ;; is what `corfu-popupinfo' uses to determine the code location for the
+    ;; candidate. It does work for Elisp, however.
+    "M-l" #'corfu-popupinfo-location
     "M-p" #'corfu-popupinfo-scroll-down
     "M-n" #'corfu-popupinfo-scroll-up)
   :hook
   (corfu-mode . corfu-popupinfo-mode)
   :custom
-  (corfu-popupinfo-delay 1.0))
+  (corfu-popupinfo-delay 1.0)
+  (corfu-popupinfo-max-height 16))
 
-;; Corfu icons.
-(use-package kind-icon
+(use-package corfu-quick
   :after corfu
-  :commands kind-icon-margin-formatter
-  :defines corfu-margin-formatters
-  :hook
-  ;; After toggling between themes the icon cache needs to be reset.
-  (my/after-enable-theme . kind-icon-reset-cache)
+  :elpaca nil
+  :general
+  (general-def 'corfu-map
+    "'" #'corfu-quick-complete)
   :custom
-  (kind-icon-default-face 'corfu-default)
+  (corfu-quick1 "asdfghjkl")
+  (corfu-quick2 "asdfghjkl"))
+
+(use-package corfu-history
+  :after corfu
+  :elpaca nil
+  :custom
+  (corfu-history-mode t)
   :init
-  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+  ;; Persist Corfu history between Emacs sessions.
+  (add-to-list 'savehist-additional-variables 'corfu-history))
+
+;; Icons used by Corfu's popup.
+(use-package nerd-icons-corfu
+  :after corfu
+  :commands nerd-icons-corfu-formatter
+  :defines corfu-margin-formatters
+  :init (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
 
 ;; Vertico provides the vertical completion minibuffer and Orderless provides
 ;; the "completion style". Some commands that make use of Vertico's selection
@@ -1236,6 +1255,16 @@
   ;; Persist Vertico history between Emacs sessions.
   (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
 
+(use-package vertico-quick
+  :after vertico
+  :elpaca nil
+  :general
+  (general-def 'vertico-map
+    "'" #'vertico-quick-exit)
+  :custom
+  (vertico-quick1 "asdfghjkl")
+  (vertico-quick2 "asdfghjkl"))
+
 ;; Dedicated completion commands.
 (use-package cape
   :general
@@ -1264,7 +1293,12 @@
   :custom
   (completion-styles '(orderless basic))
   (completion-category-defaults nil)
-  (completion-category-overrides nil)
+  ;; While it's possible to set `completion-category-overrides' to nil to go
+  ;; all in on Orderless, it's recommended in the Vertico README to enable
+  ;; `partial-completion' for files so that commands like `find-file' work
+  ;; properly with wildcards (e.g. opening multiple files - need to use M-RET
+  ;; to submit, however).
+  (completion-category-overrides '((file (styles partial-completion))))
   ;; Allow backslash to escape the space to search for literal spaces.
   (orderless-component-separator #'orderless-escapable-split-on-space))
 
@@ -2454,15 +2488,14 @@ the current project, otherwise it is run from the current directory."
     ;; See: https://emacs.stackexchange.com/a/45281
     (remove-hook 'eshell-output-filter-functions
                  'eshell-postoutput-scroll-to-bottom)
-
     ;; Configuration eshell completion.
+    (setq-local corfu-auto nil)
+    (setq-local cape-file-directory-must-exist nil)
     (setq-local completion-at-point-functions
                 (list
                  #'tempel-complete
-                 #'pcomplete-completions-at-point
                  #'cape-file
-                 #'cape-dabbrev))
-
+                 #'pcomplete-completions-at-point))
     ;; Make outline work with eshell prompts.
     (setq-local outline-regexp eshell-prompt-regexp))
 
