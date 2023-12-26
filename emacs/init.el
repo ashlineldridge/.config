@@ -153,7 +153,7 @@
   (electric-pair-mode t)
   (electric-pair-inhibit-predicate #'my/electric-pair-inhibit)
   (repeat-mode t)
-  (repeat-exit-timeout 5)
+  (repeat-exit-timeout 10)
   (repeat-echo-function #'my/repeat-echo-mode-line)
   ;; Increase margins slightly.
   (fringe-mode 5)
@@ -267,7 +267,9 @@
      (lambda (_key cmd)
        (when (symbolp cmd)
          (put cmd 'repeat-map keymap)))
-     (symbol-value keymap))))
+     (symbol-value keymap))
+    ;; Add a quit key.
+    (define-key (symbol-value keymap) (kbd "q") #'ignore)))
 
 ;;;; Appearance
 
@@ -499,73 +501,7 @@
 
 ;;;; Window Management
 
-;;;;; Window Manipulation and Selection
-
-(use-package ace-window
-  :commands
-  (aw-switch-to-window
-   aw-delete-window
-   aw-select)
-
-  :general
-  (general-def
-    "M-o" #'ace-window)
-
-  :custom
-  (aw-display-mode-overlay t)
-  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
-  (aw-dispatch-always t)
-  (aw-background t)
-
-  :config
-  (defun my/ace-open-buffer (window)
-    "Opens a buffer in WINDOW using `consult-buffer'."
-    (aw-switch-to-window window)
-    (consult-buffer))
-
-  (defun my/ace-delete-frame (window)
-    "Ace Window action that deletes WINDOW and kills its buffer."
-    (aw-switch-to-window window)
-    (delete-frame)
-    (other-frame 1))
-
-  (defun my/ace-split-window-below (window)
-    "Ace Window action that splits WINDOW vertically and selects the new one."
-    (select-window window)
-    (split-window-below))
-
-  (defun my/ace-split-window-right (window)
-    "Split WINDOW horizontally."
-    (select-window window)
-    (split-window-right))
-
-  ;; Personalize Ace Window's dispatch menu (doesn't work when customized via
-  ;; the :custom block so need to do via `setq' here).
-  (setq aw-dispatch-alist
-        '((?0 aw-delete-window "Delete Window")
-          (?1 delete-other-windows "Delete Other Windows")
-          (?2 my/ace-split-window-below "Split Below")
-          (?3 my/ace-split-window-right "Split Right")
-          (?K my/ace-delete-frame "Delete Frame")
-          (?w aw-swap-window "Swap Windows")
-          (?m aw-move-window "Move Window")
-          (?c aw-copy-window "Copy Window")
-          (?b my/ace-open-buffer "Open Buffer")
-          (?? aw-show-dispatch-help))))
-
-;; Brings in useful functions such as `transpose-frame', `flip-frame', etc.
-;; See: https://www.emacswiki.org/emacs/TransposeFrame.
-(use-package transpose-frame)
-
-;;;;; Window History
-
-(use-package winner
-  :elpaca nil
-  :custom
-  (winner-mode t)
-  (winner-dont-bind-my-keys t))
-
-;;;;; General Window Commands
+;;;;; General Window Movement and Commands
 
 (use-package window
   :elpaca nil
@@ -573,7 +509,7 @@
   :general
   (general-def
     "M-q" #'bury-buffer)
-  (general-def "C-o"
+  (general-def "M-o"
     '(:keymap my/window-map))
 
   :custom
@@ -598,18 +534,34 @@
     "1" #'delete-other-windows
     "2" #'split-window-below
     "3" #'split-window-right
-    "a" #'ace-window
-    "f" #'flop-frame
-    "F" #'flip-frame
+    "4" #'flop-frame
+    "5" #'flip-frame
     "o" #'other-window
-    "C-o" #'other-frame
-    "N" #'make-frame
-    "K" #'delete-frame
     "u" #'winner-undo
-    "r" #'winner-redo)
+    "r" #'winner-redo
+    "f" #'windmove-right
+    "b" #'windmove-left
+    "p" #'windmove-up
+    "n" #'windmove-down
+    "F" #'windmove-swap-states-right
+    "B" #'windmove-swap-states-left
+    "P" #'windmove-swap-states-up
+    "N" #'windmove-swap-states-down)
 
   ;; Make all window commands repeatable.
   (my/repeatize 'my/window-map))
+
+;; Brings in useful functions such as `transpose-frame', `flip-frame', etc.
+;; See: https://www.emacswiki.org/emacs/TransposeFrame.
+(use-package transpose-frame)
+
+;;;;; Window History
+
+(use-package winner
+  :elpaca nil
+  :custom
+  (winner-mode t)
+  (winner-dont-bind-my-keys t))
 
 ;;;;; Window Orchestration
 
@@ -769,7 +721,9 @@
 ;; https://karthinks.com/software/avy-can-do-anything and
 ;; https://github.com/karthink/.emacs.d/blob/master/lisp/setup-avy.el.
 (use-package avy
-  :functions ring-ref
+  :preface
+  (declare-function ring-ref "ring")
+
   :general
   (general-unbind "M-j")
   (general-def :prefix "M-j"
@@ -785,7 +739,23 @@
     "m" #'avy-move-line
     "M-m" #'avy-move-region)
 
-  :init
+  :custom
+  (avy-single-candidate-jump t)
+  (avy-timeout-seconds 0.4)
+  (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?l ?v ?b))
+  (avy-dispatch-alist
+   '((?k . avy-action-kill-stay)
+     (?K . my/avy-action-kill-whole-line)
+     (?t . avy-action-teleport)
+     (?m . avy-action-mark)
+     (?w . avy-action-copy)
+     (?W . my/avy-action-copy-whole-line)
+     (?y . avy-action-yank)
+     (?Y . avy-action-yank-line)
+     (?z . avy-action-zap-to-char)
+     (?. . my/avy-action-embark-act)))
+
+  :config
   (defun my/avy-action-embark-act (pt)
     "Avy action for running `embark-act' on the selected candidate."
     (unwind-protect
@@ -804,7 +774,6 @@
      (cdr (ring-ref avy-ring 0))) t)
 
   (defun my/avy-action-kill-whole-line (pt)
-    "Avy action for running `kill-whole-line' on the line of the candidate."
     (save-excursion
       (goto-char pt)
       (kill-whole-line))
@@ -821,23 +790,7 @@
         (copy-region-as-kill start end)))
     (select-window
      (cdr
-      (ring-ref avy-ring 0))) t)
-
-  :custom
-  (avy-single-candidate-jump t)
-  (avy-timeout-seconds 0.4)
-  (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?l ?v ?b))
-  (avy-dispatch-alist
-   '((?k . avy-action-kill-stay)
-     (?K . my/avy-action-kill-whole-line)
-     (?t . avy-action-teleport)
-     (?m . avy-action-mark)
-     (?w . avy-action-copy)
-     (?W . my/avy-action-copy-whole-line)
-     (?y . avy-action-yank)
-     (?Y . avy-action-yank-line)
-     (?z . avy-action-zap-to-char)
-     (?. . my/avy-action-embark-act))))
+      (ring-ref avy-ring 0))) t))
 
 (use-package isearch
   :elpaca nil
@@ -888,7 +841,6 @@
     ;; Replace `list-buffers' with `ibuffer'.
     "C-b" #'ibuffer)
   (general-def 'ibuffer-mode-map
-    ;; Keep M-o binding for ace-window.
     "M-o" nil
     ;; Group buffers by VC project.
     "/p" #'ibuffer-vc-set-filter-groups-by-vc-root))
@@ -950,65 +902,6 @@
   ;; Dired face highlighting by file permissions.
   (dired-rainbow-define-chmod directory "#6cb2eb" "d.*")
   (dired-rainbow-define-chmod executable-unix "#38c172" "-.*x.*"))
-
-;; I generally prefer to not use a tree viewer and rely more on dired and the
-;; various file jumping commands, but we've got some huge repos at work where
-;; I find it useful to have a tree viewer so that I can mentally situate myself
-;; within the directory tree. I use treemacs for visualization only and stick
-;; to dired and eshell for manipulation. This treemacs config was inspired by:
-;; https://github.com/seagle0128/.emacs.d/blob/8cbec0c132cd6de06a8c293598a720d377f3f5b9/lisp/init-treemacs.el.
-(use-package treemacs
-  :commands
-  (treemacs
-   treemacs-select-window
-   ;; Used by the inline function `treemacs-current-visibility' below.
-   treemacs-get-local-buffer
-   treemacs-get-local-window)
-  :general
-  (general-def
-    "M-t" #'my/treemacs-stay)
-  (general-def 'treemacs-mode-map
-    ;; Otherwise it takes two clicks to open a directory.
-    [mouse-1] #'treemacs-single-click-expand-action)
-
-  :hook
-  ;; Don't wrap long lines in Treemacs.
-  (treemacs-mode . my/truncate-lines)
-
-  :custom
-  (treemacs-follow-mode t)
-  (treemacs-project-follow-mode t)
-  (treemacs-filewatch-mode t)
-  (treemacs-width 40)
-  (treemacs-missing-project-action 'remove)
-  (treemacs-follow-after-init t)
-
-  :init
-  (defun my/treemacs-stay ()
-    "Open the Treemacs viewer but keep the current window selected."
-    (interactive)
-    (treemacs)
-    ;; If the Treemacs buffer is visible then call `treemacs-select-window'
-    ;; to shift focus back to the previously selected window.
-    (when (eq 'visible (treemacs-current-visibility))
-      (treemacs-select-window)))
-
-  :config
-  ;; By default, treemacs-mode will add itself to `aw-ignored-buffers' which
-  ;; prevents jumping to its window using ace-window. Personally, I prefer
-  ;; being able to treat it just like any other window.
-  (require 'ace-window)
-  (setq aw-ignored-buffers (delq 'treemacs-mode aw-ignored-buffers)))
-
-;; Style the treemacs viewer with nerd icons.
-(use-package treemacs-nerd-icons
-  :after treemacs
-  :functions treemacs-load-theme
-  :custom-face
-  (treemacs-nerd-icons-root-face ((t (:inherit nerd-icons-green :height 1.3))))
-  (treemacs-nerd-icons-file-face ((t (:inherit nerd-icons-dsilver))))
-  :config
-  (treemacs-load-theme "nerd-icons"))
 
 ;;;;; File History
 
@@ -1672,53 +1565,6 @@
       (embark-prefix-help-command)))
 
   :config
-  (defun my/ace-find-file ()
-    "Switch window and run `find-file'."
-    (interactive)
-    ;; Some commands like `find-file' pass the absolute file name whereas
-    ;; the Consult file finding commands pass a project-relative file name.
-    (let* ((root (my/project-current-root))
-           (file (expand-file-name (read-from-minibuffer "") root)))
-      (aw-switch-to-window (aw-select nil))
-      (find-file file)))
-
-  (defun my/ace-switch-to-buffer ()
-    "Switch window and run `switch-to-buffer'."
-    (interactive)
-    (aw-switch-to-window (aw-select nil))
-    (call-interactively #'switch-to-buffer))
-
-  (defun my/ace-bookmark-jump ()
-    "Switch window and run `bookmark-jump'."
-    (interactive)
-    (aw-switch-to-window (aw-select nil))
-    (call-interactively #'bookmark-jump))
-
-  (defun my/ace-org-roam-node-find ()
-    "Switch window and run `org-roam-node-find'."
-    (interactive)
-    (aw-switch-to-window (aw-select nil))
-    (call-interactively #'org-roam-node-find))
-
-  ;; TODO: Is there a better way to do this? This way is flawed as it only
-  ;; navigates to the line rather than where the symbol is on the line.
-  ;; To jump to the actual symbol location, I think `consult-xref' would need
-  ;; to be updated to provide additional info.
-  (defun my/ace-goto-consult-xref ()
-    "Switch window and jump to the xref location (read from the minibuffer)."
-    (interactive)
-    (let ((project-dir (my/project-current-root)))
-      (aw-switch-to-window (aw-select nil))
-      (let* ((xref-location (read-from-minibuffer ""))
-             (parts (string-split xref-location ":"))
-             (file (nth 0 parts))
-             (line (nth 1 parts)))
-        (unless (file-name-absolute-p file)
-          (setq file (expand-file-name file project-dir)))
-        (find-file file)
-        (goto-char (point-min))
-        (forward-line (1- (string-to-number line))))))
-
   (defvar-keymap my/embark-org-roam-node-map
     :doc "Keymap for Embark `org-roam-node' actions."
     :parent embark-general-map)
@@ -2407,9 +2253,7 @@ the current project, otherwise it is run from the current directory."
 (use-package sgml-mode
   :elpaca nil
   :general
-  (general-def 'html-mode-map
-    ;; Unbind M-o as I want that for ace-window.
-    "M-o" nil))
+  (general-unbind 'html-mode-map "M-o"))
 
 ;;;;;; Markdown
 
