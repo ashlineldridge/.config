@@ -812,6 +812,19 @@
     "hl" #'highlight-lines-matching-regexp
     "hu" #'unhighlight-regexp))
 
+(use-package pulsar
+  :commands pulsar-pulse-line
+  :custom
+  (pulsar-global-mode t)
+  (pulsar-delay 0.05)
+  (pulsar-iterations 15)
+  (pulsar-face 'pulsar-cyan)
+  :config
+  ;; TODO: Add multiple to list.
+  (add-to-list 'pulsar-pulse-functions #'avy-goto-char-timer)
+  (add-to-list 'pulsar-pulse-functions #'avy-goto-line)
+  (add-to-list 'pulsar-pulse-functions #'avy-goto-end-of-line))
+
 ;;;;; Templating
 
 (use-package tempel
