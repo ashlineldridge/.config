@@ -820,7 +820,6 @@
   (pulsar-iterations 15)
   (pulsar-face 'pulsar-cyan)
   :config
-  ;; TODO: Add multiple to list.
   (add-to-list 'pulsar-pulse-functions #'avy-goto-char-timer)
   (add-to-list 'pulsar-pulse-functions #'avy-goto-line)
   (add-to-list 'pulsar-pulse-functions #'avy-goto-end-of-line))
@@ -868,7 +867,6 @@
   :elpaca nil
   :general
   (general-def 'dired-mode-map
-    "C-o" nil
     "N" #'dired-create-empty-file
     "?" #'which-key-show-major-mode
     "i" #'dired-subtree-insert
@@ -1084,7 +1082,8 @@
   :after corfu
   :commands nerd-icons-corfu-formatter
   :defines corfu-margin-formatters
-  :init (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
+  :init
+  (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
 
 ;; Vertico provides the vertical completion minibuffer and Orderless provides
 ;; the "completion style". Some commands that make use of Vertico's selection
@@ -1535,22 +1534,12 @@
           consult-dir--source-recentf)))
 
 (use-package embark
-  :commands
-  (embark-prefix-help-command
-   embark-target-identifier-at-point
-   my/goto-consult-xref)
-
+  :commands embark-prefix-help-command
   :general
   (general-def
     "C-." #'embark-act
     "C-M-." #'embark-dwim
     "C-h b" #'embark-bindings)
-
-  (general-def 'embark-file-map "o" #'my/ace-find-file)
-  (general-def 'embark-buffer-map "o" #'my/ace-switch-to-buffer)
-  (general-def 'embark-bookmark-map "o" #'my/ace-bookmark-jump)
-  (general-def 'my/embark-org-roam-node-map "o" #'my/ace-org-roam-node-find)
-  (general-def 'my/embark-consult-xref-map "o" #'my/ace-goto-consult-xref)
 
   :custom
   ;; Just show the minimal "Act" prompt (the default starts with minimal
@@ -1578,18 +1567,6 @@
       (embark-prefix-help-command)))
 
   :config
-  (defvar-keymap my/embark-org-roam-node-map
-    :doc "Keymap for Embark `org-roam-node' actions."
-    :parent embark-general-map)
-
-  (defvar-keymap my/embark-consult-xref-map
-    :doc "Keymap for Embark `consult-xref' actions."
-    :parent embark-general-map)
-
-  (add-to-list 'embark-keymap-alist '(org-roam-node . my/embark-org-roam-node-map))
-  (add-to-list 'embark-keymap-alist '(consult-xref . my/embark-consult-xref-map))
-  (add-to-list 'embark-keymap-alist '(xref . my/embark-consult-xref-map))
-
   ;; Adapt the associated commands so that they are usable as Embark actions.
   ;; If commands don't behave properly with Embark, play with this. Look at
   ;; similar commands already in `embark-target-injection-hooks' and mimic.
@@ -1683,10 +1660,10 @@
   (eglot-managed-mode . my/eglot-init)
 
   :general
-  (my/bind-goto :keymaps 'eglot-mode-map
+  (my/bind-goto 'eglot-mode-map
     "^" #'eglot-find-implementation)
 
-  (my/bind-c-c :keymaps 'eglot-mode-map
+  (my/bind-c-c 'eglot-mode-map
     "ra" #'eglot-code-actions
     "ro" #'eglot-code-action-organize-imports
     "rr" #'eglot-rename)
@@ -1756,7 +1733,7 @@
 
 (use-package consult-eglot
   :general
-  (my/bind-goto :keymap 'eglot-mode-map
+  (my/bind-goto 'eglot-mode-map
     "o" #'consult-eglot-symbols))
 
 ;;;;;; Eldoc
@@ -2041,7 +2018,7 @@ the current project, otherwise it is run from the current directory."
 (use-package rustic
   :demand t
   :general
-  (my/bind-c-c :keymaps '(rust-mode-map rust-ts-mode-map)
+  (my/bind-c-c '(rust-mode-map rust-ts-mode-map)
     "tt" #'rustic-cargo-current-test)
   :custom
   (rustic-lsp-client 'eglot)
@@ -2102,7 +2079,7 @@ the current project, otherwise it is run from the current directory."
   :hook
   ((go-mode go-ts-mode) . (lambda () (setq-local go-test-args "-v")))
   :general
-  (my/bind-c-c :keymaps '(go-mode-map go-ts-mode-map)
+  (my/bind-c-c '(go-mode-map go-ts-mode-map)
     "tf" #'go-test-current-file
     "tt" #'go-test-current-test
     "tp" #'go-test-current-project
@@ -2111,7 +2088,7 @@ the current project, otherwise it is run from the current directory."
 
 (use-package go-gen-test
   :general
-  (my/bind-c-c :keymaps '(go-mode-map go-ts-mode-map)
+  (my/bind-c-c '(go-mode-map go-ts-mode-map)
     "tg" #'go-gen-test-dwim))
 
 ;;;;;; Haskell
@@ -2315,14 +2292,11 @@ the current project, otherwise it is run from the current directory."
   :general
   (my/bind-c-c
     "e" #'eshell)
-  (my/bind-c-c :keymaps 'eshell-mode-map
-    ;; Needed for `org-open-at-point-global'.
-    "C-o" nil
+  (my/bind-c-c 'eshell-mode-map
     "C-<backspace>" #'eshell-kill-output
     "C-SPC" #'eshell-mark-output)
-  (general-def 'eshell-hist-mode-map
-    ;; Needed for search key prefix.
-    "M-s" nil)
+  (general-unbind 'eshell-hist-mode-map
+    "M-s")
 
   :custom
   (eshell-history-size 10000)
@@ -2464,7 +2438,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 (use-package sh-script
   :elpaca nil
   :general
-  (my/bind-c-c :keymaps 'sh-mode-map
+  (my/bind-c-c 'sh-mode-map
     "C-o" nil))
 
 ;;;; Org Mode
@@ -2520,7 +2494,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
            :which-key "capture music")
     ;; Use same keybinding given to `org-open-at-point' in Org mode.
     "C-o" #'org-open-at-point-global)
-  (my/bind-c-c :keymaps 'org-mode-map
+  (my/bind-c-c 'org-mode-map
     "C-S-l" #'org-cliplink)
   (general-def 'org-agenda-mode-map
     "rr" '(org-agenda-refile :which-key "refile (select)")
