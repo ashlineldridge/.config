@@ -1412,8 +1412,8 @@
 
   ;; Customize the list of sources shown by `consult-buffer'.
   (setq consult-buffer-sources
-        '(consult--source-project-buffer ;; Narrow: ?b (shown)
-          consult--source-buffer         ;; Narrow: ?o (shown)
+        '(consult--source-buffer         ;; Narrow: ?b (shown)
+          consult--source-project-buffer ;; Narrow: ?p (shown)
           my/consult-source-dired-buffer ;; Narrow: ?d (hidden)
           my/consult-source-shell-buffer ;; Narrow: ?s (hidden)
           consult--source-file-register  ;; Narrow: ?g (shown)
@@ -1427,7 +1427,7 @@
     "Version of `project-find-file' that uses Consult sources."
     (interactive)
     (let ((consult-project-buffer-sources
-           '(consult--source-project-buffer-hidden      ;; Narrow: ?b (hidden)
+           '(consult--source-project-buffer-hidden      ;; Narrow: ?p (hidden)
              consult--source-project-recent-file-hidden ;; Narrow: ?r (hidden)
              my/consult-source-project-file)))          ;; Narrow: ?f (shown)
       (consult-project-buffer)))
@@ -1439,18 +1439,18 @@
     "Multi-source project finder to be used in `project-switch-commands'."
     (interactive)
     (let ((consult-project-buffer-sources
-           '(consult--source-project-buffer      ;; Narrow: ?b (shown)
+           '(consult--source-project-buffer      ;; Narrow: ?p (shown)
              consult--source-project-recent-file ;; Narrow: ?r (shown)
              my/consult-source-project-file)))   ;; Narrow: ?f (shown)
       (consult-project-buffer)))
 
   ;; Customize individual Consult sources.
   (consult-customize
+   consult--source-buffer
+   :name "Open Buffer" :narrow ?b
    consult--source-project-buffer
    consult--source-project-buffer-hidden
-   :name "Project Buffer" :narrow ?b
-   consult--source-buffer
-   :name "Open Buffer" :narrow ?o
+   :name "Project Buffer" :narrow ?p
    consult--source-file-register
    :name "Register" :narrow ?g :preview-key my/preview-key
    ;; Due to the value of `consult-preview-key' configured above, the preview
