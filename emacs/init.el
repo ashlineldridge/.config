@@ -694,6 +694,18 @@
 
 ;;;; General Editing
 
+;;;;; Text Substitution
+
+(use-package substitute
+  :general
+  (general-def
+    "M-# s" #'substitute-target-below-point
+    "M-# r" #'substitute-target-above-point
+    "M-# d" #'substitute-target-in-defun
+    "M-# b" #'substitute-target-in-buffer)
+  :hook
+  (substitute-post-replace . substitute-report-operation))
+
 ;;;;; Undo/Redo
 
 (use-package undo-tree
