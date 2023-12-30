@@ -572,6 +572,13 @@
   (winner-mode t)
   (winner-dont-bind-my-keys t))
 
+;;;;; Tab Bar
+
+(use-package tab-bar
+  :elpaca nil
+  :custom
+  (tab-bar-show nil))
+
 ;;;;; Window Orchestration
 
 ;; Use Shackle for managing windows that aren't considered to be "popups" by
