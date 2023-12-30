@@ -499,6 +499,15 @@
   :custom
   (minions-mode t))
 
+;;;;; Cursor
+
+(use-package cursory
+  :commands cursory-set-preset
+  :hook
+  (org-mode . (lambda () (cursory-set-preset 'bar :local)))
+  :init
+  (cursory-set-preset 'box))
+
 ;;;; Window Management
 
 ;;;;; General Window Movement and Commands
