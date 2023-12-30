@@ -826,8 +826,8 @@
   (my/bind-search
     "." #'isearch-forward-thing-at-point)
   (general-def 'isearch-mode-map
-    "C-n" #'isearch-repeat-forward
-    "C-p" #'isearch-repeat-backward))
+    ;; The default `isearch-abort' requires multiple C-g if search not found.
+    "C-g" #'isearch-cancel))
 
 ;;;;; Highlighting
 
