@@ -2274,6 +2274,7 @@ the current project, otherwise it is run from the current directory."
 (use-package magit
   :general
   (my/bind-c-c
+    "gc" #'magit-clone
     "gs" #'magit-status
     "gd" #'magit-dispatch
     "gf" #'magit-file-dispatch)
