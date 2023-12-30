@@ -26,14 +26,14 @@ alias kns=kubens
 alias ku=kustomize
 alias tf=terraform
 
-# Replace ls with exa.
-alias ls=exa
-alias l=exa
-alias ll="exa -l"
-alias l.="exa -d .*"
-alias ll.="exa -ld .*"
-alias la="exa -a"
-alias lla="exa -la"
+# Replace ls with eza.
+alias ls=eza
+alias l=eza
+alias ll="eza -l"
+alias l.="eza -d .*"
+alias ll.="eza -ld .*"
+alias la="eza -a"
+alias lla="eza -la"
 
 # Watch every 1 second by default.
 alias watch='watch -n 1 '

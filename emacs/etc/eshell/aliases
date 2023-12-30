@@ -27,13 +27,14 @@ alias kns kubens $1
 alias h helm $*
 alias ku kustomize $*
 
-;; Replace ls with exa.
-alias l exa $*
-alias ll exa -l $*
-alias l. exa -d .* $*
-alias ll. exa -ld .* $*
-alias la exa -a $*
-alias lla exa -la $*
+;; Replace ls with eza.
+alias ls eza
+alias l eza $*
+alias ll eza -l $*
+alias l. eza -d .* $*
+alias ll. eza -ld .* $*
+alias la eza -a $*
+alias lla eza -la $*
 
 ;; Search hidden files/directories except .git.
 alias rg rg --hidden --glob !.git $*
