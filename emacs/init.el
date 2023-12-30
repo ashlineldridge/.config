@@ -2854,6 +2854,18 @@ specified then a task category will be determined by the item's tags."
   (require 'org-roam-protocol)
   (require 'org-roam-dailies))
 
+;;;; Spelling
+
+(use-package jinx
+  :general
+  (general-def
+    "M-$" #'jinx-correct
+    "C-M-$" #'jinx-languages)
+  (my/bind-c-x
+    "xj" #'jinx-mode)
+  :hook
+  (org-mode . jinx-mode))
+
 ;;;; Process Management
 
 (use-package proced
