@@ -699,14 +699,15 @@
 ;;;;; Text Substitution
 
 (use-package substitute
+  :commands substitute-report-operation
   :general
   (general-def
     "M-# s" #'substitute-target-below-point
     "M-# r" #'substitute-target-above-point
     "M-# d" #'substitute-target-in-defun
     "M-# b" #'substitute-target-in-buffer)
-  :hook
-  (substitute-post-replace . substitute-report-operation))
+  :config
+  (add-to-list 'substitute-post-replace-functions #'substitute-report-operation))
 
 ;;;;; Undo/Redo
 
