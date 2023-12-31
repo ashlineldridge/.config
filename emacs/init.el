@@ -508,6 +508,16 @@
   :init
   (cursory-set-preset 'box))
 
+;;;;; Margins
+
+(use-package olivetti
+  :general
+  (general-def
+    "<f7>" #'olivetti-mode)
+  :custom
+  (olivetti-body-width 90)
+  (olivetti-style 'fancy))
+
 ;;;; Window Management
 
 ;;;;; General Window Movement and Commands
