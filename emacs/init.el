@@ -513,6 +513,8 @@
 ;;;;; General Window Movement and Commands
 
 (use-package window
+  ;; Load after winner to override its default repeat map.
+  :after winner
   :elpaca nil
   :functions my/repeatize
   :general
