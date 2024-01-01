@@ -762,80 +762,25 @@
 
 ;;;;; Point Jumping
 
-;; A lot of my Avy inspiration came from the following:
-;; https://karthinks.com/software/avy-can-do-anything and
-;; https://github.com/karthink/.emacs.d/blob/master/lisp/setup-avy.el.
 (use-package avy
-  :preface
-  (declare-function ring-ref "ring")
-
   :general
   (general-unbind "M-j")
   (general-def :prefix "M-j"
     "j" #'avy-goto-char-timer
     "l" #'avy-goto-line
-    "M-l" #'avy-goto-end-of-line
+    "L" #'avy-goto-end-of-line
     "y" #'avy-copy-line
-    "M-y" #'avy-copy-region
+    "Y" #'avy-copy-region
     "k" #'avy-kill-whole-line
-    "M-k" #'avy-kill-region
+    "K" #'avy-kill-region
     "w" #'avy-kill-ring-save-whole-line
-    "M-w" #'avy-kill-ring-save-region
+    "W" #'avy-kill-ring-save-region
     "m" #'avy-move-line
-    "M-m" #'avy-move-region)
-
+    "M" #'avy-move-region)
   :custom
   (avy-single-candidate-jump t)
   (avy-timeout-seconds 0.4)
-  (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?l ?v ?b))
-  (avy-dispatch-alist
-   '((?k . avy-action-kill-stay)
-     (?K . my/avy-action-kill-whole-line)
-     (?t . avy-action-teleport)
-     (?m . avy-action-mark)
-     (?w . avy-action-copy)
-     (?W . my/avy-action-copy-whole-line)
-     (?y . avy-action-yank)
-     (?Y . avy-action-yank-line)
-     (?z . avy-action-zap-to-char)
-     (?. . my/avy-action-embark-act)))
-
-  :config
-  (defun my/avy-action-embark-act (pt)
-    "Avy action for running `embark-act' on the selected candidate."
-    (unwind-protect
-        (save-excursion
-          (goto-char pt)
-          (embark-act))
-      (select-window
-       (cdr (ring-ref avy-ring 0)))) t)
-
-  (defun my/avy-action-kill-line (pt)
-    "Avy action for running `kill-line' on the line of the selected candidate."
-    (save-excursion
-      (goto-char pt)
-      (kill-line))
-    (select-window
-     (cdr (ring-ref avy-ring 0))) t)
-
-  (defun my/avy-action-kill-whole-line (pt)
-    (save-excursion
-      (goto-char pt)
-      (kill-whole-line))
-    (select-window
-     (cdr
-      (ring-ref avy-ring 0))) t)
-
-  (defun my/avy-action-copy-whole-line (pt)
-    "Avy action for copying the whole line of the candidate to the kill ring."
-    (save-excursion
-      (goto-char pt)
-      (cl-destructuring-bind (start . end)
-          (bounds-of-thing-at-point 'line)
-        (copy-region-as-kill start end)))
-    (select-window
-     (cdr
-      (ring-ref avy-ring 0))) t))
+  (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
 
 (use-package isearch
   :elpaca nil
