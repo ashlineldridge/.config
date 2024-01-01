@@ -500,7 +500,7 @@
   :custom
   (minions-mode t))
 
-;;;;; Cursor
+;;;;; Point/Cursor
 
 (use-package cursory
   :commands cursory-set-preset
@@ -508,6 +508,18 @@
   (org-mode . (lambda () (cursory-set-preset 'bar :local)))
   :init
   (cursory-set-preset 'box))
+
+(use-package pulsar
+  :commands pulsar-pulse-line
+  :custom
+  (pulsar-global-mode t)
+  (pulsar-delay 0.05)
+  (pulsar-iterations 15)
+  (pulsar-face 'pulsar-cyan)
+  :config
+  (add-to-list 'pulsar-pulse-functions #'avy-goto-char-timer)
+  (add-to-list 'pulsar-pulse-functions #'avy-goto-line)
+  (add-to-list 'pulsar-pulse-functions #'avy-goto-end-of-line))
 
 ;;;;; Margins
 
@@ -801,18 +813,6 @@
     "hh" #'highlight-regexp
     "hl" #'highlight-lines-matching-regexp
     "hu" #'unhighlight-regexp))
-
-(use-package pulsar
-  :commands pulsar-pulse-line
-  :custom
-  (pulsar-global-mode t)
-  (pulsar-delay 0.05)
-  (pulsar-iterations 15)
-  (pulsar-face 'pulsar-cyan)
-  :config
-  (add-to-list 'pulsar-pulse-functions #'avy-goto-char-timer)
-  (add-to-list 'pulsar-pulse-functions #'avy-goto-line)
-  (add-to-list 'pulsar-pulse-functions #'avy-goto-end-of-line))
 
 ;;;;; Templating
 
