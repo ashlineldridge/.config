@@ -84,13 +84,6 @@
     "M-]" #'next-buffer
     "M-<backspace>" #'my/delete-to-bol)
 
-  (my/bind-c-x
-    "C-k" #'kill-this-buffer
-    "rK" #'my/clear-registers
-    "x|" #'display-fill-column-indicator-mode
-    "xh" #'hl-line-mode
-    "xn" #'display-line-numbers-mode)
-
   (my/bind-search
     ;; Add search prefix descriptions.
     "h" '(:ignore t :which-key "highlight"))
@@ -100,6 +93,7 @@
     "b" '(:ignore t :which-key "build")
     "b1" #'compile
     "b2" #'recompile
+    "c" '(:ignore t :which-key "cape")
     "f" '(:ignore t :which-key "flymake")
     "g" '(:ignore t :which-key "magit")
     "n" '(:ignore t :which-key "notes")
@@ -107,8 +101,16 @@
     "p" '(:ignore t :which-key "cape")
     "r" '(:ignore t :which-key "refactor")
     "t" '(:ignore t :which-key "test")
-    "z" #'delete-trailing-whitespace
-    "Z" #'my/toggle-show-trailing-whitespace)
+    "x" '(:ignore t :which-key "util")
+    "x|" #'display-fill-column-indicator-mode
+    "xh" #'hl-line-mode
+    "xn" #'display-line-numbers-mode
+    "xz" #'delete-trailing-whitespace
+    "xZ" #'my/toggle-show-trailing-whitespace)
+
+  (my/bind-c-x
+    "C-k" #'kill-this-buffer
+    "rK" #'my/clear-registers)
 
   :custom
   (confirm-kill-emacs #'yes-or-no-p)
@@ -279,7 +281,7 @@
   :elpaca nil
   :init
   ;; Default theme loaded by `consult-theme' after init.
-  (defvar my/default-theme 'modus-vivendi)
+  (defvar my/default-theme 'modus-operandi-tinted)
 
   ;; Variable pitch headings used by Modus and Ef themes.
   (defvar my/variable-pitch-headings
@@ -581,8 +583,11 @@
 (use-package winner
   :elpaca nil
   :custom
-  (winner-mode t)
-  (winner-dont-bind-my-keys t))
+  (winner-dont-bind-my-keys t)
+  :init
+  ;; Needs to be enabled via a function call rather than a customization
+  ;; so that `winner-dont-bind-my-keys' takes effect.
+  (winner-mode 1))
 
 ;;;;; Tab Bar
 
@@ -1315,9 +1320,6 @@
     "m" #'consult-mark
     "M" #'consult-global-mark)
 
-  (my/bind-c-c
-    "H" #'consult-history)
-
   (my/bind-c-c 'flymake-mode-map
     "ff" #'consult-flymake)
 
@@ -1453,13 +1455,13 @@
 
   ;; Customize the list of sources shown by `consult-buffer'.
   (setq consult-buffer-sources
-        '(consult--source-buffer         ;; Narrow: ?b (shown)
-          consult--source-project-buffer ;; Narrow: ?p (shown)
-          my/consult-source-dired-buffer ;; Narrow: ?d (hidden)
-          my/consult-source-shell-buffer ;; Narrow: ?s (hidden)
-          consult--source-file-register  ;; Narrow: ?g (shown)
-          consult--source-bookmark       ;; Narrow: ?m (shown)
-          consult--source-recent-file))  ;; Narrow: ?r (hidden)
+        '(consult--source-buffer                ;; Narrow: ?b (shown)
+          consult--source-project-buffer-hidden ;; Narrow: ?p (hidden)
+          my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
+          my/consult-source-shell-buffer        ;; Narrow: ?s (hidden)
+          consult--source-file-register         ;; Narrow: ?g (shown)
+          consult--source-bookmark              ;; Narrow: ?m (shown)
+          consult--source-recent-file))         ;; Narrow: ?r (hidden)
 
   ;; Designed to replace `project-find-file' (which doesn't provide preview),
   ;; this command only shows project files by default but can show project
@@ -2886,7 +2888,7 @@ specified then a task category will be determined by the item's tags."
   (general-def
     "M-$" #'jinx-correct
     "C-M-$" #'jinx-languages)
-  (my/bind-c-x
+  (my/bind-c-c
     "xj" #'jinx-mode)
   :hook
   (org-mode . jinx-mode))
