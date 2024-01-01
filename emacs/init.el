@@ -156,6 +156,7 @@
   (electric-pair-inhibit-predicate #'my/electric-pair-inhibit)
   (repeat-mode t)
   (repeat-exit-timeout 10)
+  (repeat-exit-key (kbd "RET"))
   (repeat-echo-function #'my/repeat-echo-mode-line)
   ;; Increase margins slightly.
   (fringe-mode 5)
@@ -269,9 +270,7 @@
      (lambda (_key cmd)
        (when (symbolp cmd)
          (put cmd 'repeat-map keymap)))
-     (symbol-value keymap))
-    ;; Add a quit key.
-    (define-key (symbol-value keymap) (kbd "q") #'ignore)))
+     (symbol-value keymap))))
 
 ;;;; Appearance
 
@@ -1319,6 +1318,9 @@
     "I" #'consult-imenu-multi
     "m" #'consult-mark
     "M" #'consult-global-mark)
+
+  (my/bind-c-c
+    "xt" #'consult-theme)
 
   (my/bind-c-c 'flymake-mode-map
     "ff" #'consult-flymake)
