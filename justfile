@@ -30,7 +30,7 @@ install-emacs: clean-emacs
     # The entire application is copied rather than creating an alias as that
     # seems to screw with the icon that gets shown by Raycast/Spotlight.
     sudo rm -rf /Applications/Emacs.app
-    sudo cp -r /opt/homebrew/Cellar/emacs-plus@{{emacs-version}}/Emacs.app /Applications/
+    sudo cp -r /opt/homebrew/opt/emacs-plus/Emacs.app /Applications/
     sudo chown -R {{mac-user}}:{{mac-group}} /Applications/Emacs.app
 
 uninstall-emacs:
