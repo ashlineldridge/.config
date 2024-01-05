@@ -1684,7 +1684,9 @@
 
 (use-package eglot
   ;; Use latest. See: https://www.reddit.com/r/emacs/comments/16yny40/how_to_use_the_latest_version_of_eglot_with_elpaca.
-  :elpaca (:inherit elpaca-menu-gnu-devel-elpa)
+  ;; And ignore version checking for now. See: https://github.com/progfolio/elpaca/issues/216#issuecomment-1876204588.
+  :elpaca (:inherit elpaca-menu-gnu-devel-elpa
+           :build (:not elpaca--check-version))
   :commands
   (eglot-completion-at-point
    eglot--current-server-or-lose
@@ -2321,9 +2323,6 @@ the current project, otherwise it is run from the current directory."
     "go" #'browse-at-remote
     "gk" #'browse-at-remote-kill))
 
-;; Transient is built-in but Magit requires a newer version.
-(use-package transient)
-
 ;;;; Shell/Terminal
 
 (use-package eshell
@@ -2902,17 +2901,6 @@ specified then a task category will be determined by the item's tags."
     "C-p" #'proced)
   :custom
   (proced-enable-color-flag t))
-
-;;;; Credential Management
-
-(use-package pass)
-
-(use-package auth-source-pass
-  :elpaca nil
-  :custom
-  (auth-source-do-cache nil)
-  :init
-  (auth-source-pass-enable))
 
 ;;; End:
 (provide 'init)
