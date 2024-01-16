@@ -1008,6 +1008,10 @@
 ;;;; Completion System
 
 (use-package corfu
+  ;; Calling `global-corfu-mode' below invokes `eldoc-add-command' internally
+  ;; and because I'm pulling a later version of Eldoc, Corfu needs to be
+  ;; configured after Eldoc has been loaded.
+  :after eldoc
   :elpaca (:files (:defaults "extensions/*.el"))
   :commands (corfu-mode global-corfu-mode)
   :functions consult-completion-in-region
@@ -1270,6 +1274,7 @@
   (general-unbind 'minibuffer-local-map "M-s")
 
   (general-def
+    "M-i" #'consult-imenu
     "M-y" #'consult-yank-pop)
 
   (general-def 'consult-narrow-map
@@ -1313,10 +1318,14 @@
     ;; keep `M-e' as the default keybinding for `isearch-edit-string'.
     "h" #'consult-isearch-history)
 
+  (my/bind-c-c 'minibuffer-local-map
+    "h" #'consult-history)
+
   (my/bind-c-x
     "b" #'consult-buffer
     "4b" #'consult-buffer-other-window
     "5b" #'consult-buffer-other-frame
+    "tb" #'consult-buffer-other-tab
     "pb" #'consult-project-buffer
     "pf" #'my/consult-project-file
     "rb" #'consult-bookmark
@@ -1670,9 +1679,7 @@
 
 (use-package eglot
   ;; Use latest. See: https://www.reddit.com/r/emacs/comments/16yny40/how_to_use_the_latest_version_of_eglot_with_elpaca.
-  ;; And ignore version checking for now. See: https://github.com/progfolio/elpaca/issues/216#issuecomment-1876204588.
-  :elpaca (:inherit elpaca-menu-gnu-devel-elpa
-           :build (:not elpaca--check-version))
+  :elpaca (:inherit elpaca-menu-gnu-devel-elpa)
   :commands
   (eglot-completion-at-point
    eglot--current-server-or-lose
@@ -1770,7 +1777,15 @@
 ;;;;;; Eldoc
 
 (use-package eldoc
-  :elpaca nil
+  ;; Later versions of Eglot require a later version of Eldoc. The following
+  ;; :preface is required to unload the built-in and allow the new version
+  ;; to be loaded. See:
+  ;; https://github.com/progfolio/elpaca/issues/236#issuecomment-1879838229.
+  :preface
+  (unload-feature 'eldoc t)
+  (setq custom-delayed-init-variables '())
+  (defvar global-eldoc-mode nil)
+
   :general
   (general-def
     "C-h t" #'eldoc-mode)
