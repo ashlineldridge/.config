@@ -172,26 +172,17 @@
    '(read-only t cursor-intangible t face minibuffer-prompt))
   ;; Don't show M-x commands which don't work in the current mode.
   (read-extended-command-predicate #'command-completion-default-include-p)
-  ;; Timezones to be displayed by `world-clock'. Zones names can be found
-  ;; here: https://www.timezoneconverter.com/cgi-bin/tzc.
-  (world-clock-list
-   '(("Australia/Melbourne" "Melbourne")
-     ("America/Los_Angeles" "Seattle")
-     ("America/New_York" "New York")
-     ("Europe/London" "London")
-     ("Europe/Paris" "Paris")
-     ("Europe/Vilnius" "Lithuania")
-     ("Asia/Tokyo" "Tokyo")
-     ("Canada/Eastern" "Toronto")))
 
   :init
   ;; Use y/n rather than yes/no.
   (defalias 'yes-or-no-p #'y-or-n-p)
 
   ;; Enable Emacs functions that are disabled by default.
-  (put 'narrow-to-region 'disabled nil)
-  (put 'upcase-region 'disabled nil)
-  (put 'downcase-region 'disabled nil)
+  (dolist (cmd '(narrow-to-region
+                 upcase-region
+                 downcase-region
+                 set-goal-column))
+    (put cmd 'disabled nil))
 
   (defun my/server-start ()
     "Start Emacs in server mode if it is not already."
@@ -269,6 +260,24 @@
        (when (symbolp cmd)
          (put cmd 'repeat-map keymap)))
      (symbol-value keymap))))
+
+(use-package time
+  :elpaca nil
+  :custom
+  (display-time-mode t)
+  (display-time-default-load-average nil)
+  (display-time-format "%H:%M")
+  ;; Timezones to be displayed by `world-clock'. Zones names can be found
+  ;; here: https://www.timezoneconverter.com/cgi-bin/tzc.
+  (world-clock-list
+   '(("Australia/Melbourne" "Melbourne")
+     ("America/Los_Angeles" "Seattle")
+     ("America/New_York" "New York")
+     ("Europe/London" "London")
+     ("Europe/Paris" "Paris")
+     ("Europe/Vilnius" "Lithuania")
+     ("Asia/Tokyo" "Tokyo")
+     ("Canada/Eastern" "Toronto"))))
 
 ;;;; Appearance
 
@@ -479,24 +488,22 @@
   ;; called to determine the font height that will be used to calculate the
   ;; height of the mode line.
   (doom-modeline-mode t)
-  (doom-modeline-height 1)
-  (doom-modeline-bar-width 4)
-  (doom-modeline-window-width-limit nil)
-  (doom-modeline-lsp t)
-  (doom-modeline-github nil)
-  (doom-modeline-mu4e nil)
-  (doom-modeline-irc nil)
-  (doom-modeline-minor-modes t)
-  (doom-modeline-persp-name nil)
   (doom-modeline-buffer-file-name-style 'relative-from-project)
+  (doom-modeline-lsp t)
+  (doom-modeline-height 20)
+  (doom-modeline-bar-width 4)
+  (doom-modeline-column-zero-based t)
+  (doom-modeline-total-line-number t)
+  (doom-modeline-percent-position nil)
+  (doom-modeline-window-width-limit nil)
   (doom-modeline-major-mode-icon nil)
+  (doom-modeline-buffer-state-icon nil)
+  (doom-modeline-minor-modes nil)
   (doom-modeline-buffer-encoding nil)
-  (doom-modeline-buffer-state-icon t)
-  (doom-modeline-column-zero-based nil))
-
-(use-package minions
-  :custom
-  (minions-mode t))
+  (doom-modeline-time-icon nil)
+  :custom-face
+  ;; Make the time text stand out a bit more.
+  (doom-modeline-time ((t (:inherit doom-modeline-evil-insert-state)))))
 
 ;;;;; Point/Cursor
 
@@ -1745,7 +1752,7 @@
   (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p 3)
   (eldoc-echo-area-display-truncation-message nil)
-  :init
+  :config
   ;; Register commands and command prefixes that can move point to a symbol
   ;; where Eldoc documentation should be shown.
   (eldoc-add-command "embark-dwim")
@@ -2207,7 +2214,7 @@ the current project, otherwise it is run from the current directory."
   ;; doesn't work unless I do it under :config rather than :general.
   (general-unbind 'paredit-mode-map
     "C-c C-M-l" "C-<left>" "C-<right>" "C-M-<left>" "C-M-<right>"
-    "M-S" "M-q" "M-r" "M-s" "M-?"))
+    "M-?" "M-<up>" "M-<down>" "M-S" "M-q" "M-r" "M-s"))
 
 (use-package rainbow-delimiters
   :hook
