@@ -74,7 +74,6 @@
 
   :general
   (general-def
-    [remap quit-window] #'kill-this-buffer
     "<escape>" #'keyboard-escape-quit
     "C-;" #'comment-line
     "C-S-k" #'my/copy-to-eol
@@ -109,7 +108,6 @@
     "xZ" #'my/toggle-show-trailing-whitespace)
 
   (my/bind-c-x
-    "C-k" #'kill-this-buffer
     "rK" #'my/clear-registers)
 
   :custom
@@ -1283,7 +1281,8 @@
     "pf" #'my/consult-project-file
     "rb" #'consult-bookmark
     "rr" #'consult-register
-    "rs" #'consult-register-store)
+    "rs" #'consult-register-store
+    "C-k k" #'consult-kmacro)
 
   :custom
   ;; Type < followed by a prefix key to narrow the available candidates.
