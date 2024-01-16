@@ -536,6 +536,39 @@
   (olivetti-body-width 90)
   (olivetti-style 'fancy))
 
+;;;;; Scrolling
+
+(use-package pixel-scroll
+  :elpaca nil
+  :general
+  (general-def
+    [remap scroll-up-command] #'pixel-scroll-interpolate-down
+    [remap scroll-down-command] #' pixel-scroll-interpolate-up
+    "M-<up>" #'my/pixel-scroll-partial-up
+    "M-<down>" #'my/pixel-scroll-partial-down)
+  :custom
+  (pixel-scroll-precision-mode t)
+  (pixel-scroll-precision-interpolate-page t)
+  :config
+  (defvar my/pixel-scroll-factor 0.3)
+
+  (defun my/pixel-scroll-page (&optional factor)
+    "Scroll up by the page's height multiplied by FACTOR."
+    (let* ((factor (or factor 1.0))
+           (window-height (window-text-height nil t))
+           (delta (* window-height factor)))
+      (pixel-scroll-precision-interpolate delta nil 1)))
+
+  (defun my/pixel-scroll-partial-up ()
+    "Scroll up by `my/pixel-scroll-factor' times the page height."
+    (interactive)
+    (my/pixel-scroll-page my/pixel-scroll-factor))
+
+  (defun my/pixel-scroll-partial-down ()
+    "Scroll down by `my/pixel-scroll-factor' times the page height."
+    (interactive)
+    (my/pixel-scroll-page (- my/pixel-scroll-factor))))
+
 ;;;; Window Management
 
 ;;;;; General Window Movement and Commands
