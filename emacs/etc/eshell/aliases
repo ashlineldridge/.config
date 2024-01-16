@@ -28,7 +28,7 @@ alias h helm $*
 alias ku kustomize $*
 
 ;; Replace ls with eza.
-alias ls eza
+alias ls eza $*
 alias l eza $*
 alias ll eza -l $*
 alias l. eza -d .* $*
