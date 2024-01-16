@@ -287,7 +287,7 @@
   :elpaca nil
   :init
   ;; Default theme loaded by `consult-theme' after init.
-  (defvar my/default-theme 'modus-operandi-tinted)
+  (defvar my/default-theme 'modus-vivendi)
 
   ;; Variable pitch headings used by Modus and Ef themes.
   (defvar my/variable-pitch-headings
