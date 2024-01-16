@@ -2484,6 +2484,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     ;; Use same keybinding given to `org-open-at-point' in Org mode.
     "C-o" #'org-open-at-point-global)
   (my/bind-c-c 'org-mode-map
+    "'" nil
     "C-S-l" #'org-cliplink)
   (general-def 'org-agenda-mode-map
     "rr" '(org-agenda-refile :which-key "refile (select)")
@@ -2662,6 +2663,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   ;; Show refile headlines as nested paths.
   (org-refile-use-outline-path t)
   (org-special-ctrl-a/e t)
+  (org-startup-indented t)
   (org-tags-column 0)
   (org-todo-keywords
    `((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "HOLD(h)" "|" "DONE(d)")))
@@ -2683,7 +2685,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (defun my/org-init ()
     "Init function for `org-mode'."
     (interactive)
-    (org-indent-mode 1)
     (visual-line-mode 1)
     (variable-pitch-mode 1)
     (display-line-numbers-mode 0)
@@ -2781,7 +2782,6 @@ specified then a task category will be determined by the item's tags."
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (use-package org-roam
-  :commands org-roam-db-autosync-mode
   :general
   (my/bind-c-c
     "nl" #'org-roam-buffer-toggle
@@ -2834,9 +2834,7 @@ specified then a task category will be determined by the item's tags."
     "M-$" #'jinx-correct
     "C-M-$" #'jinx-languages)
   (my/bind-c-c
-    "xj" #'jinx-mode)
-  :hook
-  (org-mode . jinx-mode))
+    "xj" #'jinx-mode))
 
 ;;;; Process Management
 
