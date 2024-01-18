@@ -85,7 +85,7 @@
 	(mapconcat #'identity
                    '("/opt/homebrew/opt/gcc/lib/gcc/13"
                      "/opt/homebrew/opt/libgccjit/lib/gcc/13"
-                     "/opt/homebrew/opt/gcc/lib/gcc/13/gcc/aarch64-apple-darwin22/13") ":"))
+                     "/opt/homebrew/opt/gcc/lib/gcc/13/gcc/aarch64-apple-darwin23/13") ":"))
 
 ;; If an early-init-private.el file exists, load it. I use this file to manage
 ;; configuration I don't want to make public. Typically, it's just environment

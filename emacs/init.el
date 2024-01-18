@@ -550,7 +550,7 @@
   (pixel-scroll-precision-mode t)
   (pixel-scroll-precision-interpolate-page t)
   :config
-  (defvar my/pixel-scroll-factor 0.3)
+  (defvar my/pixel-scroll-factor 0.25)
 
   (defun my/pixel-scroll-page (&optional factor)
     "Scroll up by the page's height multiplied by FACTOR."
