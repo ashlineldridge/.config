@@ -156,6 +156,8 @@
   (repeat-exit-timeout 10)
   (repeat-exit-key (kbd "RET"))
   (repeat-echo-function #'my/repeat-echo-mode-line)
+  ;; Use GNU ls (used by dired and supports grouping directories first).
+  (insert-directory-program "gls")
   ;; Increase margins slightly.
   (fringe-mode 5)
   ;; Ignore any changes made via the customization UI.
@@ -467,17 +469,8 @@
   (unless (member "Symbols Nerd Font Mono" (font-family-list))
     (nerd-icons-install-fonts t)))
 
-(use-package nerd-icons-dired
-  :hook (dired-mode . nerd-icons-dired-mode))
-
-(use-package nerd-icons-ibuffer
-  :hook
-  (ibuffer-mode . nerd-icons-ibuffer-mode))
-
-(use-package nerd-icons-completion
-  ;; For some reason, this only seems to work when `nerd-icons-completion-mode.'
-  ;; is called very late in the startup cycle.
-  :hook (elpaca-after-init . nerd-icons-completion-mode))
+;; Package-specific Nerd icon packages (e.g. `nerd-icons-dired') are grouped
+;; with the related package.
 
 ;;;;; Mode Line
 
@@ -887,6 +880,10 @@
 
 (use-package ibuffer-vc)
 
+(use-package nerd-icons-ibuffer
+  :hook
+  (ibuffer-mode . nerd-icons-ibuffer-mode))
+
 ;;;; File System
 
 ;;;;; File Browsing
@@ -894,6 +891,9 @@
 (use-package dired
   :elpaca nil
   :general
+  ;; Allow `dired-goto-file' (via j) straight after jumping with C-x C-j.
+  ;; Without this, repeat mode takes over and j calls `dired-jump' again.
+  (general-unbind 'dired-jump-map "j")
   (general-def 'dired-mode-map
     "N" #'dired-create-empty-file
     "?" #'which-key-show-major-mode
@@ -903,13 +903,12 @@
   :hook
   (dired-mode . auto-revert-mode)
   :custom
-  ;; See more settings here:
-  ;; https://github.com/protesilaos/dotfiles/blob/master/emacs/.emacs.d/prot-emacs-modules/prot-emacs-dired.el
   (dired-recursive-copies 'always)
   (dired-recursive-deletes 'always)
   (delete-by-moving-to-trash t)
   (dired-kill-when-opening-new-dired-buffer t)
-  (dired-use-ls-dired nil))
+  (dired-free-space nil)
+  (dired-listing-switches "-al --group-directories-first"))
 
 (use-package dired-subtree)
 
@@ -941,6 +940,9 @@
   ;; Dired face highlighting by file permissions.
   (dired-rainbow-define-chmod directory "#6cb2eb" "d.*")
   (dired-rainbow-define-chmod executable-unix "#38c172" "-.*x.*"))
+
+(use-package nerd-icons-dired
+  :hook (dired-mode . nerd-icons-dired-mode))
 
 ;;;;; File History
 
@@ -1201,6 +1203,12 @@
   :custom
   (vertico-quick1 "asdfghjkl")
   (vertico-quick2 "asdfghjkl"))
+
+;; Enables Vertico icons.
+(use-package nerd-icons-completion
+  ;; For some reason, this only seems to work when `nerd-icons-completion-mode.'
+  ;; is called very late in the startup cycle.
+  :hook (elpaca-after-init . nerd-icons-completion-mode))
 
 ;; Dedicated completion commands.
 (use-package cape
