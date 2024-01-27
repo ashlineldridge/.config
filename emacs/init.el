@@ -537,8 +537,8 @@
   (general-def
     [remap scroll-up-command] #'pixel-scroll-interpolate-down
     [remap scroll-down-command] #' pixel-scroll-interpolate-up
-    "M-<up>" #'my/pixel-scroll-partial-up
-    "M-<down>" #'my/pixel-scroll-partial-down)
+    "M-S-<up>" #'my/pixel-scroll-partial-up
+    "M-S-<down>" #'my/pixel-scroll-partial-down)
   :custom
   (pixel-scroll-precision-mode t)
   (pixel-scroll-precision-interpolate-page t)
@@ -2532,6 +2532,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    my/org-agenda-refile-inbox)
 
   :general
+  (general-unbind 'org-mode-map
+    "C-'"      ;; Used for Popper.
+    "M-S-<up>" ;; Used for scrolling.
+    "M-S-<down>")
+
   (my/bind-c-c
     "ol" #'org-store-link
     "oa" #'org-agenda
@@ -2546,9 +2551,10 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
            :which-key "capture music")
     ;; Use same keybinding given to `org-open-at-point' in Org mode.
     "C-o" #'org-open-at-point-global)
+
   (my/bind-c-c 'org-mode-map
-    "'" nil
     "C-S-l" #'org-cliplink)
+
   (general-def 'org-agenda-mode-map
     "rr" '(org-agenda-refile :which-key "refile (select)")
     "rp" '(my/org-agenda-refile-personal :which-key "personal")
@@ -2558,9 +2564,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "ri" '(my/org-agenda-refile-inbox :which-key "inbox")
     "k" #'org-agenda-kill
     "?" #'which-key-show-major-mode)
-  (general-unbind 'org-mode-map
-    ;; Used for Popper.
-    "C-'")
 
   :hook
   (org-mode . my/org-init)
