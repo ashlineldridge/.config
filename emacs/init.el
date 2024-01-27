@@ -969,7 +969,7 @@
      (consult-ripgrep "Ripgrep" ?s)
      (magit-project-status "Magit" ?m)
      (project-eshell "Eshell" ?e)
-     (my/project-vterm "Vterm" ?v)
+     (my/vterm-project "Vterm" ?v)
      (project-async-shell-command "Async shell" ?&)))
 
   :config
@@ -2440,8 +2440,14 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       buf)))
 
 (use-package vterm
-  :commands (vterm-next-prompt vterm-previous-prompt vterm-send-key)
-  :functions (my/repeatize project-prefixed-buffer-name)
+  :commands
+  (vterm-next-prompt
+   vterm-previous-prompt
+   vterm-send-key
+   my/vterm-project)
+  :functions
+  (project-prefixed-buffer-name
+   my/repeatize)
   :hook (vterm-mode . my/vterm-init)
   :general
   (my/bind-c-c
