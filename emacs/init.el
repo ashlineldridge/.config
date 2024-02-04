@@ -511,13 +511,15 @@
   :commands pulsar-pulse-line
   :custom
   (pulsar-global-mode t)
-  (pulsar-delay 0.05)
+  (pulsar-delay 0.1)
   (pulsar-iterations 15)
-  (pulsar-face 'pulsar-cyan)
+  (pulsar-face 'pulsar-generic)
   :config
   (add-to-list 'pulsar-pulse-functions #'avy-goto-char-timer)
   (add-to-list 'pulsar-pulse-functions #'avy-goto-line)
-  (add-to-list 'pulsar-pulse-functions #'avy-goto-end-of-line))
+  (add-to-list 'pulsar-pulse-functions #'avy-goto-end-of-line)
+  (add-to-list 'pulsar-pulse-functions #'beginning-of-buffer)
+  (add-to-list 'pulsar-pulse-functions #'end-of-buffer))
 
 ;;;;; Margins
 
@@ -573,9 +575,17 @@
   :functions my/repeatize
   :general
   (general-def
-    "M-q" #'bury-buffer)
+    "M-q" #'bury-buffer
+    "M-H" #'windmove-left
+    "M-J" #'windmove-down
+    "M-K" #'windmove-up
+    "M-L" #'windmove-right
+    "C-M-S-h" #'windmove-swap-states-left
+    "C-M-S-j" #'windmove-swap-states-down
+    "C-M-S-k" #'windmove-swap-states-up
+    "C-M-S-l" #'windmove-swap-states-right)
   (general-def "M-o"
-    '(:keymap my/window-map))
+    '(:keymap my/window-setup-map))
 
   :custom
   ;; The following provides the default `display-buffer' behaviour for buffers
@@ -586,8 +596,8 @@
   (even-window-sizes nil)
 
   :config
-  (defvar-keymap my/window-map
-    :doc "Keymap for window commands."
+  (defvar-keymap my/window-setup-map
+    :doc "Keymap for window setup commands."
     "=" #'balance-windows
     ">" #'rotate-frame-clockwise
     "<" #'rotate-frame-anticlockwise
@@ -601,20 +611,11 @@
     "3" #'split-window-right
     "4" #'flop-frame
     "5" #'flip-frame
-    "o" #'other-window
     "u" #'winner-undo
-    "r" #'winner-redo
-    "f" #'windmove-right
-    "b" #'windmove-left
-    "p" #'windmove-up
-    "n" #'windmove-down
-    "F" #'windmove-swap-states-right
-    "B" #'windmove-swap-states-left
-    "P" #'windmove-swap-states-up
-    "N" #'windmove-swap-states-down)
+    "r" #'winner-redo)
 
   ;; Make all window commands repeatable.
-  (my/repeatize 'my/window-map))
+  (my/repeatize 'my/window-setup-map))
 
 ;; Brings in useful functions such as `transpose-frame', `flip-frame', etc.
 ;; See: https://www.emacswiki.org/emacs/TransposeFrame.
@@ -669,8 +670,7 @@
     "M-'" #'popper-cycle
     "C-M-'" #'popper-toggle-type)
   (general-def 'popper-mode-map
-    "M-k" #'my/popper-kill-popup-stay-open
-    "M-K" #'popper-kill-latest-popup)
+    "M-k" #'my/popper-kill-popup-stay-open)
 
   :preface
   (defvar my/popper-ignore-modes '(grep-mode rg-mode))
@@ -2270,7 +2270,7 @@ the current project, otherwise it is run from the current directory."
   ;; doesn't work unless I do it under :config rather than :general.
   (general-unbind 'paredit-mode-map
     "C-c C-M-l" "C-<left>" "C-<right>" "C-M-<left>" "C-M-<right>"
-    "M-?" "M-<up>" "M-<down>" "M-S" "M-q" "M-r" "M-s"))
+    "M-?" "M-<up>" "M-<down>" "M-S" "M-J" "M-q" "M-r" "M-s"))
 
 (use-package rainbow-delimiters
   :hook
@@ -2457,7 +2457,9 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "h" (lambda () (interactive) (vterm-send-key (kbd "C-r"))))
   (general-unbind 'vterm-mode-map
     "C-o" "C-r" "C-s" "C-SPC"
-    "M-s" "M-g" "M-:" "M-&")
+    "M-s" "M-g" "M-:" "M-&"
+    "M-H" "M-J" "M-K" "M-L"
+    "C-M-H" "C-M-J" "C-M-K" "C-M-L")
 
   :custom
   (vterm-always-compile-module t)
@@ -2539,9 +2541,9 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 
   :general
   (general-unbind 'org-mode-map
-    "C-'"      ;; Used for Popper.
-    "M-S-<up>" ;; Used for scrolling.
-    "M-S-<down>")
+    "C-'"         ;; Used for Popper.
+    "M-S-<up>"    ;; Used for scrolling.
+    "M-S-<down>") ;; Used for scrolling.
 
   (my/bind-c-c
     "ol" #'org-store-link
