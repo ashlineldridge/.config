@@ -290,9 +290,6 @@
 (use-package custom
   :elpaca nil
   :init
-  ;; Default theme loaded by `consult-theme' after init.
-  (defvar my/default-theme 'modus-vivendi)
-
   ;; Variable pitch headings used by Modus and Ef themes.
   (defvar my/variable-pitch-headings
     '((1 . (variable-pitch semibold 1.2))
@@ -1323,7 +1320,11 @@
   (declare-function project-files "project")
 
   :hook
-  (elpaca-after-init . (lambda () (consult-theme my/default-theme)))
+  ;; Use the previously selected theme else default to Modus Vivendi.
+  (elpaca-after-init . (lambda ()
+                         (consult-theme (if consult--theme-history
+                                            (intern (car consult--theme-history))
+                                          'modus-vivendi))))
 
   :general
   (general-unbind 'minibuffer-local-map "M-s")
