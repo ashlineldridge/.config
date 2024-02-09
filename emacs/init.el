@@ -1001,6 +1001,9 @@
 (use-package project
   :elpaca nil
   :general
+  (general-def
+    ;; Short keybinding to easily run build system commands.
+    "C-M-&" #'project-async-shell-command)
   (my/bind-c-x
     "pj" #'project-dired
     "pu" #'my/project-update-list)
