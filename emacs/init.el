@@ -506,15 +506,17 @@
   :commands pulsar-pulse-line
   :custom
   (pulsar-global-mode t)
-  (pulsar-delay 0.1)
+  (pulsar-delay 0.075)
   (pulsar-iterations 15)
   (pulsar-face 'pulsar-generic)
   :config
-  (add-to-list 'pulsar-pulse-functions #'avy-goto-char-timer)
-  (add-to-list 'pulsar-pulse-functions #'avy-goto-line)
-  (add-to-list 'pulsar-pulse-functions #'avy-goto-end-of-line)
-  (add-to-list 'pulsar-pulse-functions #'beginning-of-buffer)
-  (add-to-list 'pulsar-pulse-functions #'end-of-buffer))
+  (add-to-list 'pulsar-pulse-functions 'avy-goto-char-timer)
+  (add-to-list 'pulsar-pulse-functions 'avy-goto-line)
+  (add-to-list 'pulsar-pulse-functions 'avy-goto-end-of-line)
+  (add-to-list 'pulsar-pulse-functions 'my/window-multi-command-left)
+  (add-to-list 'pulsar-pulse-functions 'my/window-multi-command-down)
+  (add-to-list 'pulsar-pulse-functions 'my/window-multi-command-up)
+  (add-to-list 'pulsar-pulse-functions 'my/window-multi-command-right))
 
 ;;;;; Margins
 
@@ -571,16 +573,12 @@
   :general
   (general-def
     "M-q" #'bury-buffer
-    "M-H" #'windmove-left
-    "M-J" #'windmove-down
-    "M-K" #'windmove-up
-    "M-L" #'windmove-right
-    "C-M-S-h" #'windmove-swap-states-left
-    "C-M-S-j" #'windmove-swap-states-down
-    "C-M-S-k" #'windmove-swap-states-up
-    "C-M-S-l" #'windmove-swap-states-right)
+    "M-H" #'my/window-multi-command-left
+    "M-J" #'my/window-multi-command-down
+    "M-K" #'my/window-multi-command-up
+    "M-L" #'my/window-multi-command-right)
   (general-def "M-o"
-    '(:keymap my/window-setup-map))
+    '(:keymap my/window-repeat-map))
 
   :custom
   ;; The following provides the default `display-buffer' behaviour for buffers
@@ -591,8 +589,53 @@
   (even-window-sizes nil)
 
   :config
-  (defvar-keymap my/window-setup-map
-    :doc "Keymap for window setup commands."
+  (require 'windmove)
+
+  (defun my/throw-buffer (dir)
+    "Move the current buffer to the window in direction DIR."
+    (let ((window (selected-window))
+          (buffer (current-buffer))
+          (target (windmove-find-other-window dir))
+          (rev (pcase dir ('up 'down) ('down 'up) ('left))))
+      (if (null target)
+          (user-error "No window %s from selected window" dir)
+        (windmove-do-window-select dir)
+        (switch-to-buffer buffer nil t)
+        (select-window window)
+        (switch-to-prev-buffer))))
+
+  (defun my/window-multi-command (arg dir)
+    "Perform a window action based on ARG in the direction DIR."
+    (pcase arg
+      ('nil (windmove-do-window-select dir))
+      ('(4) (my/throw-buffer dir))
+      ('(16) (windmove-swap-states-in-direction dir))
+      (0 (windmove-delete-in-direction dir))
+      ('- (windmove-display-in-direction dir))
+      (_ (user-error "Unexpected prefix argument: %S" arg))))
+
+  (defun my/window-multi-command-up (arg)
+    "Act towards the window above based on ARG."
+    (interactive "P")
+    (my/window-multi-command arg 'up))
+
+  (defun my/window-multi-command-down (arg)
+    "Act towards the window below based on ARG."
+    (interactive "P")
+    (my/window-multi-command arg 'down))
+
+  (defun my/window-multi-command-left (arg)
+    "Act towards the left window based on ARG."
+    (interactive "P")
+    (my/window-multi-command arg 'left))
+
+  (defun my/window-multi-command-right (arg)
+    "Act towards the right window based on ARG."
+    (interactive "P")
+    (my/window-multi-command arg 'right))
+
+  (defvar-keymap my/window-repeat-map
+    :doc "Keymap for repeatable window commands."
     "=" #'balance-windows
     ">" #'rotate-frame-clockwise
     "<" #'rotate-frame-anticlockwise
@@ -609,8 +652,7 @@
     "u" #'winner-undo
     "r" #'winner-redo)
 
-  ;; Make all window commands repeatable.
-  (my/repeatize 'my/window-setup-map))
+  (my/repeatize 'my/window-repeat-map))
 
 ;; Brings in useful functions such as `transpose-frame', `flip-frame', etc.
 ;; See: https://www.emacswiki.org/emacs/TransposeFrame.
@@ -660,12 +702,12 @@
   :commands
   (popper-mode popper-echo-mode popper-kill-latest-popup popper-open-latest)
   :general
+  ;; Popper commands are driven by key chords based on single quote.
   (general-def
     "C-'" #'popper-toggle
     "M-'" #'popper-cycle
-    "C-M-'" #'popper-toggle-type)
-  (general-def 'popper-mode-map
-    "M-k" #'my/popper-kill-popup-stay-open)
+    "C-M-'" #'popper-toggle-type
+    "C-M-\"" #'my/popper-kill-popup-stay-open)
 
   :preface
   (defvar my/popper-ignore-modes '(grep-mode rg-mode))
