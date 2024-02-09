@@ -2398,8 +2398,11 @@ the current project, otherwise it is run from the current directory."
   (my/bind-c-c 'eshell-mode-map
     "C-<backspace>" #'eshell-kill-output
     "C-SPC" #'eshell-mark-output)
+  (general-def 'eshell-mode-map
+    "C-S-<backspace>" #'my/eshell-kill-whole-line)
   (general-unbind 'eshell-hist-mode-map
-    "M-s")
+    "M-s"  ;; Search prefix.
+    "M-r") ;; Prefer globally bound `move-to-window-line-top-bottom'.
 
   :custom
   (eshell-history-size 10000)
@@ -2488,7 +2491,13 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     (let* ((name (or name (generate-new-buffer-name "*eshell-output*")))
            (buf (get-buffer-create name)))
       (display-buffer buf)
-      buf)))
+      buf))
+
+  (defun my/eshell-kill-whole-line ()
+    "Eshell version of `kill-whole-line' that respects the prompt, if any."
+    (interactive)
+    (eshell-bol)
+    (kill-line)))
 
 (use-package vterm
   :commands
@@ -2508,7 +2517,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "h" (lambda () (interactive) (vterm-send-key (kbd "C-r"))))
   (general-unbind 'vterm-mode-map
     "C-o" "C-r" "C-s" "C-SPC"
-    "M-s" "M-g" "M-:" "M-&"
+    "M-s" "M-g" "M-:" "M-&" "M-'"
     "M-H" "M-J" "M-K" "M-L"
     "C-M-H" "C-M-J" "C-M-K" "C-M-L")
 
