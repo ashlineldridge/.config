@@ -939,15 +939,25 @@
     "M-s" nil)
   :hook
   (dired-mode . auto-revert-mode)
+  (dired-mode . dired-hide-details-mode)
   :custom
   (dired-recursive-copies 'always)
   (dired-recursive-deletes 'always)
   (delete-by-moving-to-trash t)
   (dired-kill-when-opening-new-dired-buffer t)
   (dired-free-space nil)
-  (dired-listing-switches "-al --group-directories-first"))
+  (dired-listing-switches "-al --group-directories-first")
+  (dired-hide-details-hide-symlink-targets t))
 
-(use-package dired-subtree)
+(use-package dired-aux
+  :elpaca nil
+  :custom
+  (dired-create-destination-dirs 'ask)
+  (dired-create-destination-dirs-on-trailing-dirsep t))
+
+(use-package dired-subtree
+  :custom
+  (dired-subtree-use-backgrounds nil))
 
 (use-package diredfl
   :hook (dired-mode . diredfl-mode))
