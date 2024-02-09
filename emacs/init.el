@@ -478,27 +478,20 @@
 
 (use-package doom-modeline
   :custom
-  ;; Mode line height is determined by the smaller of `doom-modeline-height'
-  ;; and the mode line font. The function `doom-modeline--font-height' can be
-  ;; called to determine the font height that will be used to calculate the
-  ;; height of the mode line.
   (doom-modeline-mode t)
-  (doom-modeline-buffer-file-name-style 'relative-from-project)
-  (doom-modeline-lsp t)
-  (doom-modeline-height 20)
   (doom-modeline-bar-width 4)
-  (doom-modeline-column-zero-based t)
-  (doom-modeline-total-line-number t)
-  (doom-modeline-percent-position nil)
-  (doom-modeline-window-width-limit nil)
-  (doom-modeline-major-mode-icon nil)
-  (doom-modeline-buffer-state-icon nil)
-  (doom-modeline-minor-modes nil)
   (doom-modeline-buffer-encoding nil)
+  (doom-modeline-buffer-file-name-style 'relative-from-project)
+  (doom-modeline-buffer-state-icon t)
+  (doom-modeline-column-zero-based t)
+  (doom-modeline-height 20)
+  (doom-modeline-lsp t)
+  (doom-modeline-major-mode-icon nil)
+  (doom-modeline-minor-modes nil)
+  (doom-modeline-percent-position nil)
   (doom-modeline-time-icon nil)
-  :custom-face
-  ;; Make the time text stand out a bit more.
-  (doom-modeline-time ((t (:inherit doom-modeline-evil-insert-state)))))
+  (doom-modeline-total-line-number t)
+  (doom-modeline-window-width-limit nil))
 
 ;;;;; Point/Cursor
 
