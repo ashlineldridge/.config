@@ -54,6 +54,7 @@
 (setenv "JAVA_HOME" "/Library/Java/JavaVirtualMachines/current/Contents/Home")
 (setenv "PAGER" "cat")
 (setenv "KUBECTX_IGNORE_FZF" "true")
+(setenv "BUILDKIT_PROGRESS" "plain")
 (setenv "EDITOR" "emacsclient")
 
 ;; Set `exec-path' and PATH explicitly so that they mirror each other.
