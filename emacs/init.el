@@ -113,7 +113,7 @@
 
   :custom
   (confirm-kill-emacs #'yes-or-no-p)
-  (inhibit-startup-message t)
+  (inhibit-startup-screen t)
   (tool-bar-mode nil)
   (tooltip-mode nil)
   (menu-bar-mode nil)
@@ -139,6 +139,7 @@
   (compilation-ask-about-save nil)
   (fill-column 80)
   (column-number-mode t)
+  (shell-command-prompt-show-cwd t)
   (async-shell-command-buffer 'new-buffer)
   (history-length 1000)
   ;; Save bookmarks immediately.
