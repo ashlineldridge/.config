@@ -75,6 +75,14 @@
 (elpaca transient)
 (elpaca jsonrpc)
 
+;; Later versions of Eglot require a later version of Eldoc. The following
+;; is required to unload the built-in and allow the new version to be loaded.
+;; See: https://github.com/progfolio/elpaca/issues/236#issuecomment-1879838229.
+(unload-feature 'eldoc t)
+(setq custom-delayed-init-variables '())
+(defvar global-eldoc-mode nil)
+(elpaca eldoc)
+
 ;; Block until current queue is processed.
 (elpaca-wait)
 
