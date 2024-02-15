@@ -1383,6 +1383,7 @@
   (my/bind-c-x
     "b" #'consult-buffer
     "4b" #'consult-buffer-other-window
+    "4f" #'my/consult-find-file-other-window
     "5b" #'consult-buffer-other-frame
     "tb" #'consult-buffer-other-tab
     "pb" #'consult-project-buffer
@@ -1392,6 +1393,7 @@
     "rr" #'consult-register
     "rl" #'consult-register-load
     "rs" #'consult-register-store
+    "C-f" #'my/consult-find-file
     "C-k k" #'consult-kmacro)
 
   :custom
@@ -1543,6 +1545,29 @@
              my/consult-source-project-file)))   ;; Narrow: ?f (shown)
       (consult-project-buffer)))
 
+  (defun my/consult-read-file-name (prompt &optional dir default mustmatch initial pred)
+    "Function to assign to `read-file-name-function' to enable previewing."
+    (interactive)
+    (let ((default-directory (or dir default-directory))
+          (minibuffer-completing-file-name t))
+      (consult--read #'read-file-name-internal :state (consult--file-preview)
+                     :prompt prompt
+                     :initial (abbreviate-file-name default-directory)
+                     :require-match mustmatch
+                     :predicate pred)))
+
+  (defun my/consult-find-file ()
+    "Version of `find-file' that supports preview."
+    (interactive)
+    (let ((read-file-name-function #'my/consult-read-file-name))
+      (call-interactively #'find-file)))
+
+  (defun my/consult-find-file-other-window ()
+    "Version of `find-file-other-window' that supports preview."
+    (interactive)
+    (let ((read-file-name-function #'my/consult-read-file-name))
+      (call-interactively #'find-file-other-window)))
+
   ;; Customize individual Consult sources.
   (consult-customize
    consult--source-buffer
@@ -1639,6 +1664,8 @@
     "C-." #'embark-act
     "C-M-." #'embark-dwim
     "C-h b" #'embark-bindings)
+  (general-def 'minibuffer-local-map
+    "M-." #'my/embark-force-preview)
 
   :custom
   ;; Just show the minimal "Act" prompt (the default starts with minimal
@@ -1666,6 +1693,15 @@
       (embark-prefix-help-command)))
 
   :config
+  ;; This command has the downside that leaves all previewed files open.
+  (defun my/embark-force-preview ()
+    "Force a preview of the current candidate for non-Consult commands."
+    (interactive)
+    (unless (bound-and-true-p consult--preview-function)
+      (save-selected-window
+        (let ((embark-quit-after-action nil))
+          (embark-dwim)))))
+
   ;; Adapt the associated commands so that they are usable as Embark actions.
   ;; If commands don't behave properly with Embark, play with this. Look at
   ;; similar commands already in `embark-target-injection-hooks' and mimic.
