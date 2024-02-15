@@ -429,7 +429,7 @@
         (set-face-attribute face nil
                             :font my/variable-font
                             :height variable-font-height))
-      (dolist (face '(mode-line mode-line-inactive))
+      (dolist (face '(mode-line-active mode-line-inactive))
         (set-face-attribute face nil
                             :font my/fixed-font
                             :height mode-line-font-height))
