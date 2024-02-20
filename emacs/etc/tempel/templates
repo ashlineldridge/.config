@@ -31,8 +31,8 @@ emacs-lisp-mode
 
 eshell-mode
 
-(sink " > (my/eshell-sink)")
-(sink-named " > (my/eshell-sink \"" (p "BUFFER-NAME") "\")")
+(sink "> (my/eshell-sink)")
+(sink-named "> (my/eshell-sink \"" (p "BUFFER-NAME") "\")")
 
 org-mode
 
