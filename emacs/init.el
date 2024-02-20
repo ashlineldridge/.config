@@ -103,7 +103,6 @@
     "t" '(:ignore t :which-key "test")
     "x" '(:ignore t :which-key "util")
     "x|" #'display-fill-column-indicator-mode
-    "xh" #'hl-line-mode
     "xn" #'display-line-numbers-mode
     "xz" #'delete-trailing-whitespace
     "xZ" #'my/toggle-show-trailing-whitespace)
@@ -268,7 +267,7 @@
 (use-package time
   :ensure nil
   :custom
-  (display-time-mode t)
+  (display-time-mode nil)
   (display-time-default-load-average nil)
   (display-time-format "%H:%M")
   ;; Timezones to be displayed by `world-clock'. Zones names can be found
@@ -498,22 +497,6 @@
   (org-mode . (lambda () (cursory-set-preset 'bar :local)))
   :init
   (cursory-set-preset 'box))
-
-(use-package pulsar
-  :commands pulsar-pulse-line
-  :custom
-  (pulsar-global-mode t)
-  (pulsar-delay 0.075)
-  (pulsar-iterations 15)
-  (pulsar-face 'pulsar-generic)
-  :config
-  (add-to-list 'pulsar-pulse-functions 'avy-goto-char-timer)
-  (add-to-list 'pulsar-pulse-functions 'avy-goto-line)
-  (add-to-list 'pulsar-pulse-functions 'avy-goto-end-of-line)
-  (add-to-list 'pulsar-pulse-functions 'my/window-multi-command-left)
-  (add-to-list 'pulsar-pulse-functions 'my/window-multi-command-down)
-  (add-to-list 'pulsar-pulse-functions 'my/window-multi-command-up)
-  (add-to-list 'pulsar-pulse-functions 'my/window-multi-command-right))
 
 ;;;;; Margins
 
@@ -869,6 +852,21 @@
     "C-g" #'isearch-cancel))
 
 ;;;;; Highlighting
+
+(use-package hl-line
+  :ensure nil
+  :general
+  (my/bind-c-c
+    "xh" #'hl-line-mode)
+  :hook
+  (elpaca-after-init . global-hl-line-mode)
+  ((eshell-mode shell-mode term-mode vterm-mode eglot-inlay-hints-mode) .
+   (lambda () (setq-local global-hl-line-mode nil)))
+  :custom
+  (hl-line-sticky-flag nil))
+
+(use-package hl-todo
+  (global-hl-todo-mode t))
 
 (use-package hi-lock
   :ensure nil
@@ -1422,7 +1420,7 @@
      "--hidden"
      "--glob=!.git/"))
 
-  ;; Configure both `config-find' and `consult-fd' to follow, symlinks, include
+  ;; Configure both `config-find' and `consult-fd' to follow symlinks, include
   ;; hidden files, and ignore the .git directory. The fd command needs to be
   ;; specifically told to allow matching across the full path (e.g. so you
   ;; can search for "src/foo"). In general, I prefer `consult-fd' as it obeys
@@ -1545,7 +1543,7 @@
              my/consult-source-project-file)))   ;; Narrow: ?f (shown)
       (consult-project-buffer)))
 
-  (defun my/consult-read-file-name (prompt &optional dir default mustmatch initial pred)
+  (defun my/consult-read-file-name (prompt &optional dir _default mustmatch _initial pred)
     "Function to assign to `read-file-name-function' to enable previewing."
     (interactive)
     (let ((default-directory (or dir default-directory))
@@ -1553,6 +1551,8 @@
       (consult--read #'read-file-name-internal :state (consult--file-preview)
                      :prompt prompt
                      :initial (abbreviate-file-name default-directory)
+                     ;; Less disruptive for a commonly used command.
+                     :preview-key "M-."
                      :require-match mustmatch
                      :predicate pred)))
 
