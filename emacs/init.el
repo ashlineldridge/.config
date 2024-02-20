@@ -575,8 +575,7 @@
     "Move the current buffer to the window in direction DIR."
     (let ((window (selected-window))
           (buffer (current-buffer))
-          (target (windmove-find-other-window dir))
-          (rev (pcase dir ('up 'down) ('down 'up) ('left))))
+          (target (windmove-find-other-window dir)))
       (if (null target)
           (user-error "No window %s from selected window" dir)
         (windmove-do-window-select dir)
@@ -633,6 +632,11 @@
     "r" #'winner-redo)
 
   (my/repeatize 'my/window-repeat-map))
+
+(use-package framemove
+  :ensure (:host github :repo "emacsmirror/framemove")
+  :config
+  (setq framemove-hook-into-windmove t))
 
 ;; Brings in useful functions such as `transpose-frame', `flip-frame', etc.
 ;; See: https://www.emacswiki.org/emacs/TransposeFrame.
@@ -838,9 +842,20 @@
     "m" #'avy-move-line
     "M" #'avy-move-region)
   :custom
+  (avy-all-windows 'all-frames)
   (avy-single-candidate-jump t)
   (avy-timeout-seconds 0.4)
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
+
+(use-package link-hint
+  :general
+  (general-def :prefix "M-j"
+    "o" #'link-hint-open-link
+    "O" #'link-hint-copy-link))
+
+(use-package beginend
+  :custom
+  (beginend-global-mode 1))
 
 (use-package isearch
   :ensure nil
@@ -1664,6 +1679,7 @@
     "C-." #'embark-act
     "C-M-." #'embark-dwim
     "C-h b" #'embark-bindings)
+
   (general-def 'minibuffer-local-map
     "M-." #'my/embark-force-preview)
 
@@ -1782,7 +1798,6 @@
    eglot--current-server-or-lose
    eglot--request
    eglot--TextDocumentPositionParams)
-  :functions my/flymake-eldoc-show-first
 
   :hook
   ((go-mode
@@ -1922,11 +1937,9 @@
 ;;;;;; Flymake
 
 (use-package flymake
-  :ensure nil
   :functions my/repeatize
   :hook
   (prog-mode . flymake-mode)
-  (elpaca-after-init . my/flymake-global-init)
 
   :general
   (my/bind-c-c 'flymake-mode-map
@@ -1935,19 +1948,30 @@
     "fn" #'flymake-goto-next-error
     "fp" #'flymake-goto-prev-error)
 
-  :config
-  (defun my/flymake-global-init ()
-    "Global init function for `flymake-mode'."
-    ;; Tell Flymake about the value of `load-path' late in the startup sequence.
-    ;; See: https://emacs.stackexchange.com/a/72754.
-    (setq elisp-flymake-byte-compile-load-path
-          (append elisp-flymake-byte-compile-load-path load-path)))
+  :custom
+  (flymake-no-changes-timeout 0.5)
+  (flymake-start-on-save-buffer t)
 
+  :init
   (defun my/flymake-eldoc-show-first ()
     "Prioritize Flymake messages when Eldoc composes documentation."
     ;; This ensures Flymake messages are always visible in the minibuffer.
     (remove-hook 'eldoc-documentation-functions #'flymake-eldoc-function t)
     (add-hook 'eldoc-documentation-functions #'flymake-eldoc-function nil t))
+
+  :config
+  (defun my/elisp-flymake-byte-compile (fn &rest args)
+    "Wrapper for `elisp-flymake-byte-compile' that considers `load-path'."
+    (let* ((alt-load-path (seq-filter (lambda (d)
+                                        (not (string-match-p "elpaca/builds/vterm" d))) load-path))
+           (elisp-flymake-byte-compile-load-path
+            (append elisp-flymake-byte-compile-load-path alt-load-path)))
+      ;; (message "Setting elisp-flymake-byte-compile-load-path to %S" elisp-flymake-byte-compile-load-path)
+      (apply fn args)
+      ))
+
+  (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-byte-compile)
+  (remove-hook 'flymake-diagnostic-functions #'flymake-proc-legacy-flymake)
 
   (defvar-keymap my/flymake-repeat-map
     :doc "Keymap for repeatable Flymake commands."
