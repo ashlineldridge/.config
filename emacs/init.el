@@ -881,6 +881,7 @@
   (hl-line-sticky-flag nil))
 
 (use-package hl-todo
+  :custom
   (global-hl-todo-mode t))
 
 (use-package hi-lock
