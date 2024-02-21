@@ -1125,12 +1125,13 @@
 
   ;; From: https://github.com/minad/corfu#transfer-completion-to-the-minibuffer.
   (defun my/corfu-move-to-minibuffer ()
-    "Transfer the Corfu completion session to the minibuffer."
     (interactive)
-    (when completion-in-region--data
-      (let ((completion-extra-properties corfu--extra)
-            completion-cycle-threshold completion-cycling)
-        (apply #'consult-completion-in-region completion-in-region--data)))))
+    (pcase completion-in-region--data
+      (`(,beg ,end ,table ,pred ,extras)
+       (let ((completion-extra-properties extras)
+             completion-cycle-threshold completion-cycling)
+         (consult-completion-in-region beg end table pred)))))
+  (add-to-list 'corfu-continue-commands #'my/corfu-move-to-minibuffer))
 
 (use-package corfu-popupinfo
   :after corfu
