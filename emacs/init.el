@@ -2423,13 +2423,17 @@ the current project, otherwise it is run from the current directory."
     "gs" #'magit-status
     "gd" #'magit-dispatch
     "gf" #'magit-file-dispatch)
-  :custom
-  ;; Show commit diff when writing commit message (Shackle will place the
-  ;; diff buffer in the other window and NOT select it).
-  (magit-commit-show-diff t)
-  ;; Based on advice from: https://magit.vc/manual/magit/Performance.html.
-  (magit-refresh-status-buffer nil)
-  (auto-revert-buffer-list-filter #'magit-auto-revert-repository-buffer-p))
+  :config
+  ;; Speed up Magit by removing a bunch of the slower status hook functions
+  ;; that add details to the status buffer. It makes it look more bare-bones
+  ;; but the speed increase is worth it. Run M-x `magit-toggle-verbose-refresh'
+  ;; to see how long each function takes.
+  (remove-hook 'magit-status-sections-hook 'magit-insert-status-headers)
+  (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-pushremote)
+  (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-upstream-or-recent)
+  (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-pushremote)
+  (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-upstream)
+  (remove-hook 'magit-status-headers-hook 'magit-insert-tags-header))
 
 (use-package difftastic)
 
