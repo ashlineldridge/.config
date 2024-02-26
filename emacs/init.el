@@ -82,7 +82,7 @@
     "M-[" #'previous-buffer
     "M-]" #'next-buffer
     "M-<backspace>" #'my/delete-to-bol
-    "M-k" #'kill-this-buffer)
+    "M-k" #'kill-current-buffer)
 
   (my/bind-search
     ;; Add search prefix descriptions.
