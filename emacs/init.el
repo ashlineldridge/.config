@@ -2827,6 +2827,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (require 'org-agenda)
 
   :config
+  (defvar my/org-extra-electric-pairs '((?/ . ?/) (?= . ?=)))
   (defun my/org-init ()
     "Init function for `org-mode'."
     (interactive)
@@ -2835,7 +2836,11 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     (display-line-numbers-mode 0)
     (setq-local line-spacing 2)
     (setq-local completion-at-point-functions
-                (list #'tempel-complete #'cape-file)))
+                (list #'tempel-complete #'cape-file))
+    (setq-local electric-pair-pairs
+                (append electric-pair-pairs my/org-extra-electric-pairs))
+    (setq-local electric-pair-text-pairs
+                (append electric-pair-text-pairs my/org-extra-electric-pairs)))
 
   (defun my/org-agenda-cmp-todo (a b)
     "Custom compares agenda items A and B based on their todo keywords."
