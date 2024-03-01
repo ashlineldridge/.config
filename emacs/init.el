@@ -284,65 +284,11 @@
 
 ;;;; Appearance
 
-;;;;; Themes
-
-(use-package custom
-  :ensure nil
-  :init
-  ;; Variable pitch headings used by Modus and Ef themes.
-  (defvar my/variable-pitch-headings
-    '((1 . (variable-pitch semibold 1.2))
-      (t . (variable-pitch semibold 1.1))))
-
-  ;; Theme-agnostic hook that is run after a theme is enabled.
-  (defvar my/after-enable-theme-hook nil
-    "Hook run after enabling a theme.")
-
-  ;; Call hooks after the theme is enabled. No need to call `disable-theme'
-  ;; before enabling to avoid "blending" (Prot mentions this in his theme docs)
-  ;; as I use `consult-theme' which does this anyway.
-  (defun my/after-enable-theme (&rest _args)
-    "Run after `enable-theme'."
-    (run-hooks 'my/after-enable-theme-hook))
-  (advice-add #'enable-theme :after #'my/after-enable-theme))
-
-(use-package modus-themes
-  :custom
-  (modus-themes-italic-constructs t)
-  (modus-themes-custom-auto-reload t)
-  (modus-themes-prompts '(bold))
-  (modus-themes-org-blocks 'gray-background)
-  (modus-themes-headings my/variable-pitch-headings))
-
-(use-package ef-themes
-  :custom
-  (ef-themes-mixed-fonts t)
-  (ef-themes-variable-pitch-ui t)
-  (ef-themes-headings my/variable-pitch-headings))
-
 ;;;;; Fonts
 
 (use-package faces
   :ensure nil
-  :hook
-  ;; Update fonts after theme is loaded so changes take effect.
-  (my/after-enable-theme . my/apply-font-config)
-
   :config
-  (defvar my/font-config-index 0)
-  (defvar my/fixed-font "Iosevka Comfy")
-  (defvar my/variable-font "Iosevka Comfy Duo")
-
-  (defvar my/font-configs
-    '((:fixed-font-height 140
-       :variable-font-height 140
-       :line-number-font-height 120
-       :mode-line-font-height 130)
-      (:fixed-font-height 146
-       :variable-font-height 146
-       :line-number-font-height 126
-       :mode-line-font-height 136)))
-
   ;; Create faces used in `consult-imenu-config' as extension points from
   ;; the default faces used in programming language buffers. Use C-u C-x =
   ;; to discover the font face under point.
@@ -409,54 +355,68 @@
   (defface my/imenu-category-variable-face
     '((t :inherit font-lock-variable-name-face))
     "Face for displaying variable symbols in imenu."
-    :group 'my/imenu-faces)
+    :group 'my/imenu-faces))
 
-  (defun my/apply-font-config (&optional index)
-    "Apply the INDEX'th font configuration from `my/font-configs'."
-    (let* ((index (or index my/font-config-index))
-           (config (nth index my/font-configs))
-           (fixed-font-height (plist-get config :fixed-font-height))
-           (variable-font-height (plist-get config :variable-font-height))
-           (line-number-font-height (plist-get config :line-number-font-height))
-           (mode-line-font-height (plist-get config :mode-line-font-height)))
+(use-package fontaine
+  :general
+  (my/bind-c-c
+    "xf" #'fontaine-set-preset)
+  :hook
+  (elpaca-after-init . (lambda () (fontaine-set-preset 'regular)))
+  :custom
+  (fontaine-presets
+   '((small
+      :default-height 134
+      :mode-line-active-height 120
+      :mode-line-inactive-height 120
+      :line-number-height 112)
+     (regular)
+     (t
+      :default-family "Iosevka Comfy"
+      :default-weight regular
+      :default-height 140
+      :fixed-pitch-height 1.0
+      :fixed-pitch-serif-height 1.0
+      :variable-pitch-family "Iosevka Comfy Duo"
+      :variable-pitch-weight regular
+      :variable-pitch-height 1.0
+      :mode-line-active-family "Iosevka Comfy"
+      :mode-line-active-height 130
+      :mode-line-inactive-family "Iosevka Comfy"
+      :mode-line-inactive-height 130
+      :line-number-family "Iosevka Comfy"
+      :line-number-slant italic
+      :line-number-height 120
+      :bold-weight bold
+      :italic-slant italic)))
+  :init
+  (defun my/apply-font-faces (&rest _)
+    "Apply the current font configuration."
+    (fontaine-set-preset (or fontaine-current-preset 'regular)))
+  (add-hook 'enable-theme-functions #'my/apply-font-faces)
 
-      (dolist (face '(default fixed-pitch))
-        (set-face-attribute face nil
-                            :font my/fixed-font
-                            :height fixed-font-height))
-      (dolist (face '(variable-pitch))
-        (set-face-attribute face nil
-                            :font my/variable-font
-                            :height variable-font-height))
-      (dolist (face '(mode-line-active mode-line-inactive))
-        (set-face-attribute face nil
-                            :font my/fixed-font
-                            :height mode-line-font-height))
-      (dolist (face '(line-number line-number-current-line))
-        (set-face-attribute face nil
-                            :font my/fixed-font
-                            :height line-number-font-height
-                            :slant 'italic))
+  ;; Variable pitch headings used by Modus and Ef themes.
+  (defvar my/variable-pitch-headings
+    '((1 . (variable-pitch semibold 1.2))
+      (t . (variable-pitch semibold 1.1)))))
 
-      ;; Make the inlay face a bit bigger and italic.
-      (with-eval-after-load 'eglot
-        (set-face-attribute 'eglot-inlay-hint-face nil
-                            :height 0.9
-                            :slant 'italic))
+;;;;; Themes
 
-      ;; Use fixed pitch for appropriate org elements (use C-u C-x = to
-      ;; determine the font face of the character under point). Note that
-      ;; `modus-themes-mixed-fonts' can also be used to achieve this.
-      (require 'org-faces)
-      (dolist (face '(org-block org-table))
-        (set-face-attribute face nil :inherit 'fixed-pitch))))
+(use-package modus-themes
+  :custom
+  (modus-themes-italic-constructs t)
+  (modus-themes-custom-auto-reload t)
+  (modus-themes-prompts '(bold))
+  (modus-themes-org-blocks 'gray-background)
+  (modus-themes-headings my/variable-pitch-headings)
+  (modus-themes-mixed-fonts t))
 
-  (defun my/cycle-font-config ()
-    "Cycle to the next font configuration."
-    (interactive)
-    (setq my/font-config-index (mod (+ my/font-config-index 1)
-                                    (length my/font-configs)))
-    (my/apply-font-config my/font-config-index)))
+(use-package ef-themes
+  :custom
+  (ef-themes-mixed-fonts t)
+  (ef-themes-variable-pitch-ui t)
+  (ef-themes-headings my/variable-pitch-headings)
+  (ef-themes-mixed-fonts t))
 
 ;;;;; Icons
 
@@ -673,6 +633,8 @@
   (shackle-mode t)
   (shackle-default-rule nil)
   (shackle-rules
+   ;; More reliable to match by regex than by major mode as some commands
+   ;; don't set the major mode until after they've called `display-buffer'.
    '(("\\*eldoc" :select nil :other t :regexp t)
      ("\\*eshell-output\\*" :select t :other t :regexp t)
      ("\\*helpful" :select t :other t :regexp t)
@@ -1851,6 +1813,9 @@
 
   ;; See: https://github.com/minad/corfu/wiki#filter-list-of-all-possible-completions-with-completion-style-like-orderless.
   (add-to-list 'completion-category-overrides '(eglot (styles orderless)))
+
+  ;; Style the inlay type hinting face.
+  (set-face-attribute 'eglot-inlay-hint-face nil :height 0.9 :slant 'italic)
 
   ;; Customize configuration of LSP servers via `eglot-server-programs' below.
   ;; Note that `:json-false' is used to disable features rather than `nil'.
