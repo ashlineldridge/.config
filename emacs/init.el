@@ -1193,7 +1193,9 @@
   :ensure (:files (:defaults "extensions/*.el"))
   :custom
   (vertico-mode t)
-  (vertico-count 20))
+  (vertico-count 20)
+  (vertico-count-format nil)
+  (vertico-resize 'grow-only))
 
 (use-package vertico-directory
   :after vertico
