@@ -1,4 +1,4 @@
-;;; elpaca-bootstrap.el --- Elpaca Bootstrap -*- lexical-binding: t -*-
+;;; bootstrap.el --- Elpaca Bootstrap -*- lexical-binding: t -*-
 
 ;; Author: Ashlin Eldridge <ashlin.eldridge@gmail.com>
 ;; URL: https://github.com/ashlineldridge/.config
@@ -34,7 +34,7 @@
     (make-directory repo t)
     (when (< emacs-major-version 28) (require 'subr-x))
     (condition-case-unless-debug err
-        (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+        (if-let ((buffer (pop-to-buffer-same-window "*bootstrap*"))
                  ((zerop (call-process "git" nil buffer t "clone"
                                        (plist-get order :repo) repo)))
                  ((zerop (call-process "git" nil buffer t "checkout"
@@ -83,7 +83,12 @@
 (defvar global-eldoc-mode nil)
 (elpaca eldoc)
 
+;; Install no-littering early to tame Emacs config/data/other files.
+(elpaca no-littering
+  (require 'no-littering)
+  (no-littering-theme-backups))
+
 ;; Block until current queue is processed.
 (elpaca-wait)
 
-;;; elpaca-bootstrap.el ends here
+;;; bootstrap.el ends here

@@ -13,57 +13,86 @@
 
 ;;;; Bootstrap
 
-(load (expand-file-name "elpaca-bootstrap.el" user-emacs-directory))
-(declare-function elpaca-wait "elpaca")
-
-(use-package no-littering
-  :demand t
-  :commands no-littering-theme-backups
-  :config
-  (no-littering-theme-backups))
-
-(use-package general
-  :demand t
-  :commands
-  (general-auto-unbind-keys
-   general-define-key)
-  :config
-  ;; Automatically unbind non-prefix keys when used.
-  (general-auto-unbind-keys)
-  (general-create-definer my/bind-search :prefix "M-s")
-  (general-create-definer my/bind-goto :prefix "M-g")
-  (general-create-definer my/bind-c-c :prefix "C-c")
-  (general-create-definer my/bind-c-x :prefix "C-x"))
-
-;; Packages that modify the syntax of `use-package' need to be waited on.
-(elpaca-wait)
-
-(use-package gcmh
-  :hook (elpaca-after-init . gcmh-mode)
-  :custom
-  (gcmh-idle-delay 'auto)
-  (gcmh-auto-idle-delay-factor 10)
-  (gcmh-high-cons-threshold (* 16 1024 1024)))
-
-(use-package elpaca
-  :ensure nil
-  :general
-  (my/bind-c-c
-    "pp" #'elpaca-manager
-    "pf" #'elpaca-fetch
-    "pF" #'elpaca-fetch-all
-    "pm" #'elpaca-merge
-    "pM" #'elpaca-merge-all
-    "pb" #'elpaca-browse
-    "pd" #'elpaca-delete
-    "pt" #'elpaca-try
-    "pr" #'elpaca-rebuild
-    "pv" #'elpaca-visit))
+(load (expand-file-name "bootstrap.el" user-emacs-directory))
 
 ;;;; Base Settings
 
 (use-package emacs
   :ensure nil
+  :preface
+  ;; Use y/n rather than yes/no.
+  (defalias 'yes-or-no-p #'y-or-n-p)
+
+  (declare-function server-running-p "server")
+  (defun my/server-start ()
+    "Start Emacs in server mode if it is not already."
+    (require 'server)
+    (unless (server-running-p)
+      (server-start)))
+
+  (defun my/truncate-lines ()
+    "Truncate long lines rather than wrapping."
+    (setq-local truncate-lines t))
+
+  (defun my/toggle-show-trailing-whitespace ()
+    "Toggle visibility of trailing whitespace."
+    (interactive)
+    (setq show-trailing-whitespace (if show-trailing-whitespace nil t))
+    (message "%s trailing whitespace" (if show-trailing-whitespace
+                                          "Showing" "Hiding")))
+
+  (defun my/copy-to-eol ()
+    "Copy the text from point to the end of the line."
+    (interactive)
+    (kill-ring-save (point) (line-end-position)))
+
+  (defun my/delete-to-eol ()
+    "Delete the text from point to the end of the line."
+    (interactive)
+    (let ((point (point))
+          (end (line-end-position)))
+      (if (eq point end)
+          (delete-char 1 nil)
+        (delete-region point end))))
+
+  (defun my/delete-to-bol ()
+    "Delete the text from point to the beginning of the line."
+    (interactive)
+    (let ((point (point))
+          (begin (line-beginning-position)))
+      (if (eq point begin)
+          (delete-char -1)
+        (delete-region (line-beginning-position) (point)))))
+
+  (defun my/flash-mode-line ()
+    "Flashes the mode line for a visible bell."
+    (invert-face 'mode-line)
+    (run-with-timer 0.1 nil 'invert-face 'mode-line))
+
+  (declare-function electric-pair-default-inhibit "elec-pair")
+  (defun my/electric-pair-inhibit (c)
+    "Return whether C should be excluded from pairing."
+    ;; Exclude '<' as I want that for triggering Tempel.
+    (if (char-equal c ?<) t (electric-pair-default-inhibit c)))
+
+  (defun my/clear-registers ()
+    "Clear all registers."
+    (interactive)
+    (if register-alist
+        (let ((len (length register-alist)))
+          (setq register-alist nil)
+          (message "Cleared %d registers" len))
+      (message "No registers to clear")))
+
+  (defun my/repeat-echo-mode-line (keymap)
+    "Display a repeat mode-line indicator for KEYMAP."
+    ;; The provided `repeat-echo-mode-line' doesn't work for me as it tries
+    ;; to represent an in-progress repeat as an additional mode which I think
+    ;; gets hidden by Minions. This looks cleaner anyway.
+    (setq global-mode-string
+          (when keymap (propertize "↻ " 'face 'mode-line-emphasis)))
+    (force-mode-line-update t))
+
   :hook
   ;; Display line numbers in certain modes.
   ((prog-mode config-mode text-mode) . display-line-numbers-mode)
@@ -72,43 +101,23 @@
   ;; Run Emacs in server mode.
   (elpaca-after-init . my/server-start)
 
-  :general
-  (general-def
-    "<escape>" #'keyboard-escape-quit
-    "C-;" #'comment-line
-    "C-S-k" #'my/copy-to-eol
-    "C-M-k" #'my/delete-to-eol
-    "C-h C-h" nil
-    "M-[" #'previous-buffer
-    "M-]" #'next-buffer
-    "M-<backspace>" #'my/delete-to-bol
-    "M-k" #'kill-current-buffer)
-
-  (my/bind-search
-    ;; Add search prefix descriptions.
-    "h" '(:ignore t :which-key "highlight"))
-
-  (my/bind-c-c
-    "-" '(:ignore t :which-key "outline")
-    "b" '(:ignore t :which-key "build")
-    "b1" #'compile
-    "b2" #'recompile
-    "c" '(:ignore t :which-key "cape")
-    "f" '(:ignore t :which-key "flymake")
-    "g" '(:ignore t :which-key "magit")
-    "n" '(:ignore t :which-key "notes")
-    "o" '(:ignore t :which-key "org")
-    "p" '(:ignore t :which-key "cape")
-    "r" '(:ignore t :which-key "refactor")
-    "t" '(:ignore t :which-key "test")
-    "x" '(:ignore t :which-key "util")
-    "x|" #'display-fill-column-indicator-mode
-    "xn" #'display-line-numbers-mode
-    "xz" #'delete-trailing-whitespace
-    "xZ" #'my/toggle-show-trailing-whitespace)
-
-  (my/bind-c-x
-    "rK" #'my/clear-registers)
+  :bind
+  ("<escape>" . keyboard-escape-quit)
+  ("C-;" . comment-line)
+  ("C-S-k" . my/copy-to-eol)
+  ("C-M-k" . my/delete-to-eol)
+  ("C-h C-h" . nil)
+  ("M-[" . previous-buffer)
+  ("M-]" . next-buffer)
+  ("M-<backspace>" . my/delete-to-bol)
+  ("M-k" . kill-current-buffer)
+  ("C-c b 1" . compile)
+  ("C-c b 2" . recompile)
+  ("C-c x |" . display-fill-column-indicator-mode)
+  ("C-c x n" . display-line-numbers-mode)
+  ("C-c x z" . delete-trailing-whitespace)
+  ("C-c x Z" . my/toggle-show-trailing-whitespace)
+  ("C-x r K" . my/clear-registers)
 
   :custom
   (confirm-kill-emacs #'yes-or-no-p)
@@ -177,9 +186,6 @@
   (read-extended-command-predicate #'command-completion-default-include-p)
 
   :init
-  ;; Use y/n rather than yes/no.
-  (defalias 'yes-or-no-p #'y-or-n-p)
-
   ;; Enable Emacs functions that are disabled by default.
   (dolist (cmd '(narrow-to-region
                  upcase-region
@@ -187,82 +193,18 @@
                  set-goal-column))
     (put cmd 'disabled nil))
 
-  (defun my/server-start ()
-    "Start Emacs in server mode if it is not already."
-    (require 'server)
-    (unless (server-running-p)
-      (server-start)))
-
-  (defun my/truncate-lines ()
-    "Truncate long lines rather than wrapping."
-    (setq-local truncate-lines t))
-
-  (defun my/toggle-show-trailing-whitespace ()
-    "Toggle visibility of trailing whitespace."
-    (interactive)
-    (setq show-trailing-whitespace (if show-trailing-whitespace nil t))
-    (message "%s trailing whitespace" (if show-trailing-whitespace
-                                          "Showing" "Hiding")))
-
-  (defun my/copy-to-eol ()
-    "Copy the text from point to the end of the line."
-    (interactive)
-    (kill-ring-save (point) (line-end-position)))
-
-  (defun my/delete-to-eol ()
-    "Delete the text from point to the end of the line."
-    (interactive)
-    (let ((point (point))
-          (end (line-end-position)))
-      (if (eq point end)
-          (delete-char 1 nil)
-        (delete-region point end))))
-
-  (defun my/delete-to-bol ()
-    "Delete the text from point to the beginning of the line."
-    (interactive)
-    (let ((point (point))
-          (begin (line-beginning-position)))
-      (if (eq point begin)
-          (delete-char -1)
-        (delete-region (line-beginning-position) (point)))))
-
-  (defun my/flash-mode-line ()
-    "Flashes the mode line for a visible bell."
-    (invert-face 'mode-line)
-    (run-with-timer 0.1 nil 'invert-face 'mode-line))
-
-  (defun my/electric-pair-inhibit (c)
-    "Return whether C should be excluded from pairing."
-    ;; Exclude '<' as I want that for triggering Tempel.
-    (if (char-equal c ?<) t (electric-pair-default-inhibit c)))
-
-  (defun my/clear-registers ()
-    "Clear all registers."
-    (interactive)
-    (if register-alist
-        (let ((len (length register-alist)))
-          (setq register-alist nil)
-          (message "Cleared %d registers" len))
-      (message "No registers to clear")))
-
-  (defun my/repeat-echo-mode-line (keymap)
-    "Display a repeat mode-line indicator for KEYMAP."
-    ;; The provided `repeat-echo-mode-line' doesn't work for me as it tries
-    ;; to represent an in-progress repeat as an additional mode which I think
-    ;; gets hidden by Minions. This looks cleaner anyway.
-    (setq global-mode-string
-          (when keymap (propertize "↻ " 'face 'mode-line-emphasis)))
-    (force-mode-line-update t))
-
-  ;; See: https://karthinks.com/software/it-bears-repeating.
-  (defun my/repeatize (keymap)
-    "Add `repeat-mode'-like support to KEYMAP (passed by symbol)."
-    (map-keymap
-     (lambda (_key cmd)
-       (when (symbolp cmd)
-         (put cmd 'repeat-map keymap)))
-     (symbol-value keymap))))
+  ;; Bind some special characters under 'C-x 8'. The [?] character is a zero-
+  ;; width space character that can be used to escape org mode emphasis markers.
+  ;; See: https://emacs.stackexchange.com/questions/16688/how-can-i-escape-the-in-org-mode-to-prevent-bold-fontification.
+  (bind-keys
+   :map iso-transl-ctl-x-8-map
+   ("0" . [?​])
+   ("a" . [?α])
+   ("b" . [?β])
+   ("l" . [?λ])
+   (">" . [?⟶])
+   ("<" . [?⟵])
+   ("s" . [?😊])))
 
 (use-package time
   :ensure nil
@@ -288,7 +230,7 @@
 
 (use-package faces
   :ensure nil
-  :config
+  :preface
   ;; Create faces used in `consult-imenu-config' as extension points from
   ;; the default faces used in programming language buffers. Use C-u C-x =
   ;; to discover the font face under point.
@@ -358,9 +300,18 @@
     :group 'my/imenu-faces))
 
 (use-package fontaine
-  :general
-  (my/bind-c-c
-    "xf" #'fontaine-set-preset)
+  :preface
+  ;; Variable pitch headings used by Modus and Ef themes.
+  (defvar my/variable-pitch-headings
+    '((1 . (variable-pitch semibold 1.2))
+      (t . (variable-pitch semibold 1.1))))
+  (defun my/apply-font-faces (&rest _)
+    "Apply the current font configuration."
+    (fontaine-set-preset (or fontaine-current-preset 'regular)))
+  (add-hook 'enable-theme-functions #'my/apply-font-faces)
+
+  :bind
+  ("C-c x f" . fontaine-set-preset)
   :hook
   (elpaca-after-init . (lambda () (fontaine-set-preset 'regular)))
   :custom
@@ -388,17 +339,7 @@
       :line-number-slant italic
       :line-number-height 120
       :bold-weight bold
-      :italic-slant italic)))
-  :init
-  (defun my/apply-font-faces (&rest _)
-    "Apply the current font configuration."
-    (fontaine-set-preset (or fontaine-current-preset 'regular)))
-  (add-hook 'enable-theme-functions #'my/apply-font-faces)
-
-  ;; Variable pitch headings used by Modus and Ef themes.
-  (defvar my/variable-pitch-headings
-    '((1 . (variable-pitch semibold 1.2))
-      (t . (variable-pitch semibold 1.1)))))
+      :italic-slant italic))))
 
 ;;;;; Themes
 
@@ -461,9 +402,8 @@
 ;;;;; Margins
 
 (use-package olivetti
-  :general
-  (general-def
-    "<f7>" #'olivetti-mode)
+  :bind
+  ("<f7>" . olivetti-mode)
   :custom
   (olivetti-body-width 90)
   (olivetti-style 'fancy))
@@ -472,16 +412,8 @@
 
 (use-package pixel-scroll
   :ensure nil
-  :general
-  (general-def
-    [remap scroll-up-command] #'pixel-scroll-interpolate-down
-    [remap scroll-down-command] #' pixel-scroll-interpolate-up
-    "M-S-<up>" #'my/pixel-scroll-partial-up
-    "M-S-<down>" #'my/pixel-scroll-partial-down)
-  :custom
-  (pixel-scroll-precision-mode t)
-  (pixel-scroll-precision-interpolate-page t)
-  :config
+  :preface
+  (declare-function pixel-scroll-precision-interpolate "pixel-scroll")
   (defvar my/pixel-scroll-factor 0.25)
 
   (defun my/pixel-scroll-page (&optional factor)
@@ -499,40 +431,81 @@
   (defun my/pixel-scroll-partial-down ()
     "Scroll down by `my/pixel-scroll-factor' times the page height."
     (interactive)
-    (my/pixel-scroll-page (- my/pixel-scroll-factor))))
+    (my/pixel-scroll-page (- my/pixel-scroll-factor)))
+
+  :bind
+  ([remap scroll-up-command] . pixel-scroll-interpolate-down)
+  ([remap scroll-down-command] . pixel-scroll-interpolate-up)
+  ("M-S-<up>" . my/pixel-scroll-partial-up)
+  ("M-S-<down>" . my/pixel-scroll-partial-down)
+  :custom
+  (pixel-scroll-precision-mode t)
+  (pixel-scroll-precision-interpolate-page t))
 
 ;;;; Window Management
 
 ;;;;; General Window Movement and Commands
 
 (use-package window
-  ;; Load after winner to override its default repeat map.
-  :after winner
   :ensure nil
-  :functions my/repeatize
-  :general
-  (general-def
-    "M-q" #'bury-buffer
-    "M-H" #'my/window-multi-command-left
-    "M-J" #'my/window-multi-command-down
-    "M-K" #'my/window-multi-command-up
-    "M-L" #'my/window-multi-command-right)
-  (general-def "M-o"
-    '(:keymap my/window-repeat-map))
-
+  :bind
+  (("M-q" . bury-buffer)
+   ("M-o =" . balance-windows)
+   ("M-o <left>" . shrink-window-horizontally)
+   ("M-o <right>" . enlarge-window-horizontally)
+   ("M-o <up>" . enlarge-window)
+   ("M-o <down>" . shrink-window)
+   ("M-o 0" . delete-window)
+   ("M-o 1" . delete-other-windows)
+   ("M-o 2" . split-window-below)
+   ("M-o 3" . split-window-right)
+   :repeat-map my/window-repeat-map
+   ("=" . balance-windows)
+   ("<left>" . shrink-window-horizontally)
+   ("<right>" . enlarge-window-horizontally)
+   ("<up>" . enlarge-window)
+   ("<down>" . shrink-window)
+   ("0" . delete-window)
+   ("1" . delete-other-windows)
+   ("2" . split-window-below)
+   ("3" . split-window-right))
   :custom
   ;; The following provides the default `display-buffer' behaviour for buffers
   ;; that are not managed by either Popper or Shackle.
   (display-buffer-base-action '((display-buffer-reuse-mode-window
                                  display-buffer-reuse-window
                                  display-buffer-same-window)))
-  (even-window-sizes nil)
+  (even-window-sizes nil))
 
-  :config
-  (require 'windmove)
+(use-package windmove
+  :ensure nil
+  :preface
+  (declare-function windmove-find-other-window "windmove")
+  (declare-function windmove-do-window-select "windmove")
 
-  (defun my/throw-buffer (dir)
+  (defun my/windmove-throw-left ()
+    "Move the current buffer to the window to the left."
+    (interactive)
+    (my/windmove-throw 'left))
+
+  (defun my/windmove-throw-right ()
+    "Move the current buffer to the window to the right."
+    (interactive)
+    (my/windmove-throw 'right))
+
+  (defun my/windmove-throw-up ()
+    "Move the current buffer to the window above."
+    (interactive)
+    (my/windmove-throw 'up))
+
+  (defun my/windmove-throw-down ()
+    "Move the current buffer to the window below."
+    (interactive)
+    (my/windmove-throw 'down))
+
+  (defun my/windmove-throw (dir)
     "Move the current buffer to the window in direction DIR."
+    (require 'windmove)
     (let ((window (selected-window))
           (buffer (current-buffer))
           (target (windmove-find-other-window dir)))
@@ -542,70 +515,61 @@
         (switch-to-buffer buffer nil t)
         (select-window window)
         (switch-to-prev-buffer))))
-
-  (defun my/window-multi-command (arg dir)
-    "Perform a window action based on ARG in the direction DIR."
-    (pcase arg
-      ('nil (windmove-do-window-select dir))
-      ('(4) (my/throw-buffer dir))
-      ('(16) (windmove-swap-states-in-direction dir))
-      (0 (windmove-delete-in-direction dir))
-      ('- (windmove-display-in-direction dir))
-      (_ (user-error "Unexpected prefix argument: %S" arg))))
-
-  (defun my/window-multi-command-up (arg)
-    "Act towards the window above based on ARG."
-    (interactive "P")
-    (my/window-multi-command arg 'up))
-
-  (defun my/window-multi-command-down (arg)
-    "Act towards the window below based on ARG."
-    (interactive "P")
-    (my/window-multi-command arg 'down))
-
-  (defun my/window-multi-command-left (arg)
-    "Act towards the left window based on ARG."
-    (interactive "P")
-    (my/window-multi-command arg 'left))
-
-  (defun my/window-multi-command-right (arg)
-    "Act towards the right window based on ARG."
-    (interactive "P")
-    (my/window-multi-command arg 'right))
-
-  (defvar-keymap my/window-repeat-map
-    :doc "Keymap for repeatable window commands."
-    "=" #'balance-windows
-    ">" #'rotate-frame-clockwise
-    "<" #'rotate-frame-anticlockwise
-    "<left>" #'shrink-window-horizontally
-    "<right>" #'enlarge-window-horizontally
-    "<up>" #'enlarge-window
-    "<down>" #'shrink-window
-    "0" #'delete-window
-    "1" #'delete-other-windows
-    "2" #'split-window-below
-    "3" #'split-window-right
-    "4" #'flop-frame
-    "5" #'flip-frame
-    "u" #'winner-undo
-    "r" #'winner-redo)
-
-  (my/repeatize 'my/window-repeat-map))
+  :bind
+  (("M-o b" . windmove-left)
+   ("M-o f" . windmove-right)
+   ("M-o p" . windmove-up)
+   ("M-o n" . windmove-down)
+   ("M-o B" . my/windmove-throw-left)
+   ("M-o F" . my/windmove-throw-right)
+   ("M-o P" . my/windmove-throw-up)
+   ("M-o N" . my/windmove-throw-down)
+   ("M-o M-b" . windmove-delete-left)
+   ("M-o M-f" . windmove-delete-right)
+   ("M-o M-p" . windmove-delete-up)
+   ("M-o M-n" . windmove-delete-down)
+   :repeat-map my/window-repeat-map
+   ("b" . windmove-left)
+   ("f" . windmove-right)
+   ("p" . windmove-up)
+   ("n" . windmove-down)
+   ("B" . my/windmove-throw-left)
+   ("F" . my/windmove-throw-right)
+   ("P" . my/windmove-throw-up)
+   ("N" . my/windmove-throw-down)
+   ("M-b" . windmove-delete-left)
+   ("M-f" . windmove-delete-right)
+   ("M-p" . windmove-delete-up)
+   ("M-n" . windmove-delete-down)))
 
 (use-package framemove
   :ensure (:host github :repo "emacsmirror/framemove")
   :config
   (setq framemove-hook-into-windmove t))
 
-;; Brings in useful functions such as `transpose-frame', `flip-frame', etc.
-;; See: https://www.emacswiki.org/emacs/TransposeFrame.
-(use-package transpose-frame)
+(use-package transpose-frame
+  :bind
+  (("M-o >" . rotate-frame-clockwise)
+   ("M-o <" . rotate-frame-anticlockwise)
+   ("M-o 4" . flop-frame)
+   ("M-o 5" . flip-frame)
+   :repeat-map my/window-repeat-map
+   (">" . rotate-frame-clockwise)
+   ("<" . rotate-frame-anticlockwise)
+   ("4" . flop-frame)
+   ("5" . flip-frame)))
 
 ;;;;; Window History
 
 (use-package winner
   :ensure nil
+  :preface
+  :bind
+  (("M-o u" . winner-undo)
+   ("M-o r" . winner-redo)
+   :repeat-map my/window-repeat-map
+   ("u" . winner-undo)
+   ("r" . winner-redo))
   :custom
   (winner-dont-bind-my-keys t)
   :init
@@ -637,7 +601,7 @@
    ;; don't set the major mode until after they've called `display-buffer'.
    '(("\\*eldoc" :select nil :other t :regexp t)
      ("\\*eshell-output\\*" :select t :other t :regexp t)
-     ("\\*helpful" :select t :other t :regexp t)
+     ("\\*helpful" :select nil :other t :regexp t)
      ("\\*rg\\*" :select t :other t :regexp t)
      ("\\*Occur\\*" :select t :other t :regexp t)
      ("\\*Pp" :select nil :other t :regexp t)
@@ -645,18 +609,22 @@
 
 (use-package popper
   :after shackle
-  :commands
-  (popper-mode popper-echo-mode popper-kill-latest-popup popper-open-latest)
-  :general
-  ;; Popper commands are driven by key chords based on single quote.
-  (general-def
-    "C-'" #'popper-toggle
-    "M-'" #'popper-cycle
-    "C-M-'" #'popper-toggle-type
-    "C-M-\"" #'my/popper-kill-popup-stay-open)
-
   :preface
+  (declare-function popper-open-latest "popper")
+  (declare-function popper-kill-latest-popup "popper")
   (defvar my/popper-ignore-modes '(grep-mode rg-mode))
+
+  (defun my/popper-kill-popup-stay-open ()
+    "Kill the current popup but stay open if there are others."
+    (interactive)
+    (popper-kill-latest-popup)
+    (popper-open-latest))
+
+  :bind
+  ("C-'" . popper-toggle)
+  ("M-'" . popper-cycle)
+  ("C-M-'" . popper-toggle-type)
+  ("C-M-\"" . my/popper-kill-popup-stay-open)
 
   :custom
   (popper-mode t)
@@ -688,36 +656,29 @@
    '(:eval (let ((face (if (doom-modeline--active)
                            'mode-line-emphasis
                          'mode-line-inactive)))
-             (format " %s " (nerd-icons-octicon "nf-oct-pin" :face face)))))
-
-  :config
-  (defun my/popper-kill-popup-stay-open ()
-    "Kill the current popup but stay open if there are others."
-    (interactive)
-    (popper-kill-latest-popup)
-    (popper-open-latest)))
+             (format " %s " (nerd-icons-octicon "nf-oct-pin" :face face))))))
 
 ;;;; Help System
 
 (use-package help-fns
   :ensure nil
-  :general
-  (general-def
-    "C-h F" #'describe-face))
+  :bind
+  ("C-h F" . describe-face))
 
 (use-package helpful
-  :general
-  (general-def
-    "C-h c" #'helpful-callable
-    ;; Replace `describe-*' bindings with Helpful where possible.
-    [remap describe-function] #'helpful-function
-    [remap describe-symbol] #'helpful-symbol
-    [remap describe-variable] #'helpful-variable
-    [remap describe-command] #'helpful-command
-    [remap describe-key] #'helpful-key)
-  (general-def '(emacs-lisp-mode-map lisp-interaction-mode-map)
-    ;; Replace `display-local-help' with Helpful.
-    "C-h ." #'helpful-at-point)
+  :bind
+  (("C-h c" . helpful-callable)
+   ;; Replace `describe-*' bindings with Helpful where possible.
+   ([remap describe-function] . helpful-function)
+   ([remap describe-symbol] . helpful-symbol)
+   ([remap describe-variable] . helpful-variable)
+   ([remap describe-command] . helpful-command)
+   ([remap describe-key] . helpful-key)
+   ;; Replace `display-local-help' with Helpful for Elisp.
+   :map emacs-lisp-mode-map
+   ([remap display-local-help] . helpful-at-point)
+   :map lisp-interaction-mode-map
+   ([remap display-local-help] . helpful-at-point))
 
   :custom
   ;; Required so that I can tell Shackle NOT to select Helpful buffers.
@@ -740,17 +701,17 @@
 
 (use-package substitute
   :commands substitute-report-operation
-  :general
-  (general-def
-    "M-# s" #'substitute-target-below-point
-    "M-# r" #'substitute-target-above-point
-    "M-# d" #'substitute-target-in-defun
-    "M-# b" #'substitute-target-in-buffer)
+  :bind
+  ("M-# s" . substitute-target-below-point)
+  ("M-# r" . substitute-target-above-point)
+  ("M-# d" . substitute-target-in-defun)
+  ("M-# b" . substitute-target-in-buffer)
   :config
   (add-to-list 'substitute-post-replace-functions #'substitute-report-operation))
 
 ;;;;; Undo/Redo
 
+;; TODO: Replace with vundo.
 (use-package undo-tree
   :custom
   (global-undo-tree-mode t)
@@ -762,10 +723,9 @@
 
 (use-package expreg
   :ensure (:host github :repo "casouri/expreg")
-  :general
-  (general-def
-    "C-=" #'expreg-expand
-    "C-+" #'expreg-contract))
+  :bind
+  ("C-=" . expreg-expand)
+  ("C-+" . expreg-contract))
 
 ;;;;; Whitespace
 
@@ -775,34 +735,23 @@
   :custom
   (ws-butler-keep-whitespace-before-point nil))
 
-;;;;; Special Characters
-
-(use-package iso-transl
-  :ensure nil
-  :general
-  ;; Bind C-x 8 0 to insert a zero-width space character which can be used to
-  ;; escape org mode emphasis markers.
-  ;; See: https://emacs.stackexchange.com/questions/16688/how-can-i-escape-the-in-org-mode-to-prevent-bold-fontification.
-  (general-def 'iso-transl-ctl-x-8-map
-    "0" [?​]))
 
 ;;;;; Point Jumping
 
 (use-package avy
-  :general
-  (general-unbind "M-j")
-  (general-def :prefix "M-j"
-    "j" #'avy-goto-char-timer
-    "l" #'avy-goto-line
-    "L" #'avy-goto-end-of-line
-    "y" #'avy-copy-line
-    "Y" #'avy-copy-region
-    "k" #'avy-kill-whole-line
-    "K" #'avy-kill-region
-    "w" #'avy-kill-ring-save-whole-line
-    "W" #'avy-kill-ring-save-region
-    "m" #'avy-move-line
-    "M" #'avy-move-region)
+  :bind
+  ("M-j" . nil)
+  ("M-j j" . avy-goto-char-timer)
+  ("M-j l" . avy-goto-line)
+  ("M-j L" . avy-goto-end-of-line)
+  ("M-j y" . avy-copy-line)
+  ("M-j Y" . avy-copy-region)
+  ("M-j k" . avy-kill-whole-line)
+  ("M-j K" . avy-kill-region)
+  ("M-j w" . avy-kill-ring-save-whole-line)
+  ("M-j W" . avy-kill-ring-save-region)
+  ("M-j m" . avy-move-line)
+  ("M-j M" . avy-move-region)
   :custom
   (avy-all-windows 'all-frames)
   (avy-single-candidate-jump t)
@@ -810,10 +759,9 @@
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
 
 (use-package link-hint
-  :general
-  (general-def :prefix "M-j"
-    "o" #'link-hint-open-link
-    "O" #'link-hint-copy-link))
+  :bind
+  ("M-j o " . link-hint-open-link)
+  ("M-j O" . link-hint-copy-link))
 
 (use-package beginend
   :custom
@@ -821,20 +769,18 @@
 
 (use-package isearch
   :ensure nil
-  :general
-  (my/bind-search
-    "." #'isearch-forward-thing-at-point)
-  (general-def 'isearch-mode-map
-    ;; The default `isearch-abort' requires multiple C-g if search not found.
-    "C-g" #'isearch-cancel))
+  :bind
+  (("M-s ." . isearch-forward-thing-at-point)
+   :map isearch-mode-map
+   ;; The default `isearch-abort' requires multiple C-g if search not found.
+   ("C-g" . isearch-cancel)))
 
 ;;;;; Highlighting
 
 (use-package hl-line
   :ensure nil
-  :general
-  (my/bind-c-c
-    "xh" #'hl-line-mode)
+  :bind
+  ("C-c x h" . hl-line-mode)
   :hook
   (elpaca-after-init . global-hl-line-mode)
   ((eshell-mode shell-mode term-mode vterm-mode eglot-inlay-hints-mode) .
@@ -848,28 +794,26 @@
 
 (use-package hi-lock
   :ensure nil
-  :general
-  (my/bind-search
-    "h." #'highlight-symbol-at-point
-    "hh" #'highlight-regexp
-    "hl" #'highlight-lines-matching-regexp
-    "hu" #'unhighlight-regexp))
+  :bind
+  (("M-s h ." . highlight-symbol-at-point)
+   ("M-s h h" . highlight-regexp)
+   ("M-s h l" . highlight-lines-matching-regexp)
+   ("M-s h u" . unhighlight-regexp)))
 
 ;;;;; Templating
 
 (use-package tempel
   :commands tempel-complete
-  :general
-  (general-def
-    "M-+" #'tempel-insert)
-  ;; Keymap used by navigating across template fields.
-  (general-def 'tempel-map
-    "<tab>" #'tempel-next
-    "S-<tab>" #'tempel-previous
-    [remap keyboard-quit] #'tempel-done)
+  :bind
+  (("M-+" . tempel-insert)
+   ;; Keymap used by navigating across template fields.
+   (:map tempel-map
+    ("<tab>" . tempel-next)
+    ("S-<tab>" . tempel-previous)
+    ([remap keyboard-quit] . tempel-done)))
 
   :custom
-  ;; Tempel completions will only appear when prefixed with "<". The function
+  ;; Tempel completions will only appear when prefixed with "<" . he function
   ;; `tempel-complete' should be added to `completion-at-point-functions' of
   ;; relevant modes to facilitate this.
   (tempel-trigger-prefix "<")
@@ -877,18 +821,19 @@
 
 ;;;; Buffer Management
 
+;; Use `ibuffer' as a replacement for `list-buffers'.
 (use-package ibuffer
   :ensure nil
-  :general
-  (my/bind-c-x
-    ;; Replace `list-buffers' with `ibuffer'.
-    "C-b" #'ibuffer)
-  (general-def 'ibuffer-mode-map
-    "M-o" nil
-    ;; Group buffers by VC project.
-    "/p" #'ibuffer-vc-set-filter-groups-by-vc-root))
+  :bind
+  (("C-x C-b" . ibuffer)
+   :map ibuffer-mode-map
+   ("M-o" . nil)))
 
-(use-package ibuffer-vc)
+(use-package ibuffer-vc
+  :bind
+  (:map ibuffer-mode-map
+   ;; Group buffers by VC project.
+   ("/p" . ibuffer-vc-set-filter-groups-by-vc-root)))
 
 (use-package nerd-icons-ibuffer
   :hook
@@ -900,16 +845,17 @@
 
 (use-package dired
   :ensure nil
-  :general
-  ;; Allow `dired-goto-file' (via j) straight after jumping with C-x C-j.
-  ;; Without this, repeat mode takes over and j calls `dired-jump' again.
-  (general-unbind 'dired-jump-map "j")
-  (general-def 'dired-mode-map
-    "N" #'dired-create-empty-file
-    "?" #'which-key-show-major-mode
-    "i" #'dired-subtree-insert
-    ";" #'dired-subtree-remove
-    "M-s" nil)
+  :bind
+  (:map dired-mode-map
+   ("M-s" . nil)
+   ("N" . dired-create-empty-file)
+   ("?" . which-key-show-major-mode)
+   ("i" . dired-subtree-insert)
+   (";" . dired-subtree-remove)
+   :map dired-jump-map
+   ;; Allow `dired-goto-file' (via j) straight after jumping with C-x C-j.
+   ;; Without this, repeat mode takes over and j calls `dired-jump' again.
+   ("j" . nil))
   :hook
   (dired-mode . auto-revert-mode)
   (dired-mode . dired-hide-details-mode)
@@ -976,26 +922,10 @@
 
 (use-package project
   :ensure nil
-  :general
-  (general-def
-    ;; Short keybinding to easily run build system commands.
-    "C-M-&" #'project-async-shell-command)
-  (my/bind-c-x
-    "pj" #'project-dired
-    "pu" #'my/project-update-list)
+  :preface
+  (declare-function project-remember-projects-under "project")
+  (declare-function project-forget-zombie-projects "project")
 
-  :custom
-  (project-prompt-project-dir)
-  (project-switch-commands
-   '((my/consult-project-multi "File" ?f)
-     (project-dired "Dired" ?j)
-     (consult-ripgrep "Ripgrep" ?s)
-     (magit-project-status "Magit" ?m)
-     (project-eshell "Eshell" ?e)
-     (my/vterm-project "Vterm" ?v)
-     (project-async-shell-command "Async shell" ?&)))
-
-  :config
   (defun my/project-current-root ()
     "Return the root directory of the current or nil."
     (if-let* ((proj (project-current)))
@@ -1016,7 +946,22 @@
                    (not (member file '("." ".."))))
           (setq found (+ found
                          (project-remember-projects-under file)))))
-      (message "Found %d new projects" found))))
+      (message "Found %d new projects" found)))
+
+  :bind
+  ("C-M-&" . project-async-shell-command)
+  ("C-x p j" . project-dired)
+  ("C-x p u" . my/project-update-list)
+  :custom
+  (project-prompt-project-dir)
+  (project-switch-commands
+   '((my/consult-project-multi "File" ?f)
+     (project-dired "Dired" ?j)
+     (consult-ripgrep "Ripgrep" ?s)
+     (magit-project-status "Magit" ?m)
+     (project-eshell "Eshell" ?e)
+     (my/vterm-project "Vterm" ?v)
+     (project-async-shell-command "Async shell" ?&))))
 
 ;;;;; Auto-Save
 
@@ -1038,47 +983,7 @@
   ;; configured after Eldoc has been loaded.
   :after eldoc
   :ensure (:files (:defaults "extensions/*.el"))
-  :commands (corfu-mode global-corfu-mode)
-  :functions consult-completion-in-region
-
-  :general
-  (general-def 'corfu-map
-    ;; We S-SPC to keep completion going and include the space.
-    "S-SPC" #'corfu-insert-separator
-    ;; Move the completion session to the minibuffer.
-    "M-m" #'my/corfu-move-to-minibuffer)
-
-  :hook
-  (minibuffer-setup . my/corfu-enable-in-minibuffer)
-
-  :custom
-  ;; Show the Corfu pop-up without requiring tab to be pressed (but after the
-  ;; delay configured below).
-  (corfu-auto t)
-  ;; Number of typed characters before Corfu will display its pop-up.
-  (corfu-auto-prefix 3)
-  ;; Number of seconds of inactivity before the Corfu pop-up is displayed. This
-  ;; setting only applies after the minimum number of prefix characters have
-  ;; been entered. This is really useful to keep so that short words that you
-  ;; don't want autocompleted don't trigger the Corfu pop-up (and subsequent
-  ;; completion which inserts a space after the completed word).
-  (corfu-auto-delay 0.2)
-  ;; Maximum number of completion candidates.
-  (corfu-count 16)
-  ;; Automatically select the first candidate if it does not reference a
-  ;; directory. This makes the eshell experience a little more natural.
-  (corfu-preselect 'directory)
-  ;; Modes which shouldn't use Corfu as I found the completions annoying.
-  (corfu-excluded-modes
-   '(bazel-build-mode
-     bazel-workspace-mode
-     bazel-starlark-mode))
-
-  :init
-  ;; Enable Corfu mode globally by default. Exclusions are captured
-  ;; individually in `corfu-excluded-modes'.
-  (global-corfu-mode)
-
+  :preface
   ;; From: https://github.com/minad/corfu#completing-in-the-minibuffer.
   (defun my/corfu-enable-in-minibuffer ()
     "Enable Corfu in the minibuffer if appropriate."
@@ -1094,34 +999,62 @@
        (let ((completion-extra-properties extras)
              completion-cycle-threshold completion-cycling)
          (consult-completion-in-region beg end table pred)))))
+
+  :bind
+  (:map corfu-map
+   ;; Retain common navigation commands as it's quicker to use `corfu-quick'
+   ;; and it's nice to be able navigate away when a completion is active.
+   ([remap next-line] . nil)
+   ([remap previous-line] . nil)
+   ([remap scroll-up-command] . nil)
+   ([remap scroll-down-command] . nil)
+   ("<up>" . corfu-previous)
+   ("<down>" . corfu-next)
+   ;; We S-SPC to keep completion going and include the space.
+   ("S-SPC" . corfu-insert-separator)
+   ;; Move the completion session to the minibuffer.
+   ("M-m" . my/corfu-move-to-minibuffer))
+  :hook
+  (minibuffer-setup . my/corfu-enable-in-minibuffer)
+
+  :custom
+  (global-corfu-mode t)
+  (corfu-excluded-modes
+   '(bazel-build-mode
+     bazel-workspace-mode
+     bazel-starlark-mode))
+  (corfu-auto nil)
+  (corfu-count 16)
+  (corfu-preselect nil)
+  (corfu-preview-current nil)
+
+  :config
   (add-to-list 'corfu-continue-commands #'my/corfu-move-to-minibuffer))
 
 (use-package corfu-popupinfo
   :after corfu
   :ensure nil
-  :general
-  (general-def 'corfu-map
-    "M-t" #'corfu-popupinfo-toggle)
-  (general-def 'corfu-popupinfo-map
-    "M-d" #'corfu-popupinfo-documentation
-    ;; Unfortunately, Eglot doesn't seem to support :company-location which
-    ;; is what `corfu-popupinfo' uses to determine the code location for the
-    ;; candidate. It does work for Elisp, however.
-    "M-l" #'corfu-popupinfo-location
-    "M-p" #'corfu-popupinfo-scroll-down
-    "M-n" #'corfu-popupinfo-scroll-up)
+  :bind
+  (:map corfu-popupinfo-map
+   ("M-d" . corfu-popupinfo-documentation)
+   ;; Unfortunately, Eglot doesn't seem to support :company-location which
+   ;; is what `corfu-popupinfo' uses to determine the code location for the
+   ;; candidate. It does work for Elisp, however.
+   ("M-l" . corfu-popupinfo-location)
+   ("M-p" . corfu-popupinfo-scroll-down)
+   ("M-n" . corfu-popupinfo-scroll-up))
   :hook
   (corfu-mode . corfu-popupinfo-mode)
   :custom
-  (corfu-popupinfo-delay 1.0)
+  (corfu-popupinfo-delay nil)
   (corfu-popupinfo-max-height 16))
 
 (use-package corfu-quick
   :after corfu
   :ensure nil
-  :general
-  (general-def 'corfu-map
-    "'" #'corfu-quick-complete)
+  :bind
+  (:map corfu-map
+   ("'" . corfu-quick-complete))
   :custom
   (corfu-quick1 "asdfghjkl")
   (corfu-quick2 "asdfghjkl"))
@@ -1129,6 +1062,7 @@
 (use-package corfu-history
   :after corfu
   :ensure nil
+  :defines savehist-additional-variables
   :custom
   (corfu-history-mode t)
   :init
@@ -1162,13 +1096,21 @@
 (use-package vertico-directory
   :after vertico
   :ensure nil
-  :general
-  (general-def 'vertico-map
-    ;; More convenient directory navigation commands.
-    "RET" #'vertico-directory-enter
-    "DEL" #'vertico-directory-delete-char)
+  :preface
+  (declare-function vertico-sort-history-length-alpha "vertico")
+  (defun my/vertico-sort-dirs-first (files)
+    "Sorts FILES by directories then alphanumerically."
+    (setq files (vertico-sort-history-length-alpha files))
+    (nconc (seq-filter (lambda (x) (string-suffix-p "/" x)) files)
+           (seq-remove (lambda (x) (string-suffix-p "/" x)) files)))
+  :bind
+  (:map vertico-map
+   ;; More convenient directory navigation commands.
+   ("RET" . vertico-directory-enter)
+   ("DEL" . vertico-directory-delete-char))
+  :hook
   ;; Tidy shadowed file names.
-  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+  (rfn-eshadow-update-overlay . vertico-directory-tidy))
 
 (use-package vertico-multiform
   :after vertico
@@ -1181,14 +1123,7 @@
 
   ;; Sometimes commands are better when the category is too broad.
   (vertico-multiform-commands
-   '((consult-outline buffer)))
-
-  :config
-  (defun my/vertico-sort-dirs-first (files)
-    "Sorts FILES by directories then alphanumerically."
-    (setq files (vertico-sort-history-length-alpha files))
-    (nconc (seq-filter (lambda (x) (string-suffix-p "/" x)) files)
-           (seq-remove (lambda (x) (string-suffix-p "/" x)) files))))
+   '((consult-outline buffer))))
 
 ;; I don't enable `vertico-buffer-mode' directly since this makes Vertico
 ;; always run in a buffer. Instead, `vertico-multiform' is used to toggle
@@ -1213,9 +1148,8 @@
   :after vertico
   :ensure nil
   :hook (minibuffer-setup . vertico-repeat-save)
-  :general
-  (my/bind-c-c
-    "'" #'vertico-repeat-select)
+  :bind
+  ("C-c '" . vertico-repeat-select)
   :init
   ;; Persist Vertico history between Emacs sessions.
   (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
@@ -1223,9 +1157,9 @@
 (use-package vertico-quick
   :after vertico
   :ensure nil
-  :general
-  (general-def 'vertico-map
-    "'" #'vertico-quick-exit)
+  :bind
+  (:map vertico-map
+   ("'" . vertico-quick-exit))
   :custom
   (vertico-quick1 "asdfghjkl")
   (vertico-quick2 "asdfghjkl"))
@@ -1238,20 +1172,19 @@
 
 ;; Dedicated completion commands.
 (use-package cape
-  :general
-  (my/bind-c-c
-    "h" #'cape-history)
-
-  (my/bind-c-c
-    "cd" #'cape-dabbrev
-    "ch" #'cape-history
-    "cf" #'cape-file
-    "ck" #'cape-keyword
-    "co" #'cape-elisp-symbol
-    "ca" #'cape-abbrev
-    "cl" #'cape-line
-    "cw" #'cape-dict)
-
+  :bind
+  ;; For history, default to `cape-history' which is displayed as a Corfu
+  ;; pop-up and use `consult-history' with local keymaps where minibuffer
+  ;; history seems more appropriate.
+  ("C-c h" . cape-history)
+  ("C-c c d" . cape-dabbrev)
+  ("C-c c h" . cape-history)
+  ("C-c c f" . cape-file)
+  ("C-c c k" . cape-keyword)
+  ("C-c c o" . cape-elisp-symbol)
+  ("C-c c a" . cape-abbrev)
+  ("C-c c l" . cape-line)
+  ("C-c c w" . cape-dict)
   :custom
   ;; Only show dabbrev candidates of a minimum length to avoid being annoying.
   (cape-dabbrev-min-length 5)
@@ -1279,152 +1212,23 @@
   (marginalia-mode t))
 
 (use-package consult
+  :after flymake
   :defines
-  (consult-imenu-config
-   my/default-theme
+  (flymake-mode-map
    xref-show-xrefs-function
    xref-show-definitions-function)
-
   :preface
-  ;; For some reason, declaring some of these functions under :functions
-  ;; doesn't satisfy Flymake so they are declared here instead.
-  (declare-function consult--buffer-query "consult")
-  (declare-function consult--buffer-state "consult")
+  (declare-function consult-xref "consult-xref")
+  (declare-function consult-register-format "consult-register")
+  (declare-function consult-register-window "consult-register")
   (declare-function consult--customize-put "consult")
+  (declare-function consult--file-preview "consult")
+  (declare-function consult--read "consult")
   (declare-function consult--file-action "consult")
   (declare-function consult--file-state "consult")
-  (declare-function consult-register-format "consult")
-  (declare-function consult-register-window "consult")
-  (declare-function consult-theme "consult")
-  (declare-function consult-xref "consult")
-  (declare-function my/project-current-root nil)
+  (declare-function consult--buffer-query "consult")
+  (declare-function consult--buffer-state "consult")
   (declare-function project--find-in-directory "project")
-  (declare-function project-files "project")
-
-  :hook
-  ;; Use the previously selected theme else default to Modus Vivendi.
-  (elpaca-after-init . (lambda ()
-                         (consult-theme (if consult--theme-history
-                                            (intern (car consult--theme-history))
-                                          'modus-vivendi))))
-
-  :general
-  (general-unbind 'minibuffer-local-map "M-s")
-
-  (general-def
-    "M-i" #'consult-imenu
-    "M-y" #'consult-yank-pop)
-
-  (general-def 'consult-narrow-map
-    "C-<" #'consult-narrow-help
-    ;; Remove if this becomes annoying due to needing a '?' character.
-    "?" #'consult-narrow-help)
-
-  (my/bind-search 'isearch-mode-map
-    ;; Allow `consult-line' functions to "take over" from `isearch'.
-    ;; TODO: The reverse would be better as I could search by line then within.
-    "l" #'consult-line
-    "L" #'consult-line-multi)
-
-  (my/bind-search
-    "a" #'consult-org-agenda
-    "f" #'consult-fd
-    "l" #'consult-line
-    "L" #'consult-line-multi
-    "p" #'my/consult-project-file
-    "s" #'consult-ripgrep
-    "=" #'consult-focus-lines)
-
-  (my/bind-goto
-    "-" #'consult-outline
-    "f" #'consult-flymake
-    "g" #'consult-goto-line
-    "M-g" #'consult-goto-line
-    "i" #'consult-imenu
-    "I" #'consult-imenu-multi
-    "m" #'consult-mark
-    "M" #'consult-global-mark)
-
-  (my/bind-c-c
-    "xt" #'consult-theme)
-
-  (my/bind-c-c 'flymake-mode-map
-    "ff" #'consult-flymake)
-
-  (my/bind-c-c 'isearch-mode-map
-    ;; Use standard history keybinding for `consult-isearch-history' and
-    ;; keep `M-e' as the default keybinding for `isearch-edit-string'.
-    "h" #'consult-isearch-history)
-
-  (my/bind-c-c 'minibuffer-local-map
-    "h" #'consult-history)
-
-  (my/bind-c-x
-    "b" #'consult-buffer
-    "4b" #'consult-buffer-other-window
-    "4f" #'my/consult-find-file-other-window
-    "5b" #'consult-buffer-other-frame
-    "tb" #'consult-buffer-other-tab
-    "pb" #'consult-project-buffer
-    "pf" #'my/consult-project-file
-    "rb" #'consult-bookmark
-    ;; Useful for searching but for quick access use `consult-register-load'.
-    "rr" #'consult-register
-    "rl" #'consult-register-load
-    "rs" #'consult-register-store
-    "C-f" #'my/consult-find-file
-    "C-k k" #'consult-kmacro)
-
-  :custom
-  ;; Type < followed by a prefix key to narrow the available candidates.
-  ;; Type C-< (defined above) to display prefix help. Alternatively, type
-  ;; < followed by C-h (or ?) to make `embark-prefix-help-command' kick in
-  ;; and display a completing prefix help.
-  (consult-narrow-key "<")
-
-  ;; Auto-preview by default.
-  (consult-preview-key 'any)
-
-  ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
-  (consult-ripgrep-args
-   '("rg"
-     "--null"
-     "--line-buffered"
-     "--color=never"
-     "--max-columns=1000"
-     "--path-separator=/"
-     "--smart-case"
-     "--no-heading"
-     "--with-filename"
-     "--line-number"
-     "--search-zip"
-     "--hidden"
-     "--glob=!.git/"))
-
-  ;; Configure both `config-find' and `consult-fd' to follow symlinks, include
-  ;; hidden files, and ignore the .git directory. The fd command needs to be
-  ;; specifically told to allow matching across the full path (e.g. so you
-  ;; can search for "src/foo"). In general, I prefer `consult-fd' as it obeys
-  ;; the .gitignore file if present.
-  (consult-find-args "find -L . -not ( -name .git -type d -prune )")
-  (consult-fd-args "fd -p -L -H -E .git/*")
-
-  ;; Only show Modus and Ef themes.
-  (consult-themes '("^modus-" "^ef-"))
-
-  :init
-  ;; Configure how registers are previewed and displayed.
-  ;; See: https://github.com/minad/consult#use-package-example.
-  (setq register-preview-delay 0)
-  (setq register-preview-function #'consult-register-format)
-  (advice-add #'register-preview :override #'consult-register-window)
-
-  ;; Use consult to select xref locations with preview.
-  (with-eval-after-load 'xref
-    (setq xref-show-xrefs-function #'consult-xref)
-    (setq xref-show-definitions-function #'consult-xref))
-
-  :config
   (defconst my/preview-key '(:debounce 0.3 any))
 
   (defvar my/consult-source-dired-buffer
@@ -1490,16 +1294,6 @@
                  (put-text-property 0 1 'multi-category `(file . ,file) part)
                  (push part items))))))))
 
-  ;; Customize the list of sources shown by `consult-buffer'.
-  (setq consult-buffer-sources
-        '(consult--source-buffer                ;; Narrow: ?b (shown)
-          consult--source-project-buffer-hidden ;; Narrow: ?p (hidden)
-          my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
-          my/consult-source-shell-buffer        ;; Narrow: ?s (hidden)
-          consult--source-file-register         ;; Narrow: ?g (shown)
-          consult--source-bookmark              ;; Narrow: ?m (shown)
-          consult--source-recent-file))         ;; Narrow: ?r (hidden)
-
   ;; Designed to replace `project-find-file' (which doesn't provide preview),
   ;; this command only shows project files by default but can show project
   ;; buffers and project recent files if requested.
@@ -1549,6 +1343,117 @@
     (let ((read-file-name-function #'my/consult-read-file-name))
       (call-interactively #'find-file-other-window)))
 
+  :bind
+  (("M-i" . consult-imenu)
+   ("M-y" . consult-yank-pop)
+   ("M-s a" . consult-org-agenda)
+   ("M-s f" . consult-fd)
+   ("M-s l" . consult-line)
+   ("M-s L" . consult-line-multi)
+   ("M-s p" . my/consult-project-file)
+   ("M-s s" . consult-ripgrep)
+   ("M-s =" . consult-focus-lines)
+   ("M-g -" . consult-outline)
+   ("M-g f" . consult-flymake)
+   ("M-g g" . consult-goto-line)
+   ("M-g M-g" . consult-goto-line)
+   ("M-g i" . consult-imenu)
+   ("M-g I" . consult-imenu-multi)
+   ("M-g m" . consult-mark)
+   ("M-g M" . consult-global-mark)
+   ("C-c x t" . consult-theme)
+   ("C-x b" . consult-buffer)
+   ("C-x 4 b" . consult-buffer-other-window)
+   ("C-x 4 f" . my/consult-find-file-other-window)
+   ("C-x 5 b" . consult-buffer-other-frame)
+   ("C-x t b" . consult-buffer-other-tab)
+   ("C-x p b" . consult-project-buffer)
+   ("C-x p f" . my/consult-project-file)
+   ("C-x r b" . consult-bookmark)
+   ("C-x r r" . consult-register)
+   ("C-x r l" . consult-register-load)
+   ("C-x r s" . consult-register-store)
+   ("C-x C-f" . my/consult-find-file)
+   ("C-x C-k k" . consult-kmacro)
+   :map minibuffer-local-map
+   ("M-s" . nil)
+   :map consult-narrow-map
+   ("C-<" . consult-narrow-help)
+   ("?" . consult-narrow-help)
+   :map flymake-mode-map
+   ("C-c f f" . consult-flymake)
+   :map isearch-mode-map
+   ("C-c h" . consult-isearch-history)
+   :map minibuffer-local-map
+   ("C-c h" . consult-history))
+
+  :hook
+  ;; Use the previously selected theme else default to Modus Vivendi.
+  (elpaca-after-init . (lambda ()
+                         (consult-theme (if consult--theme-history
+                                            (intern (car consult--theme-history))
+                                          'modus-vivendi))))
+
+  :custom
+  ;; Type < followed by a prefix key to narrow the available candidates.
+  ;; Type C-< (defined above) to display prefix help. Alternatively, type
+  ;; < followed by C-h (or ?) to make `embark-prefix-help-command' kick in
+  ;; and display a completing prefix help.
+  (consult-narrow-key "<")
+
+  ;; Auto-preview by default.
+  (consult-preview-key 'any)
+
+  ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
+  (consult-ripgrep-args
+   '("rg"
+     "--null"
+     "--line-buffered"
+     "--color=never"
+     "--max-columns=1000"
+     "--path-separator=/"
+     "--smart-case"
+     "--no-heading"
+     "--with-filename"
+     "--line-number"
+     "--search-zip"
+     "--hidden"
+     "--glob=!.git/"))
+
+  ;; Configure both `config-find' and `consult-fd' to follow symlinks, include
+  ;; hidden files, and ignore the .git directory. The fd command needs to be
+  ;; specifically told to allow matching across the full path (e.g. so you
+  ;; can search for "src/foo"). In general, I prefer `consult-fd' as it obeys
+  ;; the .gitignore file if present.
+  (consult-find-args "find -L . -not ( -name .git -type d -prune )")
+  (consult-fd-args "fd -p -L -H -E .git/*")
+
+  ;; Only show Modus and Ef themes.
+  (consult-themes '("^modus-" "^ef-"))
+
+  :init
+  ;; Configure how registers are previewed and displayed.
+  ;; See: https://github.com/minad/consult#use-package-example.
+  (setq register-preview-delay 0)
+  (setq register-preview-function #'consult-register-format)
+  (advice-add #'register-preview :override #'consult-register-window)
+
+  ;; Use consult to select xref locations with preview.
+  (with-eval-after-load 'xref
+    (setq xref-show-xrefs-function #'consult-xref)
+    (setq xref-show-definitions-function #'consult-xref))
+
+  :config
+  ;; Customize the list of sources shown by `consult-buffer'.
+  (setq consult-buffer-sources
+        '(consult--source-buffer                ;; Narrow: ?b (shown)
+          consult--source-project-buffer-hidden ;; Narrow: ?p (hidden)
+          my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
+          my/consult-source-shell-buffer        ;; Narrow: ?s (hidden)
+          consult--source-file-register         ;; Narrow: ?g (shown)
+          consult--source-bookmark              ;; Narrow: ?m (shown)
+          consult--source-recent-file))         ;; Narrow: ?r (hidden)
+
   ;; Customize individual Consult sources.
   (consult-customize
    consult--source-buffer
@@ -1577,16 +1482,7 @@
    :preview-key my/preview-key))
 
 (use-package consult-dir
-  :autoload my/find-subdirs
-  :commands consult-dir
-  :general
-  (my/bind-search
-    "d" #'consult-dir)
-  :custom
-  (consult-dir-shadow-filenames nil)
-  (consult-dir-default-command #'find-file)
-
-  :config
+  :preface
   (defun my/find-subdirs (&optional dir)
     "Return a list of all subdirectories of DIR (else `default-directory')."
     (when-let ((default-directory (or dir default-directory)))
@@ -1624,6 +1520,12 @@
       :enabled ,#'my/project-current-root
       :items ,(lambda () (my/find-subdirs (my/project-current-root)))))
 
+  :bind
+  ("M-s d" . consult-dir)
+  :custom
+  (consult-dir-shadow-filenames nil)
+  (consult-dir-default-command #'find-file)
+  :config
   (consult-customize
    consult-dir--source-bookmark :name "Bookmark" :narrow ?m
    consult-dir--source-default :name "Current" :narrow ?.
@@ -1639,15 +1541,23 @@
           consult-dir--source-recentf)))
 
 (use-package embark
-  :commands embark-prefix-help-command
-  :general
-  (general-def
-    "C-." #'embark-act
-    "C-M-." #'embark-dwim
-    "C-h b" #'embark-bindings)
+  :preface
+  ;; This command has the downside that leaves all previewed files open.
+  (defun my/embark-force-preview ()
+    "Force a preview of the current candidate for non-Consult commands."
+    (interactive)
+    (unless (bound-and-true-p consult--preview-function)
+      (save-selected-window
+        (let ((embark-quit-after-action nil))
+          (embark-dwim)))))
 
-  (general-def 'minibuffer-local-map
-    "M-." #'my/embark-force-preview)
+  :commands embark-prefix-help-command
+  :bind
+  (("C-." . embark-act)
+   ("C-M-." . embark-dwim)
+   ("C-h b" . embark-bindings)
+   :map minibuffer-local-map
+   ("M-." . my/embark-force-preview))
 
   :custom
   ;; Just show the minimal "Act" prompt (the default starts with minimal
@@ -1659,6 +1569,7 @@
   (embark-keymap-prompter-key ",")
 
   :init
+  ;; TODO: Try removing this now.
   ;; Use Embark to prompt for and run commands under a specified prefix
   ;; when C-h is pressed (e.g. C-x C-h) rather than `describe-prefix-bindings'.
   (with-eval-after-load 'help
@@ -1675,15 +1586,6 @@
       (embark-prefix-help-command)))
 
   :config
-  ;; This command has the downside that leaves all previewed files open.
-  (defun my/embark-force-preview ()
-    "Force a preview of the current candidate for non-Consult commands."
-    (interactive)
-    (unless (bound-and-true-p consult--preview-function)
-      (save-selected-window
-        (let ((embark-quit-after-action nil))
-          (embark-dwim)))))
-
   ;; Adapt the associated commands so that they are usable as Embark actions.
   ;; If commands don't behave properly with Embark, play with this. Look at
   ;; similar commands already in `embark-target-injection-hooks' and mimic.
@@ -1699,23 +1601,13 @@
 (use-package embark-consult)
 
 (use-package rg
-  :commands rg-menu
-  :functions popper--bury-all
-  :general
-  (my/bind-search
-    "M-s" #'my/rg-menu)
-
-  :config
-  (defun my/rg-menu ()
-    "Bury any popups before calling `rg-menu'."
-    (interactive)
-    (popper--bury-all)
-    (call-interactively #'rg-menu)))
+  :bind
+  ("M-s M-s" . rg)
+  ("M-s M-l" . rg-literal))
 
 (use-package wgrep
-  :general
-  (my/bind-c-c
-    "w" #'wgrep-change-to-wgrep-mode)
+  :bind
+  ("C-c w" . wgrep-change-to-wgrep-mode)
   :custom
   (wgrep-auto-save-buffer t))
 
@@ -1733,16 +1625,9 @@
    (list (no-littering-expand-var-file-name "treesit-auto"))))
 
 (use-package treesit-auto
-  :commands (treesit-auto-install-all treesit-auto-add-to-auto-mode-alist)
-  :custom
-  (global-treesit-auto-mode t)
-  (treesit-auto-install 'prompt)
-  ;; Use TS-powered modes for a smaller set of languages for now.
-  ;; See original value of `treesit-auto-langs' for the full set.
-  (treesit-auto-langs '(bash dockerfile go gomod proto python rust))
+  :preface
+  (declare-function treesit-auto-install-all "treesit-auto")
 
-  :init
-  (treesit-auto-add-to-auto-mode-alist treesit-auto-langs)
   ;; For now, to upgrade grammars, delete ~/.config/emacs/var/treesit-auto,
   ;; re-open Emacs, and then run `my/treesit-auto-install-all'.
   (defun my/treesit-auto-install-all ()
@@ -1752,18 +1637,40 @@
     (let ((old-dir (expand-file-name "tree-sitter"  user-emacs-directory))
           (new-dir (car treesit-extra-load-path)))
       (delete-directory new-dir t)
-      (rename-file old-dir new-dir))))
+      (rename-file old-dir new-dir)))
+
+  :commands treesit-auto-add-to-auto-mode-alist
+  :custom
+  (global-treesit-auto-mode t)
+  (treesit-auto-install 'prompt)
+  ;; Use TS-powered modes for a smaller set of languages for now.
+  ;; See original value of `treesit-auto-langs' for the full set.
+  (treesit-auto-langs '(bash dockerfile go gomod proto python rust))
+  :init
+  (treesit-auto-add-to-auto-mode-alist treesit-auto-langs))
 
 ;;;;;; Eglot
 
 (use-package eglot
   ;; Use latest. See: https://www.reddit.com/r/emacs/comments/16yny40/how_to_use_the_latest_version_of_eglot_with_elpaca.
   :ensure (:inherit elpaca-menu-gnu-devel-elpa)
-  :commands
-  (eglot-completion-at-point
-   eglot--current-server-or-lose
-   eglot--request
-   eglot--TextDocumentPositionParams)
+  :preface
+  (defun my/eglot-init ()
+    "Init function for `eglot--managed-mode'."
+    (eglot-inlay-hints-mode 1)
+    (setq-local completion-at-point-functions
+                (list
+                 #'tempel-complete
+                 #'eglot-completion-at-point
+                 #'cape-file))
+    (my/flymake-eldoc-show-first))
+
+  :bind
+  (:map eglot-mode-map
+   ("M-g ^" . eglot-find-implementation)
+   ("C-c r a" . eglot-code-actions)
+   ("C-c r o" . eglot-code-action-organize-imports)
+   ("C-c r r" . eglot-rename))
 
   :hook
   ((go-mode
@@ -1775,39 +1682,11 @@
     haskell-mode) . eglot-ensure)
   (eglot-managed-mode . my/eglot-init)
 
-  :general
-  (my/bind-goto 'eglot-mode-map
-    "^" #'eglot-find-implementation)
-
-  (my/bind-c-c 'eglot-mode-map
-    "ra" #'eglot-code-actions
-    "ro" #'eglot-code-action-organize-imports
-    "rr" #'eglot-rename)
-
   :custom
   (eglot-autoshutdown t)
   (eglot-confirm-server-edits nil)
 
   :config
-  (defun my/eglot-init ()
-    "Init function for `eglot--managed-mode'."
-    (eglot-inlay-hints-mode 1)
-    (setq-local completion-at-point-functions
-                (list
-                 #'tempel-complete
-                 #'eglot-completion-at-point
-                 #'cape-file))
-    (my/flymake-eldoc-show-first))
-
-  (defun my/eglot-open-external-docs ()
-    "Open external documentation for the symbol at point."
-    ;; This currently only works with rust-analyzer and is buggy.
-    (interactive)
-    (let ((url (eglot--request (eglot--current-server-or-lose)
-                               :experimental/externalDocs
-                               `(,@(eglot--TextDocumentPositionParams)))))
-      (browse-url url)))
-
   ;; Tree-sitter produces a better imenu.
   (setq eglot-stay-out-of '(imenu))
 
@@ -1851,17 +1730,16 @@
                :constantValues t))))))
 
 (use-package consult-eglot
-  :general
-  (my/bind-goto 'eglot-mode-map
-    "o" #'consult-eglot-symbols))
+  :bind
+  (:map eglot-mode-map
+   ("M-g o" . consult-eglot-symbols)))
 
 ;;;;;; Eldoc
 
 (use-package eldoc
   :ensure nil
-  :general
-  (general-def
-    "C-h t" #'eldoc-mode)
+  :bind
+  ("C-h t" . eldoc-mode)
   :custom
   (global-eldoc-mode t)
   (eldoc-idle-delay 0.5)
@@ -1884,79 +1762,71 @@
   (eldoc-add-command-completions "xref-goto-"))
 
 (use-package eldoc-box
-  :commands
-  (eldoc-box-help-at-point
-   eldoc-box-quit-frame)
-  :general
-  (general-def
-    "M-p" #'my/eldoc-box-toggle)
+  :preface
+  (declare-function eldoc-box-help-at-point "eldoc-box")
+  (declare-function eldoc-box-quit-frame "eldoc-box")
 
-  :config
-  ;; Quit Eldoc Box when C-g is received. Unfortunately, the variable
-  ;; `eldoc-box-clear-with-C-g' only applies to Eldoc Box's hover mode.
-  (advice-add #'keyboard-quit :before #'eldoc-box-quit-frame)
-
+  ;; TODO: Fix this function as it's broken.
   (defun my/eldoc-box-toggle ()
     "Toggle the `eldoc-box-help-at-point' popup."
     (interactive)
     (if (and eldoc-box--frame (frame-visible-p eldoc-box--frame))
         (eldoc-box-quit-frame)
-      (eldoc-box-help-at-point))))
+      (eldoc-box-help-at-point)))
+
+  ;; :commands my/eldoc-box-toggle
+  :bind
+  ("M-p" . my/eldoc-box-toggle)
+  :config
+  ;; Quit Eldoc Box when C-g is received. Unfortunately, the variable
+  ;; `eldoc-box-clear-with-C-g' only applies to Eldoc Box's hover mode.
+  (advice-add #'keyboard-quit :before #'eldoc-box-quit-frame))
 
 ;;;;;; Flymake
 
 (use-package flymake
-  :functions my/repeatize
-  :hook
-  (prog-mode . flymake-mode)
+  :preface
+  (declare-function flymake-eldoc-function "flymake")
+  (declare-function flymake-proc-legacy-flymake "flymake-proc")
 
-  :general
-  (my/bind-c-c 'flymake-mode-map
-    "fd" #'flymake-show-buffer-diagnostics
-    "fD" #'flymake-show-project-diagnostics
-    "fn" #'flymake-goto-next-error
-    "fp" #'flymake-goto-prev-error)
-
-  :custom
-  (flymake-no-changes-timeout 0.5)
-  (flymake-start-on-save-buffer t)
-
-  :init
   (defun my/flymake-eldoc-show-first ()
     "Prioritize Flymake messages when Eldoc composes documentation."
     ;; This ensures Flymake messages are always visible in the minibuffer.
     (remove-hook 'eldoc-documentation-functions #'flymake-eldoc-function t)
     (add-hook 'eldoc-documentation-functions #'flymake-eldoc-function nil t))
 
-  :config
   (defun my/elisp-flymake-byte-compile (fn &rest args)
     "Wrapper for `elisp-flymake-byte-compile' that considers `load-path'."
-    (let* ((alt-load-path (seq-filter (lambda (d)
-                                        (not (string-match-p "elpaca/builds/vterm" d))) load-path))
-           (elisp-flymake-byte-compile-load-path
-            (append elisp-flymake-byte-compile-load-path alt-load-path)))
-      ;; (message "Setting elisp-flymake-byte-compile-load-path to %S" elisp-flymake-byte-compile-load-path)
-      (apply fn args)
-      ))
+    ;; Don't let Vterm onto Flymake's load path as it oddly blocks it.
+    (let* ((alt-load-path (seq-filter (lambda (d) (not (string-match-p "elpaca/builds/vterm" d))) load-path))
+           (elisp-flymake-byte-compile-load-path (append elisp-flymake-byte-compile-load-path alt-load-path)))
+      (apply fn args)))
 
+  :bind
+  (:map flymake-mode-map
+   ("C-c f d" . flymake-show-buffer-diagnostics)
+   ("C-c f D" . flymake-show-project-diagnostics)
+   ("C-c f n" . flymake-goto-next-error)
+   ("C-c f p" . flymake-goto-prev-error)
+   :repeat-map my/flymake-repeat-map
+   ("n" . flymake-goto-next-error)
+   ("p" . flymake-goto-prev-error))
+
+  :hook
+  (prog-mode . flymake-mode)
+
+  :custom
+  (flymake-no-changes-timeout 0.5)
+  (flymake-start-on-save-buffer t)
+
+  :config
   (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-byte-compile)
-  (remove-hook 'flymake-diagnostic-functions #'flymake-proc-legacy-flymake)
-
-  (defvar-keymap my/flymake-repeat-map
-    :doc "Keymap for repeatable Flymake commands."
-    "n" #'flymake-goto-next-error
-    "p" #'flymake-goto-prev-error)
-
-  (my/repeatize 'my/flymake-repeat-map))
+  (remove-hook 'flymake-diagnostic-functions #'flymake-proc-legacy-flymake))
 
 ;;;;;; Xref
 
 (use-package xref
   :ensure nil
-  :general
-  (my/bind-goto
-    "." #'xref-find-definitions
-    "?" #'xref-find-references)
   :custom
   ;; Don't prompt by default (invoke with prefix arg to prompt).
   (xref-prompt-for-identifier nil))
@@ -1988,119 +1858,104 @@
 
 (use-package prog-mode
   :ensure nil
-  :general
-  (my/bind-c-c
-    ;; Build.
-    "ba" #'my/build-system-add
-    "bb" #'my/build-system-build
-    "bc" #'my/build-system-clean
-    "bf" #'my/build-system-fmt
-    "bl" #'my/build-system-lint
-    "bo" #'my/build-system-outdated
-    "br" #'my/build-system-run
-    "bu" #'my/build-system-upgrade
-    ;; Test.
-    "tp" #'my/build-system-test)
+  ;;   :preface
+  ;;   (defun my/build-system-type ()
+  ;;     "Return a symbol representing the current project's build type."
+  ;;     (if-let* ((dir (my/project-current-root)))
+  ;;         (cond ((file-exists-p (expand-file-name "Cargo.toml" dir)) 'cargo)
+  ;;               ((file-exists-p (expand-file-name "go.mod" dir)) 'go))))
 
-  :init
-  (defun my/build-system-type ()
-    "Return a symbol representing the current project's build type."
-    (if-let* ((dir (my/project-current-root)))
-        (cond ((file-exists-p (expand-file-name "Cargo.toml" dir)) 'cargo)
-              ((file-exists-p (expand-file-name "go.mod" dir)) 'go))))
+  ;;   (defvar my/build-system-command-alist
+  ;;     '((cargo
+  ;;        (add . rustic-cargo-add)
+  ;;        (build . rustic-cargo-build)
+  ;;        (clean . rustic-cargo-clean)
+  ;;        (fmt . rustic-cargo-fmt)
+  ;;        (lint . rustic-cargo-clippy)
+  ;;        (outdated . rustic-cargo-outdated)
+  ;;        (run . rustic-cargo-run)
+  ;;        (upgrade . rustic-cargo-upgrade)
+  ;;        (test . rustic-cargo-test))
+  ;;       (go
+  ;;        (test . go-test-current-project))))
 
-  (defvar my/build-system-command-alist
-    '((cargo
-       (add . rustic-cargo-add)
-       (build . rustic-cargo-build)
-       (clean . rustic-cargo-clean)
-       (fmt . rustic-cargo-fmt)
-       (lint . rustic-cargo-clippy)
-       (outdated . rustic-cargo-outdated)
-       (run . rustic-cargo-run)
-       (upgrade . rustic-cargo-upgrade)
-       (test . rustic-cargo-test))
-      (go
-       (test . go-test-current-project))))
+  ;;   (defun my/build-system-run-action (action)
+  ;;     "Execute ACTION using the project's build sytem.
+  ;; If a prefix argument has been specified, the command is run from the root of
+  ;; the current project, otherwise it is run from the current directory."
+  ;;     (if-let* ((type (my/build-system-type))
+  ;;               (commands (alist-get type my/build-system-command-alist))
+  ;;               (command (alist-get action commands))
+  ;;               (default-directory (if current-prefix-arg
+  ;;                                      (my/project-current-root)
+  ;;                                    default-directory)))
+  ;;         (funcall command)
+  ;;       (message "Action %s is not known for this build system" action)))
 
-  (defun my/build-system-run-action (action)
-    "Execute ACTION using the project's build sytem.
-If a prefix argument has been specified, the command is run from the root of
-the current project, otherwise it is run from the current directory."
-    (if-let* ((type (my/build-system-type))
-              (commands (alist-get type my/build-system-command-alist))
-              (command (alist-get action commands))
-              (default-directory (if current-prefix-arg
-                                     (my/project-current-root)
-                                   default-directory)))
-        (funcall command)
-      (message "Action %s is not known for this build system" action)))
+  ;;   (defun my/build-system-add ()
+  ;;     "Execute the add dependency action."
+  ;;     (interactive)
+  ;;     (my/build-system-run-action 'add))
 
-  (defun my/build-system-add ()
-    "Execute the add dependency action."
-    (interactive)
-    (my/build-system-run-action 'add))
+  ;;   (defun my/build-system-build ()
+  ;;     "Execute the build/compile action."
+  ;;     (interactive)
+  ;;     (my/build-system-run-action 'build))
 
-  (defun my/build-system-build ()
-    "Execute the build/compile action."
-    (interactive)
-    (my/build-system-run-action 'build))
+  ;;   (defun my/build-system-clean ()
+  ;;     "Execute the clean action."
+  ;;     (interactive)
+  ;;     (my/build-system-run-action 'clean))
 
-  (defun my/build-system-clean ()
-    "Execute the clean action."
-    (interactive)
-    (my/build-system-run-action 'clean))
+  ;;   (defun my/build-system-fmt ()
+  ;;     "Execute the fmt action."
+  ;;     (interactive)
+  ;;     (my/build-system-run-action 'fmt))
 
-  (defun my/build-system-fmt ()
-    "Execute the fmt action."
-    (interactive)
-    (my/build-system-run-action 'fmt))
+  ;;   (defun my/build-system-lint ()
+  ;;     "Execute the lint action."
+  ;;     (interactive)
+  ;;     (my/build-system-run-action 'lint))
 
-  (defun my/build-system-lint ()
-    "Execute the lint action."
-    (interactive)
-    (my/build-system-run-action 'lint))
+  ;;   (defun my/build-system-outdated ()
+  ;;     "Execute the outdated action."
+  ;;     (interactive)
+  ;;     (my/build-system-run-action 'outdated))
 
-  (defun my/build-system-outdated ()
-    "Execute the outdated action."
-    (interactive)
-    (my/build-system-run-action 'outdated))
+  ;;   (defun my/build-system-run ()
+  ;;     "Execute the run action."
+  ;;     (interactive)
+  ;;     (my/build-system-run-action 'run))
 
-  (defun my/build-system-run ()
-    "Execute the run action."
-    (interactive)
-    (my/build-system-run-action 'run))
+  ;;   (defun my/build-system-upgrade ()
+  ;;     "Execute the upgrade action."
+  ;;     (interactive)
+  ;;     (my/build-system-run-action 'upgrade))
 
-  (defun my/build-system-upgrade ()
-    "Execute the upgrade action."
-    (interactive)
-    (my/build-system-run-action 'upgrade))
+  ;;   (defun my/build-system-test ()
+  ;;     "Execute the test project action."
+  ;;     (interactive)
+  ;;     (my/build-system-run-action 'test))
 
-  (defun my/build-system-test ()
-    "Execute the test project action."
-    (interactive)
-    (my/build-system-run-action 'test)))
+  :bind
+  ("C-c b a" . my/build-system-add)
+  ("C-c b b" . my/build-system-build)
+  ("C-c b c" . my/build-system-clean)
+  ("C-c b f" . my/build-system-fmt)
+  ("C-c b l" . my/build-system-lint)
+  ("C-c b o" . my/build-system-outdated)
+  ("C-c b r" . my/build-system-run)
+  ("C-c b u" . my/build-system-upgrade)
+  ("C-c t p" . my/build-system-test))
 
 ;;;;;; Rust
 
 (use-package rust-ts-mode
   :ensure nil
-  :hook
-  (rust-ts-mode . my/rust-ts-mode-init)
-  :config
-  ;; Custom function to be used for `treesit-defun-name-function' that
-  ;; handles a wider range of node types.
-  (defun my/treesit-rust-defun-name (node)
-    "Return the defun name of NODE for Rust node types."
-    (pcase (treesit-node-type node)
-      ("const_item"
-       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
-      ("macro_definition"
-       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
-      ("trait_item"
-       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
-      ;; Call the default value of `treesit-defun-name-function'.
-      (_ (rust-ts-mode--defun-name node))))
+  :defines consult-imenu-config
+  :preface
+  (declare-function treesit-node-text "treesit")
+  (declare-function rust-ts-mode--defun-name "rust-ts-mode")
 
   (defun my/rust-ts-mode-init ()
     "Init function for `rust-ts-mode'."
@@ -2123,6 +1978,24 @@ the current project, otherwise it is run from the current directory."
                   ("Struct" "\\`struct_item\\'" nil nil)
                   ("Trait" "\\`trait_item\\'" nil nil))))
 
+  ;; Custom function to be used for `treesit-defun-name-function' that
+  ;; handles a wider range of node types.
+  (defun my/treesit-rust-defun-name (node)
+    "Return the defun name of NODE for Rust node types."
+    (pcase (treesit-node-type node)
+      ("const_item"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ("macro_definition"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ("trait_item"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ;; Call the default value of `treesit-defun-name-function'.
+      (_ (rust-ts-mode--defun-name node))))
+
+  :hook
+  (rust-ts-mode . my/rust-ts-mode-init)
+
+  :config
   ;; Update `consult-imenu-config' with the symbol categories for Rust.
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
@@ -2145,9 +2018,21 @@ the current project, otherwise it is run from the current directory."
 ;; by `treesit-auto' for `rust-ts-mode'. There must be a better way to do this.
 (use-package rustic
   :demand t
-  :general
-  (my/bind-c-c '(rust-mode-map rust-ts-mode-map)
-    "tt" #'rustic-cargo-current-test)
+  :after rust-ts-mode
+  :bind
+  (:map rust-ts-mode-map
+   ;; TODO: Look at latest Rustic commands.
+   ("C-c b a" . rustic-cargo-add)
+   ("C-c b b" . rustic-cargo-build)
+   ("C-c b c" . rustic-cargo-clean)
+   ("C-c b f" . rustic-cargo-fmt)
+   ("C-c b l" . rustic-cargo-clippy)
+   ("C-c b o" . rustic-cargo-outdated)
+   ("C-c b r" . rustic-cargo-run)
+   ("C-c b u" . rustic-cargo-update)
+   ("C-c b U" . rustic-cargo-upgrade)
+   ("C-c t ." . rustic-cargo-test-dwim)
+   ("C-c t t" . rustic-cargo-current-test))
   :custom
   (rustic-lsp-client 'eglot)
   :config
@@ -2157,24 +2042,10 @@ the current project, otherwise it is run from the current directory."
 
 (use-package go-ts-mode
   :ensure nil
-  :hook
-  (go-ts-mode . my/go-ts-mode-init)
+  :preface
+  (declare-function treesit-node-text "treesit")
+  (declare-function go-ts-mode--defun-name "go-ts-mode")
 
-  :custom
-  (go-ts-mode-indent-offset 4)
-
-  :config
-  (defun my/treesit-go-defun-name (node)
-    "Return the defun name of NODE for Go node types."
-    (pcase (treesit-node-type node)
-      ("const_spec"
-       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
-      ("var_spec"
-       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
-      (_ (go-ts-mode--defun-name node))))
-
-  ;; See possible node types here:
-  ;; https://github.com/tree-sitter/tree-sitter-go/blob/bbaa67a180cfe0c943e50c55130918be8efb20bd/src/node-types.json.
   (defun my/go-ts-mode-init ()
     "Init function for `go-ts-mode'."
     (setq-local tab-width go-ts-mode-indent-offset)
@@ -2191,6 +2062,22 @@ the current project, otherwise it is run from the current directory."
                   ;; Unfortunately, this also includes local variables.
                   ("Variable" "\\`var_spec\\'" nil nil))))
 
+  (defun my/treesit-go-defun-name (node)
+    "Return the defun name of NODE for Go node types."
+    ;; See possible node types here:
+    ;; https://github.com/tree-sitter/tree-sitter-go/blob/bbaa67a180cfe0c943e50c55130918be8efb20bd/src/node-types.json.
+    (pcase (treesit-node-type node)
+      ("const_spec"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      ("var_spec"
+       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
+      (_ (go-ts-mode--defun-name node))))
+
+  :hook
+  (go-ts-mode . my/go-ts-mode-init)
+  :custom
+  (go-ts-mode-indent-offset 4)
+  :config
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
                  '(go-ts-mode
@@ -2204,20 +2091,23 @@ the current project, otherwise it is run from the current directory."
                            (?v "Variable" my/imenu-category-variable-face))))))
 
 (use-package gotest
+  :after go-ts-mode
+  :bind
+  (:map go-ts-mode-map
+   ("C-c t r" . go-run)
+   ("C-c t f" . go-test-current-file)
+   ("C-c t t" . go-test-current-test)
+   ("C-c t p" . go-test-current-project)
+   ("C-c t b" . go-test-current-benchmark)
+   ("C-c t c" . go-test-current-coverage))
   :hook
-  ((go-mode go-ts-mode) . (lambda () (setq-local go-test-args "-v")))
-  :general
-  (my/bind-c-c '(go-mode-map go-ts-mode-map)
-    "tf" #'go-test-current-file
-    "tt" #'go-test-current-test
-    "tp" #'go-test-current-project
-    "tb" #'go-test-current-benchmark
-    "tc" #'go-test-current-coverage))
+  ((go-mode go-ts-mode) . (lambda () (setq-local go-test-args "-v"))))
 
 (use-package go-gen-test
-  :general
-  (my/bind-c-c '(go-mode-map go-ts-mode-map)
-    "tg" #'go-gen-test-dwim))
+  :after go-ts-mode
+  :bind
+  (:map go-ts-mode-map
+   ("C-c t g" . go-gen-test-dwim)))
 
 ;;;;;; Haskell
 
@@ -2301,14 +2191,7 @@ the current project, otherwise it is run from the current directory."
 
 (use-package elisp-mode
   :ensure nil
-  :hook
-  (emacs-lisp-mode . my/elisp-init)
-
-  :general
-  (my/bind-c-x
-    "C-r" #'eval-region)
-
-  :config
+  :preface
   (defun my/elisp-init ()
     "Init function for `emacs-lisp-mode'."
     (setq-local outline-regexp ";;;+ [^\n]")
@@ -2319,7 +2202,12 @@ the current project, otherwise it is run from the current directory."
                  #'elisp-completion-at-point
                  #'cape-file))
     (my/flymake-eldoc-show-first))
-
+  :bind
+  (:map emacs-lisp-mode-map
+   ("C-x C-r" . eval-region))
+  :hook
+  (emacs-lisp-mode . my/elisp-init)
+  :config
   ;; This configuration is from consult-imenu.el with the fonts changed.
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
@@ -2340,11 +2228,10 @@ the current project, otherwise it is run from the current directory."
     inferior-emacs-lisp-mode) . paredit-mode)
 
   :config
-  ;; Unbind Paredit keybindings I don't use that can cause collisions. This
-  ;; doesn't work unless I do it under :config rather than :general.
-  (general-unbind 'paredit-mode-map
-    "C-c C-M-l" "C-<left>" "C-<right>" "C-M-<left>" "C-M-<right>"
-    "M-?" "M-<up>" "M-<down>" "M-S" "M-J" "M-q" "M-r" "M-s"))
+  ;; Unbind keybindings that collide with things I find more useful.
+  (dolist (key '("C-c C-M-l" "C-<left>" "C-<right>" "C-M-<left>" "C-M-<right>"
+                 "M-?" "M-<up>" "M-<down>" "M-S" "M-J" "M-q" "M-r" "M-s"))
+    (define-key paredit-mode-map (kbd key) nil)))
 
 (use-package rainbow-delimiters
   :hook
@@ -2357,8 +2244,9 @@ the current project, otherwise it is run from the current directory."
   ((lisp-mode
     emacs-lisp-mode
     inferior-emacs-lisp-mode) . aggressive-indent-mode)
-  :general
-  (general-unbind 'aggressive-indent-mode-map "C-c C-q"))
+  :bind
+  (:map aggressive-indent-mode-map
+   ("C-c C-q" . nil)))
 
 ;; Custom Elisp indentation function - see code comments in package.
 (use-package emacs-lisp-indent
@@ -2370,8 +2258,9 @@ the current project, otherwise it is run from the current directory."
 
 (use-package sgml-mode
   :ensure nil
-  :general
-  (general-unbind 'html-mode-map "M-o"))
+  :bind
+  (:map html-mode-map
+   ("M-o" . nil)))
 
 ;;;;;; Markdown
 
@@ -2384,12 +2273,11 @@ the current project, otherwise it is run from the current directory."
 ;;;; Git
 
 (use-package magit
-  :general
-  (my/bind-c-c
-    "gc" #'magit-clone
-    "gs" #'magit-status
-    "gd" #'magit-dispatch
-    "gf" #'magit-file-dispatch)
+  :bind
+  ("C-c g c" . magit-clone)
+  ("C-c g s" . magit-status)
+  ("C-c g d" . magit-dispatch)
+  ("C-c g f" . magit-file-dispatch)
   :config
   ;; Speed up Magit by removing a bunch of the slower status hook functions
   ;; that add details to the status buffer. It makes it look more bare-bones
@@ -2405,44 +2293,21 @@ the current project, otherwise it is run from the current directory."
 (use-package difftastic)
 
 (use-package browse-at-remote
-  :general
-  (my/bind-c-c
-    "go" #'browse-at-remote
-    "gk" #'browse-at-remote-kill))
+  :bind
+  (("C-c g o" . browse-at-remote)
+   ("C-c g k" . browse-at-remote-kill)))
 
 ;;;; Shell/Terminal
 
 (use-package eshell
   :ensure nil
-  :hook
-  (eshell-mode . my/eshell-init)
-  (eshell-pre-command . my/eshell-pre-command)
-  (eshell-post-command . my/eshell-post-command)
-
-  :general
-  (my/bind-c-c
-    "e" #'eshell)
-  (my/bind-c-c 'eshell-mode-map
-    "C-<backspace>" #'eshell-kill-output
-    "C-SPC" #'eshell-mark-output)
-  (general-def 'eshell-mode-map
-    "C-S-<backspace>" #'my/eshell-kill-whole-line)
-  (general-unbind 'eshell-hist-mode-map
-    "M-s"  ;; Search prefix.
-    "M-r") ;; Prefer globally bound `move-to-window-line-top-bottom'.
-
-  :custom
-  (eshell-history-size 10000)
-  (eshell-buffer-maximum-lines 10000)
-  (eshell-hist-ignoredups t)
-  (eshell-prompt-function #'my/eshell-prompt)
-  (eshell-banner-message "Welcome to Eshell\n\n")
-  ;; The following commands will be started in `term-mode'.
-  (eshell-visual-commands '("vi" "vim" "htop" "btm" "watch"))
-
-  :config
-  ;; Needed so that `eshell-mode-map' is available above.
-  (require 'esh-mode)
+  :defines eshell-prompt-regexp
+  :preface
+  (declare-function eshell-bol "esh-mode")
+  (declare-function eshell-read-aliases-list "esh-alias")
+  (declare-function eshell/pwd "em-dirs")
+  (declare-function eshell-save-some-history "em-hist")
+  (declare-function pcomplete-completions-at-point "pcomplete")
 
   (defun my/eshell-init ()
     "Hook function executed when `eshell-mode' is run."
@@ -2524,53 +2389,50 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "Eshell version of `kill-whole-line' that respects the prompt, if any."
     (interactive)
     (eshell-bol)
-    (kill-line)))
+    (kill-line))
+
+  :bind
+  ("C-c e" . eshell)
+  :hook
+  (eshell-mode . my/eshell-init)
+  (eshell-pre-command . my/eshell-pre-command)
+  (eshell-post-command . my/eshell-post-command)
+  :custom
+  (eshell-history-size 10000)
+  (eshell-buffer-maximum-lines 10000)
+  (eshell-hist-ignoredups t)
+  (eshell-prompt-function #'my/eshell-prompt)
+  (eshell-banner-message "Welcome to Eshell\n\n")
+  ;; The following commands will be started in `term-mode'.
+  (eshell-visual-commands '("vi" "vim" "htop" "btm" "watch")))
+
+(use-package esh-mode
+  :ensure nil
+  :bind
+  (:map eshell-mode-map
+   ("C-c C-<backspace>" . eshell-kill-output)
+   ("C-c C-SPC" . eshell-mark-output)
+   ("C-S-<backspace>" . my/eshell-kill-whole-line)))
+
+(use-package em-hist
+  :ensure nil
+  :bind
+  (:map eshell-hist-mode-map
+   ("M-s" . nil)
+   ("M-r" . nil)))
 
 (use-package vterm
-  :commands
-  (vterm-next-prompt
-   vterm-previous-prompt
-   vterm-send-key
-   my/vterm-project)
-  :functions
-  (project-prefixed-buffer-name
-   my/repeatize)
-  :hook (vterm-mode . my/vterm-init)
-  :general
-  (my/bind-c-c
-    "v" #'vterm)
-  (my/bind-c-c 'vterm-mode-map
-    ;; Same keybinding for shell history as `consult-history' + `cape-history'.
-    "h" (lambda () (interactive) (vterm-send-key (kbd "C-r"))))
-  (general-unbind 'vterm-mode-map
-    "C-o" "C-r" "C-s" "C-SPC"
-    "M-s" "M-g" "M-:" "M-&" "M-'"
-    "M-H" "M-J" "M-K" "M-L"
-    "C-M-H" "C-M-J" "C-M-K" "C-M-L")
+  :defines (vterm-mode-map vterm-eval-cmds)
+  :preface
+  (declare-function vterm-send-key "vterm")
+  (declare-function vterm-previous-prompt "vterm")
+  (declare-function vterm-next-prompt "vterm")
+  (declare-function project-prefixed-buffer-name "project")
 
-  :custom
-  (vterm-always-compile-module t)
-  ;; I'd much prefer to NOT clear scrollback but I can't rely on it due to
-  ;; https://github.com/akermu/emacs-libvterm/issues/546.
-  (vterm-clear-scrollback-when-clearing t)
-  (vterm-max-scrollback 10000)
-
-  :config
   (defun my/vterm-init ()
     "Hook function executed when `vterm-mode' is run."
     ;; Make outline work with vterm prompts.
     (setq-local outline-regexp "^[^#$\n]* ❯ "))
-
-  ;; Allow find-file-other-window to be called from Vterm.
-  (add-to-list 'vterm-eval-cmds
-               '("find-file-other-window" find-file-other-window))
-
-  (defvar-keymap my/vterm-repeat-map
-    :doc "Keymap for repeatable Vterm commands."
-    "C-n" #'vterm-next-prompt
-    "C-p" #'vterm-previous-prompt)
-
-  (my/repeatize 'my/vterm-repeat-map)
 
   (defun my/vterm-project ()
     "Start a Vterm in the current project's root directory."
@@ -2580,21 +2442,57 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
            (existing-buffer (get-buffer buffer-name)))
       (if (and existing-buffer (not current-prefix-arg))
           (pop-to-buffer existing-buffer)
-        (vterm buffer-name)))))
+        (vterm buffer-name))))
+
+  (defvar-keymap my/vterm-repeat-map
+    :doc "Keymap for repeatable Vterm commands."
+    "C-n" #'vterm-next-prompt
+    "C-p" #'vterm-previous-prompt)
+
+  :bind
+  (("C-c v" . vterm)
+   :map vterm-mode-map
+   ;; Same keybinding for shell history as `consult-history' and `cape-history'.
+   ("C-c h" . (lambda () (interactive) (vterm-send-key (kbd "C-r")))))
+
+  :hook (vterm-mode . my/vterm-init)
+  :custom
+  (vterm-always-compile-module t)
+  ;; I'd much prefer to NOT clear scrollback but I can't rely on it due to
+  ;; https://github.com/akermu/emacs-libvterm/issues/546.
+  (vterm-clear-scrollback-when-clearing t)
+  (vterm-max-scrollback 10000)
+
+  :config
+  ;; Allow find-file-other-window to be called from Vterm.
+  (add-to-list 'vterm-eval-cmds
+               '("find-file-other-window" find-file-other-window))
+
+  ;; Unset a bunch of keybindings that I want to keep.
+  (dolist (key '("C-o" "C-r" "C-s" "C-SPC"
+                 "M-s" "M-g" "M-:" "M-&" "M-'"
+                 "M-H" "M-J" "M-K" "M-L"
+                 "C-M-H" "C-M-J" "C-M-K" "C-M-L"))
+    (define-key vterm-mode-map (kbd key) nil)))
 
 (use-package sh-script
   :ensure nil
-  :general
-  (my/bind-c-c 'sh-mode-map
-    "C-o" nil))
+  :bind
+  (:map sh-mode-map
+   ("C-c C-o" . nil)))
 
 ;;;; Org Mode
 
 (use-package org
+  ;; TODO: Try latest again.
   ;; Use built-in for now as latest has bugs. When Elpaca supports lockfiles
   ;; I'll just pin it. See: https://github.com/progfolio/elpaca/issues/151.
   :ensure nil
   :preface
+  (declare-function org-restart-font-lock "org")
+  (declare-function org-get-tags "org")
+  (declare-function org-refile-get-targets "org-refile")
+
   ;; GTD (agenda) & PKM (notes) paths.
   (defvar my/gtd-dir (expand-file-name "~/dev/home/gtd/"))
   (defvar my/pkm-dir (expand-file-name "~/dev/home/pkm/"))
@@ -2608,60 +2506,211 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (defvar my/gtd-coffee-file (expand-file-name "coffee.org" my/gtd-dir))
   (defvar my/gtd-music-file (expand-file-name "music.org" my/gtd-dir))
 
-  ;; Order of Org agenda items.
-  (defvar my/org-agenda-todo-sort-order '("PROG" "NEXT" "TODO" "HOLD" "DONE"))
+  ;; Extra electric pairs to use in org mode.
+  (defvar my/org-extra-electric-pairs '((?/ . ?/) (?= . ?=)))
 
-  :defines org-agenda-mode-map
-  :functions
-  (org-agenda-quit
-   org-agenda-refile
-   org-indent-mode
-   org-get-tags
-   org-structure-template-alist
-   org-refile-get-targets
-   org-restart-font-lock
-   my/org-agenda-refile
-   my/org-agenda-refile-archive
-   my/org-agenda-refile-personal
-   my/org-agenda-refile-work
-   my/org-agenda-refile-inbox)
+  (defun my/org-init ()
+    "Init function for `org-mode'."
+    (interactive)
+    (visual-line-mode 1)
+    (variable-pitch-mode 1)
+    (display-line-numbers-mode 0)
+    (setq-local line-spacing 2)
+    (setq-local completion-at-point-functions
+                (list #'tempel-complete #'cape-file))
+    (setq-local electric-pair-pairs
+                (append electric-pair-pairs my/org-extra-electric-pairs))
+    (setq-local electric-pair-text-pairs
+                (append electric-pair-text-pairs my/org-extra-electric-pairs)))
 
-  :general
-  (general-unbind 'org-mode-map
-    "C-'"         ;; Used for Popper.
-    "M-S-<up>"    ;; Used for scrolling.
-    "M-S-<down>") ;; Used for scrolling.
+  (defun my/org-toggle-emphasis-markers ()
+    "Toggle the display of org emphasis markers."
+    (interactive)
+    (org-restart-font-lock)
+    (setq org-hide-emphasis-markers (not org-hide-emphasis-markers)))
 
-  (my/bind-c-c
-    "ol" #'org-store-link
-    "oa" #'org-agenda
-    "os" #'org-save-all-org-buffers
-    "oi" '((lambda () (interactive) (org-capture nil "i"))
-           :which-key "capture inbox")
-    "ob" '((lambda () (interactive) (org-capture nil "b"))
-           :which-key "capture bookmark")
-    "oc" '((lambda () (interactive) (org-capture nil "c"))
-           :which-key "capture coffee")
-    "om" '((lambda () (interactive) (org-capture nil "m"))
-           :which-key "capture music")
-    ;; Use same keybinding given to `org-open-at-point' in Org mode.
-    "C-o" #'org-open-at-point-global)
-
-  (my/bind-c-c 'org-mode-map
-    "C-S-l" #'org-cliplink)
-
-  (general-def 'org-agenda-mode-map
-    "rr" '(org-agenda-refile :which-key "refile (select)")
-    "rp" '(my/org-agenda-refile-personal :which-key "personal")
-    "rw" '(my/org-agenda-refile-work :which-key "work")
-    "ra" '(my/org-agenda-refile-archive :which-key "archive")
-    "rs" '(my/org-agenda-refile-someday :which-key "someday")
-    "ri" '(my/org-agenda-refile-inbox :which-key "inbox")
-    "k" #'org-agenda-kill
-    "?" #'which-key-show-major-mode)
+  :bind
+  (("C-c C-o" . org-open-at-point-global)
+   ("C-c o l" . org-store-link)
+   ("C-c o s" . org-save-all-org-buffers)
+   ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
+   ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
+   ("C-c o c" . (lambda () (interactive) (org-capture nil "c")))
+   ("C-c o m" . (lambda () (interactive) (org-capture nil "m")))
+   :map org-mode-map
+   ("C-'" . nil)
+   ("M-S-<up>" . nil)
+   ("M-S-<down>" . nil)
+   ("C-c C-S-l" . org-cliplink))
 
   :hook
   (org-mode . my/org-init)
+
+  :custom
+  (org-auto-align-tags nil)
+  (org-blank-before-new-entry
+   '((heading . nil)
+     (plain-list-item . nil)))
+  (org-capture-templates
+   `(("i" "Inbox" entry
+      (file+headline ,my/gtd-inbox-file "Inbox")
+      "* TODO %i%?")
+     ("b" "Bookmark" entry
+      (file+olp+datetree ,my/gtd-bookmarks-file "Bookmarks")
+      "* %(org-cliplink-capture)%?\n")
+     ("c" "Coffee Journal" entry
+      (file+olp+datetree ,my/gtd-coffee-file "Coffee Journal" "Log")
+      ,(concat
+	"* 6%?:00 AM\n"
+        "- Beans: Use org-store-link (C-c o l) then org-insert-link (C-c C-l)\n"
+        "- Grind: KM47C+PO @ 3.0.0\n"
+        "- Water: Brisbane tap @ 95°C\n"
+        "- Brew method: V60 4:6\n"
+        "- Brew notes:\n"
+        "  - Coffee / water: 20g coffee / 300g water\n"
+        "  - Breakdown: 50g/70g/60g/60g/60g on 45s with no extra agitation\n"
+        "  - Next time: Grind a bit finer\n"
+        "- Taste notes:\n"
+        "  - Yum yum\n") :jump-to-captured t)
+     ("m" "Music" entry
+      (file+olp+datetree ,my/gtd-music-file "Music" "Albums")
+      ,(concat
+	"* %?[[https://open.spotify.com/album/4VNqy9FUAFCvwE6XqrtlOn?si=r3jW-T5QSBqiygbwpzv5fQ][Tom Waits: Bone Machine]] :experimental:rock:jazz:halloffame:\n"
+        "- Year: 2023\n"
+        "- Rating: 5/5\n"
+        "- Notes: Gud allbum.\n"))))
+  (org-catch-invisible-edits 'show-and-error)
+  (org-confirm-babel-evaluate nil)
+  (org-default-notes-file my/gtd-inbox-file)
+  (org-directory my/gtd-dir)
+  (org-ellipsis " 》")
+  (org-fontify-done-headline t)
+  (org-fontify-quote-and-verse-blocks t)
+  (org-hide-emphasis-markers t)
+  (org-log-done 'time)
+  ;; Leaving drawer logging disabled for now as I don't like the format of the
+  ;; log items and I want to know when a task was created which doesn't happen
+  ;; without what apears to be quite a bit of custom code.
+  (org-log-into-drawer nil)
+  (org-log-states-order-reversed nil)   ; Make newest last
+  (org-outline-path-complete-in-steps nil)
+  (org-pretty-entities t)
+  (org-priority-default org-priority-lowest)
+  (org-refile-targets
+   `((,my/gtd-archive-file :level . 1)
+     (,my/gtd-inbox-file :level . 1)
+     (,my/gtd-personal-file :level . 1)
+     (,my/gtd-work-file :level . 1)
+     (,my/gtd-someday-file :level . 1)))
+  ;; Show refile headlines as nested paths.
+  (org-refile-use-outline-path t)
+  (org-special-ctrl-a/e t)
+  (org-startup-indented t)
+  (org-tags-column 0)
+  (org-todo-keywords
+   `((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "HOLD(h)" "|" "DONE(d)")))
+  ;; See colours here: https://alexschroeder.ch/geocities/kensanata/colors.html.
+  (org-todo-keyword-faces
+   `(("TODO" . (:foreground "DodgerBlue2" :weight bold))
+     ("NEXT" . (:foreground "hot pink" :weight bold))
+     ("PROG" . (:foreground "CadetBlue1" :weight bold))
+     ("HOLD" . (:foreground "orange1" :weight bold))
+     ("DONE" . (:foreground "orange red" :weight bold))))
+  (org-use-fast-todo-selection 'expert)
+  (org-use-sub-superscripts nil)
+
+  :config
+  ;; Make it easier to create `org-babel' code blocks.
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")))
+
+(use-package org-agenda
+  :ensure nil
+  :preface
+  (declare-function org-agenda-quit "org-agenda")
+
+  ;; Order of Org agenda items.
+  (defvar my/org-agenda-todo-sort-order '("PROG" "NEXT" "TODO" "HOLD" "DONE"))
+  (defun my/org-agenda-cmp-todo (a b)
+    "Custom compares agenda items A and B based on their todo keywords."
+    (when-let ((state-a (get-text-property 14 'todo-state a))
+               (state-b (get-text-property 14 'todo-state b))
+               (cmp (--map (cl-position-if (lambda (x)
+                                             (equal x it))
+                                           my/org-agenda-todo-sort-order)
+                           (list state-a state-b))))
+      (cond ((apply '> cmp) 1)
+            ((apply '< cmp) -1)
+            (t nil))))
+
+  ;; Function for refiling the current agenda item under point to the specified
+  ;; file and heading. `org-agenda-refile' requires a destination refloc list
+  ;; that is difficult to compose manually. This approach to pulling the refloc
+  ;; out of the return value from `org-refile-get-targets' is adapted from:
+  ;; https://emacs.stackexchange.com/questions/54580/org-refile-under-a-given-heading.
+  (defun my/org-agenda-refile (file heading)
+    "Refile the current agenda item to the refile target for FILE and HEADING."
+    (org-agenda-refile nil
+                       (seq-find
+                        (lambda (refloc)
+                          (and
+                           (string= heading (nth 0 refloc))
+                           (string= file (nth 1 refloc))))
+                        (org-refile-get-targets)) nil))
+
+  (defun my/org-agenda-refile-personal-or-work (file &optional category)
+    "Refile the current org agenda item into FILE under Personal/ or Work/.
+If CATEGORY is specified it must equal \\='personal or \\='work; if it is not
+specified then a task category will be determined by the item's tags."
+    (interactive)
+    (let* ((hdm  (org-get-at-bol 'org-hd-marker))
+	   (tags (with-current-buffer (marker-buffer hdm) (org-get-tags hdm))))
+      (cond ((or (eq 'personal category) (member "@personal" tags))
+             (my/org-agenda-refile file "Personal"))
+            ((or (eq 'work category) (member "@work" tags))
+             (my/org-agenda-refile file "Work"))
+            (t (cl-case (read-char
+                         (format "Refile into %s as [p]ersonal or [w]ork?"
+                                 (file-name-nondirectory file)))
+                 (?p (my/org-agenda-refile-personal-or-work file 'personal))
+                 (?w (my/org-agenda-refile-personal-or-work file 'work))
+                 (t (message "Bad selection")))))))
+
+  (defun my/org-agenda-refile-personal ()
+    "Refile the current org agenda item into the personal list."
+    (interactive)
+    (my/org-agenda-refile my/gtd-personal-file "Personal"))
+
+  (defun my/org-agenda-refile-work ()
+    "Refile the current org agenda item into the work list."
+    (interactive)
+    (my/org-agenda-refile my/gtd-work-file "Work"))
+
+  (defun my/org-agenda-refile-inbox ()
+    "Refile the current org agenda item into the inbox."
+    (interactive)
+    (my/org-agenda-refile my/gtd-inbox-file "Inbox"))
+
+  (defun my/org-agenda-refile-archive ()
+    "Refile the current org agenda item into the archive."
+    (interactive)
+    (my/org-agenda-refile-personal-or-work my/gtd-archive-file))
+
+  (defun my/org-agenda-refile-someday ()
+    "Refile the current org agenda item into the someday."
+    (interactive)
+    (my/org-agenda-refile-personal-or-work my/gtd-someday-file))
+
+  :bind
+  (("C-c o a" . org-agenda)
+   :map org-agenda-mode-map
+   ("r r" . org-agenda-refile)
+   ("r p" . my/org-agenda-refile-personal)
+   ("r w" . my/org-agenda-refile-work)
+   ("r a" . my/org-agenda-refile-archive)
+   ("r s" . my/org-agenda-refile-someday)
+   ("r i" . my/org-agenda-refile-inbox)
+   ("k" . org-agenda-kill)
+   ("?" . which-key-show-major-mode))
 
   :custom
   (org-agenda-cmp-user-defined #'my/org-agenda-cmp-todo)
@@ -2750,179 +2799,10 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (org-agenda-start-with-log-mode t)
   (org-agenda-tags-column 0)
   (org-agenda-window-setup 'current-window)
-  (org-auto-align-tags nil)
-  (org-blank-before-new-entry
-   '((heading . nil)
-     (plain-list-item . nil)))
-  (org-capture-templates
-   `(("i" "Inbox" entry
-      (file+headline ,my/gtd-inbox-file "Inbox")
-      "* TODO %i%?")
-     ("b" "Bookmark" entry
-      (file+olp+datetree ,my/gtd-bookmarks-file "Bookmarks")
-      "* %(org-cliplink-capture)%?\n")
-     ("c" "Coffee Journal" entry
-      (file+olp+datetree ,my/gtd-coffee-file "Coffee Journal" "Log")
-      ,(concat
-	"* 6%?:00 AM\n"
-        "- Beans: Use org-store-link (C-c o l) then org-insert-link (C-c C-l)\n"
-        "- Grind: KM47C+PO @ 3.0.0\n"
-        "- Water: Brisbane tap @ 95°C\n"
-        "- Brew method: V60 4:6\n"
-        "- Brew notes:\n"
-        "  - Coffee / water: 20g coffee / 300g water\n"
-        "  - Breakdown: 50g/70g/60g/60g/60g on 45s with no extra agitation\n"
-        "  - Next time: Grind a bit finer\n"
-        "- Taste notes:\n"
-        "  - Yum yum\n") :jump-to-captured t)
-     ("m" "Music" entry
-      (file+olp+datetree ,my/gtd-music-file "Music" "Albums")
-      ,(concat
-	"* %?[[https://open.spotify.com/album/4VNqy9FUAFCvwE6XqrtlOn?si=r3jW-T5QSBqiygbwpzv5fQ][Tom Waits: Bone Machine]] :experimental:rock:jazz:halloffame:\n"
-        "- Year: 2023\n"
-        "- Rating: 5/5\n"
-        "- Notes: Gud allbum.\n"))))
-  (org-catch-invisible-edits 'show-and-error)
-  (org-confirm-babel-evaluate nil)
-  (org-default-notes-file my/gtd-inbox-file)
-  (org-directory my/gtd-dir)
-  (org-ellipsis " 》")
-  (org-fontify-done-headline t)
-  (org-fontify-quote-and-verse-blocks t)
-  (org-hide-emphasis-markers t)
-  (org-log-done 'time)
-  ;; Leaving drawer logging disabled for now as I don't like the format of the
-  ;; log items and I want to know when a task was created which doesn't happen
-  ;; without what apears to be quite a bit of custom code.
-  (org-log-into-drawer nil)
-  (org-log-states-order-reversed nil)   ; Make newest last
-  (org-outline-path-complete-in-steps nil)
-  (org-pretty-entities t)
-  (org-priority-default org-priority-lowest)
-  (org-refile-targets
-   `((,my/gtd-archive-file :level . 1)
-     (,my/gtd-inbox-file :level . 1)
-     (,my/gtd-personal-file :level . 1)
-     (,my/gtd-work-file :level . 1)
-     (,my/gtd-someday-file :level . 1)))
-  ;; Show refile headlines as nested paths.
-  (org-refile-use-outline-path t)
-  (org-special-ctrl-a/e t)
-  (org-startup-indented t)
-  (org-tags-column 0)
-  (org-todo-keywords
-   `((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "HOLD(h)" "|" "DONE(d)")))
-  ;; See colours here: https://alexschroeder.ch/geocities/kensanata/colors.html.
-  (org-todo-keyword-faces
-   `(("TODO" . (:foreground "DodgerBlue2" :weight bold))
-     ("NEXT" . (:foreground "hot pink" :weight bold))
-     ("PROG" . (:foreground "CadetBlue1" :weight bold))
-     ("HOLD" . (:foreground "orange1" :weight bold))
-     ("DONE" . (:foreground "orange red" :weight bold))))
-  (org-use-fast-todo-selection 'expert)
-  (org-use-sub-superscripts nil)
-
-  :init
-  ;; Require the `org-agenda' package so that its keymap can be customized.
-  (require 'org-agenda)
 
   :config
-  (defvar my/org-extra-electric-pairs '((?/ . ?/) (?= . ?=)))
-  (defun my/org-init ()
-    "Init function for `org-mode'."
-    (interactive)
-    (visual-line-mode 1)
-    (variable-pitch-mode 1)
-    (display-line-numbers-mode 0)
-    (setq-local line-spacing 2)
-    (setq-local completion-at-point-functions
-                (list #'tempel-complete #'cape-file))
-    (setq-local electric-pair-pairs
-                (append electric-pair-pairs my/org-extra-electric-pairs))
-    (setq-local electric-pair-text-pairs
-                (append electric-pair-text-pairs my/org-extra-electric-pairs)))
-
-  (defun my/org-agenda-cmp-todo (a b)
-    "Custom compares agenda items A and B based on their todo keywords."
-    (when-let ((state-a (get-text-property 14 'todo-state a))
-               (state-b (get-text-property 14 'todo-state b))
-               (cmp (--map (cl-position-if (lambda (x)
-                                             (equal x it))
-                                           my/org-agenda-todo-sort-order)
-                           (list state-a state-b))))
-      (cond ((apply '> cmp) 1)
-            ((apply '< cmp) -1)
-            (t nil))))
-
-  ;; Function for refiling the current agenda item under point to the specified
-  ;; file and heading. `org-agenda-refile' requires a destination refloc list
-  ;; that is difficult to compose manually. This approach to pulling the refloc
-  ;; out of the return value from `org-refile-get-targets' is adapted from:
-  ;; https://emacs.stackexchange.com/questions/54580/org-refile-under-a-given-heading.
-  (defun my/org-agenda-refile (file heading)
-    "Refile the current agenda item to the refile target for FILE and HEADING."
-    (org-agenda-refile nil
-                       (seq-find
-                        (lambda (refloc)
-                          (and
-                           (string= heading (nth 0 refloc))
-                           (string= file (nth 1 refloc))))
-                        (org-refile-get-targets)) nil))
-
-  (defun my/org-agenda-refile-personal-or-work (file &optional category)
-    "Refile the current org agenda item into FILE under Personal/ or Work/.
-If CATEGORY is specified it must equal \\='personal or \\='work; if it is not
-specified then a task category will be determined by the item's tags."
-    (interactive)
-    (let* ((hdm  (org-get-at-bol 'org-hd-marker))
-	   (tags (with-current-buffer (marker-buffer hdm) (org-get-tags hdm))))
-      (cond ((or (eq 'personal category) (member "@personal" tags))
-             (my/org-agenda-refile file "Personal"))
-            ((or (eq 'work category) (member "@work" tags))
-             (my/org-agenda-refile file "Work"))
-            (t (cl-case (read-char
-                         (format "Refile into %s as [p]ersonal or [w]ork?"
-                                 (file-name-nondirectory file)))
-                 (?p (my/org-agenda-refile-personal-or-work file 'personal))
-                 (?w (my/org-agenda-refile-personal-or-work file 'work))
-                 (t (message "Bad selection")))))))
-
-  (defun my/org-agenda-refile-personal ()
-    "Refile the current org agenda item into the personal list."
-    (interactive)
-    (my/org-agenda-refile my/gtd-personal-file "Personal"))
-
-  (defun my/org-agenda-refile-work ()
-    "Refile the current org agenda item into the work list."
-    (interactive)
-    (my/org-agenda-refile my/gtd-work-file "Work"))
-
-  (defun my/org-agenda-refile-inbox ()
-    "Refile the current org agenda item into the inbox."
-    (interactive)
-    (my/org-agenda-refile my/gtd-inbox-file "Inbox"))
-
-  (defun my/org-agenda-refile-archive ()
-    "Refile the current org agenda item into the archive."
-    (interactive)
-    (my/org-agenda-refile-personal-or-work my/gtd-archive-file))
-
-  (defun my/org-agenda-refile-someday ()
-    "Refile the current org agenda item into the someday."
-    (interactive)
-    (my/org-agenda-refile-personal-or-work my/gtd-someday-file))
-
-  (defun my/org-toggle-emphasis-markers ()
-    "Toggle the display of org emphasis markers."
-    (interactive)
-    (org-restart-font-lock)
-    (setq org-hide-emphasis-markers (not org-hide-emphasis-markers)))
-
   ;; Save all org buffers before quitting the agenda ('s' saves immediately).
-  (advice-add #'org-agenda-quit :before #'org-save-all-org-buffers)
-
-  ;; Make it easier to create `org-babel' code blocks.
-  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")))
+  (advice-add #'org-agenda-quit :before #'org-save-all-org-buffers))
 
 (use-package org-cliplink)
 
@@ -2932,14 +2812,13 @@ specified then a task category will be determined by the item's tags."
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (use-package org-roam
-  :general
-  (my/bind-c-c
-    "nl" #'org-roam-buffer-toggle
-    "nf" #'org-roam-node-find
-    "ng" #'org-roam-graph
-    "ni" #'org-roam-node-insert
-    "nc" #'org-roam-capture
-    "nt" #'org-roam-tag-add)
+  :bind
+  ("C-c n l" . org-roam-buffer-toggle)
+  ("C-c n f" . org-roam-node-find)
+  ("C-c n g" . org-roam-graph)
+  ("C-c n i" . org-roam-node-insert)
+  ("C-c n c" . org-roam-capture)
+  ("C-c n t" . org-roam-tag-add)
 
   :custom
   (org-roam-db-autosync-mode 1)
@@ -2979,20 +2858,33 @@ specified then a task category will be determined by the item's tags."
 ;;;; Spelling
 
 (use-package jinx
-  :general
-  (general-def
-    "M-$" #'jinx-correct
-    "C-M-$" #'jinx-languages)
-  (my/bind-c-c
-    "xj" #'jinx-mode))
+  :bind
+  ("M-$" . jinx-correct)
+  ("C-M-$" . jinx-languages)
+  ("C-c x j" . jinx-mode))
+
+;;;; Emacs Package Management
+
+(use-package elpaca
+  :ensure nil
+  :bind
+  ("C-c p p" . elpaca-manager)
+  ("C-c p f" . elpaca-fetch)
+  ("C-c p F" . elpaca-fetch-all)
+  ("C-c p m" . elpaca-merge)
+  ("C-c p M" . elpaca-merge-all)
+  ("C-c p b" . elpaca-browse)
+  ("C-c p d" . elpaca-delete)
+  ("C-c p t" . elpaca-try)
+  ("C-c p r" . elpaca-rebuild)
+  ("C-c p v" . elpaca-visit))
 
 ;;;; Process Management
 
 (use-package proced
   :ensure nil
-  :general
-  (my/bind-c-x
-    "C-p" #'proced)
+  :bind
+  ("C-x C-p" . proced)
   :custom
   (proced-enable-color-flag t))
 
