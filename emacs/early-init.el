@@ -11,33 +11,39 @@
 
 ;;; Code:
 
+;; Defer garbage collection until after init. The default settings are restored
+;; in the hook below. This reliably shaves off ~250ms of startup time.
+;; See also: https://emacsconf.org/2023/talks/gc.
+(setq gc-cons-threshold most-positive-fixnum
+      gc-cons-percentage 0.5)
+
 ;; In Emacs 29+, we can change the eln-cache directory.
 ;; See https://github.com/emacscollective/no-littering#native-compilation-cache.
 (when (fboundp 'startup-redirect-eln-cache)
   (startup-redirect-eln-cache
    (expand-file-name "var/eln-cache/" user-emacs-directory)))
 
-(custom-set-variables
- ;; Quieten Emacs 29+ compilation warnings.
- '(native-comp-async-report-warnings-errors nil)
+;; Disable package.el as Elpaca is used for package management.
+(setq package-enable-at-startup nil)
 
- ;; Disable package.el as Elpaca is used for package management.
- '(package-enable-at-startup nil)
+;; Disable JIT compilation.
+(setq native-comp-jit-compilation nil)
 
- ;; Garbage collection is started later using GCMH.
- `(gc-cons-threshold ,most-positive-fixnum)
+;; TODO: Currently evaluating whether this improves performance in any
+;; noticeable way. See: https://github.com/seagle0128/.emacs.d/blob/c9e36da598fef6684b544a02d5020b943bfc7a57/early-init.el#L55C1-L55C40
+(setq load-prefer-newer noninteractive)
 
- ;; Disable JIT compilation.
- '(native-comp-jit-compilation nil)
-
- ;; Enable `use-package''s imenu support.
- '(use-package-enable-imenu-support t))
+;; Enable `use-package''s imenu support (must be done before package is loaded).
+(defvar use-package-enable-imenu-support t)
 
 ;; Keep track of start up time.
 (add-hook 'emacs-startup-hook
 	  (lambda ()
             (message "Emacs ready in %s seconds with %d garbage collections."
-		     (emacs-init-time "%.2f") gcs-done)))
+		     (emacs-init-time "%.2f") gcs-done)
+            ;; Restore sensible GC settings after init.
+            (setq gc-cons-threshold (* 1000 1000 8)
+                  gc-cons-percentage 0.1)))
 
 ;; Configure environment variables here.
 (setenv "XDG_CONFIG_HOME" (expand-file-name "~/.config"))
