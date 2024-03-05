@@ -3,7 +3,7 @@
 ;; Author: Ashlin Eldridge <ashlin.eldridge@gmail.com>
 ;; URL: https://github.com/ashlineldridge/.config
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "29.2"))
 
 ;;; Commentary:
 ;;
@@ -1551,18 +1551,10 @@
   (embark-keymap-prompter-key ",")
 
   :init
-  ;; TODO: Try removing this now.
-  ;; Use Embark to prompt for and run commands under a specified prefix
-  ;; when C-h is pressed (e.g. C-x C-h) rather than `describe-prefix-bindings'.
+  ;; Use Embark to show keybindings under a prefix rather than the default
+  ;; `describe-prefix-bindings'. It should be possible to just set
+  ;; `prefix-help-command' but it keeps getting reverted so I have this kludge.
   (with-eval-after-load 'help
-    ;; It should be possible to just set `prefix-help-command' to
-    ;; `embark-prefix-help-command' as specified (and commented out below)
-    ;; in the Embark documentation but somehow it keeps getting reverted to
-    ;; `describe-prefix-bindings'. Even when I use `with-eval-after-load' to
-    ;; set it after the help package is loaded, it will still get reverted. I
-    ;; haven't been able to figure out what is reverting it so this hacks
-    ;; `describe-prefix-bindings' to proxy `embark-prefix-help-command'.
-    ;; (setq prefix-help-command #'embark-prefix-help-command)
     (defun describe-prefix-bindings ()
       (interactive)
       (embark-prefix-help-command)))

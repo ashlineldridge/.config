@@ -3,7 +3,7 @@
 ;; Author: Ashlin Eldridge <ashlin.eldridge@gmail.com>
 ;; URL: https://github.com/ashlineldridge/.config
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "29.2"))
 
 ;;; Commentary:
 ;;
@@ -28,10 +28,6 @@
 
 ;; Disable JIT compilation.
 (setq native-comp-jit-compilation nil)
-
-;; TODO: Currently evaluating whether this improves performance in any
-;; noticeable way. See: https://github.com/seagle0128/.emacs.d/blob/c9e36da598fef6684b544a02d5020b943bfc7a57/early-init.el#L55C1-L55C40
-(setq load-prefer-newer noninteractive)
 
 ;; Enable `use-package''s imenu support (must be done before package is loaded).
 (defvar use-package-enable-imenu-support t)

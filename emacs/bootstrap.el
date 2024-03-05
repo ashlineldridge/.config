@@ -3,7 +3,7 @@
 ;; Author: Ashlin Eldridge <ashlin.eldridge@gmail.com>
 ;; URL: https://github.com/ashlineldridge/.config
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "29.2"))
 
 ;;; Commentary:
 ;;
