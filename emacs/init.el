@@ -763,10 +763,6 @@
   ("M-j o " . link-hint-open-link)
   ("M-j O" . link-hint-copy-link))
 
-(use-package beginend
-  :custom
-  (beginend-global-mode 1))
-
 (use-package isearch
   :ensure nil
   :bind
