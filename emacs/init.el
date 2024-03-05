@@ -1676,6 +1676,11 @@
   ;; Tree-sitter produces a better imenu.
   (setq eglot-stay-out-of '(imenu))
 
+  ;; Potential performance improving settings.
+  ;; See: https://www.reddit.com/r/emacs/comments/1b25904/is_there_anything_i_can_do_to_make_eglots.
+  (fset #'jsonrpc--log-event #'ignore)
+  (setf (plist-get eglot-events-buffer-config :size) 0)
+
   ;; See: https://github.com/minad/corfu/wiki#filter-list-of-all-possible-completions-with-completion-style-like-orderless.
   (add-to-list 'completion-category-overrides '(eglot (styles orderless)))
 
@@ -1714,6 +1719,11 @@
                :compositeLiteralFields t
                :compositeLiteralTypes t
                :constantValues t))))))
+
+(use-package eglot-booster
+  :ensure (:host github :repo "jdtsmith/eglot-booster")
+  :hook
+  (eglot-managed-mode . eglot-booster-mode))
 
 (use-package consult-eglot
   :bind
