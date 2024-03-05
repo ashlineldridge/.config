@@ -1001,33 +1001,23 @@
          (consult-completion-in-region beg end table pred)))))
 
   :bind
-  (:map corfu-map
-   ;; Retain common navigation commands as it's quicker to use `corfu-quick'
-   ;; and it's nice to be able navigate away when a completion is active.
-   ([remap next-line] . nil)
-   ([remap previous-line] . nil)
-   ([remap scroll-up-command] . nil)
-   ([remap scroll-down-command] . nil)
-   ("<up>" . corfu-previous)
-   ("<down>" . corfu-next)
-   ;; We S-SPC to keep completion going and include the space.
+  (("M-/" . completion-at-point)
+   :map corfu-map
    ("S-SPC" . corfu-insert-separator)
-   ;; Move the completion session to the minibuffer.
-   ("M-m" . my/corfu-move-to-minibuffer))
+   ("M-m" . my/corfu-move-to-minibuffer)
+   ("M-/" . corfu-complete)
+   ("<tab>" . corfu-complete))
   :hook
   (minibuffer-setup . my/corfu-enable-in-minibuffer)
-
   :custom
   (global-corfu-mode t)
-  (corfu-excluded-modes
-   '(bazel-build-mode
-     bazel-workspace-mode
-     bazel-starlark-mode))
   (corfu-auto nil)
+  (corfu-preselect 'first)
   (corfu-count 16)
-  (corfu-preselect nil)
   (corfu-preview-current nil)
-
+  (corfu-min-width 60)
+  (corfu-max-width 80)
+  (corfu-on-exact-match 'insert)
   :config
   (add-to-list 'corfu-continue-commands #'my/corfu-move-to-minibuffer))
 
@@ -1173,6 +1163,7 @@
 ;; Dedicated completion commands.
 (use-package cape
   :bind
+  ("C-M-/" . cape-dabbrev)
   ;; For history, default to `cape-history' which is displayed as a Corfu
   ;; pop-up and use `consult-history' with local keymaps where minibuffer
   ;; history seems more appropriate.
@@ -1184,12 +1175,7 @@
   ("C-c c o" . cape-elisp-symbol)
   ("C-c c a" . cape-abbrev)
   ("C-c c l" . cape-line)
-  ("C-c c w" . cape-dict)
-  :custom
-  ;; Only show dabbrev candidates of a minimum length to avoid being annoying.
-  (cape-dabbrev-min-length 5)
-  ;; Only show dabbrev completions for words in the current buffer.
-  (cape-dabbrev-check-other-buffers nil))
+  ("C-c c w" . cape-dict))
 
 ;; Orderless configuration mostly taken from:
 ;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
