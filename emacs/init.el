@@ -2470,10 +2470,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 ;;;; Org Mode
 
 (use-package org
-  ;; TODO: Try latest again.
-  ;; Use built-in for now as latest has bugs. When Elpaca supports lockfiles
-  ;; I'll just pin it. See: https://github.com/progfolio/elpaca/issues/151.
-  :ensure nil
   :preface
   (declare-function org-restart-font-lock "org")
   (declare-function org-get-tags "org")
