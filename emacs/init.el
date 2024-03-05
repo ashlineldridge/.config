@@ -711,13 +711,13 @@
 
 ;;;;; Undo/Redo
 
-;; TODO: Replace with vundo.
-(use-package undo-tree
+(use-package vundo
+  :demand
+  :bind
+  ("C-x u" . vundo)
   :custom
-  (global-undo-tree-mode t)
-  (undo-tree-auto-save-history t)
-  (undo-tree-visualizer-timestamps t)
-  (undo-tree-visualizer-diff t))
+  (vundo-compact-display t)
+  (vundo-glyph-alist vundo-unicode-symbols))
 
 ;;;;; Region Expansion
 
