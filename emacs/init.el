@@ -1758,29 +1758,13 @@
   (eldoc-add-command-completions "xref-goto-"))
 
 (use-package eldoc-box
-  :preface
-  (declare-function eldoc-box-help-at-point "eldoc-box")
-  (declare-function eldoc-box-quit-frame "eldoc-box")
-
-  ;; TODO: Fix this function as it's broken.
-  (defun my/eldoc-box-toggle ()
-    "Toggle the `eldoc-box-help-at-point' popup."
-    (interactive)
-    (if (and eldoc-box--frame (frame-visible-p eldoc-box--frame))
-        (eldoc-box-quit-frame)
-      (eldoc-box-help-at-point)))
-
-  ;; :commands my/eldoc-box-toggle
   :bind
-  ("M-p" . my/eldoc-box-toggle)
-  :config
-  ;; Quit Eldoc Box when C-g is received. Unfortunately, the variable
-  ;; `eldoc-box-clear-with-C-g' only applies to Eldoc Box's hover mode.
-  (advice-add #'keyboard-quit :before #'eldoc-box-quit-frame))
+  ("M-p" . eldoc-box-help-at-point))
 
 ;;;;;; Flymake
 
 (use-package flymake
+  :ensure nil
   :preface
   (declare-function flymake-eldoc-function "flymake")
   (declare-function flymake-proc-legacy-flymake "flymake-proc")
