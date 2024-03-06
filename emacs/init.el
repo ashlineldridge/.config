@@ -2462,6 +2462,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 ;;;; Org Mode
 
 (use-package org
+  :ensure nil
   :preface
   (declare-function org-restart-font-lock "org")
   (declare-function org-get-tags "org")
@@ -2677,6 +2678,7 @@ specified then a task category will be determined by the item's tags."
   :bind
   (("C-c o a" . org-agenda)
    :map org-agenda-mode-map
+   ("r" . nil) ;; Allows 'r' to be bound as a prefix key.
    ("r r" . org-agenda-refile)
    ("r p" . my/org-agenda-refile-personal)
    ("r w" . my/org-agenda-refile-work)
