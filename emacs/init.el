@@ -1658,7 +1658,12 @@
 
   :custom
   (eglot-autoshutdown t)
+  (eglot-connect-timeout 60)
   (eglot-confirm-server-edits nil)
+  (eglot-extend-to-xref t)
+  (eglot-ignored-server-capabilities
+   '(:hoverProvider :documentFormattingProvider :documentRangeFormattingProvider
+     :documentOnTypeFormattingProvider :documentHighlightProvider))
 
   :config
   ;; Tree-sitter produces a better imenu.
@@ -1669,8 +1674,8 @@
   (fset #'jsonrpc--log-event #'ignore)
   (setf (plist-get eglot-events-buffer-config :size) 0)
 
-  ;; See: https://github.com/minad/corfu/wiki#filter-list-of-all-possible-completions-with-completion-style-like-orderless.
-  (add-to-list 'completion-category-overrides '(eglot (styles orderless)))
+  ;; Remove completion styles installed by Eglot and to fall back to Orderless.
+  (setq completion-category-defaults nil)
 
   ;; Style the inlay type hinting face.
   (set-face-attribute 'eglot-inlay-hint-face nil :height 0.9 :slant 'italic)
@@ -1708,10 +1713,21 @@
                :compositeLiteralTypes t
                :constantValues t))))))
 
+(use-package eglot-x
+  :ensure (:host github :repo "nemethf/eglot-x")
+  :hook  (eglot-managed-mode . eglot-x-setup))
+
+;; Speed up Eglot.
 (use-package eglot-booster
   :ensure (:host github :repo "jdtsmith/eglot-booster")
-  :hook
-  (eglot-managed-mode . eglot-booster-mode))
+  :hook (eglot-managed-mode . eglot-booster-mode))
+
+;; Adapt Eglot to use Tempel rather than Yasnippet for placeholder completion.
+(use-package eglot-tempel
+  :commands eglot-tempel-mode
+  ;; :after (eglot tempel)
+  :init
+  (eglot-tempel-mode))
 
 (use-package consult-eglot
   :bind
