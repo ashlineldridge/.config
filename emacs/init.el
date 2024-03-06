@@ -1637,8 +1637,7 @@
                 (list
                  #'tempel-complete
                  #'eglot-completion-at-point
-                 #'cape-file))
-    (my/flymake-eldoc-show-first))
+                 #'cape-file)))
 
   :bind
   (:map eglot-mode-map
@@ -1734,8 +1733,8 @@
   ;; fall back to the modeline. Also limit the number of lines shown in the
   ;; modeline and don't display the message about using `eldoc-doc-buffer'.
   (eldoc-echo-area-prefer-doc-buffer t)
-  (eldoc-echo-area-use-multiline-p 3)
-  (eldoc-echo-area-display-truncation-message nil)
+  (eldoc-echo-area-use-multiline-p nil)
+  (eldoc-echo-area-display-truncation-message t)
   :config
   ;; Register commands and command prefixes that can move point to a symbol
   ;; where Eldoc documentation should be shown.
@@ -1755,15 +1754,7 @@
 (use-package flymake
   :ensure nil
   :preface
-  (declare-function flymake-eldoc-function "flymake")
   (declare-function flymake-proc-legacy-flymake "flymake-proc")
-
-  (defun my/flymake-eldoc-show-first ()
-    "Prioritize Flymake messages when Eldoc composes documentation."
-    ;; This ensures Flymake messages are always visible in the minibuffer.
-    (remove-hook 'eldoc-documentation-functions #'flymake-eldoc-function t)
-    (add-hook 'eldoc-documentation-functions #'flymake-eldoc-function nil t))
-
   (defun my/elisp-flymake-byte-compile (fn &rest args)
     "Wrapper for `elisp-flymake-byte-compile' that considers `load-path'."
     ;; Don't let Vterm onto Flymake's load path as it oddly blocks it.
@@ -1781,16 +1772,19 @@
    ("n" . flymake-goto-next-error)
    ("p" . flymake-goto-prev-error))
 
-  :hook
-  (prog-mode . flymake-mode)
-
+  :hook (prog-mode . flymake-mode)
   :custom
   (flymake-no-changes-timeout 0.5)
-  (flymake-start-on-save-buffer t)
-
+  (flymake-start-on-save-buffer)
   :config
   (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-byte-compile)
   (remove-hook 'flymake-diagnostic-functions #'flymake-proc-legacy-flymake))
+
+(use-package sideline-flymake
+  :hook (flymake-mode . sideline-mode)
+  :custom
+  (sideline-backends-right '(sideline-flymake))
+  (sideline-flymake-display-mode 'point))
 
 ;;;;;; Xref
 
@@ -2169,8 +2163,7 @@
                 (list
                  #'tempel-complete
                  #'elisp-completion-at-point
-                 #'cape-file))
-    (my/flymake-eldoc-show-first))
+                 #'cape-file)))
   :bind
   (:map emacs-lisp-mode-map
    ("C-x C-r" . eval-region))
