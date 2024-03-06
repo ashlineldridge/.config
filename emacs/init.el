@@ -20,7 +20,6 @@
 (use-package emacs
   :ensure nil
   :preface
-  ;; Use y/n rather than yes/no.
   (defalias 'yes-or-no-p #'y-or-n-p)
 
   (declare-function server-running-p "server")
@@ -138,7 +137,8 @@
   (echo-keystrokes 0.01)
   (mac-command-modifier 'meta)
   (mac-option-modifier nil)
-  (tab-always-indent 'complete)
+  ;; Save the left pinky: tab for tabbing and M-/ for completion.
+  (tab-always-indent t)
   (indent-tabs-mode nil)
   (set-mark-command-repeat-pop t)
   (mark-ring-max 10)
@@ -802,8 +802,8 @@
   :commands tempel-complete
   :bind
   (("M-+" . tempel-insert)
-   ;; Keymap used by navigating across template fields.
    (:map tempel-map
+    ;; Use tab to select the next/previous field and M-/ to complete within.
     ("<tab>" . tempel-next)
     ("S-<tab>" . tempel-previous)
     ([remap keyboard-quit] . tempel-done)))
