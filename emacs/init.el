@@ -828,8 +828,9 @@
 (use-package ibuffer-vc
   :bind
   (:map ibuffer-mode-map
-   ;; Group buffers by VC project.
-   ("/p" . ibuffer-vc-set-filter-groups-by-vc-root)))
+   ("/p" . ibuffer-vc-set-filter-groups-by-vc-root))
+  :hook
+  (ibuffer . ibuffer-vc-mode))
 
 (use-package nerd-icons-ibuffer
   :hook
