@@ -2464,7 +2464,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 (use-package org
   :ensure nil
   :preface
-  (declare-function org-restart-font-lock "org")
   (declare-function org-get-tags "org")
   (declare-function org-refile-get-targets "org-refile")
 
@@ -2497,12 +2496,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
                 (append electric-pair-pairs my/org-extra-electric-pairs))
     (setq-local electric-pair-text-pairs
                 (append electric-pair-text-pairs my/org-extra-electric-pairs)))
-
-  (defun my/org-toggle-emphasis-markers ()
-    "Toggle the display of org emphasis markers."
-    (interactive)
-    (org-restart-font-lock)
-    (setq org-hide-emphasis-markers (not org-hide-emphasis-markers)))
 
   :bind
   (("C-c C-o" . org-open-at-point-global)
@@ -2786,6 +2779,13 @@ specified then a task category will be determined by the item's tags."
   :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+(use-package org-appear
+  :ensure (:host github :repo "awth13/org-appear")
+  :hook (org-mode . org-appear-mode)
+  :custom
+  (org-appear-autolinks t)
+  (org-appear-delay 1.0))
 
 (use-package org-roam
   :bind
