@@ -1146,9 +1146,8 @@
 ;; Dedicated completion commands.
 (use-package cape
   :bind
-  ("C-M-/" . cape-dabbrev)
   ;; For history, default to `cape-history' which is displayed as a Corfu
-  ;; pop-up and use `consult-history' with local keymaps where minibuffer
+  ;; popup and use `consult-history' with local keymaps where minibuffer
   ;; history seems more appropriate.
   ("C-c h" . cape-history)
   ("C-c c d" . cape-dabbrev)
@@ -1576,7 +1575,7 @@
 
 ;;;;; General Programming
 
-;;;;;; Treesitter
+;;;;;; Tree-sitter
 
 (use-package treesit
   :ensure nil
