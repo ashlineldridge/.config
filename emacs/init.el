@@ -1045,8 +1045,8 @@
 ;; Icons used by Corfu's popup.
 (use-package nerd-icons-corfu
   :after corfu
-  :commands nerd-icons-corfu-formatter
-  :defines corfu-margin-formatters
+  :preface
+  (declare-function nerd-icons-corfu-formatter "nerd-icons-corfu")
   :init
   (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
 
