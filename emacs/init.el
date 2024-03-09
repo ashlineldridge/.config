@@ -294,15 +294,14 @@
   (defvar my/variable-pitch-headings
     '((1 . (variable-pitch semibold 1.2))
       (t . (variable-pitch semibold 1.1))))
-  (defun my/apply-font-faces (&rest _)
+
+  ;; Can't seem to get `fontaine-mode' to work so doing this for now.
+  (defun my/fontaine-reset (&rest _)
     "Apply the current font configuration."
-    (fontaine-set-preset (or fontaine-current-preset 'regular)))
-  (add-hook 'enable-theme-functions #'my/apply-font-faces)
+    (fontaine-set-preset (or fontaine-current-preset 'small)))
 
   :bind
   ("C-c x f" . fontaine-set-preset)
-  :hook
-  (elpaca-after-init . (lambda () (fontaine-set-preset 'regular)))
   :custom
   (fontaine-presets
    '((small
@@ -328,7 +327,9 @@
       :line-number-slant italic
       :line-number-height 120
       :bold-weight bold
-      :italic-slant italic))))
+      :italic-slant italic)))
+  :init
+  (add-hook 'enable-theme-functions #'my/fontaine-reset))
 
 ;;;;; Themes
 
@@ -336,17 +337,16 @@
   :custom
   (modus-themes-italic-constructs t)
   (modus-themes-custom-auto-reload t)
+  (modus-themes-mixed-fonts t)
   (modus-themes-prompts '(bold))
   (modus-themes-org-blocks 'gray-background)
-  (modus-themes-headings my/variable-pitch-headings)
-  (modus-themes-mixed-fonts t))
+  (modus-themes-headings my/variable-pitch-headings))
 
 (use-package ef-themes
   :custom
   (ef-themes-mixed-fonts t)
   (ef-themes-variable-pitch-ui t)
-  (ef-themes-headings my/variable-pitch-headings)
-  (ef-themes-mixed-fonts t))
+  (ef-themes-headings my/variable-pitch-headings))
 
 ;;;;; Icons
 
