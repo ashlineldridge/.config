@@ -690,18 +690,6 @@
 
 ;;;; General Editing
 
-;;;;; Text Substitution
-
-(use-package substitute
-  :commands substitute-report-operation
-  :bind
-  ("M-# s" . substitute-target-below-point)
-  ("M-# r" . substitute-target-above-point)
-  ("M-# d" . substitute-target-in-defun)
-  ("M-# b" . substitute-target-in-buffer)
-  :config
-  (add-to-list 'substitute-post-replace-functions #'substitute-report-operation))
-
 ;;;;; Undo/Redo
 
 (use-package undo-tree
@@ -722,13 +710,12 @@
 ;;;;; Whitespace
 
 (use-package ws-butler
-  :hook
-  ((text-mode prog-mode) . ws-butler-mode)
+  :hook ((text-mode prog-mode) . ws-butler-mode)
   :custom
   (ws-butler-keep-whitespace-before-point nil))
 
 
-;;;;; Point Jumping
+;;;;; Jumping Around
 
 (use-package avy
   :bind
@@ -755,24 +742,12 @@
   ("M-j o " . link-hint-open-link)
   ("M-j O" . link-hint-copy-link))
 
-(use-package isearch
-  :ensure nil
-  :bind
-  (("M-s ." . isearch-forward-thing-at-point)
-   :map isearch-mode-map
-   ;; The default `isearch-abort' requires multiple C-g if search not found.
-   ("C-g" . isearch-cancel)))
-
 ;;;;; Highlighting
 
 (use-package hl-line
   :ensure nil
   :bind
   ("C-c x h" . hl-line-mode)
-  :hook
-  (elpaca-after-init . global-hl-line-mode)
-  ((eshell-mode shell-mode term-mode vterm-mode eglot-inlay-hints-mode) .
-   (lambda () (setq-local global-hl-line-mode nil)))
   :custom
   (hl-line-sticky-flag nil))
 
@@ -787,6 +762,26 @@
    ("M-s h h" . highlight-regexp)
    ("M-s h l" . highlight-lines-matching-regexp)
    ("M-s h u" . unhighlight-regexp)))
+
+(use-package pulsar
+  :defines pulsar-pulse-functions
+  :custom
+  (pulsar-global-mode t)
+  (pulsar-delay 0.06)
+  (pulsar-iterations 10)
+  (pulsar-face 'pulsar-generic)
+  :config
+  (add-to-list 'pulsar-pulse-functions #'avy-goto-char-timer)
+  (add-to-list 'pulsar-pulse-functions #'avy-goto-line)
+  (add-to-list 'pulsar-pulse-functions #'avy-goto-end-of-line)
+  (add-to-list 'pulsar-pulse-functions #'beginning-of-buffer)
+  (add-to-list 'pulsar-pulse-functions #'end-of-buffer)
+  (add-to-list 'pulsar-pulse-functions #'set-mark-command)
+  (add-to-list 'pulsar-pulse-functions #'pop-global-mark)
+  (add-to-list 'pulsar-pulse-functions #'flymake-goto-next-error)
+  (add-to-list 'pulsar-pulse-functions #'flymake-goto-prev-error)
+  (add-to-list 'pulsar-pulse-functions #'xref-find-definitions)
+  (add-to-list 'pulsar-pulse-functions #'xref-find-definitions-other-window))
 
 ;;;;; Templating
 
@@ -818,12 +813,10 @@
   :bind
   (:map ibuffer-mode-map
    ("/p" . ibuffer-vc-set-filter-groups-by-vc-root))
-  :hook
-  (ibuffer . ibuffer-vc-mode))
+  :hook (ibuffer . ibuffer-vc-mode))
 
 (use-package nerd-icons-ibuffer
-  :hook
-  (ibuffer-mode . nerd-icons-ibuffer-mode))
+  :hook (ibuffer-mode . nerd-icons-ibuffer-mode))
 
 ;;;; File System
 
@@ -993,8 +986,7 @@
    ("M-m" . my/corfu-move-to-minibuffer)
    ("M-/" . corfu-complete)
    ("<tab>" . corfu-complete))
-  :hook
-  (minibuffer-setup . my/corfu-enable-in-minibuffer)
+  :hook (minibuffer-setup . my/corfu-enable-in-minibuffer)
   :custom
   (global-corfu-mode t)
   (corfu-auto nil)
@@ -1020,11 +1012,11 @@
    ("M-l" . corfu-popupinfo-location)
    ("M-p" . corfu-popupinfo-scroll-down)
    ("M-n" . corfu-popupinfo-scroll-up))
-  :hook
-  (corfu-mode . corfu-popupinfo-mode)
+  :hook (corfu-mode . corfu-popupinfo-mode)
   :custom
   (corfu-popupinfo-delay nil)
   (corfu-popupinfo-max-height 16))
+
 
 (use-package corfu-quick
   :after corfu
@@ -1046,7 +1038,6 @@
   ;; Persist Corfu history between Emacs sessions.
   (add-to-list 'savehist-additional-variables 'corfu-history))
 
-;; Icons used by Corfu's popup.
 (use-package nerd-icons-corfu
   :after corfu
   :preface
@@ -1054,14 +1045,6 @@
   :init
   (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
 
-;; Vertico provides the vertical completion minibuffer and Orderless provides
-;; the "completion style". Some commands that make use of Vertico's selection
-;; list also allow a new non-matched value to be entered. For example,
-;; `org-roam-node-insert' will create a new note when given a new note name.
-;; However, if the new value matches part of an existing value in the selection
-;; list (which is more likely when using Orderless) then you will need to press
-;; M-RET which calls `vertico-exit-input' to cancel the completion and use the
-;; new value.
 (use-package vertico
   :ensure (:files (:defaults "extensions/*.el"))
   :custom
@@ -1564,6 +1547,22 @@
 
 (use-package embark-consult)
 
+;;;; Search and Replace
+
+(use-package isearch
+  :ensure nil
+  :bind
+  (("M-s ." . isearch-forward-thing-at-point)
+   :map isearch-mode-map
+   ;; The default `isearch-abort' requires multiple C-g if search not found.
+   ("C-g" . isearch-cancel)))
+
+(use-package occur
+  :ensure nil
+  :hook
+  (occur-mode . hl-line-mode)
+  (occur-mode . my/truncate-lines))
+
 (use-package rg
   :bind
   ("M-s M-s" . rg)
@@ -1574,6 +1573,16 @@
   ("C-c w" . wgrep-change-to-wgrep-mode)
   :custom
   (wgrep-auto-save-buffer t))
+
+(use-package substitute
+  :commands substitute-report-operation
+  :bind
+  ("M-# s" . substitute-target-below-point)
+  ("M-# r" . substitute-target-above-point)
+  ("M-# d" . substitute-target-in-defun)
+  ("M-# b" . substitute-target-in-buffer)
+  :config
+  (add-to-list 'substitute-post-replace-functions #'substitute-report-operation))
 
 ;;;; Programming
 
@@ -1747,6 +1756,9 @@
 
 (use-package eldoc-box
   :preface
+  (declare-function eldoc-box-help-at-point "eldoc-box")
+  (declare-function eldoc-box-quit-frame "eldoc-box")
+
   (defun my/eldoc-box-visible-p ()
     "Return whether the `eldoc-box' popup is visible."
     (and eldoc-box--frame (frame-visible-p eldoc-box--frame)))
@@ -1886,9 +1898,7 @@
       ;; Call the default value of `treesit-defun-name-function'.
       (_ (rust-ts-mode--defun-name node))))
 
-  :hook
-  (rust-ts-mode . my/rust-ts-mode-init)
-
+  :hook (rust-ts-mode . my/rust-ts-mode-init)
   :config
   ;; Update `consult-imenu-config' with the symbol categories for Rust.
   (with-eval-after-load 'consult-imenu
@@ -1967,8 +1977,7 @@
        (treesit-node-text (treesit-node-child-by-field-name node "name") t))
       (_ (go-ts-mode--defun-name node))))
 
-  :hook
-  (go-ts-mode . my/go-ts-mode-init)
+  :hook (go-ts-mode . my/go-ts-mode-init)
   :custom
   (go-ts-mode-indent-offset 4)
   :config
@@ -2420,10 +2429,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    ("M-S-<up>" . nil)
    ("M-S-<down>" . nil)
    ("C-c C-S-l" . org-cliplink))
-
-  :hook
-  (org-mode . my/org-init)
-
+  :hook (org-mode . my/org-init)
   :custom
   (org-auto-align-tags nil)
   (org-blank-before-new-entry
@@ -2590,7 +2596,7 @@ specified then a task category will be determined by the item's tags."
    ("r i" . my/org-agenda-refile-inbox)
    ("k" . org-agenda-kill)
    ("?" . which-key-show-major-mode))
-
+  :hook (org-agenda-mode . hl-line-mode)
   :custom
   (org-agenda-cmp-user-defined #'my/org-agenda-cmp-todo)
   (org-agenda-custom-commands
