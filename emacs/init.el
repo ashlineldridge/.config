@@ -1646,7 +1646,7 @@
   (eglot-confirm-server-edits nil)
   (eglot-extend-to-xref t)
   (eglot-ignored-server-capabilities
-   '(:hoverProvider :documentFormattingProvider :documentRangeFormattingProvider
+   '(:documentFormattingProvider :documentRangeFormattingProvider
      :documentOnTypeFormattingProvider :documentHighlightProvider))
 
   :config
