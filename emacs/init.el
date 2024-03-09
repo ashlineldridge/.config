@@ -2311,16 +2311,14 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
           (pop-to-buffer existing-buffer)
         (vterm buffer-name))))
 
-  (defvar-keymap my/vterm-repeat-map
-    :doc "Keymap for repeatable Vterm commands."
-    "C-n" #'vterm-next-prompt
-    "C-p" #'vterm-previous-prompt)
-
   :bind
   (("C-c v" . vterm)
    :map vterm-mode-map
    ;; Same keybinding for shell history as `consult-history' and `cape-history'.
-   ("C-c h" . (lambda () (interactive) (vterm-send-key (kbd "C-r")))))
+   ("C-c h" . (lambda () (interactive) (vterm-send-key (kbd "C-r"))))
+   :repeat-map my/vterm-repeat-map
+   ("C-n" . vterm-next-prompt)
+   ("C-p" . vterm-previous-prompt))
 
   :hook (vterm-mode . my/vterm-init)
   :custom
