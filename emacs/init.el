@@ -995,11 +995,12 @@
   (global-corfu-mode t)
   (corfu-auto nil)
   (corfu-preselect 'first)
+  (corfu-quit-at-boundary nil)
+  (corfu-on-exact-match 'insert)
   (corfu-count 16)
   (corfu-preview-current nil)
   (corfu-min-width 60)
   (corfu-max-width 80)
-  (corfu-on-exact-match 'insert)
   :config
   (add-to-list 'corfu-continue-commands #'my/corfu-move-to-minibuffer))
 
