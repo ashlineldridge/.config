@@ -2788,6 +2788,8 @@ specified then a task category will be determined by the item's tags."
   (org-appear-delay 1.0))
 
 (use-package org-roam
+  :preface
+  (declare-function org-roam-db-autosync-mode "org-roam")
   :bind
   ("C-c n l" . org-roam-buffer-toggle)
   ("C-c n f" . org-roam-node-find)
@@ -2795,15 +2797,13 @@ specified then a task category will be determined by the item's tags."
   ("C-c n i" . org-roam-node-insert)
   ("C-c n c" . org-roam-capture)
   ("C-c n t" . org-roam-tag-add)
-
   :custom
-  (org-roam-db-autosync-mode 1)
   (org-roam-directory (expand-file-name "notes/" my/pkm-dir))
   ;; Disable `org-roam' completion as it's a bit annoying.
   (org-roam-completion-everywhere nil)
   (org-roam-completion-functions nil)
   (org-roam-node-display-template
-   (concat "${title:70} " (propertize "${tags:70}" 'face 'org-tag)))
+   (concat "${title:60} " (propertize "${tags:*}" 'face 'org-tag)))
   (org-roam-capture-templates
    `(("d" "default" plain
       ,(concat
@@ -2829,7 +2829,8 @@ specified then a task category will be determined by the item's tags."
 
   :config
   (require 'org-roam-protocol)
-  (require 'org-roam-dailies))
+  (require 'org-roam-dailies)
+  (org-roam-db-autosync-mode 1))
 
 ;;;; Spelling
 
