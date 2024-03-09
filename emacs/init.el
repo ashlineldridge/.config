@@ -1784,7 +1784,8 @@
 (use-package sideline-flymake
   :hook (flymake-mode . sideline-mode)
   :custom
-  (sideline-backends-right '(sideline-flymake))
+  ;; Using the left side always displays even when using smaller windows.
+  (sideline-backends-left '(sideline-flymake))
   (sideline-flymake-display-mode 'point))
 
 ;;;;;; Xref
