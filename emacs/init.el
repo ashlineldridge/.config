@@ -1333,7 +1333,7 @@
    :map minibuffer-local-map
    ("M-s" . nil)
    :map consult-narrow-map
-   ("C-<" . consult-narrow-help)
+   ("C-," . consult-narrow-help)
    ("?" . consult-narrow-help)
    :map flymake-mode-map
    ("C-c f f" . consult-flymake)
@@ -1350,11 +1350,11 @@
                                           'modus-vivendi))))
 
   :custom
-  ;; Type < followed by a prefix key to narrow the available candidates.
-  ;; Type C-< (defined above) to display prefix help. Alternatively, type
-  ;; < followed by C-h (or ?) to make `embark-prefix-help-command' kick in
-  ;; and display a completing prefix help.
-  (consult-narrow-key "<")
+  ;; Type ',' followed by a prefix key to narrow the available candidates.
+  ;; Type C-, (defined above) to display prefix help. Alternatively, type
+  ;; ',' followed by C-h (or ?) to call `embark-prefix-help-command'. If
+  ;; ',' is problematic I'll search for another key.
+  (consult-narrow-key ",")
 
   ;; Auto-preview by default.
   (consult-preview-key 'any)
