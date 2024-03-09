@@ -1727,11 +1727,7 @@
   :custom
   (global-eldoc-mode t)
   (eldoc-idle-delay 0.5)
-  ;; Compose docs from multiple sources and display as soon as available.
   (eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
-  ;; If an `eldoc-doc-buffer' buffer is visible then prefer that, otherwise
-  ;; fall back to the modeline. Also limit the number of lines shown in the
-  ;; modeline and don't display the message about using `eldoc-doc-buffer'.
   (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p nil)
   (eldoc-echo-area-display-truncation-message t)
@@ -1746,8 +1742,32 @@
   (eldoc-add-command-completions "xref-goto-"))
 
 (use-package eldoc-box
+  :preface
+  (defun my/eldoc-box-visible-p ()
+    "Return whether the `eldoc-box' popup is visible."
+    (and eldoc-box--frame (frame-visible-p eldoc-box--frame)))
+
+  (defun my/eldoc-box-toggle ()
+    "Toggle the `eldoc-box-help-at-point' popup."
+    (interactive)
+    (require 'eldoc-box)
+    (if (my/eldoc-box-visible-p)
+        (eldoc-box-quit-frame)
+      (eldoc-box-help-at-point)))
+
+  ;; Workaround to ensure the correct documentation is shown by the `eldoc-box'
+  ;; popup if Eldoc is updated. See: https://github.com/casouri/eldoc-box/issues/96.
+  (defun my/eldoc-display-in-eldoc-box (&rest _)
+    "Display latest Eldoc buffer in `eldoc-box' if visible."
+    (when (my/eldoc-box-visible-p)
+      (eldoc-box-help-at-point)))
+
   :bind
-  ("M-p" . eldoc-box-help-at-point))
+  ("M-p" . my/eldoc-box-toggle)
+  :custom
+  (eldoc-box-clear-with-C-g t)
+  :config
+  (add-to-list 'eldoc-display-functions #'my/eldoc-display-in-eldoc-box))
 
 ;;;;;; Flymake
 
