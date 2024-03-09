@@ -618,7 +618,7 @@
   :custom
   (popper-mode t)
   (popper-echo-mode t)
-  (popper-window-height 15)
+  (popper-window-height 20)
   (popper-reference-buffers
    '("CAPTURE-.*\\.org"
      "\\*Messages\\*"
@@ -1062,9 +1062,9 @@
   :ensure (:files (:defaults "extensions/*.el"))
   :custom
   (vertico-mode t)
-  (vertico-count 20)
+  (vertico-count 8)
   (vertico-count-format nil)
-  (vertico-resize 'grow-only))
+  (vertico-resize nil))
 
 (use-package vertico-directory
   :after vertico
