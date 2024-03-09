@@ -82,11 +82,15 @@
           (when keymap (propertize "↻ " 'face 'mode-line-emphasis)))
     (force-mode-line-update t))
 
+  (defun my/truncate-lines ()
+    "Show long lines as truncated in the current buffer."
+    (setq-local truncate-lines t))
+
   :hook
   ;; Display line numbers in certain modes.
   ((prog-mode config-mode text-mode) . display-line-numbers-mode)
   ;; Don't wrap long lines in programming modes.
-  (prog-mode . (lambda () (setq-local truncate-lines t)))
+  (prog-mode . my/truncate-lines)
   ;; Run Emacs in server mode.
   (elpaca-after-init . my/server-start)
 
