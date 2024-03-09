@@ -29,17 +29,6 @@
     (unless (server-running-p)
       (server-start)))
 
-  (defun my/truncate-lines ()
-    "Truncate long lines rather than wrapping."
-    (setq-local truncate-lines t))
-
-  (defun my/toggle-show-trailing-whitespace ()
-    "Toggle visibility of trailing whitespace."
-    (interactive)
-    (setq show-trailing-whitespace (if show-trailing-whitespace nil t))
-    (message "%s trailing whitespace" (if show-trailing-whitespace
-                                          "Showing" "Hiding")))
-
   (defun my/copy-to-eol ()
     "Copy the text from point to the end of the line."
     (interactive)
@@ -68,11 +57,12 @@
     (invert-face 'mode-line)
     (run-with-timer 0.1 nil 'invert-face 'mode-line))
 
-  (declare-function electric-pair-default-inhibit "elec-pair")
-  (defun my/electric-pair-inhibit (c)
-    "Return whether C should be excluded from pairing."
-    ;; Exclude '<' as I want that for triggering Tempel.
-    (if (char-equal c ?<) t (electric-pair-default-inhibit c)))
+  (defun my/toggle-show-trailing-whitespace ()
+    "Toggle visibility of trailing whitespace."
+    (interactive)
+    (setq show-trailing-whitespace (if show-trailing-whitespace nil t))
+    (message "%s trailing whitespace" (if show-trailing-whitespace
+                                          "Showing" "Hiding")))
 
   (defun my/clear-registers ()
     "Clear all registers."
@@ -96,7 +86,7 @@
   ;; Display line numbers in certain modes.
   ((prog-mode config-mode text-mode) . display-line-numbers-mode)
   ;; Don't wrap long lines in programming modes.
-  (prog-mode . my/truncate-lines)
+  (prog-mode . (lambda () (setq-local truncate-lines t)))
   ;; Run Emacs in server mode.
   (elpaca-after-init . my/server-start)
 
@@ -161,7 +151,6 @@
      register-alist
      extended-command-history))
   (electric-pair-mode t)
-  (electric-pair-inhibit-predicate #'my/electric-pair-inhibit)
   (repeat-mode t)
   (repeat-exit-timeout 10)
   (repeat-exit-key (kbd "RET"))
