@@ -700,7 +700,17 @@
 
 ;;;;; Undo/Redo
 
+(use-package undo-tree
+  :custom
+  (global-undo-tree-mode t)
+  (undo-tree-auto-save-history t)
+  (undo-tree-visualizer-timestamps t)
+  (undo-tree-visualizer-diff t))
+
+;; Still not entirely happy with `vundo' as it doesn't persist undo history
+;; across sessions like `undo-tree'
 (use-package vundo
+  :disabled
   :demand
   :bind
   ("C-x u" . vundo)
