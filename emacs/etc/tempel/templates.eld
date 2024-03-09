@@ -55,6 +55,7 @@ prog-mode
 
 emacs-lisp-mode inferior-emacs-lisp-mode
 
+(declare-function "(declare-function " p " \"" q "\")")
 (defconst "(defvar " p " " p n> "\"" p "\")")
 (defun "(defun " p " (" p ")" n> "\"" p "\"" n> r> ")")
 (defvar "(defvar " p " " p n> "\"" p "\")")
