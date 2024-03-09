@@ -788,21 +788,18 @@
 ;;;;; Templating
 
 (use-package tempel
-  :commands tempel-complete
+  :defines nerd-icons-corfu-mapping
   :bind
-  (("M-+" . tempel-insert)
+  (("C-M-/" . tempel-complete)
    (:map tempel-map
     ;; Use tab to select the next/previous field and M-/ to complete within.
     ("<tab>" . tempel-next)
     ("S-<tab>" . tempel-previous)
     ([remap keyboard-quit] . tempel-done)))
-
-  :custom
-  ;; Tempel completions will only appear when prefixed with "<" . he function
-  ;; `tempel-complete' should be added to `completion-at-point-functions' of
-  ;; relevant modes to facilitate this.
-  (tempel-trigger-prefix "<")
-  (tempel-path (no-littering-expand-etc-file-name "tempel/templates")))
+  :config
+  (add-to-list 'nerd-icons-corfu-mapping
+               ;; Run `nerd-icons-insert' to see icons.
+               '(snippet :style "oct" :icon "heart" :face font-lock-string-face)))
 
 ;;;; Buffer Management
 
@@ -1624,7 +1621,6 @@
     (eglot-inlay-hints-mode 1)
     (setq-local completion-at-point-functions
                 (list
-                 #'tempel-complete
                  #'eglot-completion-at-point
                  #'cape-file)))
 
@@ -2166,7 +2162,6 @@
     (outline-minor-mode 1)
     (setq-local completion-at-point-functions
                 (list
-                 #'tempel-complete
                  #'elisp-completion-at-point
                  #'cape-file)))
   :bind
@@ -2289,7 +2284,6 @@
     (setq-local cape-file-directory-must-exist nil)
     (setq-local completion-at-point-functions
                 (list
-                 #'tempel-complete
                  #'cape-file
                  #'pcomplete-completions-at-point))
     ;; Make outline work with eshell prompts.
@@ -2479,8 +2473,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     (variable-pitch-mode 1)
     (display-line-numbers-mode 0)
     (setq-local line-spacing 2)
-    (setq-local completion-at-point-functions
-                (list #'tempel-complete #'cape-file))
+    (setq-local completion-at-point-functions (list #'cape-file))
     (setq-local electric-pair-pairs
                 (append electric-pair-pairs my/org-extra-electric-pairs))
     (setq-local electric-pair-text-pairs
