@@ -1927,16 +1927,19 @@
                            (?s "Struct" my/imenu-category-struct-face)
                            (?t "Trait" my/imenu-category-trait-face))))))
 
-;; Rustic is used for its useful commands (e.g. `rustic-cargo-build'), however
-;; `rust-ts-mode' is used for the major mode for Rust files. The :demand
-;; below forces Rustic to add its entry to `auto-mode-alist' which is then
-;; removed in the :config block so that it doesn't override the entry added
-;; by `treesit-auto' for `rust-ts-mode'. There must be a better way to do this.
+;; Rustic doesn't yet integrate with Tree-sitter and so I just use Rustic for
+;; it's useful commands while keeping `rust-ts-mode' as the major mode for
+;; Rust files. See: https://github.com/brotzeit/rustic/issues/475.
 (use-package rustic
-  :demand t
   :after rust-ts-mode
+  :preface
+  ;; Every once in a while, Rustic will get used as the major mode instead of
+  ;; `rust-ts-mode'. This is an attempt to prevent that from happening.
+  (add-to-list 'major-mode-remap-alist '(rustic-mode . rust-ts-mode))
   :bind
-  (:map rust-ts-mode-map
+  (:map rustic-compilation-mode-map
+   ("p" . previous-error-no-select)
+   :map rust-ts-mode-map
    ;; TODO: Look at latest Rustic commands.
    ("C-c b a" . rustic-cargo-add)
    ("C-c b b" . rustic-cargo-build)
@@ -1948,11 +1951,7 @@
    ("C-c b u" . rustic-cargo-update)
    ("C-c b U" . rustic-cargo-upgrade)
    ("C-c t ." . rustic-cargo-test-dwim)
-   ("C-c t t" . rustic-cargo-current-test))
-  :custom
-  (rustic-lsp-client 'eglot)
-  :config
-  (setq auto-mode-alist (delete '("\\.rs\\'" . rustic-mode) auto-mode-alist)))
+   ("C-c t t" . rustic-cargo-current-test)))
 
 ;;;;;; Go
 
@@ -1965,7 +1964,6 @@
   (defun my/go-ts-mode-init ()
     "Init function for `go-ts-mode'."
     (setq-local tab-width go-ts-mode-indent-offset)
-    (setq-local go-test-args "-v")
     (setq-local treesit-defun-name-function #'my/treesit-go-defun-name)
     (setq-local treesit-simple-imenu-settings
                 '(("Constant" "\\`const_spec\\'" nil nil)
@@ -2007,22 +2005,45 @@
 
 (use-package gotest
   :after go-ts-mode
+  :preface
+  (defun my/go-test-verbose (fn)
+    "Run the Go test function FN with the verbose flag enabled."
+    (require 'gotest)
+    (let ((go-test-verbose t))
+      (funcall fn)))
+
   :bind
   (:map go-ts-mode-map
-   ("C-c t r" . go-run)
+   ("C-c b r" . go-run)
    ("C-c t f" . go-test-current-file)
    ("C-c t t" . go-test-current-test)
    ("C-c t p" . go-test-current-project)
    ("C-c t b" . go-test-current-benchmark)
-   ("C-c t c" . go-test-current-coverage))
-  :hook
-  ((go-mode go-ts-mode) . (lambda () (setq-local go-test-args "-v"))))
+   ("C-c t c" . go-test-current-coverage)
+   ("C-c t T" . (lambda () (interactive) (my/go-test-verbose #'go-test-current-test)))
+   ("C-c t F" . (lambda () (interactive) (my/go-test-verbose #'go-test-current-file)))
+   ("C-c t P" . (lambda () (interactive) (my/go-test-verbose #'go-test-current-project)))))
 
 (use-package go-gen-test
   :after go-ts-mode
   :bind
   (:map go-ts-mode-map
    ("C-c t g" . go-gen-test-dwim)))
+
+(use-package go-playground
+  :preface
+  (declare-function go-playground "go-playground")
+  (declare-function go-playground-insert-template-head "go-playground")
+  :custom
+  (go-playground-init-command "go mod init playground")
+  :config
+  ;; Don't insert all the preamble which contains special comments to set the
+  ;; mode to `go-mode' rather than `go-ts-mode'.
+  (fset #'go-playground-insert-template-head #'ignore)
+  ;; Switch `go-mode' for `go-ts-mode'. I'd prefer using `major-mode-remap-alist'
+  ;; to perform this mapping but it doesn't seem to work when the major mode
+  ;; is called directly like it is by `go-playground'.
+  (advice-add #'go-playground :after #'go-ts-mode))
 
 ;;;;;; Haskell
 
