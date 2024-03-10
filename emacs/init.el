@@ -765,36 +765,39 @@
 
 (use-package pulsar
   :defines pulsar-pulse-functions
-  :preface
-  (declare-function pulsar-pulse-line "pulsar")
-  (declare-function pulsar-pulse-line-red "pulsar")
-  (declare-function pulsar-recenter-top "pulsar")
-  (declare-function pulsar-reveal-entry "pulsar")
   :custom
   (pulsar-global-mode t)
   (pulsar-delay 0.06)
   (pulsar-iterations 10)
   (pulsar-face 'pulsar-generic)
   :config
-  (add-to-list 'pulsar-pulse-functions #'avy-goto-char-timer)
-  (add-to-list 'pulsar-pulse-functions #'avy-goto-line)
-  (add-to-list 'pulsar-pulse-functions #'avy-goto-end-of-line)
-  (add-to-list 'pulsar-pulse-functions #'beginning-of-buffer)
-  (add-to-list 'pulsar-pulse-functions #'end-of-buffer)
-  (add-to-list 'pulsar-pulse-functions #'set-mark-command)
-  (add-to-list 'pulsar-pulse-functions #'pop-global-mark)
-  (add-to-list 'pulsar-pulse-functions #'flymake-goto-next-error)
-  (add-to-list 'pulsar-pulse-functions #'flymake-goto-prev-error)
-  (add-to-list 'pulsar-pulse-functions #'xref-find-definitions)
-  (add-to-list 'pulsar-pulse-functions #'xref-find-definitions-other-window)
-  (add-to-list 'pulsar-pulse-functions #'popper-toggle)
+  ;; Extra functions (and hooks below) that should trigger Pulsar. I'm not
+  ;; using #'fn syntax here to avoid needing all the forward declarations.
+  (add-to-list 'pulsar-pulse-functions 'avy-goto-char-timer)
+  (add-to-list 'pulsar-pulse-functions 'avy-goto-end-of-line)
+  (add-to-list 'pulsar-pulse-functions 'avy-goto-line)
+  (add-to-list 'pulsar-pulse-functions 'beginning-of-buffer)
+  (add-to-list 'pulsar-pulse-functions 'end-of-buffer)
+  (add-to-list 'pulsar-pulse-functions 'beginning-of-defun)
+  (add-to-list 'pulsar-pulse-functions 'end-of-defun)
+  (add-to-list 'pulsar-pulse-functions 'flymake-goto-next-error)
+  (add-to-list 'pulsar-pulse-functions 'flymake-goto-prev-error)
+  (add-to-list 'pulsar-pulse-functions 'pop-global-mark)
+  (add-to-list 'pulsar-pulse-functions 'set-mark-command)
+  (add-to-list 'pulsar-pulse-functions 'popper-toggle)
+  (add-to-list 'pulsar-pulse-functions 'eshell-next-prompt)
+  (add-to-list 'pulsar-pulse-functions 'eshell-previous-prompt)
+  (add-to-list 'pulsar-pulse-functions 'vterm-next-prompt)
+  (add-to-list 'pulsar-pulse-functions 'vterm-previous-prompt)
+  (add-to-list 'pulsar-pulse-functions 'xref-find-definitions)
+  (add-to-list 'pulsar-pulse-functions 'xref-find-definitions-other-window)
 
   ;; Some functionality is better accessed via hooks than by registering
   ;; functions in `pulsar-pulse-functions'. See Pulsar docs and Prot's config.
-  (add-hook 'minibuffer-setup-hook #'pulsar-pulse-line)
-  (add-hook 'next-error-hook #'pulsar-pulse-line-red)
-  (add-hook 'next-error-hook #'pulsar-recenter-top)
-  (add-hook 'next-error-hook #'pulsar-reveal-entry))
+  (add-hook 'minibuffer-setup-hook 'pulsar-pulse-line)
+  (add-hook 'next-error-hook 'pulsar-pulse-line-red)
+  (add-hook 'next-error-hook 'pulsar-recenter-top)
+  (add-hook 'next-error-hook 'pulsar-reveal-entry))
 
 ;;;;; Templating
 
