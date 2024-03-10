@@ -1539,12 +1539,10 @@
 
   :init
   ;; Use Embark to show keybindings under a prefix rather than the default
-  ;; `describe-prefix-bindings'. It should be possible to just set
-  ;; `prefix-help-command' but it keeps getting reverted so I have this kludge.
+  ;; `describe-prefix-bindings'. It should be possible to just use set
+  ;; `prefix-help-command' but it keeps getting reverted so doing it this way.
   (with-eval-after-load 'help
-    (defun describe-prefix-bindings ()
-      (interactive)
-      (embark-prefix-help-command)))
+    (fset #'describe-prefix-bindings #'embark-prefix-help-command))
 
   :config
   ;; Adapt the associated commands so that they are usable as Embark actions.
