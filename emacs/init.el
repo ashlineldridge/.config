@@ -765,6 +765,11 @@
 
 (use-package pulsar
   :defines pulsar-pulse-functions
+  :preface
+  (declare-function pulsar-pulse-line "pulsar")
+  (declare-function pulsar-pulse-line-red "pulsar")
+  (declare-function pulsar-recenter-top "pulsar")
+  (declare-function pulsar-reveal-entry "pulsar")
   :custom
   (pulsar-global-mode t)
   (pulsar-delay 0.06)
@@ -781,11 +786,20 @@
   (add-to-list 'pulsar-pulse-functions #'flymake-goto-next-error)
   (add-to-list 'pulsar-pulse-functions #'flymake-goto-prev-error)
   (add-to-list 'pulsar-pulse-functions #'xref-find-definitions)
-  (add-to-list 'pulsar-pulse-functions #'xref-find-definitions-other-window))
+  (add-to-list 'pulsar-pulse-functions #'xref-find-definitions-other-window)
+  (add-to-list 'pulsar-pulse-functions #'popper-toggle)
+
+  ;; Some functionality is better accessed via hooks than by registering
+  ;; functions in `pulsar-pulse-functions'. See Pulsar docs and Prot's config.
+  (add-hook 'minibuffer-setup-hook #'pulsar-pulse-line)
+  (add-hook 'next-error-hook #'pulsar-pulse-line-red)
+  (add-hook 'next-error-hook #'pulsar-recenter-top)
+  (add-hook 'next-error-hook #'pulsar-reveal-entry))
 
 ;;;;; Templating
 
 (use-package tempel
+  :after nerd-icons-corfu
   :defines nerd-icons-corfu-mapping
   :bind
   (("C-M-/" . tempel-complete)
