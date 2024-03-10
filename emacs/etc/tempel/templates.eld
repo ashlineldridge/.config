@@ -62,7 +62,7 @@ emacs-lisp-mode inferior-emacs-lisp-mode
 (dolist "(dolist (" p ")" n> r> ")")
 (if-let "(if-let (" p ")" n> r> ")")
 (if-let* "(if-let* (" p ")" n> r> ")")
-(lambda "(lambda " p " (" p ") " r> ")")
+(lambda "(lambda (" p ") " r> ")")
 (let "(let (" p ")" n> r> ")")
 (let* "(let* (" p ")" n> r> ")")
 (pcase "(pcase " p n "(" q "))" >)
