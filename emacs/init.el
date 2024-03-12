@@ -2607,7 +2607,9 @@ specified then a task category will be determined by the item's tags."
    ("r i" . my/org-agenda-refile-inbox)
    ("k" . org-agenda-kill)
    ("?" . which-key-show-major-mode))
-  :hook (org-agenda-mode . hl-line-mode)
+  :hook
+  (org-agenda-mode . hl-line-mode)
+  (org-agenda-mode . (lambda () (setq-local default-directory org-directory)))
   :custom
   (org-agenda-cmp-user-defined #'my/org-agenda-cmp-todo)
   (org-agenda-custom-commands
