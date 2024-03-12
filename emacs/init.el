@@ -60,9 +60,9 @@
   (defun my/toggle-show-trailing-whitespace ()
     "Toggle visibility of trailing whitespace."
     (interactive)
-    (setq show-trailing-whitespace (if show-trailing-whitespace nil t))
-    (message "%s trailing whitespace" (if show-trailing-whitespace
-                                          "Showing" "Hiding")))
+    (setq show-trailing-whitespace (not show-trailing-whitespace))
+    (message "%s trailing whitespace in current buffer"
+             (if show-trailing-whitespace "Showing" "Hiding")))
 
   (defun my/clear-registers ()
     "Clear all registers."
@@ -108,8 +108,8 @@
   ("C-c b 2" . recompile)
   ("C-c x |" . display-fill-column-indicator-mode)
   ("C-c x n" . display-line-numbers-mode)
-  ("C-c x z" . delete-trailing-whitespace)
-  ("C-c x Z" . my/toggle-show-trailing-whitespace)
+  ("C-c x w" . my/toggle-show-trailing-whitespace)
+  ("C-c x W" . delete-trailing-whitespace)
   ("C-x r K" . my/clear-registers)
 
   :custom
