@@ -27,13 +27,13 @@ alias ku=kustomize
 alias tf=terraform
 
 # Replace ls with eza.
-alias ls=eza
-alias l=eza
-alias ll="eza -l"
-alias l.="eza -d .*"
-alias ll.="eza -ld .*"
-alias la="eza -a"
-alias lla="eza -la"
+alias ls="eza --group-directories-first"
+alias l="eza --group-directories-first"
+alias ll="eza -l --group-directories-first"
+alias l.="eza -d --group-directories-first .*"
+alias ll.="eza -ld --group-directories-first .*"
+alias la="eza -a --group-directories-first"
+alias lla="eza -la --group-directories-first"
 
 # Watch every 1 second by default.
 alias watch='watch -n 1 '
