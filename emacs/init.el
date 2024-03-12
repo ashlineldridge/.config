@@ -199,24 +199,6 @@
    ("<" . [?⟵])
    ("s" . [?😊])))
 
-(use-package time
-  :ensure nil
-  :custom
-  (display-time-mode nil)
-  (display-time-default-load-average nil)
-  (display-time-format "%H:%M")
-  ;; Timezones to be displayed by `world-clock'. Zones names can be found
-  ;; here: https://www.timezoneconverter.com/cgi-bin/tzc.
-  (world-clock-list
-   '(("Australia/Melbourne" "Melbourne")
-     ("America/Los_Angeles" "Seattle")
-     ("America/New_York" "New York")
-     ("Europe/London" "London")
-     ("Europe/Paris" "Paris")
-     ("Europe/Vilnius" "Lithuania")
-     ("Asia/Tokyo" "Tokyo")
-     ("Canada/Eastern" "Toronto"))))
-
 ;;;; Appearance
 
 ;;;;; Fonts
@@ -2776,6 +2758,32 @@ specified then a task category will be determined by the item's tags."
   (require 'org-roam-protocol)
   (require 'org-roam-dailies)
   (org-roam-db-autosync-mode 1))
+
+;;;; Time
+
+(use-package time
+  :ensure nil
+  :custom
+  (display-time-mode nil)
+  (display-time-default-load-average nil)
+  (display-time-format "%H:%M")
+  ;; Timezones to be displayed by `world-clock'. Zones names can be found
+  ;; here: https://www.timezoneconverter.com/cgi-bin/tzc.
+  (world-clock-list
+   '(("UTC" "UTC")
+     ("Australia/Melbourne" "Melbourne")
+     ("America/Los_Angeles" "Seattle")
+     ("America/New_York" "NY")
+     ("Europe/London" "London")
+     ("Europe/Paris" "Paris")
+     ("Europe/Vilnius" "Lithuania")
+     ("Asia/Tokyo" "Tokyo")
+     ("Canada/Eastern" "Toronto"))))
+
+;; See `tzc-world-clock' and `tzc-convert-time'.
+(use-package tzc
+  :custom
+  (tzc-favourite-time-zones-alist world-clock-list))
 
 ;;;; Spelling
 
