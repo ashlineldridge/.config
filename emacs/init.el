@@ -2379,7 +2379,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 
   ;; Unset a bunch of keybindings that I want to keep.
   (dolist (key '("C-o" "C-r" "C-s" "C-SPC"
-                 "M-s" "M-g" "M-:" "M-&" "M-'"
+                 "M-g" "M-k" "M-s" "M-:" "M-&" "M-'"
                  "M-H" "M-J" "M-K" "M-L"
                  "C-M-H" "C-M-J" "C-M-K" "C-M-L"))
     (define-key vterm-mode-map (kbd key) nil)))
