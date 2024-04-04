@@ -1596,6 +1596,7 @@
   (defun my/eglot-init ()
     "Init function for `eglot--managed-mode'."
     (eglot-inlay-hints-mode 1)
+    (setq-local eglot-cache-session-completions nil)
     (setq-local completion-at-point-functions
                 (list
                  #'eglot-completion-at-point
