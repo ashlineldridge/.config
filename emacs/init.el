@@ -1695,7 +1695,7 @@
 (use-package consult-eglot
   :bind
   (:map eglot-mode-map
-   ("M-g o" . consult-eglot-symbols)))
+   ("M-g s" . consult-eglot-symbols)))
 
 ;;;;;; Eldoc
 
