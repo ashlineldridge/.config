@@ -2086,7 +2086,10 @@
 
 ;;;;;; YAML
 
-(use-package yaml-mode)
+(use-package yaml-mode
+  :hook
+  ;; Disable electric indent as it's quite annoying for this mode.
+  (yaml-mode . (lambda () (electric-indent-local-mode -1))))
 
 ;;;;;; Lisp
 
