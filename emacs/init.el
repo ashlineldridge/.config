@@ -2206,9 +2206,12 @@
 
 (use-package eshell
   :ensure nil
-  :defines eshell-prompt-regexp
+  :defines
+  (eshell-buffer-maximum-lines eshell-prompt-regexp)
   :preface
+  (defalias 'eshell/v 'eshell-exec-visual)
   (declare-function eshell-bol "esh-mode")
+  (declare-function eshell-truncate-buffer "esh-mode")
   (declare-function eshell-read-aliases-list "esh-alias")
   (declare-function eshell/pwd "em-dirs")
   (declare-function eshell-save-some-history "em-hist")
@@ -2247,7 +2250,7 @@
     (setenv "TERM" "dumb"))
 
   (defun my/eshell-prompt ()
-    "Custom eshell prompt function."
+    "Custom Eshell prompt function."
     ;; This is compatible with the default `eshell-prompt-regexp'.
     (concat (my/abbreviate-file-name (eshell/pwd) 30)
             (if (= (user-uid) 0) " # " " $ ")))
@@ -2275,13 +2278,8 @@
               components (cdr components)))
       (concat str (cl-reduce (lambda (a b) (concat a "/" b)) components))))
 
-  (defun my/eshell-refresh-aliases ()
-    "Refresh eshell aliases."
-    (interactive)
-    (eshell-read-aliases-list))
-
   (defun my/eshell-sink (&optional name)
-    "Return a reference to a buffer for sinking eshell command output.
+    "Return a reference to a buffer for sinking Eshell command output.
 If NAME is specified, a reference to that buffer will be returned, creating the
 buffer if necessary. If NAME is not specified, a buffer name will be generated."
     (let* ((name (or name (generate-new-buffer-name "*eshell-output*")))
@@ -2289,11 +2287,32 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (display-buffer buf)
       buf))
 
+  (defun my/eshell-insert-arg (&optional n)
+    "Insert the Nth argument (from the end) of the previous command."
+    (interactive "p")
+    (when-let* ((num-args (length eshell-last-arguments))
+                (n (min n num-args))
+                (arg (nth (- num-args n) eshell-last-arguments))
+                (arg (if (numberp arg) (number-to-string arg) arg)))
+      (insert (substring-no-properties arg))))
+
   (defun my/eshell-kill-whole-line ()
     "Eshell version of `kill-whole-line' that respects the prompt, if any."
     (interactive)
     (eshell-bol)
     (kill-line))
+
+  (defun my/eshell-refresh-aliases ()
+    "Refresh Eshell aliases."
+    (interactive)
+    (eshell-read-aliases-list))
+
+  (defun my/eshell-truncate-all ()
+    "Truncate all of the Eshell buffer."
+    (interactive)
+    (let ((eshell-buffer-maximum-lines 0))
+      (eshell-truncate-buffer)
+      (message "Eshell buffer truncated.")))
 
   :bind
   ("C-c e" . eshell)
@@ -2314,8 +2333,8 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   :ensure nil
   :bind
   (:map eshell-mode-map
-   ("C-c C-<backspace>" . eshell-kill-output)
-   ("C-c C-SPC" . eshell-mark-output)
+   ("C-c i" . my/eshell-insert-arg)
+   ("C-c M-t" . my/eshell-truncate-all)
    ("C-S-<backspace>" . my/eshell-kill-whole-line)))
 
 (use-package em-hist
@@ -2323,7 +2342,9 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   :bind
   (:map eshell-hist-mode-map
    ("M-s" . nil)
-   ("M-r" . nil)))
+   ("M-r" . nil)
+   ("<up>" . nil)
+   ("<down>" . nil)))
 
 (use-package vterm
   :defines (vterm-mode-map vterm-eval-cmds)
@@ -2374,7 +2395,8 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (dolist (key '("C-o" "C-r" "C-s" "C-SPC"
                  "M-g" "M-k" "M-s" "M-:" "M-&" "M-'"
                  "M-H" "M-J" "M-K" "M-L"
-                 "C-M-H" "C-M-J" "C-M-K" "C-M-L"))
+                 "C-M-H" "C-M-J" "C-M-K" "C-M-L"
+                 "<up>" "<down>" "<left>" "<right>"))
     (define-key vterm-mode-map (kbd key) nil)))
 
 (use-package sh-script
