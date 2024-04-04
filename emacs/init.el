@@ -976,9 +976,8 @@
    ("M-n" . corfu-popupinfo-scroll-up))
   :hook (corfu-mode . corfu-popupinfo-mode)
   :custom
-  (corfu-popupinfo-delay nil)
+  (corfu-popupinfo-delay '(1.0 . 0.5))
   (corfu-popupinfo-max-height 16))
-
 
 (use-package corfu-quick
   :after corfu
