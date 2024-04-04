@@ -2452,8 +2452,10 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    ("C-c o m" . (lambda () (interactive) (org-capture nil "m")))
    :map org-mode-map
    ("C-'" . nil)
-   ("M-S-<up>" . nil)
-   ("M-S-<down>" . nil)
+   ("M-<left>" . nil)
+   ("M-<right>" . nil)
+   ("S-<left>" . nil)
+   ("S-<right>" . nil)
    ("C-c C-S-l" . org-cliplink))
   :hook (org-mode . my/org-init)
   :custom
