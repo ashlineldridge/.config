@@ -2180,6 +2180,9 @@
   ("C-c g s" . magit-status)
   ("C-c g d" . magit-dispatch)
   ("C-c g f" . magit-file-dispatch)
+  :custom
+  ;; Use `global-auto-revert-mode' instead.
+  (magit-auto-revert-mode nil)
   :config
   ;; Speed up Magit by removing a bunch of the slower status hook functions
   ;; that add details to the status buffer. It makes it look more bare-bones
