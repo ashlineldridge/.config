@@ -131,8 +131,7 @@
   (echo-keystrokes 0.01)
   (mac-command-modifier 'meta)
   (mac-option-modifier nil)
-  ;; Save the left pinky: tab for tabbing and M-/ for completion.
-  (tab-always-indent t)
+  (tab-always-indent 'complete)
   (indent-tabs-mode nil)
   (set-mark-command-repeat-pop t)
   (mark-ring-max 10)
@@ -784,19 +783,12 @@
 ;;;;; Templating
 
 (use-package tempel
-  :after nerd-icons-corfu
-  :defines nerd-icons-corfu-mapping
   :bind
-  (("C-M-/" . tempel-complete)
+  (("M-/" . tempel-complete)
    (:map tempel-map
-    ;; Use tab to select the next/previous field and M-/ to complete within.
-    ("<tab>" . tempel-next)
-    ("<backtab>" . tempel-previous)
-    ([remap keyboard-quit] . tempel-done)))
-  :config
-  (add-to-list 'nerd-icons-corfu-mapping
-               ;; Run `nerd-icons-insert' to see icons.
-               '(snippet :style "oct" :icon "heart" :face font-lock-string-face)))
+    ("M-/" . tempel-next)
+    ("M-?" . tempel-previous)
+    ([remap keyboard-quit] . tempel-done))))
 
 ;;;; Buffer Management
 
@@ -972,12 +964,9 @@
          (consult-completion-in-region beg end table pred)))))
 
   :bind
-  (("M-/" . completion-at-point)
-   :map corfu-map
-   ("S-SPC" . corfu-insert-separator)
-   ("M-m" . my/corfu-move-to-minibuffer)
-   ("M-/" . corfu-complete)
-   ("<tab>" . corfu-complete))
+  (:map corfu-map
+   ("<tab>" . corfu-complete)
+   ("M-m" . my/corfu-move-to-minibuffer))
   :hook (minibuffer-setup . my/corfu-enable-in-minibuffer)
   :custom
   (global-corfu-mode t)
