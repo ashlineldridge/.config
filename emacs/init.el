@@ -2731,7 +2731,7 @@ specified then a task category will be determined by the item's tags."
   :hook (org-mode . org-appear-mode)
   :custom
   (org-appear-autolinks t)
-  (org-appear-delay 1.0))
+  (org-appear-delay 0.6))
 
 (use-package org-roam
   :preface
