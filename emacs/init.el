@@ -1043,15 +1043,17 @@
 (use-package vertico-multiform
   :after vertico
   :ensure nil
+  :commands vertico-multiform-mode
   :custom
-  (vertico-multiform-mode t)
   (vertico-multiform-categories
-   '((imenu buffer)
-     (file (vertico-sort-function . my/vertico-sort-dirs-first))))
-
+   '((file (vertico-sort-function . my/vertico-sort-dirs-first))))
   ;; Sometimes commands are better when the category is too broad.
   (vertico-multiform-commands
-   '((consult-outline buffer))))
+   '((consult-imenu buffer)
+     (consult-outline buffer)))
+  :init
+  ;; Enabling via a customization doesn't seem to take effect.
+  (vertico-multiform-mode 1))
 
 ;; I don't enable `vertico-buffer-mode' directly since this makes Vertico
 ;; always run in a buffer. Instead, `vertico-multiform' is used to toggle
@@ -1064,13 +1066,8 @@
   :custom
   (vertico-buffer-display-action
    '(display-buffer-in-direction
-     ;; Below results in the search buffer being displayed to the right of the
-     ;; current window with both the windows being shown at 50% width. Trying
-     ;; to control the % via (window-width . 0.3) seems to set the width based
-     ;; on the frame width rather than the current window which makes the
-     ;; search window too large when the frame is split vertically into
-     ;; multiple windows. So 50% is fine for now.
-     (direction . right))))
+     (direction . right)
+     (window-width . 0.3))))
 
 (use-package vertico-repeat
   :after vertico
