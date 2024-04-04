@@ -804,14 +804,11 @@
    ("M-s" . nil)
    ("N" . dired-create-empty-file)
    ("?" . which-key-show-major-mode)
-   ("i" . dired-subtree-insert)
-   (";" . dired-subtree-remove)
    :map dired-jump-map
    ;; Allow `dired-goto-file' (via j) straight after jumping with C-x C-j.
    ;; Without this, repeat mode takes over and j calls `dired-jump' again.
    ("j" . nil))
   :hook
-  (dired-mode . auto-revert-mode)
   (dired-mode . dired-hide-details-mode)
   :custom
   (dired-recursive-copies 'always)
@@ -831,8 +828,8 @@
 (use-package dired-subtree
   :bind
   (:map dired-mode-map
-   ("<tab>" . dired-subtree-toggle)
-   ("<backtab>" . dired-subtree-remove))
+   ("i" . dired-subtree-insert)
+   (";" . dired-subtree-remove))
   :custom
   (dired-subtree-use-backgrounds nil))
 
