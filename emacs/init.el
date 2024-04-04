@@ -1749,7 +1749,11 @@
   :custom
   (eldoc-box-clear-with-C-g t)
   :config
-  (add-to-list 'eldoc-display-functions #'my/eldoc-display-in-eldoc-box))
+  ;; The function `my/eldoc-display-in-eldoc-box' needs to be called after
+  ;; `eldoc-display-in-buffer' to get the new value of  `eldoc--doc-buffer'.
+  (remove-hook 'eldoc-display-functions #'eldoc-display-in-buffer)
+  (add-hook 'eldoc-display-functions #'my/eldoc-display-in-eldoc-box)
+  (add-hook 'eldoc-display-functions #'eldoc-display-in-buffer))
 
 ;;;;;; Flymake
 
