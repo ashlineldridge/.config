@@ -146,12 +146,13 @@
   ;; Save bookmarks immediately.
   (bookmark-save-flag 0)
   (savehist-mode t)
+  ;; Auto-revert all file visiting buffers when they change on disk.
+  (global-auto-revert-mode t)
   ;; Variables to persist between sessions.
   (savehist-additional-variables
    '(kill-ring
      search-ring
      regexp-search-ring
-     register-alist
      extended-command-history))
   (electric-pair-mode t)
   (repeat-mode t)
@@ -416,40 +417,31 @@
   (pixel-scroll-precision-mode t)
   (pixel-scroll-precision-interpolate-page t))
 
-;;;; Window Management
+;;;; Window/Frame Management
 
-;;;;; General Window Movement and Commands
+;;;;; Window/Frame Movement
 
 (use-package window
   :ensure nil
   :bind
   (("M-q" . bury-buffer)
    ("M-o =" . balance-windows)
-   ("M-o <left>" . shrink-window-horizontally)
-   ("M-o <right>" . enlarge-window-horizontally)
-   ("M-o <up>" . enlarge-window)
-   ("M-o <down>" . shrink-window)
    ("M-o 0" . delete-window)
    ("M-o 1" . delete-other-windows)
    ("M-o 2" . split-window-below)
    ("M-o 3" . split-window-right)
    :repeat-map my/window-repeat-map
    ("=" . balance-windows)
-   ("<left>" . shrink-window-horizontally)
-   ("<right>" . enlarge-window-horizontally)
-   ("<up>" . enlarge-window)
-   ("<down>" . shrink-window)
    ("0" . delete-window)
-   ("1" . delete-other-windows)
    ("2" . split-window-below)
    ("3" . split-window-right))
   :custom
+  (even-window-sizes nil)
   ;; The following provides the default `display-buffer' behaviour for buffers
   ;; that are not managed by either Popper or Shackle.
   (display-buffer-base-action '((display-buffer-reuse-mode-window
                                  display-buffer-reuse-window
-                                 display-buffer-same-window)))
-  (even-window-sizes nil))
+                                 display-buffer-same-window))))
 
 (use-package windmove
   :ensure nil
@@ -457,66 +449,64 @@
   (declare-function windmove-find-other-window "windmove")
   (declare-function windmove-do-window-select "windmove")
 
-  (defun my/windmove-throw-left ()
-    "Move the current buffer to the window to the left."
+  (defun my/windmove-move-left ()
     (interactive)
-    (my/windmove-throw 'left))
+    (my/windmove-move 'left))
 
-  (defun my/windmove-throw-right ()
+  (defun my/windmove-move-right ()
     "Move the current buffer to the window to the right."
     (interactive)
-    (my/windmove-throw 'right))
+    (my/windmove-move 'right))
 
-  (defun my/windmove-throw-up ()
+  (defun my/windmove-move-up ()
     "Move the current buffer to the window above."
     (interactive)
-    (my/windmove-throw 'up))
+    (my/windmove-move 'up))
 
-  (defun my/windmove-throw-down ()
+  (defun my/windmove-move-down ()
     "Move the current buffer to the window below."
     (interactive)
-    (my/windmove-throw 'down))
+    (my/windmove-move 'down))
 
-  (defun my/windmove-throw (dir)
+  (defun my/windmove-move (dir)
     "Move the current buffer to the window in direction DIR."
     (require 'windmove)
-    (let ((window (selected-window))
-          (buffer (current-buffer))
+    (let ((buffer (current-buffer))
           (target (windmove-find-other-window dir)))
       (if (null target)
           (user-error "No window %s from selected window" dir)
+        (switch-to-prev-buffer)
         (windmove-do-window-select dir)
-        (switch-to-buffer buffer nil t)
-        (select-window window)
-        (switch-to-prev-buffer))))
+        (switch-to-buffer buffer nil t))))
   :bind
-  (("M-o b" . windmove-left)
-   ("M-o f" . windmove-right)
-   ("M-o p" . windmove-up)
-   ("M-o n" . windmove-down)
-   ("M-o B" . my/windmove-throw-left)
-   ("M-o F" . my/windmove-throw-right)
-   ("M-o P" . my/windmove-throw-up)
-   ("M-o N" . my/windmove-throw-down)
-   ("M-o M-b" . windmove-delete-left)
-   ("M-o M-f" . windmove-delete-right)
-   ("M-o M-p" . windmove-delete-up)
-   ("M-o M-n" . windmove-delete-down)
-   :repeat-map my/window-repeat-map
-   ("b" . windmove-left)
-   ("f" . windmove-right)
-   ("p" . windmove-up)
-   ("n" . windmove-down)
-   ("B" . my/windmove-throw-left)
-   ("F" . my/windmove-throw-right)
-   ("P" . my/windmove-throw-up)
-   ("N" . my/windmove-throw-down)
-   ("M-b" . windmove-delete-left)
-   ("M-f" . windmove-delete-right)
-   ("M-p" . windmove-delete-up)
-   ("M-n" . windmove-delete-down)))
+  (("<left>" . windmove-left)
+   ("<right>" . windmove-right)
+   ("<up>" . windmove-up)
+   ("<down>" . windmove-down)
+   ("M-<left>" . my/windmove-move-left)
+   ("M-<right>" . my/windmove-move-right)
+   ("M-<up>" . my/windmove-move-up)
+   ("M-<down>" . my/windmove-move-down)
+   ("S-<left>" . windmove-swap-states-left)
+   ("S-<right>" . windmove-swap-states-right)
+   ("S-<up>" . windmove-swap-states-up)
+   ("S-<down>" . windmove-swap-states-down)
+   ("C-<left>" . windmove-delete-left)
+   ("C-<right>" . windmove-delete-right)
+   ("C-<up>" . windmove-delete-up)
+   ("C-<down>" . windmove-delete-down)
+   :map minibuffer-local-map
+   ("<up>" . nil)
+   ("<down>" . nil)))
+
+(use-package frame
+  :ensure nil
+  :bind
+  ("M-o M-n" . make-frame-command)
+  ("M-o M-k" . delete-frame))
 
 (use-package framemove
+  :demand t
   :ensure (:host github :repo "emacsmirror/framemove")
   :config
   (setq framemove-hook-into-windmove t))
@@ -525,13 +515,13 @@
   :bind
   (("M-o >" . rotate-frame-clockwise)
    ("M-o <" . rotate-frame-anticlockwise)
-   ("M-o 4" . flop-frame)
-   ("M-o 5" . flip-frame)
+   ("M-o @" . flip-frame)
+   ("M-o #" . flop-frame)
    :repeat-map my/window-repeat-map
    (">" . rotate-frame-clockwise)
    ("<" . rotate-frame-anticlockwise)
-   ("4" . flop-frame)
-   ("5" . flip-frame)))
+   ("@" . flip-frame)
+   ("#" . flop-frame)))
 
 ;;;;; Window History
 
