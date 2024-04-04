@@ -1422,7 +1422,7 @@
 
   (defvar my/consult-dir-source-local-subdir
     `(:name "Local Subdir"
-      :narrow ?l
+      :narrow ?.
       :hidden t
       :category file
       :face consult-file
@@ -1432,7 +1432,7 @@
 
   (defvar my/consult-dir-source-project-subdir
     `(:name "Project Subdir"
-      :narrow ?p
+      :narrow ?d
       :hidden t
       :category file
       :face consult-file
@@ -1444,21 +1444,19 @@
   ("M-s d" . consult-dir)
   :custom
   (consult-dir-shadow-filenames nil)
-  (consult-dir-default-command #'find-file)
+  (consult-dir-default-command #'consult-dir-dired)
   :config
   (consult-customize
    consult-dir--source-bookmark :name "Bookmark" :narrow ?m
-   consult-dir--source-default :name "Current" :narrow ?.
-   consult-dir--source-project :name "Project" :narrow ?P
+   consult-dir--source-project :name "Project" :narrow ?p
    consult-dir--source-recentf :name "Recent" :narrow ?r :hidden t)
 
   (setq consult-dir-sources
-        '(consult-dir--source-default
-          my/consult-dir-source-local-subdir
-          my/consult-dir-source-project-subdir
-          consult-dir--source-bookmark
+        '(consult-dir--source-bookmark
           consult-dir--source-project
-          consult-dir--source-recentf)))
+          my/consult-dir-source-project-subdir
+          consult-dir--source-recentf
+          my/consult-dir-source-local-subdir)))
 
 (use-package embark
   :preface
