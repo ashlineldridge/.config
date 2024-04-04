@@ -1001,10 +1001,12 @@
 
 (use-package nerd-icons-corfu
   :after corfu
-  :preface
-  (declare-function nerd-icons-corfu-formatter "nerd-icons-corfu")
   :init
-  (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
+  (add-to-list 'corfu-margin-formatters 'nerd-icons-corfu-formatter)
+  :config
+  ;; Makes `tempel-complete' look nice (use `nerd-icons-insert' to see icons).
+  (add-to-list 'nerd-icons-corfu-mapping
+               '(snippet :style "oct" :icon "heart" :face font-lock-string-face)))
 
 (use-package vertico
   :ensure (:files (:defaults "extensions/*.el"))
