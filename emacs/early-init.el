@@ -11,11 +11,16 @@
 
 ;;; Code:
 
-;; Defer garbage collection until after init. The default settings are restored
-;; in the hook below. This reliably shaves off ~250ms of startup time.
+;; Defer garbage collection until after init and restore normality below.
 ;; See also: https://emacsconf.org/2023/talks/gc.
-(setq gc-cons-threshold most-positive-fixnum
-      gc-cons-percentage 0.5)
+(setq gc-cons-threshold most-positive-fixnum)
+
+;; Keep track of start up time and restore sensible GC settings.
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (message "Emacs ready in %s seconds with %d garbage collections."
+                     (emacs-init-time "%.2f") gcs-done)
+            (setq gc-cons-threshold (* 16 1024 1024))))
 
 ;; In Emacs 29+, we can change the eln-cache directory.
 ;; See https://github.com/emacscollective/no-littering#native-compilation-cache.
@@ -29,17 +34,11 @@
 ;; Disable JIT compilation.
 (setq native-comp-jit-compilation nil)
 
-;; Enable `use-package''s imenu support (must be done before package is loaded).
-(defvar use-package-enable-imenu-support t)
-
-;; Keep track of start up time.
-(add-hook 'emacs-startup-hook
-	  (lambda ()
-            (message "Emacs ready in %s seconds with %d garbage collections."
-		     (emacs-init-time "%.2f") gcs-done)
-            ;; Restore sensible GC settings after init.
-            (setq gc-cons-threshold (* 1000 1000 8)
-                  gc-cons-percentage 0.1)))
+;; Configure `use-package' options that need to before load.
+(setq-default use-package-always-defer t
+              use-package-always-ensure t
+              use-package-expand-minimally t
+              use-package-enable-imenu-support t)
 
 ;; Configure environment variables here.
 (setenv "XDG_CONFIG_HOME" (expand-file-name "~/.config"))
