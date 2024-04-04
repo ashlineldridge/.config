@@ -690,28 +690,21 @@
 
 (use-package avy
   :bind
-  ("M-j" . nil)
-  ("M-j j" . avy-goto-char-timer)
-  ("M-j l" . avy-goto-line)
-  ("M-j L" . avy-goto-end-of-line)
-  ("M-j y" . avy-copy-line)
-  ("M-j Y" . avy-copy-region)
-  ("M-j k" . avy-kill-whole-line)
-  ("M-j K" . avy-kill-region)
-  ("M-j w" . avy-kill-ring-save-whole-line)
-  ("M-j W" . avy-kill-ring-save-region)
-  ("M-j m" . avy-move-line)
-  ("M-j M" . avy-move-region)
+  ("M-j" . avy-goto-word-1)
+  ("M-g w" . avy-goto-word-1)
+  ("M-g c" . avy-goto-char-timer)
+  ("M-g l" . avy-goto-line)
+  ("M-g L" . avy-goto-end-of-line)
   :custom
   (avy-all-windows 'all-frames)
   (avy-single-candidate-jump t)
-  (avy-timeout-seconds 0.4)
+  (avy-timeout-seconds 0.3)
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
 
 (use-package link-hint
   :bind
-  ("M-j o " . link-hint-open-link)
-  ("M-j O" . link-hint-copy-link))
+  ("M-g o" . link-hint-open-link)
+  ("M-g M-o" . link-hint-copy-link))
 
 ;;;;; Highlighting
 
@@ -747,17 +740,18 @@
   (add-to-list 'pulsar-pulse-functions 'avy-goto-char-timer)
   (add-to-list 'pulsar-pulse-functions 'avy-goto-end-of-line)
   (add-to-list 'pulsar-pulse-functions 'avy-goto-line)
+  (add-to-list 'pulsar-pulse-functions 'avy-goto-word-1)
   (add-to-list 'pulsar-pulse-functions 'beginning-of-buffer)
-  (add-to-list 'pulsar-pulse-functions 'end-of-buffer)
   (add-to-list 'pulsar-pulse-functions 'beginning-of-defun)
+  (add-to-list 'pulsar-pulse-functions 'end-of-buffer)
   (add-to-list 'pulsar-pulse-functions 'end-of-defun)
+  (add-to-list 'pulsar-pulse-functions 'eshell-next-prompt)
+  (add-to-list 'pulsar-pulse-functions 'eshell-previous-prompt)
   (add-to-list 'pulsar-pulse-functions 'flymake-goto-next-error)
   (add-to-list 'pulsar-pulse-functions 'flymake-goto-prev-error)
   (add-to-list 'pulsar-pulse-functions 'pop-global-mark)
-  (add-to-list 'pulsar-pulse-functions 'set-mark-command)
   (add-to-list 'pulsar-pulse-functions 'popper-toggle)
-  (add-to-list 'pulsar-pulse-functions 'eshell-next-prompt)
-  (add-to-list 'pulsar-pulse-functions 'eshell-previous-prompt)
+  (add-to-list 'pulsar-pulse-functions 'set-mark-command)
   (add-to-list 'pulsar-pulse-functions 'vterm-next-prompt)
   (add-to-list 'pulsar-pulse-functions 'vterm-previous-prompt)
   (add-to-list 'pulsar-pulse-functions 'xref-find-definitions)
