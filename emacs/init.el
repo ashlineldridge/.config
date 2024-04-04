@@ -1556,9 +1556,10 @@
   :custom
   (treesit-font-lock-level 4)
   (treesit-extra-load-path
-   (list (no-littering-expand-var-file-name "treesit-auto"))))
+   (list (no-littering-expand-var-file-name "tree-sitter"))))
 
 (use-package treesit-auto
+  :defines treesit-auto-langs
   :preface
   (declare-function treesit-auto-install-all "treesit-auto")
 
@@ -1567,21 +1568,24 @@
   (defun my/treesit-auto-install-all ()
     "Wrapper around `treesit-auto-install-all' that respects no-littering."
     (interactive)
+    (require 'treesit-auto)
     (treesit-auto-install-all)
-    (let ((old-dir (expand-file-name "tree-sitter"  user-emacs-directory))
+    (let ((old-dir (locate-user-emacs-file "tree-sitter"))
           (new-dir (car treesit-extra-load-path)))
       (delete-directory new-dir t)
       (rename-file old-dir new-dir)))
 
-  :commands treesit-auto-add-to-auto-mode-alist
+  :commands
+  (global-treesit-auto-mode treesit-auto-add-to-auto-mode-alist)
   :custom
-  (global-treesit-auto-mode t)
   (treesit-auto-install 'prompt)
+
+  :init
   ;; Use TS-powered modes for a smaller set of languages for now.
   ;; See original value of `treesit-auto-langs' for the full set.
-  (treesit-auto-langs '(bash dockerfile go gomod proto python rust))
-  :init
-  (treesit-auto-add-to-auto-mode-alist treesit-auto-langs))
+  (setq treesit-auto-langs '(bash dockerfile go gomod proto python rust))
+  (treesit-auto-add-to-auto-mode-alist treesit-auto-langs)
+  (global-treesit-auto-mode 1))
 
 ;;;;;; Eglot
 
