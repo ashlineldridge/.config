@@ -1513,7 +1513,9 @@
   (("M-s ." . isearch-forward-thing-at-point)
    :map isearch-mode-map
    ;; The default `isearch-abort' requires multiple C-g if search not found.
-   ("C-g" . isearch-cancel)))
+   ("C-g" . isearch-cancel)
+   ("C-n" . isearch-repeat-forward)
+   ("C-p" . isearch-repeat-backward)))
 
 (use-package occur
   :ensure nil
