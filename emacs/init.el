@@ -153,7 +153,6 @@
      search-ring
      regexp-search-ring
      extended-command-history))
-  (electric-pair-mode t)
   (repeat-mode t)
   (repeat-exit-timeout 10)
   (repeat-exit-key (kbd "RET"))
@@ -2130,6 +2129,14 @@
   (dolist (key '("C-c C-M-l" "C-<left>" "C-<right>" "C-M-<left>" "C-M-<right>"
                  "M-?" "M-<up>" "M-<down>" "M-S" "M-J" "M-q" "M-r" "M-s"))
     (define-key paredit-mode-map (kbd key) nil)))
+
+(use-package elec-pair
+  :ensure nil
+  :custom
+  (electric-pair-mode t)
+  :config
+  (add-to-list 'electric-pair-pairs '(?` . ?`))
+  (add-to-list 'electric-pair-pairs '(?< . ?>)))
 
 (use-package rainbow-delimiters
   :hook
