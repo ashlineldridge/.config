@@ -95,7 +95,6 @@
   (elpaca-after-init . my/server-start)
 
   :bind
-  ("<escape>" . keyboard-escape-quit)
   ("C-;" . comment-line)
   ("C-S-k" . my/copy-to-eol)
   ("C-M-k" . my/delete-to-eol)
@@ -1166,9 +1165,9 @@
           :as #'buffer-name
           :mode 'dired-mode))))
 
-  (defvar my/consult-source-shell-buffer
-    `(:name "Shell Buffer"
-      :narrow ?s
+  (defvar my/consult-source-eshell-buffer
+    `(:name "Eshell Buffer"
+      :narrow ?e
       :hidden t
       :category buffer
       :face consult-buffer
@@ -1179,10 +1178,7 @@
          (consult--buffer-query
           :sort 'visibility
           :as #'buffer-name
-          :predicate
-          (lambda (buf)
-            (with-current-buffer buf
-              (derived-mode-p 'eshell-mode 'vterm-mode)))))))
+          :mode 'eshell-mode))))
 
   ;; Consult source for all project files. This has largely been adapted from
   ;; the implementation of `consult--source-project-recent-file'.
@@ -2315,7 +2311,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (message "Eshell buffer truncated.")))
 
   :bind
-  ("C-c e" . eshell)
+  ("<escape>" . eshell)
   :hook
   (eshell-mode . my/eshell-init)
   (eshell-pre-command . my/eshell-pre-command)
@@ -2333,6 +2329,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   :ensure nil
   :bind
   (:map eshell-mode-map
+   ("<escape>" . previous-buffer)
    ("C-c i" . my/eshell-insert-arg)
    ("C-c M-t" . my/eshell-truncate-all)
    ("C-S-<backspace>" . my/eshell-kill-whole-line)))
@@ -2344,8 +2341,12 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    ("M-s" . nil)
    ("M-r" . nil)
    ("<up>" . nil)
-   ("<down>" . nil)))
+   ("<down>" . nil)
+   ("C-<up>" . nil)
+   ("C-<down>" . nil)))
 
+;; I much prefer Eshell but have Vterm as an escape hatch when I need a proper
+;; terminal emulator. Just call 'M-x vterm' rather than wasting a keybinding.
 (use-package vterm
   :defines (vterm-mode-map vterm-eval-cmds)
   :preface
@@ -2370,8 +2371,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
         (vterm buffer-name))))
 
   :bind
-  (("C-c v" . vterm)
-   :map vterm-mode-map
+  (:map vterm-mode-map
    ;; Same keybinding for shell history as `consult-history' and `cape-history'.
    ("C-c h" . (lambda () (interactive) (vterm-send-key (kbd "C-r"))))
    :repeat-map my/vterm-repeat-map
