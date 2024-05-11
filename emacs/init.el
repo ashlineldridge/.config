@@ -738,7 +738,7 @@
   ;; functions in `pulsar-pulse-functions'. See Pulsar docs and Prot's config.
   (add-hook 'minibuffer-setup-hook 'pulsar-pulse-line)
   (add-hook 'next-error-hook 'pulsar-pulse-line-red)
-  (add-hook 'next-error-hook 'pulsar-recenter-top)
+  (add-hook 'next-error-hook 'pulsar-recenter-center)
   (add-hook 'next-error-hook 'pulsar-reveal-entry))
 
 ;;;;; Templating
