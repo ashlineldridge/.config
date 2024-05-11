@@ -95,6 +95,7 @@
   (elpaca-after-init . my/server-start)
 
   :bind
+  ("<escape>" . keyboard-escape-quit)
   ("C-;" . comment-line)
   ("C-S-k" . my/copy-to-eol)
   ("C-M-k" . my/delete-to-eol)
@@ -2322,7 +2323,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (message "Eshell buffer truncated.")))
 
   :bind
-  ("<escape>" . eshell)
+  ("C-c e" . eshell)
   :hook
   (eshell-mode . my/eshell-init)
   (eshell-pre-command . my/eshell-pre-command)
