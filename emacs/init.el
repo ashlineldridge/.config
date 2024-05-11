@@ -2803,7 +2803,7 @@ specified then a task category will be determined by the item's tags."
   (world-clock-list
    '(("UTC" "UTC")
      ("Australia/Melbourne" "Melbourne")
-     ("America/Los_Angeles" "Seattle")
+     ("America/Los_Angeles" "LA")
      ("America/New_York" "NY")
      ("Europe/London" "London")
      ("Europe/Paris" "Paris")
