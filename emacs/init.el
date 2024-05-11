@@ -354,7 +354,7 @@
   (doom-modeline-mode t)
   (doom-modeline-bar-width 4)
   (doom-modeline-buffer-encoding nil)
-  (doom-modeline-buffer-file-name-style 'relative-from-project)
+  (doom-modeline-buffer-file-name-style 'truncate-upto-project)
   (doom-modeline-buffer-state-icon t)
   (doom-modeline-column-zero-based t)
   (doom-modeline-height 20)
@@ -364,7 +364,9 @@
   (doom-modeline-percent-position nil)
   (doom-modeline-time-icon nil)
   (doom-modeline-total-line-number t)
-  (doom-modeline-window-width-limit nil))
+  (doom-modeline-window-width-limit nil)
+  (doom-modeline-env-version nil)
+  (doom-modeline-check-simple-format t))
 
 ;;;;; Point/Cursor
 
