@@ -1662,7 +1662,6 @@
 ;; Adapt Eglot to use Tempel rather than Yasnippet for placeholder completion.
 (use-package eglot-tempel
   :commands eglot-tempel-mode
-  ;; :after (eglot tempel)
   :init
   (eglot-tempel-mode))
 
@@ -2113,8 +2112,7 @@
   :custom
   (electric-pair-mode t)
   :config
-  (add-to-list 'electric-pair-pairs '(?` . ?`))
-  (add-to-list 'electric-pair-pairs '(?< . ?>)))
+  (add-to-list 'electric-pair-pairs '(?` . ?`)))
 
 (use-package rainbow-delimiters
   :hook
