@@ -422,18 +422,30 @@
 
 (use-package window
   :ensure nil
+  :preface
+  (defun my/split-window-below ()
+    "Split window below and move point to the new window."
+    (interactive)
+    (split-window-below)
+    (other-window 1))
+
+  (defun my/split-window-right ()
+    "Split window right and move point to the new window."
+    (interactive)
+    (split-window-right)
+    (other-window 1))
   :bind
   (("M-q" . bury-buffer)
    ("M-o =" . balance-windows)
    ("M-o 0" . delete-window)
    ("M-o 1" . delete-other-windows)
-   ("M-o 2" . split-window-below)
-   ("M-o 3" . split-window-right)
+   ("M-o 2" . my/split-window-below)
+   ("M-o 3" . my/split-window-right)
    :repeat-map my/window-repeat-map
    ("=" . balance-windows)
    ("0" . delete-window)
-   ("2" . split-window-below)
-   ("3" . split-window-right))
+   ("2" . my/split-window-below)
+   ("3" . my/split-window-right))
   :custom
   (even-window-sizes nil)
   ;; The following provides the default `display-buffer' behaviour for buffers
@@ -442,61 +454,21 @@
                                  display-buffer-reuse-window
                                  display-buffer-same-window))))
 
-(use-package windmove
-  :ensure nil
-  :preface
-  (declare-function windmove-find-other-window "windmove")
-  (declare-function windmove-do-window-select "windmove")
-
-  (defun my/windmove-move-left ()
-    (interactive)
-    (my/windmove-move 'left))
-
-  (defun my/windmove-move-right ()
-    "Move the current buffer to the window to the right."
-    (interactive)
-    (my/windmove-move 'right))
-
-  (defun my/windmove-move-up ()
-    "Move the current buffer to the window above."
-    (interactive)
-    (my/windmove-move 'up))
-
-  (defun my/windmove-move-down ()
-    "Move the current buffer to the window below."
-    (interactive)
-    (my/windmove-move 'down))
-
-  (defun my/windmove-move (dir)
-    "Move the current buffer to the window in direction DIR."
-    (require 'windmove)
-    (let ((buffer (current-buffer))
-          (target (windmove-find-other-window dir)))
-      (if (null target)
-          (user-error "No window %s from selected window" dir)
-        (switch-to-prev-buffer)
-        (windmove-do-window-select dir)
-        (switch-to-buffer buffer nil t))))
+(use-package winum
   :bind
-  (("<left>" . windmove-left)
-   ("<right>" . windmove-right)
-   ("<up>" . windmove-up)
-   ("<down>" . windmove-down)
-   ("M-<left>" . my/windmove-move-left)
-   ("M-<right>" . my/windmove-move-right)
-   ("M-<up>" . my/windmove-move-up)
-   ("M-<down>" . my/windmove-move-down)
-   ("S-<left>" . windmove-swap-states-left)
-   ("S-<right>" . windmove-swap-states-right)
-   ("S-<up>" . windmove-swap-states-up)
-   ("S-<down>" . windmove-swap-states-down)
-   ("C-<left>" . windmove-delete-left)
-   ("C-<right>" . windmove-delete-right)
-   ("C-<up>" . windmove-delete-up)
-   ("C-<down>" . windmove-delete-down)
-   :map minibuffer-local-map
-   ("<up>" . nil)
-   ("<down>" . nil)))
+  (("M-o n" . winum-select-window-by-number)
+   ("M-0" . winum-select-window-0-or-10)
+   ("M-1" . winum-select-window-1)
+   ("M-2" . winum-select-window-2)
+   ("M-3" . winum-select-window-3)
+   ("M-4" . winum-select-window-4)
+   ("M-5" . winum-select-window-5)
+   ("M-6" . winum-select-window-6)
+   ("M-7" . winum-select-window-7)
+   ("M-8" . winum-select-window-8)
+   ("M-9" . winum-select-window-9))
+  :custom
+  (winum-mode t))
 
 (use-package frame
   :ensure nil
@@ -504,23 +476,17 @@
   ("M-o M-n" . make-frame-command)
   ("M-o M-k" . delete-frame))
 
-(use-package framemove
-  :demand t
-  :ensure (:host github :repo "emacsmirror/framemove")
-  :config
-  (setq framemove-hook-into-windmove t))
-
 (use-package transpose-frame
   :bind
   (("M-o >" . rotate-frame-clockwise)
    ("M-o <" . rotate-frame-anticlockwise)
-   ("M-o @" . flip-frame)
-   ("M-o #" . flop-frame)
+   ("M-o _" . flip-frame)
+   ("M-o |" . flop-frame)
    :repeat-map my/window-repeat-map
    (">" . rotate-frame-clockwise)
    ("<" . rotate-frame-anticlockwise)
-   ("@" . flip-frame)
-   ("#" . flop-frame)))
+   ("_" . flip-frame)
+   ("|" . flop-frame)))
 
 ;;;;; Window History
 
@@ -2131,8 +2097,7 @@
 
   :config
   ;; Unbind keybindings that collide with things I find more useful.
-  (dolist (key '("C-c C-M-l" "C-<left>" "C-<right>" "C-M-<left>" "C-M-<right>"
-                 "M-?" "M-<up>" "M-<down>" "M-S" "M-J" "M-q" "M-r" "M-s"))
+  (dolist (key '("C-c C-M-l" "M-?" "M-q" "M-r" "M-s"))
     (define-key paredit-mode-map (kbd key) nil)))
 
 (use-package elec-pair
@@ -2351,15 +2316,12 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   :bind
   (:map eshell-hist-mode-map
    ("M-s" . nil)
-   ("M-r" . nil)
-   ("<up>" . nil)
-   ("<down>" . nil)
-   ("C-<up>" . nil)
-   ("C-<down>" . nil)))
+   ("M-r" . nil)))
 
 ;; I much prefer Eshell but have Vterm as an escape hatch when I need a proper
 ;; terminal emulator. Just call 'M-x vterm' rather than wasting a keybinding.
 (use-package vterm
+  :commands vterm
   :defines (vterm-mode-map vterm-eval-cmds)
   :preface
   (declare-function vterm-send-key "vterm")
@@ -2404,11 +2366,8 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
                '("find-file-other-window" find-file-other-window))
 
   ;; Unset a bunch of keybindings that I want to keep.
-  (dolist (key '("C-o" "C-r" "C-s" "C-SPC"
-                 "M-g" "M-k" "M-s" "M-:" "M-&" "M-'"
-                 "M-H" "M-J" "M-K" "M-L"
-                 "C-M-H" "C-M-J" "C-M-K" "C-M-L"
-                 "<up>" "<down>" "<left>" "<right>"))
+  (dolist (key '("C-r" "C-s" "C-SPC"
+                 "M-g" "M-k" "M-s" "M-:" "M-&" "M-'"))
     (define-key vterm-mode-map (kbd key) nil)))
 
 (use-package sh-script
@@ -2464,10 +2423,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    ("C-c o m" . (lambda () (interactive) (org-capture nil "m")))
    :map org-mode-map
    ("C-'" . nil)
-   ("M-<left>" . nil)
-   ("M-<right>" . nil)
-   ("S-<left>" . nil)
-   ("S-<right>" . nil)
    ("C-c C-S-l" . org-cliplink))
   :hook (org-mode . my/org-init)
   :custom
