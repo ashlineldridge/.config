@@ -1040,7 +1040,7 @@
   (vertico-buffer-display-action
    '(display-buffer-in-direction
      (direction . right)
-     (window-width . 0.3))))
+     (window-width . 0.25))))
 
 (use-package vertico-repeat
   :after vertico
@@ -1235,6 +1235,7 @@
 
   :bind
   (("M-i" . consult-imenu)
+   ("M-I" . consult-imenu-multi)
    ("M-y" . consult-yank-pop)
    ("M-s a" . consult-org-agenda)
    ("M-s f" . consult-fd)
