@@ -153,6 +153,8 @@
    '(kill-ring
      search-ring
      regexp-search-ring
+     ;; Far from perfect as doesn't persist if contains certain register types.
+     register-alist
      extended-command-history))
   (repeat-mode t)
   (repeat-exit-timeout 10)
@@ -342,8 +344,8 @@
   (unless (member "Symbols Nerd Font Mono" (font-family-list))
     (nerd-icons-install-fonts t)))
 
-;; Package-specific Nerd icon packages (e.g. `nerd-icons-dired') are grouped
-;; with the related package.
+;; Note: package-specific Nerd icon packages (e.g. `nerd-icons-dired') are
+;; grouped with the related package.
 
 ;;;;; Mode Line
 
