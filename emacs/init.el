@@ -633,11 +633,17 @@
 ;;;;; Undo/Redo
 
 (use-package undo-tree
+  :disabled ;; TODO: In-progress: giving vundo a try.
   :custom
   (global-undo-tree-mode t)
   (undo-tree-auto-save-history t)
   (undo-tree-visualizer-timestamps t)
   (undo-tree-visualizer-diff t))
+
+(use-package vundo
+  :demand
+  :bind
+  ("C-x u" . vundo))
 
 ;;;;; Region Expansion
 
