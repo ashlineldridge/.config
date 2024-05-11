@@ -2162,17 +2162,27 @@
   :custom
   ;; Use `global-auto-revert-mode' instead.
   (magit-auto-revert-mode nil)
+  (magit-verbose-messages t)
+  (magit-refresh-verbose t)
   :config
-  ;; Speed up Magit by removing a bunch of the slower status hook functions
-  ;; that add details to the status buffer. It makes it look more bare-bones
-  ;; but the speed increase is worth it. Run M-x `magit-toggle-verbose-refresh'
-  ;; to see how long each function takes.
-  (remove-hook 'magit-status-sections-hook 'magit-insert-status-headers)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-pushremote)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-upstream-or-recent)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-pushremote)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-upstream)
-  (remove-hook 'magit-status-headers-hook 'magit-insert-tags-header))
+  ;; Unbind keys used by winum.
+  (dolist (key '("M-1" "M-2" "M-3" "M-4"))
+    (define-key magit-section-mode-map (kbd key) nil))
+
+  ;; I have previously removed many of the hook functions from `magit-status-sections-hook'
+  ;; to speed up Magit on large repos. However, I do like a lot of the information I get
+  ;; from the status sections so I've stopped removing them and use `magit-refresh-verbose'
+  ;; to at least get some sort of feedback. `magit-toggle-verbose-refresh' can also be called
+  ;; to toggle verbose refresh on/off.
+  ;; See also https://twitter.com/nmartyanoff/status/1777622507916251368
+  ;; See also https://www.reddit.com/r/emacs/comments/k3xfa1/comment/ge7gi0d/
+  ;; (add-hook 'magit-status-sections-hook 'magit-insert-status-headers)
+  ;; (add-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-pushremote)
+  ;; (add-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-upstream-or-recent)
+  ;; (add-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-pushremote)
+  ;; (add-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-upstream)
+  ;; (add-hook 'magit-status-headers-hook 'magit-insert-tags-header)
+  )
 
 (use-package difftastic)
 
