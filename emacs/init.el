@@ -2318,9 +2318,10 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   :ensure nil
   :bind
   (:map eshell-mode-map
-   ("<escape>" . previous-buffer)
+   ("C-c C-o" . nil)
    ("C-c i" . my/eshell-insert-arg)
-   ("C-c M-t" . my/eshell-truncate-all)
+   ("C-c C-<backspace>" . eshell-kill-output)
+   ("C-c C-S-<backspace>" . my/eshell-truncate-all)
    ("C-S-<backspace>" . my/eshell-kill-whole-line)))
 
 (use-package em-hist
