@@ -990,14 +990,9 @@
   :ensure (:files (:defaults "extensions/*.el"))
   :custom
   (vertico-mode t)
-  (vertico-count 8)
+  (vertico-count 10)
   (vertico-count-format nil)
-  (vertico-resize nil)
-  :bind
-  (:map vertico-map
-   ;; I want these keys for windmove commands.
-   ("<up>" . nil)
-   ("<down>" . nil)))
+  (vertico-resize nil))
 
 (use-package vertico-directory
   :after vertico
