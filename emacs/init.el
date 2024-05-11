@@ -1075,6 +1075,7 @@
   ;; popup and use `consult-history' with local keymaps where minibuffer
   ;; history seems more appropriate.
   ("C-c h" . cape-history)
+  ("C-c d" . cape-dabbrev)
   ("C-c c d" . cape-dabbrev)
   ("C-c c h" . cape-history)
   ("C-c c f" . cape-file)
