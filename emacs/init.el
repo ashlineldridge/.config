@@ -803,6 +803,7 @@
   (dired-create-destination-dirs-on-trailing-dirsep t))
 
 (use-package dired-subtree
+  :after dired
   :bind
   (:map dired-mode-map
    ("i" . dired-subtree-insert)
@@ -935,7 +936,7 @@
   (corfu-count 16)
   (corfu-preview-current nil)
   (corfu-min-width 60)
-  (corfu-max-width 80)
+  (corfu-max-width 120)
   :config
   (add-to-list 'corfu-continue-commands #'my/corfu-move-to-minibuffer))
 
@@ -951,8 +952,8 @@
    ("M-l" . corfu-popupinfo-location)
    ("M-p" . corfu-popupinfo-scroll-down)
    ("M-n" . corfu-popupinfo-scroll-up))
-  :hook (corfu-mode . corfu-popupinfo-mode)
   :custom
+  (corfu-popupinfo-mode t)
   (corfu-popupinfo-delay '(1.0 . 0.5))
   (corfu-popupinfo-max-height 16))
 
@@ -2210,6 +2211,7 @@
                  'eshell-postoutput-scroll-to-bottom)
     ;; Configuration eshell completion.
     (setq-local corfu-auto nil)
+    (setq-local corfu-popupinfo-mode nil)
     (setq-local cape-file-directory-must-exist nil)
     (setq-local completion-at-point-functions
                 (list
