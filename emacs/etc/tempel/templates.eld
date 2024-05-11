@@ -49,7 +49,7 @@ prog-mode
 
 (fixme (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "FIXME: ")
 (todo (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "TODO: ")
-(todo-ash (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "TODO(ashlin.eldridge): ")
+(todo-me (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "TODO(ashlin.eldridge): ")
 (bug (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "BUG: ")
 (hack (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "HACK: ")
 
@@ -97,7 +97,8 @@ go-mode go-ts-mode
 (if-else-if "if " p " {" n> p n "} else if " > p " {" n> q n "}" >)
 (if-else-if-else "if " p " {" n> p n "} else if " > p " {" n> p n "} else {" > n> q n "}" >)
 (if-err "if err != nil {" n> q n "}" >)
-(if-err-compact "if err := " r "; err != nil {" n> q n "}" >)
+(if-err-compact "if err := " p "; err != nil {" n> q n "}" >)
+(if-err-propagate "if err != nil {" n> "return errors.Propagate(err)" n "}" >)
 (import-block "import (" n> q n ")" >)
 (init "func init() {" n> q n "}" >)
 (interface "type " p " interface {" n> q n "}" >)
