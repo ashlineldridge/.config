@@ -459,9 +459,26 @@
                                  display-buffer-same-window))))
 
 (use-package winum
+  :preface
+  (declare-function winum-get-window-by-number "winum")
+  (defun my/winum-move-buffer (n)
+    "Move the current buffer to window N."
+    (when (winum-get-window-by-number n)
+      (let ((buffer (current-buffer)))
+        (switch-to-prev-buffer)
+        (winum-select-window-by-number n)
+        (switch-to-buffer buffer nil t))))
+  (defun my/winum-move-buffer-1 () (interactive) (my/winum-move-buffer 1))
+  (defun my/winum-move-buffer-2 () (interactive) (my/winum-move-buffer 2))
+  (defun my/winum-move-buffer-3 () (interactive) (my/winum-move-buffer 3))
+  (defun my/winum-move-buffer-4 () (interactive) (my/winum-move-buffer 4))
+  (defun my/winum-move-buffer-5 () (interactive) (my/winum-move-buffer 5))
+  (defun my/winum-move-buffer-6 () (interactive) (my/winum-move-buffer 6))
+  (defun my/winum-move-buffer-7 () (interactive) (my/winum-move-buffer 7))
+  (defun my/winum-move-buffer-8 () (interactive) (my/winum-move-buffer 8))
+  (defun my/winum-move-buffer-9 () (interactive) (my/winum-move-buffer 9))
   :bind
-  (("M-o n" . winum-select-window-by-number)
-   ("M-0" . winum-select-window-0-or-10)
+  (("M-0" . winum-select-window-0-or-10)
    ("M-1" . winum-select-window-1)
    ("M-2" . winum-select-window-2)
    ("M-3" . winum-select-window-3)
@@ -470,7 +487,16 @@
    ("M-6" . winum-select-window-6)
    ("M-7" . winum-select-window-7)
    ("M-8" . winum-select-window-8)
-   ("M-9" . winum-select-window-9))
+   ("M-9" . winum-select-window-9)
+   ("C-M-1" . my/winum-move-buffer-1)
+   ("C-M-2" . my/winum-move-buffer-2)
+   ("C-M-3" . my/winum-move-buffer-3)
+   ("C-M-4" . my/winum-move-buffer-4)
+   ("C-M-5" . my/winum-move-buffer-5)
+   ("C-M-6" . my/winum-move-buffer-6)
+   ("C-M-7" . my/winum-move-buffer-7)
+   ("C-M-8" . my/winum-move-buffer-8)
+   ("C-M-9" . my/winum-move-buffer-9))
   :custom
   (winum-mode t))
 
@@ -496,7 +522,6 @@
 
 (use-package winner
   :ensure nil
-  :preface
   :bind
   (("M-o u" . winner-undo)
    ("M-o r" . winner-redo)
