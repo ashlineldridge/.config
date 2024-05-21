@@ -1167,6 +1167,21 @@
           :as #'buffer-name
           :mode 'dired-mode))))
 
+  (defvar my/consult-source-magit-buffer
+    `(:name "Magit Buffer"
+      :narrow ?m
+      :hidden t
+      :category buffer
+      :face consult-buffer
+      :history buffer-name-history
+      :state ,#'consult--buffer-state
+      :items
+      ,(lambda ()
+         (consult--buffer-query
+          :sort 'visibility
+          :as #'buffer-name
+          :mode 'magit-status-mode))))
+
   (defvar my/consult-source-eshell-buffer
     `(:name "Eshell Buffer"
       :narrow ?e
@@ -1369,8 +1384,9 @@
           consult--source-project-buffer-hidden ;; Narrow: ?p (hidden)
           my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
           my/consult-source-eshell-buffer       ;; Narrow: ?s (hidden)
+          my/consult-source-magit-buffer        ;; Narrow: ?m (hidden)
           consult--source-file-register         ;; Narrow: ?g (shown)
-          consult--source-bookmark              ;; Narrow: ?m (shown)
+          consult--source-bookmark              ;; Narrow: ?k (shown)
           consult--source-recent-file))         ;; Narrow: ?r (hidden)
 
   ;; Customize individual Consult sources.
@@ -1380,6 +1396,8 @@
    consult--source-project-buffer
    consult--source-project-buffer-hidden
    :name "Project Buffer" :narrow ?p
+   consult--source-bookmark
+   :name "Bookmark" :narrow ?k
    consult--source-file-register
    :name "Register" :narrow ?g :preview-key my/preview-key
    ;; Due to the value of `consult-preview-key' configured above, the preview
@@ -1446,7 +1464,7 @@
   (consult-dir-default-command #'consult-dir-dired)
   :config
   (consult-customize
-   consult-dir--source-bookmark :name "Bookmark" :narrow ?m
+   consult-dir--source-bookmark :name "Bookmark" :narrow ?k
    consult-dir--source-project :name "Project" :narrow ?p
    consult-dir--source-recentf :name "Recent" :narrow ?r :hidden t)
 
