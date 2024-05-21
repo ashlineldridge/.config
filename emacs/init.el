@@ -910,7 +910,6 @@
      (consult-ripgrep "Ripgrep" ?s)
      (magit-project-status "Magit" ?m)
      (project-eshell "Eshell" ?e)
-     (my/vterm-project "Vterm" ?v)
      (project-async-shell-command "Async shell" ?&))))
 
 ;;;;; Auto-Save
@@ -2379,16 +2378,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     "Hook function executed when `vterm-mode' is run."
     ;; Make outline work with vterm prompts.
     (setq-local outline-regexp "^[^#$\n]* ❯ "))
-
-  (defun my/vterm-project ()
-    "Start a Vterm in the current project's root directory."
-    (interactive)
-    (let* ((default-directory (project-root (project-current t)))
-           (buffer-name (project-prefixed-buffer-name "vterm"))
-           (existing-buffer (get-buffer buffer-name)))
-      (if (and existing-buffer (not current-prefix-arg))
-          (pop-to-buffer existing-buffer)
-        (vterm buffer-name))))
 
   :bind
   (:map vterm-mode-map
