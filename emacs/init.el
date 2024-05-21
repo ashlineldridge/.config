@@ -658,7 +658,6 @@
 ;;;;; Undo/Redo
 
 (use-package undo-tree
-  :disabled ;; TODO: In-progress: giving vundo a try.
   :custom
   (global-undo-tree-mode t)
   (undo-tree-auto-save-history t)
@@ -666,6 +665,10 @@
   (undo-tree-visualizer-diff t))
 
 (use-package vundo
+  ;; HOLD: Undo-tree just feels more solid right now. Try Vundo again in the
+  ;; future and wire up support for saving undo history between sessions.
+  ;; See https://github.com/casouri/vundo/issues/97.
+  :disabled
   :demand
   :bind
   ("C-x u" . vundo))
