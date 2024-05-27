@@ -504,8 +504,12 @@
 (use-package frame
   :ensure nil
   :bind
-  ("M-o M-n" . make-frame-command)
-  ("M-o M-k" . delete-frame))
+  (("M-o M-o" . other-frame)
+   ("M-o M-n" . make-frame-command)
+   ("M-o M-k" . delete-frame)
+   ("M-o M-u" . undelete-frame))
+  :custom
+  (undelete-frame-mode t))
 
 (use-package transpose-frame
   :bind
