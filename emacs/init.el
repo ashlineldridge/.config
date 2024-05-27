@@ -461,6 +461,7 @@
 (use-package winum
   :preface
   (declare-function winum-get-window-by-number "winum")
+  (declare-function winum-select-window-by-number "winum")
   (defun my/winum-move-buffer (n)
     "Move the current buffer to window N."
     (when (winum-get-window-by-number n)
