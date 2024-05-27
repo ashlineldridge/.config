@@ -28,6 +28,7 @@ AWSVPNClient/
 argocd/
 auto-save-list
 configstore/
+dlv/.dbg_history
 droidcli/
 envconfig/
 exercism/

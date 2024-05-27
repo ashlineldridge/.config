@@ -1720,6 +1720,39 @@
   (:map eglot-mode-map
    ("M-g s" . consult-eglot-symbols)))
 
+(use-package dape
+  :bind-keymap
+  ("C-c C-d" . dape-global-map)
+  :custom
+  (dape-key-prefix nil)
+  (dape-repl-use-shorthand t)
+  (dape-buffer-window-arrangement 'right)
+  (dape-info-hide-mode-line t)
+  :config
+  ;; Don't display REPL initially and create on demand with `dape-repl'.
+  (remove-hook 'dape-on-start-hooks 'dape-repl)
+  ;; Dape config for debugging the Go test under point. Adapted from example
+  ;; at https://github.com/svaante/dape/wiki.
+  (add-to-list 'dape-configs
+               `(dlv-test
+                 modes (go-mode go-ts-mode)
+                 ensure dape-ensure-command
+                 command "dlv"
+                 command-args ("dap" "--listen" "127.0.0.1::autoport")
+                 command-cwd dape-command-cwd
+                 port :autoport
+                 :request "launch"
+                 :type "debug"
+                 :mode "test"
+                 :cwd "."
+                 :program "."
+                 :args (lambda ()
+                         (require 'which-func)
+                         (if-let* ((test-name (which-function))
+                                   (test-regexp (concat "^" test-name "$")))
+                             `["-test.run" ,test-regexp]
+                           (error "No test selected"))))))
+
 ;;;;;; Eldoc
 
 (use-package eldoc
