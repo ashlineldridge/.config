@@ -607,6 +607,8 @@
      "\\*Shell Command Output\\*"
      "\\*Async Shell Command\\*"
      "\\*apheleia-"
+     ;; Used for generating adhoc popper-managed buffers.
+     "\\*popper-"
 
      ;; Match all modes that derive from compilation-mode but do not derive
      ;; from a member of `my/popper-ignore-modes'.
