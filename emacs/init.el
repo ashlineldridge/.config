@@ -187,6 +187,9 @@
                  set-goal-column))
     (put cmd 'disabled nil))
 
+  ;; Don't yank face properties (e.g. prevents pasting colors).
+  (add-to-list 'yank-excluded-properties 'face)
+
   ;; Bind some special characters under 'C-x 8'. The [?] character is a zero-
   ;; width space character that can be used to escape org mode emphasis markers.
   ;; See: https://emacs.stackexchange.com/questions/16688/how-can-i-escape-the-in-org-mode-to-prevent-bold-fontification.
