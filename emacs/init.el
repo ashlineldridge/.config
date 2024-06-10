@@ -742,14 +742,21 @@
 
 (use-package pulsar
   :defines pulsar-pulse-functions
+  :hook
+  ;; Some functionality is better accessed via hooks than by registering
+  ;; functions in `pulsar-pulse-functions'. See Pulsar docs and Prot's config.
+  (minibuffer-setup . pulsar-pulse-line)
+  (next-error . (pulsar-pulse-line-red
+                 pulsar-recenter-center
+                 pulsar-reveal-entry))
   :custom
   (pulsar-global-mode t)
   (pulsar-delay 0.06)
-  (pulsar-iterations 10)
+  (pulsar-iterations 12)
   (pulsar-face 'pulsar-generic)
   :config
-  ;; Extra functions (and hooks below) that should trigger Pulsar. I'm not
-  ;; using #'fn syntax here to avoid needing all the forward declarations.
+  ;; Add extra functions that should trigger Pulsar. I'm not using
+  ;; #'fn syntax here to avoid needing all the forward declarations.
   (add-to-list 'pulsar-pulse-functions 'avy-goto-char-timer)
   (add-to-list 'pulsar-pulse-functions 'avy-goto-end-of-line)
   (add-to-list 'pulsar-pulse-functions 'avy-goto-line)
@@ -764,20 +771,35 @@
   (add-to-list 'pulsar-pulse-functions 'flymake-goto-prev-error)
   (add-to-list 'pulsar-pulse-functions 'magit-section-backward)
   (add-to-list 'pulsar-pulse-functions 'magit-section-forward)
+  (add-to-list 'pulsar-pulse-functions 'other-frame)
   (add-to-list 'pulsar-pulse-functions 'pop-global-mark)
   (add-to-list 'pulsar-pulse-functions 'popper-toggle)
   (add-to-list 'pulsar-pulse-functions 'set-mark-command)
   (add-to-list 'pulsar-pulse-functions 'vterm-next-prompt)
   (add-to-list 'pulsar-pulse-functions 'vterm-previous-prompt)
+  (add-to-list 'pulsar-pulse-functions 'winner-undo)
+  (add-to-list 'pulsar-pulse-functions 'winner-redo)
+  (add-to-list 'pulsar-pulse-functions 'winum-select-window-0)
+  (add-to-list 'pulsar-pulse-functions 'winum-select-window-1)
+  (add-to-list 'pulsar-pulse-functions 'winum-select-window-2)
+  (add-to-list 'pulsar-pulse-functions 'winum-select-window-3)
+  (add-to-list 'pulsar-pulse-functions 'winum-select-window-4)
+  (add-to-list 'pulsar-pulse-functions 'winum-select-window-5)
+  (add-to-list 'pulsar-pulse-functions 'winum-select-window-6)
+  (add-to-list 'pulsar-pulse-functions 'winum-select-window-7)
+  (add-to-list 'pulsar-pulse-functions 'winum-select-window-8)
+  (add-to-list 'pulsar-pulse-functions 'winum-select-window-9)
+  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-1)
+  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-2)
+  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-3)
+  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-4)
+  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-5)
+  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-6)
+  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-7)
+  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-8)
+  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-9)
   (add-to-list 'pulsar-pulse-functions 'xref-find-definitions)
-  (add-to-list 'pulsar-pulse-functions 'xref-find-definitions-other-window)
-
-  ;; Some functionality is better accessed via hooks than by registering
-  ;; functions in `pulsar-pulse-functions'. See Pulsar docs and Prot's config.
-  (add-hook 'minibuffer-setup-hook 'pulsar-pulse-line)
-  (add-hook 'next-error-hook 'pulsar-pulse-line-red)
-  (add-hook 'next-error-hook 'pulsar-recenter-center)
-  (add-hook 'next-error-hook 'pulsar-reveal-entry))
+  (add-to-list 'pulsar-pulse-functions 'xref-find-definitions-other-window))
 
 ;;;;; Templating
 
