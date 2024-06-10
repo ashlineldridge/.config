@@ -14,8 +14,13 @@ libs=(
   completion.zsh
 )
 
+# Configure eat if we're running it.
+if [[ "${INSIDE_EMACS:-}" =~ "eat$" ]]; then
+  libs+=(eat.zsh)
+fi
+
 # Configure vterm if we're running it.
-if [[ "${INSIDE_EMACS:-}" == vterm ]]; then
+if [[ "${INSIDE_EMACS:-}" =~ "vterm$" ]]; then
   libs+=(vterm.zsh)
 fi
 
