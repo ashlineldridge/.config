@@ -15,4 +15,3 @@ lister-gen
 promu
 protoc-gen-go
 protoc-gen-go-grpc
-staticcheck
