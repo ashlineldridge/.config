@@ -977,15 +977,16 @@
 
   :bind
   (:map corfu-map
-   ("<tab>" . corfu-complete)
+   ("S-SPC" . corfu-insert-separator)
    ("M-m" . my/corfu-move-to-minibuffer))
   :hook (minibuffer-setup . my/corfu-enable-in-minibuffer)
   :custom
   (global-corfu-mode t)
-  (corfu-auto nil)
-  (corfu-preselect 'first)
-  (corfu-quit-at-boundary nil)
-  (corfu-on-exact-match 'insert)
+  (corfu-auto t)
+  (corfu-auto-delay 0.3)
+  (corfu-preselect 'directory)
+  (corfu-quit-at-boundary 'separator)
+  (corfu-on-exact-match 'quit)
   (corfu-count 16)
   (corfu-preview-current nil)
   (corfu-min-width 60)
@@ -1005,8 +1006,9 @@
    ("M-l" . corfu-popupinfo-location)
    ("M-p" . corfu-popupinfo-scroll-down)
    ("M-n" . corfu-popupinfo-scroll-up))
+  :hook
+  (global-corfu-mode . corfu-popupinfo-mode)
   :custom
-  (corfu-popupinfo-mode t)
   (corfu-popupinfo-delay '(1.0 . 0.5))
   (corfu-popupinfo-max-height 16))
 
