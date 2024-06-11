@@ -2390,10 +2390,17 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (insert (substring-no-properties arg))))
 
   (defun my/eshell-kill-whole-line ()
-    "Eshell version of `kill-whole-line' that respects the prompt, if any."
+    "Eshell version of `kill-whole-line' that respects the prompt."
     (interactive)
     (eshell-bol)
     (kill-line))
+
+  (defun my/eshell-delete-to-bol ()
+    "Eshell version of `my/delete-to-bol' that respects the prompt."
+    (interactive)
+    (let ((to (point)))
+      (eshell-bol)
+      (delete-region (point) to)))
 
   (defun my/eshell-refresh-aliases ()
     "Refresh Eshell aliases."
