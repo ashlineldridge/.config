@@ -2325,11 +2325,6 @@
     ;; Configuration eshell completion.
     (setq-local corfu-auto nil)
     (setq-local corfu-popupinfo-mode nil)
-    (setq-local cape-file-directory-must-exist nil)
-    (setq-local completion-at-point-functions
-                (list
-                 #'cape-file
-                 #'pcomplete-completions-at-point))
     ;; Make outline work with eshell prompts.
     (setq-local outline-regexp eshell-prompt-regexp))
 
