@@ -1578,7 +1578,8 @@
 
 (use-package wgrep
   :bind
-  ("C-c w" . wgrep-change-to-wgrep-mode)
+  (:map grep-mode-map
+   ("C-c C-w" . wgrep-change-to-wgrep-mode))
   :custom
   (wgrep-auto-save-buffer t))
 
