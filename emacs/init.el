@@ -2285,6 +2285,13 @@
   ;; (add-hook 'magit-status-headers-hook 'magit-insert-tags-header)
   )
 
+(use-package diff-mode
+  :ensure nil
+  :config
+  ;; Unbind colliding keybindings.
+  (dolist (key '("M-0" "M-1" "M-2" "M-3" "M-4" "M-5" "M-6" "M-7" "M-8" "M-9" "M-k"))
+    (define-key diff-mode-map (kbd key) nil)))
+
 (use-package difftastic)
 
 (use-package browse-at-remote
@@ -2475,14 +2482,20 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
                '("find-file-other-window" find-file-other-window))
 
   ;; Unset a bunch of keybindings that I want to keep.
-  (dolist (key '("C-r" "C-s" "C-SPC"
-                 "M-g" "M-k" "M-s" "M-:" "M-&" "M-'"))
+  (dolist (key '("C-r" "C-s" "C-SPC" "M-g" "M-k" "M-s" "M-:" "M-&" "M-'"
+                 "M-0" "M-1" "M-2" "M-3" "M-4" "M-5" "M-6" "M-7" "M-8" "M-9"))
     (define-key vterm-mode-map (kbd key) nil)))
 
 (use-package sh-script
   :ensure nil
   :bind
   (:map sh-mode-map
+   ("C-c C-o" . nil)))
+
+(use-package comint
+  :ensure nil
+  :bind
+  (:map comint-mode-map
    ("C-c C-o" . nil)))
 
 ;;;; Org Mode
