@@ -2436,7 +2436,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "Welcome to Eshell\n\n")
   ;; The following commands will be started in `term-mode'.
-  (eshell-visual-commands '("vi" "vim" "htop" "btm" "watch")))
+  (eshell-visual-commands '("top" "vi" "vim" "htop" "btm" "watch" "kubectx" "kubens")))
 
 (use-package esh-mode
   :ensure nil
