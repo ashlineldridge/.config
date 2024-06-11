@@ -1046,7 +1046,7 @@
   :custom
   (vertico-mode t)
   (vertico-count 10)
-  (vertico-count-format nil)
+  (vertico-count-format '("%-6s " . "%s/%s"))
   (vertico-resize nil))
 
 (use-package vertico-directory
