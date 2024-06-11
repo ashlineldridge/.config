@@ -164,12 +164,8 @@
   (fringe-mode 5)
   ;; Ignore any changes made via the customization UI.
   (custom-file (make-temp-file "emacs-custom-"))
-  ;; Enable recursive editing to allow multiple minibuffers to be opened on top
-  ;; of each other. E.g., this allows starting a query-replace, then open a
-  ;; file to look at something, then go back to the query-replace minibuffer.
   (enable-recursive-minibuffers t)
-  ;; Display a small "[n]" that shows the minibuffer recursive depth. Another
-  ;; option is to use https://github.com/minad/recursion-indicator.
+  ;; Display a small "[n]" that shows the minibuffer recursive depth.
   (minibuffer-depth-indicate-mode t)
   ;; Don't allow the cursor in the minibuffer prompt text.
   (minibuffer-prompt-properties
