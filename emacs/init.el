@@ -1816,24 +1816,10 @@
     (if (my/eldoc-box-visible-p)
         (eldoc-box-quit-frame)
       (eldoc-box-help-at-point)))
-
-  ;; Workaround to ensure the correct documentation is shown by the `eldoc-box'
-  ;; popup if Eldoc is updated. See: https://github.com/casouri/eldoc-box/issues/96.
-  (defun my/eldoc-display-in-eldoc-box (&rest _)
-    "Display latest Eldoc buffer in `eldoc-box' if visible."
-    (when (my/eldoc-box-visible-p)
-      (eldoc-box-help-at-point)))
-
   :bind
   ("M-p" . my/eldoc-box-toggle)
   :custom
-  (eldoc-box-clear-with-C-g t)
-  :config
-  ;; The function `my/eldoc-display-in-eldoc-box' needs to be called after
-  ;; `eldoc-display-in-buffer' to get the new value of  `eldoc--doc-buffer'.
-  (remove-hook 'eldoc-display-functions #'eldoc-display-in-buffer)
-  (add-hook 'eldoc-display-functions #'my/eldoc-display-in-eldoc-box)
-  (add-hook 'eldoc-display-functions #'eldoc-display-in-buffer))
+  (eldoc-box-clear-with-C-g t))
 
 ;;;;;; Flymake
 
