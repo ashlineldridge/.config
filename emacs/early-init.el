@@ -85,15 +85,8 @@
 ;; See https://github.com/d12frosted/homebrew-emacs-plus/issues/323 for details.
 (setenv "LIBRARY_PATH"
 	(mapconcat #'identity
-                   '("/opt/homebrew/opt/gcc/lib/gcc/13"
-                     "/opt/homebrew/opt/libgccjit/lib/gcc/13"
-                     "/opt/homebrew/opt/gcc/lib/gcc/13/gcc/aarch64-apple-darwin23/13") ":"))
-
-;; If an early-init-private.el file exists, load it. I use this file to manage
-;; configuration I don't want to make public. Typically, it's just environment
-;; variables and `exec-path' entries that are work-specific.
-(let ((pfile (expand-file-name "early-init-private.el" user-emacs-directory)))
-  (when (file-readable-p pfile)
-    (load pfile)))
+                   '("/opt/homebrew/opt/gcc/lib/gcc/14"
+                     "/opt/homebrew/opt/libgccjit/lib/gcc/14"
+                     "/opt/homebrew/opt/gcc/lib/gcc/14/gcc/aarch64-apple-darwin23/14") ":"))
 
 ;;; early-init.el ends here
