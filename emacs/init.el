@@ -2414,6 +2414,15 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (eshell-truncate-buffer)
       (message "Eshell buffer truncated.")))
 
+  (defun my/eshell-goto-dir ()
+    "Change current Eshell directory with `consult-dir'."
+    (interactive)
+    (let ((consult-dir-default-command (lambda ()
+                                         (interactive)
+                                         (eshell/cd default-directory)
+                                         (eshell-send-input))))
+      (consult-dir)))
+
   :bind
   ("C-c e" . eshell)
   :hook
