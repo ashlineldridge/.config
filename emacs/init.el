@@ -126,6 +126,7 @@
   ;; Don't resize the frame when themes, fonts, etc, change.
   (frame-inhibit-implied-resize t)
   (sentence-end-double-space nil)
+  (delete-by-moving-to-trash t)
   (delete-selection-mode t)
   (echo-keystrokes 0.01)
   (mac-command-modifier 'meta)
@@ -720,10 +721,16 @@
 
 (use-package hl-line
   :ensure nil
-  :bind
-  ("C-c x h" . hl-line-mode)
   :custom
   (hl-line-sticky-flag nil))
+
+(use-package lin
+  :hook
+  (elpaca-after-init . lin-global-mode)
+  :bind
+  ("C-c x h" . lin-mode)
+  :custom
+  (lin-face 'lin-green))
 
 (use-package hl-todo
   :custom
@@ -847,10 +854,9 @@
   :custom
   (dired-recursive-copies 'always)
   (dired-recursive-deletes 'always)
-  (delete-by-moving-to-trash t)
   (dired-kill-when-opening-new-dired-buffer t)
   (dired-free-space nil)
-  (dired-listing-switches "-al --group-directories-first")
+  (dired-listing-switches "-AGFhlv --group-directories-first --time-style=long-iso")
   (dired-hide-details-hide-symlink-targets t))
 
 (use-package dired-aux
@@ -864,27 +870,22 @@
   :bind
   (:map dired-mode-map
    ("i" . dired-subtree-insert)
-   (";" . dired-subtree-remove))
+   (";" . dired-subtree-remove)
+   ("<tab>" . dired-subtree-toggle))
   :custom
   (dired-subtree-use-backgrounds nil))
 
 (use-package diredfl
   :hook (dired-mode . diredfl-mode))
 
-(use-package nerd-icons-dired
-  :preface
-  (declare-function nerd-icons-dired--refresh-advice "nerd-icons-dired")
-  :hook (dired-mode . nerd-icons-dired-mode)
-  :config
-  ;; Add support for additional subtree commands.
-  ;; TODO: Remove after https://github.com/rainstormstudio/nerd-icons-dired/pull/18 is merged.
-  (with-eval-after-load 'dired-subtree
-    (advice-add 'dired-subtree-insert :around #'nerd-icons-dired--refresh-advice)
-    (advice-add 'dired-subtree-remove :around #'nerd-icons-dired--refresh-advice)))
-
 ;; Provides the super useful `wdired-change-to-wdired-mode' command.
 (use-package wdired
   :ensure nil
+  :after dired
+  :bind
+  (:map dired-mode-map
+   ;; Use same keybinding as `wgrep-change-to-wgrep-mode'.
+   ("C-c C-w" . wdired-change-to-wdired-mode))
   :custom
   (wdired-allow-to-change-permissions t)
   (wdired-create-parent-directories t))
