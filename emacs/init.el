@@ -2061,6 +2061,15 @@
   (:map go-ts-mode-map
    ("C-c t g" . go-gen-test-dwim)))
 
+(use-package go-add-tags
+  :after go-ts-mode
+  :bind
+  (:map go-ts-mode-map
+   ("C-c r t" . go-add-tags))
+  :custom
+  (go-add-tags-style 'camel-case)
+  (go-add-tags-fields-tags '("json" "yaml" "validate")))
+
 (use-package go-playground
   :preface
   (declare-function go-playground "go-playground")
