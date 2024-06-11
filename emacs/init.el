@@ -87,11 +87,10 @@
     (setq-local truncate-lines t))
 
   :hook
-  ;; Display line numbers in certain modes.
-  ((prog-mode config-mode text-mode) . display-line-numbers-mode)
-  ;; Don't wrap long lines in programming modes.
+  ((prog-mode conf-mode text-mode) . display-line-numbers-mode)
+  ;; Unfortunately, `global-auto-revert-mode' isn't working reliably.
+  ((prog-mode conf-mode text-mode dired-mode) . auto-revert-mode)
   (prog-mode . my/truncate-lines)
-  ;; Run Emacs in server mode.
   (elpaca-after-init . my/server-start)
 
   :bind
@@ -146,8 +145,6 @@
   ;; Save bookmarks immediately.
   (bookmark-save-flag 0)
   (savehist-mode t)
-  ;; Auto-revert all file visiting buffers when they change on disk.
-  (global-auto-revert-mode t)
   ;; Variables to persist between sessions.
   (savehist-additional-variables
    '(kill-ring
@@ -2270,8 +2267,7 @@
   ("C-c g d" . magit-dispatch)
   ("C-c g f" . magit-file-dispatch)
   :custom
-  ;; Use `global-auto-revert-mode' instead.
-  (magit-auto-revert-mode nil)
+  (magit-auto-revert-mode nil) ;; Use `auto-revert-mode' instead.
   (magit-verbose-messages t)
   (magit-refresh-verbose t)
   :config
