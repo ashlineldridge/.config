@@ -2922,6 +2922,14 @@ specified then a task category will be determined by the item's tags."
   :custom
   (proced-enable-color-flag t))
 
+;;;; Work Configuration
+
+(use-package chronosphere
+  :if (file-exists-p "~/dev/home/chronosphere")
+  :load-path "~/dev/home/chronosphere"
+  :bind-keymap
+  ("C-c w" . chronosphere-map))
+
 ;;; End:
 (provide 'init)
 
