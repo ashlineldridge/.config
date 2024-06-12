@@ -2446,7 +2446,14 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    ("C-c i" . my/eshell-insert-arg)
    ("C-c C-<backspace>" . eshell-kill-output)
    ("C-c C-S-<backspace>" . my/eshell-truncate-all)
-   ("C-S-<backspace>" . my/eshell-kill-whole-line)))
+   ("C-S-<backspace>" . my/eshell-kill-whole-line)
+   ("M-<backspace>" . my/eshell-delete-to-bol)
+   ("M-g d" . my/eshell-goto-dir)
+   :repeat-map eshell-prompt-repeat-map
+   ("C-n" . nil)
+   ("C-p" . nil)
+   ("n" . eshell-next-prompt)
+   ("p" . eshell-previous-prompt)))
 
 (use-package em-hist
   :ensure nil
