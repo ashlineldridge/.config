@@ -2315,10 +2315,12 @@
   (defalias 'eshell/v 'eshell-exec-visual)
   (declare-function eshell-bol "esh-mode")
   (declare-function eshell-truncate-buffer "esh-mode")
+  (declare-function eshell-send-input "esh-mode")
   (declare-function eshell-read-aliases-list "esh-alias")
+  (declare-function eshell/cd "em-dirs")
   (declare-function eshell/pwd "em-dirs")
   (declare-function eshell-save-some-history "em-hist")
-  (declare-function pcomplete-completions-at-point "pcomplete")
+  (declare-function consult-dir--pick "consult-dir")
 
   (defun my/eshell-init ()
     "Hook function executed when `eshell-mode' is run."
@@ -2328,7 +2330,7 @@
     ;; See: https://emacs.stackexchange.com/a/45281
     (remove-hook 'eshell-output-filter-functions
                  'eshell-postoutput-scroll-to-bottom)
-    ;; Configuration eshell completion.
+    ;; Preferred eshell completion settings.
     (setq-local corfu-auto nil)
     (setq-local corfu-popupinfo-mode nil)
     ;; Make outline work with eshell prompts.
@@ -2336,9 +2338,8 @@
 
   (defun my/eshell-pre-command ()
     "Eshell pre-command hook function."
-    ;; Interactive eshell commands should use colors but this gets reverted by
-    ;; the post-command hook.
-    ;; See: https://github.com/daviwil/dotfiles/blob/master/Emacs.org#configuration.
+    ;; Temporarily set TERM as certain shell commands use this to decide whether
+    ;; output in color. This setting is reverted in `my/eshell-post-command'.
     (setenv "TERM" "xterm-256color")
     ;; Save history after command is entered but before it is invoked.
     ;; Otherwise, history is not saved until the eshell buffer is quit.
@@ -2423,11 +2424,9 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (defun my/eshell-goto-dir ()
     "Change current Eshell directory with `consult-dir'."
     (interactive)
-    (let ((consult-dir-default-command (lambda ()
-                                         (interactive)
-                                         (eshell/cd default-directory)
-                                         (eshell-send-input))))
-      (consult-dir)))
+    (require 'consult-dir)
+    (eshell/cd (consult-dir--pick))
+    (eshell-send-input))
 
   :bind
   ("C-c e" . eshell)
