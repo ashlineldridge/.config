@@ -1448,6 +1448,8 @@
 
 (use-package consult-dir
   :preface
+  (declare-function consult-dir--project-list-make "consult-dir")
+
   (defun my/find-subdirs (&optional dir)
     "Return a list of all subdirectories of DIR (else `default-directory')."
     (when-let ((default-directory (or dir default-directory)))
@@ -1501,7 +1503,11 @@
           consult-dir--source-project
           my/consult-dir-source-project-subdir
           consult-dir--source-recentf
-          my/consult-dir-source-local-subdir)))
+          my/consult-dir-source-local-subdir))
+
+  ;; Refresh projects maintained by `consult-dir' when the main list is updated.
+  (advice-add #'my/project-update-list
+              :after (lambda () (consult-dir--project-list-make t))))
 
 (use-package embark
   :preface
