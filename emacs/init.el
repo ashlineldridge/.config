@@ -2956,10 +2956,13 @@ specified then a task category will be determined by the item's tags."
 ;;;; Work Configuration
 
 (use-package chronosphere
+  :commands chronosphere-init
   :if (file-exists-p "~/dev/home/chronosphere")
   :load-path "~/dev/home/chronosphere"
   :bind-keymap
-  ("C-c w" . chronosphere-map))
+  ("C-c w" . chronosphere-map)
+  :init
+  (chronosphere-init))
 
 ;;; End:
 (provide 'init)
