@@ -2454,6 +2454,12 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    ("n" . eshell-next-prompt)
    ("p" . eshell-previous-prompt)))
 
+(use-package em-cmpl
+  :ensure nil
+  :bind
+  (:map eshell-cmpl-mode-map
+   ("C-c SPC" . nil)))
+
 (use-package em-hist
   :ensure nil
   :bind
@@ -2955,13 +2961,11 @@ specified then a task category will be determined by the item's tags."
 ;;;; Work Configuration
 
 (use-package chronosphere
-  :commands chronosphere-init
   :if (file-exists-p "~/dev/home/chronosphere")
   :load-path "~/dev/home/chronosphere"
+  :hook (elpaca-after-init . chronosphere-init)
   :bind-keymap
-  ("C-c w" . chronosphere-map)
-  :init
-  (chronosphere-init))
+  ("C-c SPC" . chronosphere-map))
 
 ;;; End:
 (provide 'init)
