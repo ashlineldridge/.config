@@ -1794,7 +1794,7 @@
   (eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
   (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p nil)
-  (eldoc-echo-area-display-truncation-message t)
+  (eldoc-echo-area-display-truncation-message nil)
   :config
   ;; Register commands and command prefixes that can move point to a symbol
   ;; where Eldoc documentation should be shown.
@@ -1856,13 +1856,6 @@
   :config
   (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-byte-compile)
   (remove-hook 'flymake-diagnostic-functions #'flymake-proc-legacy-flymake))
-
-(use-package sideline-flymake
-  :hook (flymake-mode . sideline-mode)
-  :custom
-  ;; Using the left side always displays even when using smaller windows.
-  (sideline-backends-left '(sideline-flymake))
-  (sideline-flymake-display-mode 'point))
 
 ;;;;;; Xref
 
