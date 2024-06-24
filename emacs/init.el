@@ -2305,6 +2305,8 @@
   (eshell-buffer-maximum-lines eshell-prompt-regexp)
   :preface
   (defalias 'eshell/v 'eshell-exec-visual)
+  (defalias 'eshell/d 'my/eshell-goto-dir)
+
   (declare-function eshell-bol "esh-mode")
   (declare-function eshell-truncate-buffer "esh-mode")
   (declare-function eshell-send-input "esh-mode")
@@ -2433,7 +2435,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "Welcome to Eshell\n\n")
   ;; The following commands will be started in `term-mode'.
-  (eshell-visual-commands '("top" "vi" "vim" "htop" "btm" "watch" "kubectx" "kubens")))
+  (eshell-visual-commands '("top" "vi" "vim" "htop" "btm" "watch")))
 
 (use-package esh-mode
   :ensure nil
