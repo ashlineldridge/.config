@@ -1125,6 +1125,9 @@
 ;; Dedicated completion commands.
 (use-package cape
   :bind
+  ;; TODO: Make sorting of results consistent between `cape-history' and
+  ;; `consult-history'. See https://github.com/minad/cape/discussions/123.
+  ;;
   ;; For history, default to `cape-history' which is displayed as a Corfu
   ;; popup and use `consult-history' with local keymaps where minibuffer
   ;; history seems more appropriate.
