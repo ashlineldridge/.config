@@ -1478,7 +1478,7 @@
 
   (defvar my/consult-dir-source-project-subdir
     `(:name "Project Subdir"
-      :narrow ?d
+      :narrow ?p
       :hidden t
       :category file
       :face consult-file
@@ -1494,7 +1494,7 @@
   :config
   (consult-customize
    consult-dir--source-bookmark :name "Bookmark" :narrow ?k
-   consult-dir--source-project :name "Project" :narrow ?p
+   consult-dir--source-project :name "Project" :narrow ?P
    consult-dir--source-recentf :name "Recent" :narrow ?r :hidden t)
 
   (setq consult-dir-sources
