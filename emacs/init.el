@@ -2919,7 +2919,8 @@ specified then a task category will be determined by the item's tags."
 ;;;; Calculator
 
 ;; Transient menu interface for `calc'. Use 'C-x *' to launch `calc-dispatch'.
-(use-package casual
+(use-package casual-calc
+  :defines calc-mode-map
   :after calc
   :bind
   (:map calc-mode-map
