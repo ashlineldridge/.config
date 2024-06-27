@@ -591,17 +591,17 @@
   (popper-echo-mode t)
   (popper-window-height 20)
   (popper-reference-buffers
-   '("CAPTURE-.*\\.org"
-     "\\*Messages\\*"
-     "\\*Warnings\\*"
+   '("\\*Async Shell Command\\*"
      "\\*Backtrace\\*"
      "\\*Breakpoints\\*"
-     "\\*Flymake"
      "\\*Call Hierarchy\\*"
+     "\\*Flymake"
+     "\\*Messages\\*"
      "\\*Shell Command Output\\*"
-     "\\*Async Shell Command\\*"
+     "\\*Warnings\\*"
      "\\*apheleia-"
      "\\*chronosphere-"
+     "CAPTURE-.*\\.org"
 
      ;; Match all modes that derive from compilation-mode but do not derive
      ;; from a member of `my/popper-ignore-modes'.
