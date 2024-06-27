@@ -40,6 +40,10 @@
               use-package-expand-minimally t
               use-package-enable-imenu-support t)
 
+;; Hide the title bar and use rounded corners.
+;; See https://github.com/d12frosted/homebrew-emacs-plus#emacs-29-and-emacs-30.
+(add-to-list 'default-frame-alist '(undecorated-round . t))
+
 ;; Configure environment variables here.
 (setenv "XDG_CONFIG_HOME" (expand-file-name "~/.config"))
 (setenv "XDG_CACHE_HOME" (expand-file-name "~/.cache"))
