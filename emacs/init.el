@@ -952,10 +952,6 @@
 ;;;; Completion System
 
 (use-package corfu
-  ;; Calling `global-corfu-mode' below invokes `eldoc-add-command' internally
-  ;; and because I'm pulling a later version of Eldoc, Corfu needs to be
-  ;; configured after Eldoc has been loaded.
-  :after eldoc
   :ensure (:files (:defaults "extensions/*.el"))
   :preface
   ;; From: https://github.com/minad/corfu#completing-in-the-minibuffer.
@@ -1125,9 +1121,6 @@
 ;; Dedicated completion commands.
 (use-package cape
   :bind
-  ;; TODO: Make sorting of results consistent between `cape-history' and
-  ;; `consult-history'. See https://github.com/minad/cape/discussions/123.
-  ;;
   ;; For history, default to `cape-history' which is displayed as a Corfu
   ;; popup and use `consult-history' with local keymaps where minibuffer
   ;; history seems more appropriate.
@@ -1361,13 +1354,9 @@
   :custom
   ;; Type ',' followed by a prefix key to narrow the available candidates.
   ;; Type C-, (defined above) to display prefix help. Alternatively, type
-  ;; ',' followed by C-h (or ?) to call `embark-prefix-help-command'. If
-  ;; ',' is problematic I'll search for another key.
+  ;; ',' followed by C-h (or ?) to call `embark-prefix-help-command'.
   (consult-narrow-key ",")
-
-  ;; Auto-preview by default.
   (consult-preview-key 'any)
-
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
   (consult-ripgrep-args
    '("rg"
@@ -1383,7 +1372,6 @@
      "--search-zip"
      "--hidden"
      "--glob=!.git/"))
-
   ;; Configure both `config-find' and `consult-fd' to follow symlinks, include
   ;; hidden files, and ignore the .git directory. The fd command needs to be
   ;; specifically told to allow matching across the full path (e.g. so you
@@ -1391,9 +1379,10 @@
   ;; the .gitignore file if present.
   (consult-find-args "find -L . -not ( -name .git -type d -prune )")
   (consult-fd-args "fd -p -L -H -E .git/*")
-
   ;; Only show Modus and Ef themes.
   (consult-themes '("^modus-" "^ef-"))
+  ;; Use Consult & Vertico for completion (commented out to use Corfu).
+  ;; (completion-in-region-function #'consult-completion-in-region)
 
   :init
   ;; Configure how registers are previewed and displayed.
@@ -1401,8 +1390,7 @@
   (setq register-preview-delay 0)
   (setq register-preview-function #'consult-register-format)
   (advice-add #'register-preview :override #'consult-register-window)
-
-  ;; Use consult to select xref locations with preview.
+  ;; Use Consult to select xref locations with preview.
   (with-eval-after-load 'xref
     (setq xref-show-xrefs-function #'consult-xref)
     (setq xref-show-definitions-function #'consult-xref))
