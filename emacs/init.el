@@ -1465,7 +1465,7 @@
       :face consult-file
       :history file-name-history
       :enabled ,#'my/project-current-root
-      :items ,(lambda () (my/find-subdirs))))
+      :items ,#'my/find-subdirs))
 
   (defvar my/consult-dir-source-project-subdir
     `(:name "Project Subdir"
@@ -1485,9 +1485,12 @@
   :config
   (consult-customize
    consult-dir--source-bookmark :name "Bookmark" :narrow ?k
-   consult-dir--source-project :name "Project" :narrow ?P
-   consult-dir--source-recentf :name "Recent" :narrow ?r :hidden t)
+   consult-dir--source-recentf :name "Recent" :narrow ?r :hidden t
+   ;; Override `:items' to show all projects including the current one as this
+   ;; allows me to use `my/eshell-goto-dir' to jump to the root of a project.
+   consult-dir--source-project :name "Project" :narrow ?P :items #'consult-dir--project-dirs)
 
+  ;; Customize the set of sources used by `consult-dir'.
   (setq consult-dir-sources
         '(consult-dir--source-bookmark
           consult-dir--source-project
