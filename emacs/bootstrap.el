@@ -61,30 +61,6 @@
   (elpaca-use-package-mode)
   (setq elpaca-use-package-by-default t))
 
-;; Newer versions of built-in packages are required by other packages.
-;; Will keep upgrades of core built-in packages here for now.
-;; See: https://github.com/progfolio/elpaca/issues/216#issuecomment-1876204588.
-(defun my/elpaca-unload-seq (e)
-  (and (featurep 'seq) (unload-feature 'seq t))
-  (elpaca--continue-build e))
-
-(defun my/elpaca-seq-build-steps ()
-  (append (butlast (if (file-exists-p (expand-file-name "seq" elpaca-builds-directory))
-                       elpaca--pre-built-steps elpaca-build-steps))
-          (list #'my/elpaca-unload-seq #'elpaca--activate-package)))
-
-(elpaca `(seq :build ,(my/elpaca-seq-build-steps)))
-(elpaca transient)
-(elpaca jsonrpc)
-
-;; Later versions of Eglot require a later version of Eldoc. The following
-;; is required to unload the built-in and allow the new version to be loaded.
-;; See: https://github.com/progfolio/elpaca/issues/236#issuecomment-1879838229.
-(unload-feature 'eldoc t)
-(setq custom-delayed-init-variables '())
-(defvar global-eldoc-mode nil)
-(elpaca eldoc)
-
 ;; Install no-littering early to tame Emacs config/data/other files.
 (elpaca no-littering
   (require 'no-littering)

@@ -1646,9 +1646,11 @@
 ;;;;;; Eglot
 
 (use-package eglot
-  ;; Use latest. See: https://www.reddit.com/r/emacs/comments/16yny40/how_to_use_the_latest_version_of_eglot_with_elpaca.
-  :ensure (:inherit elpaca-menu-gnu-devel-elpa)
   :preface
+  (declare-function eglot-inlay-hints-mode "eglot")
+  (declare-function eglot-completion-at-point "eglot")
+  (declare-function jsonrpc--log-event "subr")
+
   (defun my/eglot-init ()
     "Init function for `eglot--managed-mode'."
     (eglot-inlay-hints-mode 1)
@@ -1657,7 +1659,6 @@
                 (list
                  #'eglot-completion-at-point
                  #'cape-file)))
-
   :bind
   (:map eglot-mode-map
    ("M-g ^" . eglot-find-implementation)
@@ -2446,7 +2447,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (:map eshell-mode-map
    ("C-c C-o" . nil)
    ("C-c i" . my/eshell-insert-arg)
-   ("C-c C-<backspace>" . eshell-kill-output)
+   ("C-c C-<backspace>" . eshell-delete-output)
    ("C-c C-S-<backspace>" . my/eshell-truncate-all)
    ("C-S-<backspace>" . my/eshell-kill-whole-line)
    ("M-<backspace>" . my/eshell-delete-to-bol)
