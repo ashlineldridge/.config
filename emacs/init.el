@@ -963,6 +963,7 @@
 ;;;; Completion System
 
 (use-package corfu
+  :disabled ;; No popups experiment.
   :ensure (:files (:defaults "extensions/*.el"))
   :preface
   ;; From: https://github.com/minad/corfu#completing-in-the-minibuffer.
@@ -1001,6 +1002,7 @@
   (add-to-list 'corfu-continue-commands #'my/corfu-move-to-minibuffer))
 
 (use-package corfu-popupinfo
+  :disabled ;; No popups experiment.
   :after corfu
   :ensure nil
   :bind
@@ -1019,6 +1021,7 @@
   (corfu-popupinfo-max-height 16))
 
 (use-package corfu-quick
+  :disabled ;; No popups experiment.
   :after corfu
   :ensure nil
   :bind
@@ -1029,6 +1032,7 @@
   (corfu-quick2 "asdfghjkl"))
 
 (use-package corfu-history
+  :disabled ;; No popups experiment.
   :after corfu
   :ensure nil
   :defines savehist-additional-variables
@@ -1039,6 +1043,7 @@
   (add-to-list 'savehist-additional-variables 'corfu-history))
 
 (use-package nerd-icons-corfu
+  :disabled ;; No popups experiment.
   :after corfu
   :init
   (add-to-list 'corfu-margin-formatters 'nerd-icons-corfu-formatter)
@@ -1132,10 +1137,7 @@
 ;; Dedicated completion commands.
 (use-package cape
   :bind
-  ;; For history, default to `cape-history' which is displayed as a Corfu
-  ;; popup and use `consult-history' with local keymaps where minibuffer
-  ;; history seems more appropriate.
-  ("C-c h" . cape-history)
+  ;; ("C-c h" . cape-history) No popups experiment.
   ("C-c d" . cape-dabbrev)
   ("C-c c d" . cape-dabbrev)
   ("C-c c h" . cape-history)
@@ -1393,8 +1395,8 @@
   (consult-fd-args "fd -p -L -H -E .git/*")
   ;; Only show Modus and Ef themes.
   (consult-themes '("^modus-" "^ef-"))
-  ;; Use Consult & Vertico for completion (commented out to use Corfu).
-  ;; (completion-in-region-function #'consult-completion-in-region)
+  ;; No popups experiment.
+  (completion-in-region-function #'consult-completion-in-region)
 
   :init
   ;; Configure how registers are previewed and displayed.
@@ -1814,6 +1816,7 @@
   (eldoc-add-command-completions "xref-goto-"))
 
 (use-package eldoc-box
+  :disabled ;; No popups experiment.
   :preface
   (declare-function eldoc-box-help-at-point "eldoc-box")
   (declare-function eldoc-box-quit-frame "eldoc-box")
