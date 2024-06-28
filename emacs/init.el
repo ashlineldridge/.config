@@ -164,6 +164,11 @@
   (fringe-mode 5)
   ;; Ignore any changes made via the customization UI.
   (custom-file (make-temp-file "emacs-custom-"))
+  ;; Ignore case when completing via minibuffer.
+  (read-file-name-completion-ignore-case t)
+  (read-buffer-completion-ignore-case t)
+  (completion-ignore-case t)
+  ;; I heard you like minibuffers.
   (enable-recursive-minibuffers t)
   ;; Display a small "[n]" that shows the minibuffer recursive depth.
   (minibuffer-depth-indicate-mode t)
@@ -1168,16 +1173,17 @@
    xref-show-xrefs-function
    xref-show-definitions-function)
   :preface
-  (declare-function consult-xref "consult-xref")
+  (declare-function consult-completion-in-region "consult")
   (declare-function consult-register-format "consult-register")
   (declare-function consult-register-window "consult-register")
-  (declare-function consult--customize-put "consult")
-  (declare-function consult--file-preview "consult")
-  (declare-function consult--read "consult")
-  (declare-function consult--file-action "consult")
-  (declare-function consult--file-state "consult")
+  (declare-function consult-xref "consult-xref")
   (declare-function consult--buffer-query "consult")
   (declare-function consult--buffer-state "consult")
+  (declare-function consult--customize-put "consult")
+  (declare-function consult--file-action "consult")
+  (declare-function consult--file-preview "consult")
+  (declare-function consult--file-state "consult")
+  (declare-function consult--read "consult")
   (declare-function project--find-in-directory "project")
   (defconst my/preview-key '(:debounce 0.3 any))
 
