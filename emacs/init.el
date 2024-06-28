@@ -559,8 +559,7 @@
   (shackle-rules
    ;; More reliable to match by regex than by major mode as some commands
    ;; don't set the major mode until after they've called `display-buffer'.
-   '(("\\*eldoc" :select nil :other t :regexp t)
-     ("\\*eshell-output\\*" :select t :other t :regexp t)
+   '(("\\*eshell-output\\*" :select t :other t :regexp t)
      ("\\*helpful" :select nil :other t :regexp t)
      ("\\*rg\\*" :select t :other t :regexp t)
      ("\\*Occur\\*" :select t :other t :regexp t)
@@ -590,6 +589,8 @@
   (popper-mode t)
   (popper-echo-mode t)
   (popper-window-height 20)
+  ;; Display popup but don't select it.
+  (popper-display-function #'popper-display-popup-at-bottom)
   (popper-reference-buffers
    '("\\*Async Shell Command\\*"
      "\\*Backtrace\\*"
@@ -601,6 +602,7 @@
      "\\*Warnings\\*"
      "\\*apheleia-"
      "\\*chronosphere-"
+     "\\*eldoc"
      "CAPTURE-.*\\.org"
 
      ;; Match all modes that derive from compilation-mode but do not derive
@@ -628,19 +630,14 @@
 
 (use-package helpful
   :bind
-  (("C-h c" . helpful-callable)
-   ;; Replace `describe-*' bindings with Helpful where possible.
-   ([remap describe-function] . helpful-function)
-   ([remap describe-symbol] . helpful-symbol)
-   ([remap describe-variable] . helpful-variable)
-   ([remap describe-command] . helpful-command)
-   ([remap describe-key] . helpful-key)
-   ;; Replace `display-local-help' with Helpful for Elisp.
-   :map emacs-lisp-mode-map
-   ([remap display-local-help] . helpful-at-point)
-   :map lisp-interaction-mode-map
-   ([remap display-local-help] . helpful-at-point))
-
+  ("C-h c" . helpful-callable)
+  ("C-h ," . helpful-at-point)
+  ;; Replace `describe-*' bindings with Helpful where possible.
+  ([remap describe-function] . helpful-function)
+  ([remap describe-symbol] . helpful-symbol)
+  ([remap describe-variable] . helpful-variable)
+  ([remap describe-command] . helpful-command)
+  ([remap describe-key] . helpful-key)
   :custom
   ;; Required so that I can tell Shackle NOT to select Helpful buffers.
   (helpful-switch-buffer-function #'display-buffer))
@@ -1791,6 +1788,7 @@
 (use-package eldoc
   :ensure nil
   :bind
+  ("C-h ." . eldoc-doc-buffer)
   ("C-h t" . eldoc-mode)
   :custom
   (global-eldoc-mode t)
