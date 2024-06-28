@@ -1111,6 +1111,7 @@
 (use-package vertico-repeat
   :after vertico
   :ensure nil
+  :defines savehist-additional-variables
   :hook (minibuffer-setup . vertico-repeat-save)
   :bind
   ("C-c '" . vertico-repeat-select)
