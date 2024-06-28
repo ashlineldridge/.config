@@ -658,6 +658,15 @@
 
 ;;;; General Editing
 
+;;;;; Text
+
+(use-package text-mode
+  :ensure nil
+  :custom
+  ;; Otherwise I get spelling auto-completion in Magit commit buffers
+  ;; which I find annoying. Call Jinx manually instead.
+  (text-mode-ispell-word-completion nil))
+
 ;;;;; Undo/Redo
 
 (use-package undo-tree
@@ -2542,7 +2551,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 
   (defun my/org-init ()
     "Init function for `org-mode'."
-    (interactive)
     (visual-line-mode 1)
     (variable-pitch-mode 1)
     (display-line-numbers-mode 0)
