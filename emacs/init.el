@@ -1086,10 +1086,11 @@
   :custom
   (vertico-multiform-categories
    '((file (vertico-sort-function . my/vertico-sort-dirs-first))))
-  ;; Sometimes commands are better when the category is too broad.
+  ;; Commands work better when the category is too broad.
   (vertico-multiform-commands
    '((consult-imenu buffer)
-     (consult-outline buffer)))
+     (consult-outline buffer)
+     (consult-completion-in-region buffer)))
   :init
   ;; Enabling via a customization doesn't seem to take effect.
   (vertico-multiform-mode 1))
@@ -1138,8 +1139,6 @@
 ;; Dedicated completion commands.
 (use-package cape
   :bind
-  ;; ("C-c h" . cape-history) No popups experiment.
-  ("C-c d" . cape-dabbrev)
   ("C-c c d" . cape-dabbrev)
   ("C-c c h" . cape-history)
   ("C-c c f" . cape-file)
@@ -1333,6 +1332,7 @@
    ("M-g I" . consult-imenu-multi)
    ("M-g m" . consult-mark)
    ("M-g M" . consult-global-mark)
+   ("C-c h" . consult-history)
    ("C-c x t" . consult-theme)
    ("C-x b" . consult-buffer)
    ("C-x 4 b" . consult-buffer-other-window)
@@ -1346,6 +1346,7 @@
    ("C-x r l" . consult-register-load)
    ("C-x r s" . consult-register-store)
    ("C-x C-f" . my/consult-find-file)
+   ("C-x C-r" . consult-recent-file)
    ("C-x C-k k" . consult-kmacro)
    :map minibuffer-local-map
    ("M-s" . nil)
@@ -1355,9 +1356,7 @@
    :map flymake-mode-map
    ("C-c f f" . consult-flymake)
    :map isearch-mode-map
-   ("C-c h" . consult-isearch-history)
-   :map minibuffer-local-map
-   ("C-c h" . consult-history))
+   ("C-c h" . consult-isearch-history))
 
   :hook
   ;; Use the previously selected theme else default to Modus Vivendi.
@@ -1582,8 +1581,7 @@
 (use-package occur
   :ensure nil
   :hook
-  (occur-mode . hl-line-mode)
-  (occur-mode . my/truncate-lines))
+  (occur-mode . (hl-line-mode my/truncate-lines)))
 
 (use-package rg
   :bind
@@ -2189,9 +2187,6 @@
                 (list
                  #'elisp-completion-at-point
                  #'cape-file)))
-  :bind
-  (:map emacs-lisp-mode-map
-   ("C-x C-r" . eval-region))
   :hook
   (emacs-lisp-mode . my/elisp-init)
   :config
@@ -2336,6 +2331,8 @@
     ;; See: https://emacs.stackexchange.com/a/45281
     (remove-hook 'eshell-output-filter-functions
                  'eshell-postoutput-scroll-to-bottom)
+    ;; Looks cleaner and makes things jump around less.
+    (setq-local truncate-lines t)
     ;; Preferred eshell completion settings.
     (setq-local corfu-auto nil)
     (setq-local corfu-popupinfo-mode nil)
@@ -2497,7 +2494,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
 
   :bind
   (:map vterm-mode-map
-   ;; Same keybinding for shell history as `consult-history' and `cape-history'.
+   ;; Use same keybinding for shell history as `consult-history'.
    ("C-c h" . (lambda () (interactive) (vterm-send-key (kbd "C-r"))))
    :repeat-map my/vterm-repeat-map
    ("C-n" . vterm-next-prompt)
