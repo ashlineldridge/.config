@@ -730,14 +730,6 @@
   :custom
   (hl-line-sticky-flag nil))
 
-(use-package lin
-  :hook
-  (elpaca-after-init . lin-global-mode)
-  :bind
-  ("C-c x h" . lin-mode)
-  :custom
-  (lin-face 'lin-green))
-
 (use-package hl-todo
   :custom
   (global-hl-todo-mode t))
@@ -749,6 +741,14 @@
    ("M-s h h" . highlight-regexp)
    ("M-s h l" . highlight-lines-matching-regexp)
    ("M-s h u" . unhighlight-regexp)))
+
+(use-package lin
+  :hook
+  (elpaca-after-init . lin-global-mode)
+  :bind
+  ("C-c x h" . lin-mode)
+  :custom
+  (lin-face 'lin-green))
 
 (use-package pulsar
   :defines pulsar-pulse-functions
@@ -1581,7 +1581,7 @@
 (use-package occur
   :ensure nil
   :hook
-  (occur-mode . (hl-line-mode my/truncate-lines)))
+  (occur-mode . my/truncate-lines))
 
 (use-package rg
   :bind
