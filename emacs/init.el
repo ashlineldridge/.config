@@ -574,26 +574,48 @@
 (use-package popper
   :after shackle
   :preface
+  (declare-function popper-close-latest "popper")
   (declare-function popper-open-latest "popper")
   (declare-function popper-kill-latest-popup "popper")
+  (defvar my/popper-default-height 10)
   (defvar my/popper-ignore-modes '(grep-mode rg-mode))
+
+  (defun my/popper-toggle-height ()
+    "Toggle the height of the popup window."
+    (interactive)
+    (setq popper-window-height
+          (if (eq popper-window-height my/popper-default-height)
+              (* 2 my/popper-default-height)
+            my/popper-default-height))
+    (when popper-open-popup-alist
+      (popper-close-latest)
+      (popper-open-latest)))
 
   (defun my/popper-kill-popup-stay-open ()
     "Kill the current popup but stay open if there are others."
     (interactive)
-    (popper-kill-latest-popup)
-    (popper-open-latest))
+    (when popper-open-popup-alist
+      (popper-kill-latest-popup)
+      (popper-open-latest)))
 
   :bind
-  ("C-'" . popper-toggle)
-  ("M-'" . popper-cycle)
-  ("C-M-'" . popper-toggle-type)
-  ("C-M-\"" . my/popper-kill-popup-stay-open)
+  (("M-'" . nil) ;; Required as M-' is already taken.
+   ("M-' '" . popper-toggle)
+   ("M-' t" . popper-toggle-type)
+   ("M-' h" . my/popper-toggle-height)
+   ("M-' k" . my/popper-kill-popup-stay-open)
+   ("M-' <tab>" . popper-cycle)
+   :repeat-map my/popper-repeat-map
+   ("'" . popper-toggle)
+   ("t" . popper-toggle-type)
+   ("h" . my/popper-toggle-height)
+   ("k" . my/popper-kill-popup-stay-open)
+   ("<tab>" . popper-cycle))
 
   :custom
   (popper-mode t)
   (popper-echo-mode t)
-  (popper-window-height 20)
+  (popper-window-height my/popper-default-height)
   ;; Display popup but don't select it.
   (popper-display-function #'popper-display-popup-at-bottom)
   (popper-reference-buffers
@@ -783,7 +805,6 @@
   (add-to-list 'pulsar-pulse-functions 'magit-section-forward)
   (add-to-list 'pulsar-pulse-functions 'other-frame)
   (add-to-list 'pulsar-pulse-functions 'pop-global-mark)
-  (add-to-list 'pulsar-pulse-functions 'popper-toggle)
   (add-to-list 'pulsar-pulse-functions 'set-mark-command)
   (add-to-list 'pulsar-pulse-functions 'vterm-next-prompt)
   (add-to-list 'pulsar-pulse-functions 'vterm-previous-prompt)
