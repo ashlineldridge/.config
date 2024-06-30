@@ -21,7 +21,6 @@
   :ensure nil
   :preface
   (defalias 'yes-or-no-p #'y-or-n-p)
-
   (declare-function server-running-p "server")
   (defun my/server-start ()
     "Start Emacs in server mode if it is not already."
@@ -175,7 +174,7 @@
   ;; Don't allow the cursor in the minibuffer prompt text.
   (minibuffer-prompt-properties
    '(read-only t cursor-intangible t face minibuffer-prompt))
-  ;; Don't show M-x commands which don't work in the current mode.
+  ;; Don't show M-x commands that don't work in the current mode.
   (read-extended-command-predicate #'command-completion-default-include-p)
 
   :init
