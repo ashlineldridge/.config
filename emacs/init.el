@@ -1522,8 +1522,7 @@
   (consult-customize
    consult-dir--source-bookmark :name "Bookmark" :narrow ?k
    consult-dir--source-recentf :name "Recent" :narrow ?r :hidden t
-   ;; Override `:items' to show all projects including the current one as this
-   ;; allows me to use `my/eshell-goto-dir' to jump to the root of a project.
+   ;; Override `:items' to show all projects including the current one.
    consult-dir--source-project :name "Project" :narrow ?P :items #'consult-dir--project-dirs)
 
   ;; Customize the set of sources used by `consult-dir'.
@@ -2340,9 +2339,6 @@
   :defines
   (eshell-buffer-maximum-lines eshell-prompt-regexp)
   :preface
-  (defalias 'eshell/v 'eshell-exec-visual)
-  (defalias 'eshell/d 'my/eshell-goto-dir)
-
   (declare-function eshell-bol "esh-mode")
   (declare-function eshell-truncate-buffer "esh-mode")
   (declare-function eshell-send-input "esh-mode")
@@ -2453,12 +2449,12 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (eshell-truncate-buffer)
       (message "Eshell buffer truncated.")))
 
-  (defun my/eshell-goto-dir ()
+  (defalias 'eshell/v 'eshell-exec-visual)
+
+  (defun eshell/d ()
     "Change current Eshell directory with `consult-dir'."
-    (interactive)
     (require 'consult-dir)
-    (eshell/cd (consult-dir--pick))
-    (eshell-send-input))
+    (eshell/cd (consult-dir--pick)))
 
   :bind
   ("C-c e" . eshell)
@@ -2485,7 +2481,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    ("C-c C-S-<backspace>" . my/eshell-truncate-all)
    ("C-S-<backspace>" . my/eshell-kill-whole-line)
    ("M-<backspace>" . my/eshell-delete-to-bol)
-   ("M-g d" . my/eshell-goto-dir)
    :repeat-map eshell-prompt-repeat-map
    ("C-n" . nil)
    ("C-p" . nil)
