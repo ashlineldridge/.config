@@ -1107,11 +1107,12 @@
   :custom
   (vertico-multiform-categories
    '((file (vertico-sort-function . my/vertico-sort-dirs-first))))
-  ;; Commands work better when the category is too broad.
+  ;; Commands work better when the category is too broad. To customize display
+  ;; of completions, reference the `consult-completion-in-region' command.
   (vertico-multiform-commands
    '((consult-imenu buffer)
-     (consult-outline buffer)
-     (consult-completion-in-region buffer)))
+     (consult-outline buffer)))
+
   :init
   ;; Enabling via a customization doesn't seem to take effect.
   (vertico-multiform-mode 1))
