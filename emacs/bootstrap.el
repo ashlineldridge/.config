@@ -12,6 +12,17 @@
 
 ;;; Code:
 
+;; Forward declarations to make the byte compiler happy.
+(declare-function elpaca "elpaca")
+(declare-function elpaca-generate-autoloads "elpaca")
+(declare-function elpaca-process-queues "elpaca")
+(declare-function elpaca-wait "elpaca")
+(declare-function elpaca-use-package-mode "elpaca-use-package")
+(declare-function no-littering-theme-backups "no-littering")
+(defvar elpaca-use-package)
+(defvar elpaca-use-package-by-default)
+(defvar no-littering)
+
 ;; Elpaca loads Magit so this needs to be set here.
 (defvar magit-define-global-key-bindings nil)
 

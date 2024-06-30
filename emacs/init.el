@@ -1153,9 +1153,9 @@
 
 ;; Enables Vertico icons.
 (use-package nerd-icons-completion
-  ;; For some reason, this only seems to work when `nerd-icons-completion-mode.'
-  ;; is called very late in the startup cycle.
-  :hook (elpaca-after-init . nerd-icons-completion-mode))
+  ;; Need to call `nerd-icons-completion-mode' late in the startup cycle.
+  :hook
+  (elpaca-after-init . nerd-icons-completion-mode))
 
 ;; Dedicated completion commands.
 (use-package cape
