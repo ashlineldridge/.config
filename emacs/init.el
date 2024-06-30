@@ -2179,6 +2179,7 @@
 (use-package elisp-mode
   :ensure nil
   :preface
+  (declare-function flymake-eldoc-function "flymake")
   (defun my/elisp-init ()
     "Init function for `emacs-lisp-mode'."
     (setq-local outline-regexp ";;;+ [^\n]")
@@ -2186,7 +2187,13 @@
     (setq-local completion-at-point-functions
                 (list
                  #'elisp-completion-at-point
-                 #'cape-file)))
+                 #'cape-file))
+    (setq-local eldoc-documentation-functions
+                (list
+                 #'elisp-eldoc-funcall
+                 #'flymake-eldoc-function
+                 #'elisp-eldoc-var-docstring-with-value)))
+
   :hook
   (emacs-lisp-mode . my/elisp-init)
   :config
