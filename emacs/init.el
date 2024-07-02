@@ -449,6 +449,7 @@
    :repeat-map my/window-repeat-map
    ("=" . balance-windows)
    ("0" . delete-window)
+   ("1" . delete-other-windows)
    ("2" . my/split-window-below)
    ("3" . my/split-window-right))
   :custom
@@ -498,7 +499,18 @@
    ("C-M-6" . my/winum-move-buffer-6)
    ("C-M-7" . my/winum-move-buffer-7)
    ("C-M-8" . my/winum-move-buffer-8)
-   ("C-M-9" . my/winum-move-buffer-9))
+   ("C-M-9" . my/winum-move-buffer-9)
+   :repeat-map my/window-repeat-map
+   ("M-0" . winum-select-window-0-or-10)
+   ("M-1" . winum-select-window-1)
+   ("M-2" . winum-select-window-2)
+   ("M-3" . winum-select-window-3)
+   ("M-4" . winum-select-window-4)
+   ("M-5" . winum-select-window-5)
+   ("M-6" . winum-select-window-6)
+   ("M-7" . winum-select-window-7)
+   ("M-8" . winum-select-window-8)
+   ("M-9" . winum-select-window-9))
   :custom
   (winum-mode t))
 
@@ -599,14 +611,13 @@
       (popper-open-latest)))
 
   :bind
-  (("M-'" . nil) ;; Required as M-' is already taken.
-   ("M-' '" . popper-toggle)
-   ("M-' t" . popper-toggle-type)
-   ("M-' h" . my/popper-toggle-height)
-   ("M-' k" . my/popper-kill-popup-stay-open)
-   ("M-' <tab>" . popper-cycle)
-   :repeat-map my/popper-repeat-map
-   ("'" . popper-toggle)
+  (("M-o o" . popper-toggle)
+   ("M-o t" . popper-toggle-type)
+   ("M-o h" . my/popper-toggle-height)
+   ("M-o k" . my/popper-kill-popup-stay-open)
+   ("M-o <tab>" . popper-cycle)
+   :repeat-map my/window-repeat-map
+   ("o" . popper-toggle)
    ("t" . popper-toggle-type)
    ("h" . my/popper-toggle-height)
    ("k" . my/popper-kill-popup-stay-open)
