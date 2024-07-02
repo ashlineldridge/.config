@@ -1629,6 +1629,12 @@
 
 ;;;;; General Programming
 
+(use-package prog-mode
+  :ensure nil
+  :bind
+  (:map prog-mode-map
+   ("M-q" . nil)))
+
 ;;;;;; Tree-sitter
 
 (use-package treesit
