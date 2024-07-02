@@ -2328,6 +2328,8 @@
   ;; (add-hook 'magit-status-headers-hook 'magit-insert-tags-header)
   )
 
+(use-package github-review)
+
 (use-package diff-mode
   :ensure nil
   :config
