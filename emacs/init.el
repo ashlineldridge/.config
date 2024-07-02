@@ -576,6 +576,7 @@
   (declare-function popper-close-latest "popper")
   (declare-function popper-open-latest "popper")
   (declare-function popper-kill-latest-popup "popper")
+  (declare-function popper--update-popups "popper")
   (defvar my/popper-default-height 10)
   (defvar my/popper-ignore-modes '(grep-mode rg-mode))
 
@@ -645,7 +646,11 @@
    '(:eval (let ((face (if (doom-modeline--active)
                            'mode-line-emphasis
                          'mode-line-inactive)))
-             (format " %s " (nerd-icons-octicon "nf-oct-pin" :face face))))))
+             (format " %s " (nerd-icons-octicon "nf-oct-pin" :face face)))))
+  :config
+  ;; Workaround to ensure `popper-open-popup-alist' is up to date.
+  ;; See: https://github.com/karthink/popper/issues/71.
+  (advice-add #'popper-toggle :before (lambda (&rest _) (popper--update-popups))))
 
 ;;;; Help System
 
