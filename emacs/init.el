@@ -2355,8 +2355,6 @@
     ;; See: https://emacs.stackexchange.com/a/45281
     (remove-hook 'eshell-output-filter-functions
                  'eshell-postoutput-scroll-to-bottom)
-    ;; Looks cleaner and makes things jump around less.
-    (setq-local truncate-lines t)
     ;; Preferred eshell completion settings.
     (setq-local corfu-auto nil)
     (setq-local corfu-popupinfo-mode nil)
