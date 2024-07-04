@@ -528,13 +528,13 @@
   :bind
   (("M-o >" . rotate-frame-clockwise)
    ("M-o <" . rotate-frame-anticlockwise)
-   ("M-o _" . flip-frame)
-   ("M-o |" . flop-frame)
+   ("M-o M-v" . flip-frame) ;; Flip [v]ertically.
+   ("M-o M-h" . flop-frame) ;; Flop [h]orizontally.
    :repeat-map my/window-repeat-map
    (">" . rotate-frame-clockwise)
    ("<" . rotate-frame-anticlockwise)
-   ("_" . flip-frame)
-   ("|" . flop-frame)))
+   ("M-v" . flip-frame)
+   ("M-h" . flop-frame)))
 
 ;;;;; Window History
 
