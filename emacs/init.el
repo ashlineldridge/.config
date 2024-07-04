@@ -627,6 +627,8 @@
   (popper-mode t)
   (popper-echo-mode t)
   (popper-window-height my/popper-default-height)
+  ;; Just tab to cycle through popups.
+  (popper-echo-dispatch-keys nil)
   ;; Display popup but don't select it.
   (popper-display-function #'popper-display-popup-at-bottom)
   (popper-reference-buffers
@@ -642,15 +644,12 @@
      "\\*chronosphere-"
      "\\*eldoc"
      "CAPTURE-.*\\.org"
-
      ;; Match all modes that derive from compilation-mode but do not derive
      ;; from a member of `my/popper-ignore-modes'.
      (lambda (buf)
        (with-current-buffer buf
          (unless (apply #'derived-mode-p my/popper-ignore-modes)
            (derived-mode-p 'compilation-mode))))))
-
-  (popper-echo-dispatch-keys '(?0 ?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9))
 
   ;; Taken from: https://github.com/seagle0128/.emacs.d/blob/8cbec0c132cd6de06a8c293598a720d377f3f5b9/lisp/init-window.el#L148.
   (popper-mode-line
