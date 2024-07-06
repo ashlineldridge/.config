@@ -3,7 +3,7 @@
 ;; Author: Ashlin Eldridge <ashlin.eldridge@gmail.com>
 ;; URL: https://github.com/ashlineldridge/.config
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "29.2"))
+;; Package-Requires: ((emacs "30.0"))
 
 ;;; Commentary:
 ;;
@@ -684,6 +684,7 @@
   (helpful-switch-buffer-function #'display-buffer))
 
 (use-package which-key
+  :ensure nil
   :custom
   (which-key-mode t)
   ;; Use Embark for `prefix-help-command' as it is searchable.
