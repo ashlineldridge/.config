@@ -3,7 +3,7 @@
 ;; Author: Ashlin Eldridge <ashlin.eldridge@gmail.com>
 ;; URL: https://github.com/ashlineldridge/.config
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "29.2"))
+;; Package-Requires: ((emacs "30.0"))
 
 ;;; Commentary:
 ;;
@@ -22,11 +22,10 @@
                      (emacs-init-time "%.2f") gcs-done)
             (setq gc-cons-threshold (* 16 1024 1024))))
 
-;; In Emacs 29+, we can change the eln-cache directory.
+;; Change the default native compilation cache directory.
 ;; See https://github.com/emacscollective/no-littering#native-compilation-cache.
-(when (fboundp 'startup-redirect-eln-cache)
-  (startup-redirect-eln-cache
-   (expand-file-name "var/eln-cache/" user-emacs-directory)))
+(startup-redirect-eln-cache
+ (expand-file-name "var/eln-cache/" user-emacs-directory))
 
 ;; Disable package.el as Elpaca is used for package management.
 (setq package-enable-at-startup nil)
