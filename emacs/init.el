@@ -757,8 +757,8 @@
 
 (use-package link-hint
   :bind
-  ("M-g o" . link-hint-open-link)
-  ("M-g M-o" . link-hint-copy-link))
+  ("M-g h" . link-hint-open-link)
+  ("M-g M-h" . link-hint-copy-link))
 
 ;;;;; Highlighting
 
@@ -1793,7 +1793,7 @@
 (use-package consult-eglot
   :bind
   (:map eglot-mode-map
-   ("M-g s" . consult-eglot-symbols)))
+   ("M-g o" . consult-eglot-symbols)))
 
 (use-package dape
   :bind-keymap
