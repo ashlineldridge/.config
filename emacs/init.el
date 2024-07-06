@@ -739,7 +739,6 @@
   :custom
   (ws-butler-keep-whitespace-before-point nil))
 
-
 ;;;;; Jumping Around
 
 (use-package avy
@@ -1805,7 +1804,7 @@
   (dape-info-hide-mode-line t)
   :config
   ;; Don't display REPL initially and create on demand with `dape-repl'.
-  (remove-hook 'dape-on-start-hooks 'dape-repl)
+  (remove-hook 'dape-start-hook 'dape-repl)
   ;; Dape config for debugging the Go test under point. Adapted from example
   ;; at https://github.com/svaante/dape/wiki.
   (add-to-list 'dape-configs
@@ -2042,6 +2041,9 @@
       (_ (go-ts-mode--defun-name node))))
 
   :hook (go-ts-mode . my/go-ts-mode-init)
+  :bind
+  (:map go-ts-mode-map
+   ("C-c C-d" . nil))
   :custom
   (go-ts-mode-indent-offset 4)
   :config
