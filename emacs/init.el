@@ -672,7 +672,7 @@
 (use-package helpful
   :bind
   ("C-h c" . helpful-callable)
-  ("C-h ," . helpful-at-point)
+  ("C-h C-." . helpful-at-point)
   ;; Replace `describe-*' bindings with Helpful where possible.
   ([remap describe-function] . helpful-function)
   ([remap describe-symbol] . helpful-symbol)
@@ -999,7 +999,6 @@
 ;;;; Completion System
 
 (use-package corfu
-  :disabled ;; No popups experiment.
   :ensure (:files (:defaults "extensions/*.el"))
   :preface
   ;; From: https://github.com/minad/corfu#completing-in-the-minibuffer.
@@ -1022,9 +1021,10 @@
   (:map corfu-map
    ("S-SPC" . corfu-insert-separator)
    ("M-m" . my/corfu-move-to-minibuffer))
-  :hook (minibuffer-setup . my/corfu-enable-in-minibuffer)
+  :hook
+  (elpaca-after-init . global-corfu-mode)
+  (minibuffer-setup . my/corfu-enable-in-minibuffer)
   :custom
-  (global-corfu-mode t)
   (corfu-auto t)
   (corfu-auto-delay 0.3)
   (corfu-preselect 'directory)
@@ -1038,7 +1038,6 @@
   (add-to-list 'corfu-continue-commands #'my/corfu-move-to-minibuffer))
 
 (use-package corfu-popupinfo
-  :disabled ;; No popups experiment.
   :after corfu
   :ensure nil
   :bind
@@ -1057,7 +1056,6 @@
   (corfu-popupinfo-max-height 16))
 
 (use-package corfu-quick
-  :disabled ;; No popups experiment.
   :after corfu
   :ensure nil
   :bind
@@ -1068,7 +1066,6 @@
   (corfu-quick2 "asdfghjkl"))
 
 (use-package corfu-history
-  :disabled ;; No popups experiment.
   :after corfu
   :ensure nil
   :defines savehist-additional-variables
@@ -1079,7 +1076,6 @@
   (add-to-list 'savehist-additional-variables 'corfu-history))
 
 (use-package nerd-icons-corfu
-  :disabled ;; No popups experiment.
   :after corfu
   :init
   (add-to-list 'corfu-margin-formatters 'nerd-icons-corfu-formatter)
@@ -1432,7 +1428,7 @@
   (consult-fd-args "fd -p -L -H -E .git/*")
   ;; Only show Modus and Ef themes.
   (consult-themes '("^modus-" "^ef-"))
-  ;; No popups experiment.
+  ;; Following will be overridden if/when `global-corfu-mode' is run.
   (completion-in-region-function #'consult-completion-in-region)
 
   :init
@@ -1857,24 +1853,8 @@
   (eldoc-add-command-completions "xref-goto-"))
 
 (use-package eldoc-box
-  :disabled ;; No popups experiment.
-  :preface
-  (declare-function eldoc-box-help-at-point "eldoc-box")
-  (declare-function eldoc-box-quit-frame "eldoc-box")
-
-  (defun my/eldoc-box-visible-p ()
-    "Return whether the `eldoc-box' popup is visible."
-    (and eldoc-box--frame (frame-visible-p eldoc-box--frame)))
-
-  (defun my/eldoc-box-toggle ()
-    "Toggle the `eldoc-box-help-at-point' popup."
-    (interactive)
-    (require 'eldoc-box)
-    (if (my/eldoc-box-visible-p)
-        (eldoc-box-quit-frame)
-      (eldoc-box-help-at-point)))
   :bind
-  ("M-p" . my/eldoc-box-toggle)
+  ("C-h ," . eldoc-box-help-at-point)
   :custom
   (eldoc-box-clear-with-C-g t))
 
