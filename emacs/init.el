@@ -2321,6 +2321,8 @@
   ;; (add-hook 'magit-status-headers-hook 'magit-insert-tags-header)
   )
 
+(use-package forge)
+
 (use-package diff-mode
   :ensure nil
   :config
