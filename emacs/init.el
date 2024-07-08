@@ -756,8 +756,8 @@
 
 (use-package link-hint
   :bind
-  ("M-g h" . link-hint-open-link)
-  ("M-g M-h" . link-hint-copy-link))
+  ("M-g b" . link-hint-open-link)
+  ("M-g M-b" . link-hint-copy-link))
 
 ;;;;; Highlighting
 
