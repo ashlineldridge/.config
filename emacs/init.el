@@ -1773,7 +1773,7 @@
 
 (use-package eglot-x
   :ensure (:host github :repo "nemethf/eglot-x")
-  :hook  (eglot-managed-mode . eglot-x-setup))
+  :hook (eglot-managed-mode . eglot-x-setup))
 
 ;; Speed up Eglot.
 (use-package eglot-booster
