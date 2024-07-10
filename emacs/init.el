@@ -727,7 +727,6 @@
 ;;;;; Region Expansion
 
 (use-package expreg
-  :ensure (:host github :repo "casouri/expreg")
   :bind
   ("C-=" . expreg-expand)
   ("C-+" . expreg-contract))
@@ -2154,7 +2153,6 @@
 ;;;;;; Protobuf
 
 (use-package protobuf-ts-mode
-  :ensure (:host github :repo "ashlineldridge/protobuf-ts-mode")
   :config
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
@@ -2166,17 +2164,11 @@
 
 ;;;;;; Bazel
 
-(use-package bazel-mode
-  :ensure (:host github :repo "bazelbuild/emacs-bazel-mode")
+(use-package bazel
   :mode
   ("\\.BUILD\\'" . bazel-mode)
   ("\\.bazel\\'" . bazel-mode)
-  ("\\.star\\'" . bazel-starlark-mode)
-  :custom
-  (bazel-buildifier-before-save t)
-  :init
-  ;; Remove the default Bazel keybindings.
-  (setq bazel-mode-map (make-sparse-keymap)))
+  ("\\.star\\'" . bazel-starlark-mode))
 
 ;;;;;; Just (Task Runner)
 
