@@ -1787,9 +1787,16 @@
   (eglot-tempel-mode))
 
 (use-package consult-eglot
+  :after eglot
   :bind
   (:map eglot-mode-map
    ("M-g o" . consult-eglot-symbols)))
+
+(use-package consult-eglot-embark
+  :after (eglot consult-eglot)
+  :commands consult-eglot-embark-mode
+  :init
+  (consult-eglot-embark-mode))
 
 (use-package dape
   :bind-keymap
