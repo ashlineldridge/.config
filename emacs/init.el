@@ -1590,9 +1590,7 @@
   (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
   (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
   (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(my/query-replace-wrap embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(my/query-replace-regexp-wrap embark--allow-edit)))
+  (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit)))
 
 (use-package embark-consult)
 
