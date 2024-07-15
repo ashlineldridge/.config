@@ -61,10 +61,18 @@
                set-goal-column))
   (put cmd 'disabled nil))
 
-;; Hide the title bar and use rounded corners.
-;; See https://github.com/d12frosted/homebrew-emacs-plus#emacs-29-and-emacs-30.
-(add-to-list 'default-frame-alist '(undecorated-round . t))
-(add-to-list 'default-frame-alist '(fullscreen . maximized))
+;; Configure frame parameters.
+(setq default-frame-alist
+      (append '((undecorated-round . t)
+                (width . (text-pixels . 800))
+                (height . (text-pixels . 900)))
+              default-frame-alist))
+
+;; Blank out the screen to prevent the initial flash of white light which
+;; doesn't look so great when using a dark theme (which is most of the time).
+(setq mode-line-format nil)
+(set-face-attribute 'default nil :background "#000000" :foreground "#ffffff")
+(set-face-attribute 'mode-line nil :background "#000000" :foreground "#ffffff" :box 'unspecified)
 
 ;; Configure environment variables here.
 (setenv "XDG_CONFIG_HOME" (expand-file-name "~/.config"))
