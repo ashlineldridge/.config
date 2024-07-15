@@ -66,6 +66,7 @@ emacs-lisp-mode inferior-emacs-lisp-mode
 (let "(let (" p ")" n> r> ")")
 (let* "(let* (" p ")" n> r> ")")
 (pcase "(pcase " p n "(" q "))" >)
+(use-package "(use-package " p q n> ":ensure" n> ":defines" n> ":functions" n> ":preface" n> ":if" n> ":no-require" n> ":after" n> ":custom" n> ":bind" n> ":hook" n> ":commands" n> ":init" n> ":defer" n> ":config" n> ")")
 (when-let "(when-let (" p ")" n> r> ")")
 (when-let* "(when-let* (" p ")" n> r> ")")
 

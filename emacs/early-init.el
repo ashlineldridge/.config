@@ -27,21 +27,44 @@
 (startup-redirect-eln-cache
  (expand-file-name "var/eln-cache/" user-emacs-directory))
 
-;; Disable package.el as Elpaca is used for package management.
-(setq package-enable-at-startup nil)
-
 ;; Disable JIT compilation.
 (setq native-comp-jit-compilation nil)
 
-;; Configure `use-package' options that need to before load.
-(setq-default use-package-always-defer t
-              use-package-always-ensure t
-              use-package-expand-minimally t
-              use-package-enable-imenu-support t)
+;; Base settings to be configured early.
+(custom-set-variables
+ '(use-short-answers t)
+ `(ring-bell-function #'ignore)
+ ;; Disable package.el as Elpaca is used for package management.
+ '(package-enable-at-startup nil)
+ '(native-comp-jit-compilation nil)
+ '(frame-resize-pixelwise t)
+ '(frame-inhibit-implied-resize t)
+ '(inhibit-splash-screen t)
+ '(inhibit-startup-screen t)
+ '(inhibit-startup-buffer-menu t)
+ '(tool-bar-mode nil)
+ '(tooltip-mode nil)
+ '(menu-bar-mode nil)
+ '(scroll-bar-mode nil)
+ ;; Ignore any changes made via the customization UI.
+ `(custom-file ,(make-temp-file "emacs-custom-"))
+ '(use-package-always-defer t)
+ '(use-package-always-ensure t)
+ '(use-package-compute-statistics t)
+ '(use-package-enable-imenu-support t)
+ `(use-package-expand-minimally ,(not init-file-debug)))
+
+;; Enable functions that are disabled by default.
+(dolist (cmd '(narrow-to-region
+               upcase-region
+               downcase-region
+               set-goal-column))
+  (put cmd 'disabled nil))
 
 ;; Hide the title bar and use rounded corners.
 ;; See https://github.com/d12frosted/homebrew-emacs-plus#emacs-29-and-emacs-30.
 (add-to-list 'default-frame-alist '(undecorated-round . t))
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 ;; Configure environment variables here.
 (setenv "XDG_CONFIG_HOME" (expand-file-name "~/.config"))

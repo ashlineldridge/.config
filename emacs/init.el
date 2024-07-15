@@ -11,195 +11,14 @@
 
 ;;; Code:
 
+;; TODO:
+;; 1. Invert use-package-always-ensure
+;; 2. Make sure all packages follow correct use-package symbol order
+;; 3. Refactor outline sections
+
 ;;;; Bootstrap
 
 (load (expand-file-name "bootstrap.el" user-emacs-directory))
-
-;;;; Base Settings
-
-(use-package emacs
-  :ensure nil
-  :preface
-  (defalias 'yes-or-no-p #'y-or-n-p)
-  (declare-function server-running-p "server")
-  (defun my/server-start ()
-    "Start Emacs in server mode if it is not already."
-    (require 'server)
-    (unless (server-running-p)
-      (server-start)))
-
-  (defun my/copy-to-eol ()
-    "Copy the text from point to the end of the line."
-    (interactive)
-    (kill-ring-save (point) (line-end-position)))
-
-  (defun my/delete-to-eol ()
-    "Delete the text from point to the end of the line."
-    (interactive)
-    (let ((point (point))
-          (end (line-end-position)))
-      (if (eq point end)
-          (delete-char 1 nil)
-        (delete-region point end))))
-
-  (defun my/delete-to-bol ()
-    "Delete the text from point to the beginning of the line."
-    (interactive)
-    (let ((point (point))
-          (begin (line-beginning-position)))
-      (if (eq point begin)
-          (delete-char -1)
-        (delete-region (line-beginning-position) (point)))))
-
-  (defun my/flash-mode-line ()
-    "Flashes the mode line for a visible bell."
-    (invert-face 'mode-line)
-    (run-with-timer 0.1 nil 'invert-face 'mode-line))
-
-  (defun my/toggle-show-trailing-whitespace ()
-    "Toggle visibility of trailing whitespace."
-    (interactive)
-    (setq show-trailing-whitespace (not show-trailing-whitespace))
-    (message "%s trailing whitespace in current buffer"
-             (if show-trailing-whitespace "Showing" "Hiding")))
-
-  (defun my/clear-registers ()
-    "Clear all registers."
-    (interactive)
-    (if register-alist
-        (let ((len (length register-alist)))
-          (setq register-alist nil)
-          (message "Cleared %d registers" len))
-      (message "No registers to clear")))
-
-  (defun my/repeat-echo-mode-line (keymap)
-    "Display a repeat mode-line indicator for KEYMAP."
-    ;; The provided `repeat-echo-mode-line' doesn't work for me as it tries
-    ;; to represent an in-progress repeat as an additional mode which I think
-    ;; gets hidden by Minions. This looks cleaner anyway.
-    (setq global-mode-string
-          (when keymap (propertize "↻ " 'face 'mode-line-emphasis)))
-    (force-mode-line-update t))
-
-  (defun my/truncate-lines ()
-    "Show long lines as truncated in the current buffer."
-    (setq-local truncate-lines t))
-
-  :hook
-  ((prog-mode conf-mode text-mode) . display-line-numbers-mode)
-  ;; Unfortunately, `global-auto-revert-mode' isn't working reliably.
-  ((prog-mode conf-mode text-mode dired-mode) . auto-revert-mode)
-  (prog-mode . my/truncate-lines)
-  (elpaca-after-init . my/server-start)
-
-  :bind
-  ("<escape>" . keyboard-escape-quit)
-  ("C-;" . comment-line)
-  ("C-S-k" . my/copy-to-eol)
-  ("C-M-k" . my/delete-to-eol)
-  ("C-h C-h" . nil)
-  ("M-[" . previous-buffer)
-  ("M-]" . next-buffer)
-  ("M-<backspace>" . my/delete-to-bol)
-  ("M-k" . kill-current-buffer)
-  ("C-c b 1" . compile)
-  ("C-c b 2" . recompile)
-  ("C-c x |" . display-fill-column-indicator-mode)
-  ("C-c x n" . display-line-numbers-mode)
-  ("C-c x w" . my/toggle-show-trailing-whitespace)
-  ("C-c x W" . delete-trailing-whitespace)
-  ("C-x r K" . my/clear-registers)
-
-  :custom
-  (confirm-kill-emacs #'yes-or-no-p)
-  (inhibit-startup-screen t)
-  (tool-bar-mode nil)
-  (tooltip-mode nil)
-  (menu-bar-mode nil)
-  (scroll-bar-mode nil)
-  ;; Flash the modeline rather than the frame.
-  (visible-bell nil)
-  (ring-bell-function #'my/flash-mode-line)
-  ;; Play nice with window managers like Yabai.
-  (frame-resize-pixelwise t)
-  ;; Don't resize the frame when themes, fonts, etc, change.
-  (frame-inhibit-implied-resize t)
-  (sentence-end-double-space nil)
-  (delete-by-moving-to-trash t)
-  (delete-selection-mode t)
-  (echo-keystrokes 0.01)
-  (mac-command-modifier 'meta)
-  (mac-option-modifier nil)
-  (tab-always-indent 'complete)
-  (indent-tabs-mode nil)
-  (set-mark-command-repeat-pop t)
-  (mark-ring-max 10)
-  (global-mark-ring-max 10)
-  (vc-follow-symlinks t)
-  (compilation-ask-about-save nil)
-  (fill-column 80)
-  (column-number-mode t)
-  (shell-command-prompt-show-cwd t)
-  (async-shell-command-buffer 'new-buffer)
-  (history-length 1000)
-  ;; Save bookmarks immediately.
-  (bookmark-save-flag 0)
-  (savehist-mode t)
-  ;; Variables to persist between sessions.
-  (savehist-additional-variables
-   '(kill-ring
-     search-ring
-     regexp-search-ring
-     ;; Far from perfect as doesn't persist if contains certain register types.
-     register-alist
-     extended-command-history))
-  (repeat-mode t)
-  (repeat-exit-timeout 10)
-  (repeat-exit-key (kbd "RET"))
-  (repeat-echo-function #'my/repeat-echo-mode-line)
-  ;; Use GNU ls (used by dired and supports grouping directories first).
-  (insert-directory-program "gls")
-  ;; Increase margins slightly.
-  (fringe-mode 5)
-  ;; Ignore any changes made via the customization UI.
-  (custom-file (make-temp-file "emacs-custom-"))
-  ;; Ignore case when completing via minibuffer.
-  (read-file-name-completion-ignore-case t)
-  (read-buffer-completion-ignore-case t)
-  (completion-ignore-case t)
-  ;; I heard you like minibuffers.
-  (enable-recursive-minibuffers t)
-  ;; Display a small "[n]" that shows the minibuffer recursive depth.
-  (minibuffer-depth-indicate-mode t)
-  ;; Don't allow the cursor in the minibuffer prompt text.
-  (minibuffer-prompt-properties
-   '(read-only t cursor-intangible t face minibuffer-prompt))
-  ;; Don't show M-x commands that don't work in the current mode.
-  (read-extended-command-predicate #'command-completion-default-include-p)
-
-  :init
-  ;; Enable Emacs functions that are disabled by default.
-  (dolist (cmd '(narrow-to-region
-                 upcase-region
-                 downcase-region
-                 set-goal-column))
-    (put cmd 'disabled nil))
-
-  ;; Don't yank face properties (e.g. prevents pasting colors).
-  (add-to-list 'yank-excluded-properties 'face)
-
-  ;; Bind some special characters under 'C-x 8'. The [?] character is a zero-
-  ;; width space character that can be used to escape org mode emphasis markers.
-  ;; See: https://emacs.stackexchange.com/questions/16688/how-can-i-escape-the-in-org-mode-to-prevent-bold-fontification.
-  (bind-keys
-   :map iso-transl-ctl-x-8-map
-   ("0" . [?​])
-   ("a" . [?α])
-   ("b" . [?β])
-   ("l" . [?λ])
-   (">" . [?⟶])
-   ("<" . [?⟵])
-   ("s" . [?😊])))
 
 ;;;; Appearance
 
@@ -336,14 +155,15 @@
   (ef-themes-variable-pitch-ui t)
   (ef-themes-headings my/variable-pitch-headings))
 
+(use-package theme
+  :ensure nil
+  :no-require
+  :hook (elpaca-after-init . (lambda () (load-theme 'ef-dark :no-confirm))))
+
 ;;;;; Icons
 
-(use-package nerd-icons
-  :commands nerd-icons-install-fonts
-  :init
-  ;; Install fonts if they are not already installed.
-  (unless (member "Symbols Nerd Font Mono" (font-family-list))
-    (nerd-icons-install-fonts t)))
+;; Run `nerd-icons-install-fonts' manually to install fonts.
+(use-package nerd-icons)
 
 ;; Note: package-specific Nerd icon packages (e.g. `nerd-icons-dired') are
 ;; grouped with the related package.
@@ -351,8 +171,8 @@
 ;;;;; Mode Line
 
 (use-package doom-modeline
+  :hook (elpaca-after-init . doom-modeline-mode)
   :custom
-  (doom-modeline-mode t)
   (doom-modeline-bar-width 4)
   (doom-modeline-buffer-encoding nil)
   (doom-modeline-buffer-file-name-style 'truncate-upto-project)
@@ -380,12 +200,34 @@
 
 ;;;;; Margins
 
+(use-package fringe
+  :ensure nil
+  :custom
+  (fringe-mode 0))
+
 (use-package olivetti
   :bind
   ("<f7>" . olivetti-mode)
   :custom
   (olivetti-body-width 90)
   (olivetti-style 'fancy))
+
+;;;;; Lines and Columns
+
+(use-package display-line-numbers
+  :ensure nil
+  :bind
+  ("C-c x |" . display-fill-column-indicator-mode)
+  ("C-c x n" . display-line-numbers-mode)
+  :hook
+  ((prog-mode conf-mode text-mode) . display-line-numbers-mode))
+
+(use-package display-fill-column-indicator
+  :ensure nil
+  :bind
+  ("C-c x |" . display-fill-column-indicator-mode)
+  :custom
+  (fill-column 80))
 
 ;;;;; Scrolling
 
@@ -417,13 +259,76 @@
   ([remap scroll-down-command] . pixel-scroll-interpolate-up)
   ("M-S-<up>" . my/pixel-scroll-partial-up)
   ("M-S-<down>" . my/pixel-scroll-partial-down)
+  :hook (elpaca-after-init . pixel-scroll-precision-mode)
   :custom
-  (pixel-scroll-precision-mode t)
   (pixel-scroll-precision-interpolate-page t))
 
-;;;; Window/Frame Management
+;;;; Repeating
 
-;;;;; Window/Frame Movement
+(use-package repeat
+  :ensure nil
+  :preface
+  (defun my/repeat-echo-mode-line (keymap)
+    "Display a repeat mode-line indicator for KEYMAP."
+    ;; The provided `repeat-echo-mode-line' doesn't work for me as it tries
+    ;; to represent an in-progress repeat as an additional mode which I think
+    ;; gets hidden by Minions. This looks cleaner anyway.
+    (setq global-mode-string
+          (when keymap (propertize "↻ " 'face 'mode-line-emphasis)))
+    (force-mode-line-update t))
+  :hook (elpaca-after-init . repeat-mode)
+  :custom
+  (repeat-exit-timeout 5)
+  (repeat-exit-key (kbd "RET"))
+  (repeat-echo-function #'my/repeat-echo-mode-line))
+
+;;;; Bookmarks
+
+(use-package bookmark
+  :ensure nil
+  :custom
+  ;; Save bookmarks immediately.
+  (bookmark-save-flag 0))
+
+;;;; Registers
+
+(use-package register
+  :ensure nil
+  :preface
+  (defun my/clear-registers ()
+    "Clear all registers."
+    (interactive)
+    (let ((len (length register-alist)))
+      (setq register-alist nil)
+      (message "Cleared %d registers" len)))
+  :bind
+  ("C-x r K" . my/clear-registers))
+
+;;;; General History
+
+(use-package savehist
+  :ensure nil
+  :hook (elpaca-after-init . savehist-mode)
+  :custom
+  (history-length 1000)
+  ;; Variables to persist between sessions.
+  (savehist-additional-variables
+   '(kill-ring
+     search-ring
+     regexp-search-ring
+     ;; Far from perfect as doesn't persist if contains certain register types.
+     register-alist
+     extended-command-history)))
+
+;;;; Window and Frame Management
+
+(use-package ns-win
+  :ensure nil
+  :custom
+  (mac-command-modifier 'meta)
+  (mac-option-modifier nil))
+
+;;;;; Window Movement
 
 (use-package window
   :ensure nil
@@ -440,7 +345,9 @@
     (split-window-right)
     (other-window 1))
   :bind
-  (("M-q" . bury-buffer)
+  (("M-[" . previous-buffer)
+   ("M-]" . next-buffer)
+   ("M-q" . bury-buffer)
    ("M-o =" . balance-windows)
    ("M-o 0" . delete-window)
    ("M-o 1" . delete-other-windows)
@@ -511,8 +418,7 @@
    ("M-7" . winum-select-window-7)
    ("M-8" . winum-select-window-8)
    ("M-9" . winum-select-window-9))
-  :custom
-  (winum-mode t))
+  :hook (elpaca-after-init . winum-mode))
 
 (use-package frame
   :ensure nil
@@ -521,8 +427,7 @@
    ("M-o M-n" . make-frame-command)
    ("M-o M-k" . delete-frame)
    ("M-o M-u" . undelete-frame))
-  :custom
-  (undelete-frame-mode t))
+  :hook (elpaca-after-init . undelete-frame-mode))
 
 (use-package transpose-frame
   :bind
@@ -546,12 +451,9 @@
    :repeat-map my/window-repeat-map
    ("u" . winner-undo)
    ("r" . winner-redo))
+  :hook (elpaca-after-init . winner-mode)
   :custom
-  (winner-dont-bind-my-keys t)
-  :init
-  ;; Needs to be enabled via a function call rather than a customization
-  ;; so that `winner-dont-bind-my-keys' takes effect.
-  (winner-mode 1))
+  (winner-dont-bind-my-keys t))
 
 ;;;;; Tab Bar
 
@@ -565,12 +467,10 @@
 ;; Use Shackle for managing windows that aren't considered to be "popups" by
 ;; Popper. Shackle basically replaces the manual configuration of
 ;; `display-buffer-base-action' and `display-buffer-alist' with a simpler
-;; syntax. `shackle-mode' needs to be called before `popper-mode' so that the
-;; latter gets priority in `display-buffer-alist'; that way, any buffer not
-;; claimed by Popper will be subject to Shackle's rules.
+;; syntax.
 (use-package shackle
+  :hook (elpaca-after-init . shackle-mode)
   :custom
-  (shackle-mode t)
   (shackle-default-rule nil)
   (shackle-rules
    ;; More reliable to match by regex than by major mode as some commands
@@ -583,7 +483,6 @@
      ("^magit-diff:" :select nil :other t :regexp t))))
 
 (use-package popper
-  :after shackle
   :preface
   (declare-function popper-close-latest "popper")
   (declare-function popper-open-latest "popper")
@@ -622,10 +521,10 @@
    ("h" . my/popper-toggle-height)
    ("k" . my/popper-kill-popup-stay-open)
    ("<tab>" . popper-cycle))
-
+  :hook
+  (elpaca-after-init . popper-mode)
+  (elpaca-after-init . popper-echo-mode)
   :custom
-  (popper-mode t)
-  (popper-echo-mode t)
   (popper-window-height my/popper-default-height)
   ;; Just tab to cycle through popups.
   (popper-echo-dispatch-keys nil)
@@ -685,8 +584,9 @@
 
 (use-package which-key
   :ensure nil
+  :hook (elpaca-after-init . which-key-mode)
   :custom
-  (which-key-mode t)
+  (echo-keystrokes 0.01)
   ;; Use Embark for `prefix-help-command' as it is searchable.
   (which-key-show-early-on-C-h nil)
   (which-key-use-C-h-commands nil)
@@ -697,6 +597,58 @@
 
 ;;;; General Editing
 
+(use-package simple
+  :ensure nil
+  :preface
+  (defun my/truncate-lines ()
+    "Show long lines as truncated in the current buffer."
+    (setq-local truncate-lines t))
+
+  (defun my/copy-to-eol ()
+    "Copy the text from point to the end of the line."
+    (interactive)
+    (kill-ring-save (point) (line-end-position)))
+
+  (defun my/delete-to-eol ()
+    "Delete the text from point to the end of the line."
+    (interactive)
+    (let ((point (point))
+          (end (line-end-position)))
+      (if (eq point end)
+          (delete-char 1 nil)
+        (delete-region point end))))
+
+  (defun my/delete-to-bol ()
+    "Delete the text from point to the beginning of the line."
+    (interactive)
+    (let ((point (point))
+          (begin (line-beginning-position)))
+      (if (eq point begin)
+          (delete-char -1)
+        (delete-region (line-beginning-position) (point)))))
+
+  :custom
+  (indent-tabs-mode nil)
+  (mark-ring-max 10)
+  (global-mark-ring-max 10)
+  (set-mark-command-repeat-pop t)
+  (shell-command-prompt-show-cwd t)
+  (async-shell-command-buffer 'new-buffer)
+  ;; Don't show M-x commands that don't work in the current mode.
+  (read-extended-command-predicate #'command-completion-default-include-p)
+  :bind
+  ("<escape>" . keyboard-escape-quit)
+  ("C-S-k" . my/copy-to-eol)
+  ("C-M-k" . my/delete-to-eol)
+  ("M-<backspace>" . my/delete-to-bol)
+  ("M-k" . kill-current-buffer)
+  :hook
+  (elpaca-after-init . column-number-mode)
+  (prog-mode . my/truncate-lines)
+  :config
+  ;; Don't yank face properties (e.g. prevents pasting colors).
+  (add-to-list 'yank-excluded-properties 'face))
+
 ;;;;; Text
 
 (use-package text-mode
@@ -706,11 +658,42 @@
   ;; which I find annoying. Call Jinx manually instead.
   (text-mode-ispell-word-completion nil))
 
+(use-package paragraphs
+  :ensure nil
+  :no-require
+  :custom
+  (sentence-end-double-space nil))
+
+(use-package indent
+  :ensure nil
+  :no-require
+  :custom
+  (tab-always-indent 'complete))
+
+(use-package delsel
+  :ensure nil
+  :hook (elpaca-after-init . delete-selection-mode))
+
+(use-package iso-transl
+  :ensure nil
+  :bind
+  ;; Bind some special characters under 'C-x 8'. The [?] character is a zero-
+  ;; width space character that can be used to escape org mode emphasis markers.
+  ;; See: https://emacs.stackexchange.com/questions/16688/how-can-i-escape-the-in-org-mode-to-prevent-bold-fontification.
+  (:map iso-transl-ctl-x-8-map
+   ("0" . [?​])
+   ("a" . [?α])
+   ("b" . [?β])
+   ("l" . [?λ])
+   (">" . [?⟶])
+   ("<" . [?⟵])
+   ("s" . [?😊])))
+
 ;;;;; Undo/Redo
 
 (use-package undo-tree
+  :hook (elpaca-after-init . global-undo-tree-mode)
   :custom
-  (global-undo-tree-mode t)
   (undo-tree-auto-save-history t)
   (undo-tree-visualizer-timestamps t)
   (undo-tree-visualizer-diff t))
@@ -720,7 +703,6 @@
   ;; future and wire up support for saving undo history between sessions.
   ;; See https://github.com/casouri/vundo/issues/97.
   :disabled
-  :demand
   :bind
   ("C-x u" . vundo))
 
@@ -732,6 +714,19 @@
   ("C-+" . expreg-contract))
 
 ;;;;; Whitespace
+
+(use-package whitespace
+  :ensure nil
+  :preface
+  (defun my/toggle-show-trailing-whitespace ()
+    "Toggle visibility of trailing whitespace."
+    (interactive)
+    (setq show-trailing-whitespace (not show-trailing-whitespace))
+    (message "%s trailing whitespace in current buffer"
+             (if show-trailing-whitespace "Showing" "Hiding")))
+  :bind
+  ("C-c x w" . my/toggle-show-trailing-whitespace)
+  ("C-c x W" . delete-trailing-whitespace))
 
 (use-package ws-butler
   :hook ((text-mode prog-mode) . ws-butler-mode)
@@ -755,8 +750,8 @@
 
 (use-package link-hint
   :bind
-  ("M-g b" . link-hint-open-link)
-  ("M-g M-b" . link-hint-copy-link))
+  ("M-g ." . link-hint-open-link)
+  ("M-g M-." . link-hint-copy-link))
 
 ;;;;; Highlighting
 
@@ -766,8 +761,7 @@
   (hl-line-sticky-flag nil))
 
 (use-package hl-todo
-  :custom
-  (global-hl-todo-mode t))
+  :hook (elpaca-after-init . global-hl-todo-mode))
 
 (use-package hi-lock
   :ensure nil
@@ -778,8 +772,7 @@
    ("M-s h u" . unhighlight-regexp)))
 
 (use-package lin
-  :hook
-  (elpaca-after-init . lin-global-mode)
+  :hook (elpaca-after-init . lin-global-mode)
   :bind
   ("C-c x h" . lin-mode)
   :custom
@@ -787,15 +780,14 @@
 
 (use-package pulsar
   :defines pulsar-pulse-functions
-  :hook
+  :hook (elpaca-after-init . pulsar-global-mode)
   ;; Some functionality is better accessed via hooks than by registering
-  ;; functions in `pulsar-pulse-functions'. See Pulsar docs and Prot's config.
+  ;; functions in `pulsar-pulse-functions'.
   (minibuffer-setup . pulsar-pulse-line)
-  (next-error . (pulsar-pulse-line-red
-                 pulsar-recenter-center
-                 pulsar-reveal-entry))
+  (next-error . pulsar-pulse-line-red)
+  (next-error . pulsar-reveal-entry)
+  (next-error . pulsar-recenter-center)
   :custom
-  (pulsar-global-mode t)
   (pulsar-delay 0.06)
   (pulsar-iterations 12)
   (pulsar-face 'pulsar-generic)
@@ -876,6 +868,14 @@
 
 ;;;; File System
 
+(use-package files
+  :ensure nil
+  :custom
+  (confirm-kill-emacs #'yes-or-no-p)
+  (delete-by-moving-to-trash t)
+  ;; Use GNU ls (used by dired and supports grouping directories first).
+  (insert-directory-program "gls"))
+
 ;;;;; File Browsing
 
 (use-package dired
@@ -934,9 +934,17 @@
 
 (use-package recentf
   :ensure nil
+  :hook (elpaca-after-init . recentf-mode)
   :custom
-  (recentf-mode t)
   (recentf-max-saved-items 300))
+
+;;;;; Reverting
+
+(use-package autorevert
+  :ensure nil
+  :hook (elpaca-after-init . global-auto-revert-mode)
+  :custom
+  (global-auto-revert-non-file-buffers t))
 
 ;;;;; Project Management
 
@@ -985,14 +993,106 @@
 ;;;;; Auto-Save
 
 (use-package super-save
-  :commands super-save-mode
+  :hook (elpaca-after-init . super-save-mode)
   :custom
   ;; Disable built-in `auto-save-mode' as this replaces it.
   (auto-save-default nil)
-  (super-save-mode t)
   (super-save-auto-save-when-idle t)
   (super-save-idle-duration 30)
   (super-save-max-buffer-size 100000))
+
+;;;; Minibuffer
+
+(use-package minibuffer
+  :ensure nil
+  :hook (elpaca-after-init . minibuffer-depth-indicate-mode)
+  :custom
+  (completion-ignore-case t)
+  (read-file-name-completion-ignore-case t)
+  (read-buffer-completion-ignore-case t)
+  (enable-recursive-minibuffers t)
+  ;; Don't allow the cursor in the minibuffer prompt text.
+  (minibuffer-prompt-properties
+   '(read-only t cursor-intangible t face minibuffer-prompt)))
+
+(use-package vertico
+  :ensure (:files (:defaults "extensions/*.el"))
+  :hook (elpaca-after-init . vertico-mode)
+  :custom
+  (vertico-count 10)
+  (vertico-count-format '("%-6s " . "%s/%s"))
+  (vertico-resize nil))
+
+(use-package vertico-directory
+  :after vertico
+  :ensure nil
+  :preface
+  (declare-function vertico-sort-history-length-alpha "vertico")
+  (defun my/vertico-sort-dirs-first (files)
+    "Sorts FILES by directories then alphanumerically."
+    (setq files (vertico-sort-history-length-alpha files))
+    (nconc (seq-filter (lambda (x) (string-suffix-p "/" x)) files)
+           (seq-remove (lambda (x) (string-suffix-p "/" x)) files)))
+  :bind
+  (:map vertico-map
+   ;; More convenient directory navigation commands.
+   ("RET" . vertico-directory-enter)
+   ("DEL" . vertico-directory-delete-char))
+  :hook
+  ;; Tidy shadowed file names.
+  (rfn-eshadow-update-overlay . vertico-directory-tidy))
+
+(use-package vertico-multiform
+  :ensure nil
+  :hook (elpaca-after-init . vertico-multiform-mode)
+  :custom
+  (vertico-multiform-categories
+   '((file (vertico-sort-function . my/vertico-sort-dirs-first))))
+  ;; Commands work better when the category is too broad. To customize display
+  ;; of completions, reference the `consult-completion-in-region' command.
+  (vertico-multiform-commands
+   '((consult-imenu buffer)
+     (consult-outline buffer))))
+
+;; I don't enable `vertico-buffer-mode' directly since this makes Vertico
+;; always run in a buffer. Instead, `vertico-multiform' is used to toggle
+;; buffer display on a per-category or per-command basis. The configuration
+;; of `vertico-buffer-display-action' below changes the default way that
+;; Vertico buffers are shown (otherwise they reuse the current window).
+(use-package vertico-buffer
+  :after vertico
+  :ensure nil
+  :custom
+  (vertico-buffer-display-action
+   '(display-buffer-in-direction
+     (direction . right)
+     (window-width . 0.25))))
+
+(use-package vertico-repeat
+  :ensure nil
+  ;; :defines savehist-additional-variables
+  :hook (minibuffer-setup . vertico-repeat-save)
+  :bind
+  ("C-c '" . vertico-repeat-select)
+  :init
+  ;; Persist Vertico history between Emacs sessions.
+  (with-eval-after-load 'savehist
+    (add-to-list 'savehist-additional-variables 'vertico-repeat-history)))
+
+(use-package vertico-quick
+  :after vertico
+  :ensure nil
+  :bind
+  (:map vertico-map
+   ("'" . vertico-quick-exit))
+  :custom
+  (vertico-quick1 "asdfghjkl")
+  (vertico-quick2 "asdfghjkl"))
+
+;; Enables Vertico icons.
+(use-package nerd-icons-completion
+  ;; Need to call `nerd-icons-completion-mode' late in the startup cycle.
+  :hook (elpaca-after-init . nerd-icons-completion-mode))
 
 ;;;; Completion System
 
@@ -1047,8 +1147,7 @@
    ("M-l" . corfu-popupinfo-location)
    ("M-p" . corfu-popupinfo-scroll-down)
    ("M-n" . corfu-popupinfo-scroll-up))
-  :hook
-  (global-corfu-mode . corfu-popupinfo-mode)
+  :hook (global-corfu-mode . corfu-popupinfo-mode)
   :custom
   (corfu-popupinfo-delay '(1.0 . 0.5))
   (corfu-popupinfo-max-height 16))
@@ -1066,12 +1165,11 @@
 (use-package corfu-history
   :after corfu
   :ensure nil
-  :defines savehist-additional-variables
-  :custom
-  (corfu-history-mode t)
+  :hook (global-corfu-mode . corfu-history-mode)
   :init
   ;; Persist Corfu history between Emacs sessions.
-  (add-to-list 'savehist-additional-variables 'corfu-history))
+  (with-eval-after-load 'savehist
+    (add-to-list 'savehist-additional-variables 'corfu-history)))
 
 (use-package nerd-icons-corfu
   :after corfu
@@ -1081,91 +1179,6 @@
   ;; Makes `tempel-complete' look nice (use `nerd-icons-insert' to see icons).
   (add-to-list 'nerd-icons-corfu-mapping
                '(snippet :style "oct" :icon "heart" :face font-lock-string-face)))
-
-(use-package vertico
-  :ensure (:files (:defaults "extensions/*.el"))
-  :custom
-  (vertico-mode t)
-  (vertico-count 10)
-  (vertico-count-format '("%-6s " . "%s/%s"))
-  (vertico-resize nil))
-
-(use-package vertico-directory
-  :after vertico
-  :ensure nil
-  :preface
-  (declare-function vertico-sort-history-length-alpha "vertico")
-  (defun my/vertico-sort-dirs-first (files)
-    "Sorts FILES by directories then alphanumerically."
-    (setq files (vertico-sort-history-length-alpha files))
-    (nconc (seq-filter (lambda (x) (string-suffix-p "/" x)) files)
-           (seq-remove (lambda (x) (string-suffix-p "/" x)) files)))
-  :bind
-  (:map vertico-map
-   ;; More convenient directory navigation commands.
-   ("RET" . vertico-directory-enter)
-   ("DEL" . vertico-directory-delete-char))
-  :hook
-  ;; Tidy shadowed file names.
-  (rfn-eshadow-update-overlay . vertico-directory-tidy))
-
-(use-package vertico-multiform
-  :after vertico
-  :ensure nil
-  :commands vertico-multiform-mode
-  :custom
-  (vertico-multiform-categories
-   '((file (vertico-sort-function . my/vertico-sort-dirs-first))))
-  ;; Commands work better when the category is too broad. To customize display
-  ;; of completions, reference the `consult-completion-in-region' command.
-  (vertico-multiform-commands
-   '((consult-imenu buffer)
-     (consult-outline buffer)))
-
-  :init
-  ;; Enabling via a customization doesn't seem to take effect.
-  (vertico-multiform-mode 1))
-
-;; I don't enable `vertico-buffer-mode' directly since this makes Vertico
-;; always run in a buffer. Instead, `vertico-multiform' is used to toggle
-;; buffer display on a per-category or per-command basis. The configuration
-;; of `vertico-buffer-display-action' below changes the default way that
-;; Vertico buffers are shown (otherwise they reuse the current window).
-(use-package vertico-buffer
-  :after vertico
-  :ensure nil
-  :custom
-  (vertico-buffer-display-action
-   '(display-buffer-in-direction
-     (direction . right)
-     (window-width . 0.25))))
-
-(use-package vertico-repeat
-  :after vertico
-  :ensure nil
-  :defines savehist-additional-variables
-  :hook (minibuffer-setup . vertico-repeat-save)
-  :bind
-  ("C-c '" . vertico-repeat-select)
-  :init
-  ;; Persist Vertico history between Emacs sessions.
-  (add-to-list 'savehist-additional-variables 'vertico-repeat-history))
-
-(use-package vertico-quick
-  :after vertico
-  :ensure nil
-  :bind
-  (:map vertico-map
-   ("'" . vertico-quick-exit))
-  :custom
-  (vertico-quick1 "asdfghjkl")
-  (vertico-quick2 "asdfghjkl"))
-
-;; Enables Vertico icons.
-(use-package nerd-icons-completion
-  ;; Need to call `nerd-icons-completion-mode' late in the startup cycle.
-  :hook
-  (elpaca-after-init . nerd-icons-completion-mode))
 
 ;; Dedicated completion commands.
 (use-package cape
@@ -1195,16 +1208,10 @@
   (orderless-component-separator #'orderless-escapable-split-on-space))
 
 (use-package marginalia
-  :commands marginalia-mode
-  :custom
-  (marginalia-mode t))
+  :hook (elpaca-after-init . marginalia-mode))
 
 (use-package consult
-  :after flymake
-  :defines
-  (flymake-mode-map
-   xref-show-xrefs-function
-   xref-show-definitions-function)
+  :defines (xref-show-xrefs-function xref-show-definitions-function)
   :preface
   (declare-function consult-completion-in-region "consult")
   (declare-function consult-register-format "consult-register")
@@ -1364,6 +1371,7 @@
    ("M-g m" . consult-mark)
    ("M-g M" . consult-global-mark)
    ("C-c h" . consult-history)
+   ("C-c f f" . consult-flymake)
    ("C-c x t" . consult-theme)
    ("C-x b" . consult-buffer)
    ("C-x 4 b" . consult-buffer-other-window)
@@ -1384,17 +1392,8 @@
    :map consult-narrow-map
    ("C-," . consult-narrow-help)
    ("?" . consult-narrow-help)
-   :map flymake-mode-map
-   ("C-c f f" . consult-flymake)
    :map isearch-mode-map
    ("C-c h" . consult-isearch-history))
-
-  :hook
-  ;; Use the previously selected theme else default to Modus Vivendi.
-  (elpaca-after-init . (lambda ()
-                         (consult-theme (if consult--theme-history
-                                            (intern (car consult--theme-history))
-                                          'modus-vivendi))))
 
   :custom
   ;; Type ',' followed by a prefix key to narrow the available candidates.
@@ -1556,15 +1555,15 @@
       (save-selected-window
         (let ((embark-quit-after-action nil))
           (embark-dwim)))))
-
   :commands embark-prefix-help-command
   :bind
   (("C-." . embark-act)
    ("C-M-." . embark-dwim)
    ("C-h b" . embark-bindings)
+   ;; Allow Embark to show keybindings under C-h as configured below.
+   ("C-h C-h" . nil)
    :map minibuffer-local-map
    ("M-." . my/embark-force-preview))
-
   :custom
   ;; Just show the minimal "Act" prompt (the default starts with minimal
   ;; and then `embark-mixed-indicator-delay' kicks in and the verbose screen
@@ -1573,7 +1572,6 @@
   (embark-indicators (list #'embark-minimal-indicator))
   ;; Use this key to switch Embark to the keymap prompter.
   (embark-keymap-prompter-key ",")
-
   :init
   ;; Use Embark to show keybindings under a prefix rather than the default
   ;; `describe-prefix-bindings'. It should be possible to just use set
@@ -1643,6 +1641,19 @@
   (:map prog-mode-map
    ("M-q" . nil)))
 
+(use-package compile
+  :ensure nil
+  :custom
+  (compilation-ask-about-save nil)
+  :bind
+  ("C-c b 1" . compile)
+  ("C-c b 2" . recompile))
+
+(use-package newcomment
+  :ensure nil
+  :bind
+  ("C-;" . comment-line))
+
 ;;;;;; Tree-sitter
 
 (use-package treesit
@@ -1671,15 +1682,14 @@
 
   :commands
   (global-treesit-auto-mode treesit-auto-add-to-auto-mode-alist)
+  :hook (elpaca-after-init . global-treesit-auto-mode)
   :custom
   (treesit-auto-install 'prompt)
-
-  :init
   ;; Use TS-powered modes for a smaller set of languages for now.
   ;; See original value of `treesit-auto-langs' for the full set.
-  (setq treesit-auto-langs '(bash dockerfile go gomod proto python rust))
-  (treesit-auto-add-to-auto-mode-alist treesit-auto-langs)
-  (global-treesit-auto-mode 1))
+  (treesit-auto-langs '(bash dockerfile go gomod proto python rust))
+  :config
+  (treesit-auto-add-to-auto-mode-alist treesit-auto-langs))
 
 ;;;;;; Eglot
 
@@ -1782,9 +1792,7 @@
 
 ;; Adapt Eglot to use Tempel rather than Yasnippet for placeholder completion.
 (use-package eglot-tempel
-  :commands eglot-tempel-mode
-  :init
-  (eglot-tempel-mode))
+  :hook (elpaca-after-init . eglot-tempel-mode))
 
 (use-package consult-eglot
   :after eglot
@@ -1793,10 +1801,10 @@
    ("M-g o" . consult-eglot-symbols)))
 
 (use-package consult-eglot-embark
-  :after (eglot consult-eglot)
   :commands consult-eglot-embark-mode
   :init
-  (consult-eglot-embark-mode))
+  (with-eval-after-load 'consult-eglot
+    (consult-eglot-embark-mode)))
 
 (use-package dape
   :bind-keymap
@@ -1838,8 +1846,8 @@
   :bind
   ("C-h ." . eldoc-doc-buffer)
   ("C-h t" . eldoc-mode)
+  :hook (elpaca-after-init . global-eldoc-mode)
   :custom
-  (global-eldoc-mode t)
   (eldoc-idle-delay 0.1)
   (eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
   (eldoc-echo-area-prefer-doc-buffer t)
@@ -1848,12 +1856,10 @@
   :config
   ;; Register commands and command prefixes that can move point to a symbol
   ;; where Eldoc documentation should be shown.
+  ;; TODO: Can this be lazily done after the init cycle is complete?
   (eldoc-add-command "embark-dwim")
-  (eldoc-add-command-completions "avy-goto-")
-  (eldoc-add-command-completions "paredit-")
-  (eldoc-add-command-completions "xref-find-")
-  (eldoc-add-command-completions "xref-go-")
-  (eldoc-add-command-completions "xref-goto-"))
+  (eldoc-add-command-completions
+   "avy-goto-" "paredit-" "xref-find-" "xref-go-" "xref-goto-"))
 
 (use-package eldoc-box
   :bind
@@ -1865,15 +1871,6 @@
 
 (use-package flymake
   :ensure nil
-  :preface
-  (declare-function flymake-proc-legacy-flymake "flymake-proc")
-  (defun my/elisp-flymake-byte-compile (fn &rest args)
-    "Wrapper for `elisp-flymake-byte-compile' that considers `load-path'."
-    ;; Don't let Vterm onto Flymake's load path as it oddly blocks it.
-    (let* ((alt-load-path (seq-filter (lambda (d) (not (string-match-p "elpaca/builds/vterm" d))) load-path))
-           (elisp-flymake-byte-compile-load-path (append elisp-flymake-byte-compile-load-path alt-load-path)))
-      (apply fn args)))
-
   :bind
   (:map flymake-mode-map
    ("C-c f d" . flymake-show-buffer-diagnostics)
@@ -1883,14 +1880,15 @@
    :repeat-map my/flymake-repeat-map
    ("n" . flymake-goto-next-error)
    ("p" . flymake-goto-prev-error))
-
   :hook (prog-mode . flymake-mode)
   :custom
   (flymake-no-changes-timeout 0.5)
-  (flymake-start-on-save-buffer)
+  (flymake-start-on-save-buffer))
+
+(use-package flymake-proc
+  :ensure nil
   :config
-  (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-byte-compile)
-  (remove-hook 'flymake-diagnostic-functions #'flymake-proc-legacy-flymake))
+  (remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake))
 
 ;;;;;; Xref
 
@@ -1911,8 +1909,7 @@
 ;;;;;; Code Formatting
 
 (use-package apheleia
-  :custom
-  (apheleia-global-mode t)
+  :hook (elpaca-after-init . apheleia-global-mode)
   :config
   ;; Use goimports rather than gofmt for Go files so imports get optimized.
   (setf (alist-get 'go-mode apheleia-mode-alist) 'goimports)
@@ -2215,9 +2212,16 @@
                  #'flymake-eldoc-function
                  #'elisp-eldoc-var-docstring-with-value)))
 
+  (defun my/elisp-flymake-byte-compile (fn &rest args)
+    "Advises `elisp-flymake-byte-compile' to remove vterm from `load-path'."
+    ;; Don't let Vterm onto Flymake's load path as it oddly blocks it.
+    (let* ((alt-load-path (seq-filter (lambda (d) (not (string-match-p "elpaca/builds/vterm" d))) load-path))
+           (elisp-flymake-byte-compile-load-path (append elisp-flymake-byte-compile-load-path alt-load-path)))
+      (apply fn args)))
   :hook
   (emacs-lisp-mode . my/elisp-init)
   :config
+  (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-byte-compile)
   ;; This configuration is from consult-imenu.el with the fonts changed.
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
@@ -2244,8 +2248,7 @@
 
 (use-package elec-pair
   :ensure nil
-  :custom
-  (electric-pair-mode t)
+  :hook (elpaca-after-init . electric-pair-mode)
   :config
   (add-to-list 'electric-pair-pairs '(?` . ?`)))
 
@@ -2286,22 +2289,37 @@
   :custom
   (markdown-command "multimarkdown"))
 
-;;;; Git
+;;;; Version Control
+
+(use-package vc-hooks
+  :ensure nil
+  :custom
+  (vc-follow-symlinks t))
 
 (use-package magit
+  :preface
+  (declare-function magit-auto-revert-mode "magit")
   :bind
   ("C-c g c" . magit-clone)
   ("C-c g s" . magit-status)
   ("C-c g d" . magit-dispatch)
   ("C-c g f" . magit-file-dispatch)
   :custom
-  (magit-auto-revert-mode nil) ;; Use `auto-revert-mode' instead.
   (magit-verbose-messages t)
   (magit-refresh-verbose nil)
   :config
+  ;; Use `auto-revert-mode' instead.
+  (magit-auto-revert-mode -1)
   ;; Unbind keys used by winum.
   (dolist (key '("M-1" "M-2" "M-3" "M-4"))
     (define-key magit-section-mode-map (kbd key) nil)))
+
+(use-package browse-at-remote
+  :bind
+  (("C-c g o" . browse-at-remote)
+   ("C-c g k" . browse-at-remote-kill)))
+
+;;;; Diff
 
 (use-package diff-mode
   :ensure nil
@@ -2311,11 +2329,6 @@
     (define-key diff-mode-map (kbd key) nil)))
 
 (use-package difftastic)
-
-(use-package browse-at-remote
-  :bind
-  (("C-c g o" . browse-at-remote)
-   ("C-c g k" . browse-at-remote-kill)))
 
 ;;;; Shell/Terminal
 
@@ -2559,7 +2572,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (defvar my/gtd-music-file (expand-file-name "music.org" my/gtd-dir))
 
   ;; Extra electric pairs to use in org mode.
-  (defvar my/org-extra-electric-pairs '((?/ . ?/) (?= . ?=)))
+  (defvar my/org-extra-electric-pairs '((?/ . ?/) (?= . ?=) (?~ . ?~)))
 
   (defun my/org-init ()
     "Init function for `org-mode'."
@@ -2751,9 +2764,11 @@ specified then a task category will be determined by the item's tags."
    ("r i" . my/org-agenda-refile-inbox)
    ("k" . org-agenda-kill)
    ("?" . which-key-show-major-mode))
+
   :hook
   (org-agenda-mode . hl-line-mode)
   (org-agenda-mode . (lambda () (setq-local default-directory org-directory)))
+
   :custom
   (org-agenda-cmp-user-defined #'my/org-agenda-cmp-todo)
   (org-agenda-custom-commands
@@ -2869,6 +2884,7 @@ specified then a task category will be determined by the item's tags."
   ("C-c n i" . org-roam-node-insert)
   ("C-c n c" . org-roam-capture)
   ("C-c n t" . org-roam-tag-add)
+  :hook (elpaca-after-init . org-roam-db-autosync-mode)
   :custom
   (org-roam-directory (expand-file-name "notes/" my/pkm-dir))
   ;; Disable `org-roam' completion as it's a bit annoying.
@@ -2899,17 +2915,32 @@ specified then a task category will be determined by the item's tags."
                              "#+title: %<%Y-%m-%d>\n"
                              ("Today")))))
 
+  ;; :config
+  ;; (require 'org-roam-protocol)
+  ;; (require 'org-roam-dailies)
+  )
+
+;;;; Emacs Server
+
+(use-package server
+  :disabled
+  :ensure nil
+  :preface
+  (declare-function server-running-p "server")
+  :custom
+  ;; TODO: Try other values.
+  (server-client-instructions 1)
+  ;; :defer 1
   :config
-  (require 'org-roam-protocol)
-  (require 'org-roam-dailies)
-  (org-roam-db-autosync-mode 1))
+  (unless (server-running-p)
+    (server-start)))
 
 ;;;; Time
 
 (use-package time
   :ensure nil
   :custom
-  (display-time-mode nil)
+  ;; (display-time-mode nil)
   (display-time-default-load-average nil)
   (display-time-format "%H:%M")
   ;; Timezones to be displayed by `world-clock'. Zones names can be found
@@ -2948,7 +2979,7 @@ specified then a task category will be determined by the item's tags."
   ("C-M-$" . jinx-languages)
   ("C-c x j" . jinx-mode))
 
-;;;; Emacs Package Management
+;;;; Package Management
 
 (use-package elpaca
   :ensure nil
