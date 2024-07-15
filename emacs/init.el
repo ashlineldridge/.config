@@ -22,78 +22,29 @@
 
 ;;;; Appearance
 
-;;;;; Fonts
+;;;;; Themes
 
-(use-package faces
+(use-package modus-themes
+  :custom
+  (modus-themes-italic-constructs t)
+  (modus-themes-custom-auto-reload t)
+  (modus-themes-mixed-fonts t)
+  (modus-themes-prompts '(bold))
+  (modus-themes-org-blocks 'gray-background)
+  (modus-themes-headings my/variable-pitch-headings))
+
+(use-package ef-themes
+  :custom
+  (ef-themes-mixed-fonts t)
+  (ef-themes-variable-pitch-ui t)
+  (ef-themes-headings my/variable-pitch-headings))
+
+(use-package theme
   :ensure nil
-  :preface
-  ;; Create faces used in `consult-imenu-config' as extension points from
-  ;; the default faces used in programming language buffers. Use C-u C-x =
-  ;; to discover the font face under point.
-  (defface my/imenu-category-constant-face
-    '((t :inherit font-lock-constant-face))
-    "Face for displaying constant symbols in imenu."
-    :group 'my/imenu-faces)
+  :no-require
+  :hook (elpaca-after-init . (lambda () (load-theme 'ef-dark :no-confirm))))
 
-  (defface my/imenu-category-enum-face
-    '((t :inherit font-lock-type-face))
-    "Face for displaying enumeration symbols in imenu."
-    :group 'my/imenu-faces)
-
-  (defface my/imenu-category-function-face
-    '((t :inherit font-lock-function-name-face))
-    "Face for displaying function symbols in imenu."
-    :group 'my/imenu-faces)
-
-  (defface my/imenu-category-impl-face
-    '((t :inherit font-lock-type-face))
-    "Face for displaying implementation symbols in imenu."
-    :group 'my/imenu-faces)
-
-  (defface my/imenu-category-package-face
-    '((t :inherit font-lock-constant-face))
-    "Face for displaying package symbols in imenu."
-    :group 'my/imenu-faces)
-
-  (defface my/imenu-category-macro-face
-    '((t :inherit font-lock-preprocessor-face))
-    "Face for displaying macro symbols in imenu."
-    :group 'my/imenu-faces)
-
-  (defface my/imenu-category-method-face
-    '((t :inherit font-lock-function-name-face))
-    "Face for displaying method symbols in imenu."
-    :group 'my/imenu-faces)
-
-  (defface my/imenu-category-module-face
-    '((t :inherit font-lock-constant-face))
-    "Face for displaying module symbols in imenu."
-    :group 'my/imenu-faces)
-
-  (defface my/imenu-category-static-face
-    '((t :inherit font-lock-constant-face))
-    "Face for displaying static symbols in imenu."
-    :group 'my/imenu-faces)
-
-  (defface my/imenu-category-struct-face
-    '((t :inherit font-lock-type-face))
-    "Face for displaying struct symbols in imenu."
-    :group 'my/imenu-faces)
-
-  (defface my/imenu-category-trait-face
-    '((t :inherit font-lock-type-face))
-    "Face for displaying trait/interface symbols in imenu."
-    :group 'my/imenu-faces)
-
-  (defface my/imenu-category-type-face
-    '((t :inherit font-lock-type-face))
-    "Face for displaying type-centric symbols in imenu."
-    :group 'my/imenu-faces)
-
-  (defface my/imenu-category-variable-face
-    '((t :inherit font-lock-variable-name-face))
-    "Face for displaying variable symbols in imenu."
-    :group 'my/imenu-faces))
+;;;;; Fonts
 
 (use-package fontaine
   :preface
@@ -138,27 +89,23 @@
   :init
   (add-hook 'enable-theme-functions #'my/fontaine-reset))
 
-;;;;; Themes
-
-(use-package modus-themes
-  :custom
-  (modus-themes-italic-constructs t)
-  (modus-themes-custom-auto-reload t)
-  (modus-themes-mixed-fonts t)
-  (modus-themes-prompts '(bold))
-  (modus-themes-org-blocks 'gray-background)
-  (modus-themes-headings my/variable-pitch-headings))
-
-(use-package ef-themes
-  :custom
-  (ef-themes-mixed-fonts t)
-  (ef-themes-variable-pitch-ui t)
-  (ef-themes-headings my/variable-pitch-headings))
-
-(use-package theme
+(use-package font-lock
   :ensure nil
-  :no-require
-  :hook (elpaca-after-init . (lambda () (load-theme 'ef-dark :no-confirm))))
+  :preface
+  ;; Create face aliases used in `consult-imenu-config'.
+  (put 'my/imenu-constant-face 'face-alias 'font-lock-constant-face)
+  (put 'my/imenu-enum-face 'face-alias 'font-lock-type-face)
+  (put 'my/imenu-function-face 'face-alias 'font-lock-function-name-face)
+  (put 'my/imenu-impl-face 'face-alias 'font-lock-type-face)
+  (put 'my/imenu-package-face 'face-alias 'font-lock-constant-face)
+  (put 'my/imenu-macro-face 'face-alias 'font-lock-preprocessor-face)
+  (put 'my/imenu-method-face 'face-alias 'font-lock-function-name-face)
+  (put 'my/imenu-module-face 'face-alias 'font-lock-constant-face)
+  (put 'my/imenu-static-face 'face-alias 'font-lock-constant-face)
+  (put 'my/imenu-struct-face 'face-alias 'font-lock-type-face)
+  (put 'my/imenu-trait-face 'face-alias 'font-lock-type-face)
+  (put 'my/imenu-type-face 'face-alias 'font-lock-type-face)
+  (put 'my/imenu-variable-face 'face-alias 'font-lock-variable-name-face))
 
 ;;;;; Icons
 
@@ -1735,7 +1682,7 @@
 
   :config
   ;; Tree-sitter produces a better imenu.
-  (setq eglot-stay-out-of '(imenu))
+  ;; (setq eglot-stay-out-of '(imenu))
 
   ;; Potential performance improving settings.
   ;; See: https://www.reddit.com/r/emacs/comments/1b25904/is_there_anything_i_can_do_to_make_eglots.
@@ -1970,16 +1917,16 @@
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
                  '(rust-ts-mode
-                   :types ((?a "Associated Type" my/imenu-category-type-face)
-                           (?c "Constant" my/imenu-category-constant-face)
-                           (?e "Enumeration" my/imenu-category-enum-face)
-                           (?f "Function" my/imenu-category-function-face)
-                           (?i "Implementation" my/imenu-category-impl-face)
-                           (?M "Macro" my/imenu-category-macro-face)
-                           (?m "Module" my/imenu-category-module-face)
-                           (?S "Static" my/imenu-category-static-face)
-                           (?s "Struct" my/imenu-category-struct-face)
-                           (?t "Trait" my/imenu-category-trait-face))))))
+                   :types ((?a "Associated Type" my/imenu-type-face)
+                           (?c "Constant" my/imenu-constant-face)
+                           (?e "Enumeration" my/imenu-enum-face)
+                           (?f "Function" my/imenu-function-face)
+                           (?i "Implementation" my/imenu-impl-face)
+                           (?M "Macro" my/imenu-macro-face)
+                           (?m "Module" my/imenu-module-face)
+                           (?S "Static" my/imenu-static-face)
+                           (?s "Struct" my/imenu-struct-face)
+                           (?t "Trait" my/imenu-trait-face))))))
 
 ;; Rustic doesn't yet integrate with Tree-sitter and so I just use Rustic for
 ;; it's useful commands while keeping `rust-ts-mode' as the major mode for
@@ -2051,14 +1998,14 @@
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
                  '(go-ts-mode
-                   :types ((?c "Constant" my/imenu-category-constant-face)
-                           (?f "Function" my/imenu-category-function-face)
-                           (?i "Interface" my/imenu-category-trait-face)
-                           (?m "Method" my/imenu-category-method-face)
-                           (?t "New Type" my/imenu-category-type-face)
-                           (?s "Struct" my/imenu-category-struct-face)
-                           (?a "Type Alias" my/imenu-category-type-face)
-                           (?v "Variable" my/imenu-category-variable-face))))))
+                   :types ((?c "Constant" my/imenu-constant-face)
+                           (?f "Function" my/imenu-function-face)
+                           (?i "Interface" my/imenu-trait-face)
+                           (?m "Method" my/imenu-method-face)
+                           (?t "New Type" my/imenu-type-face)
+                           (?s "Struct" my/imenu-struct-face)
+                           (?a "Type Alias" my/imenu-type-face)
+                           (?v "Variable" my/imenu-variable-face))))))
 
 (use-package gotest
   :after go-ts-mode
@@ -2159,10 +2106,10 @@
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
                  '(protobuf-ts-mode
-                   :types ((?r "RPC" my/imenu-category-function-face)
-                           (?e "Enum" my/imenu-category-enum-face)
-                           (?m "Message" my/imenu-category-struct-face)
-                           (?s "Service" my/imenu-category-impl-face))))))
+                   :types ((?r "RPC" my/imenu-function-face)
+                           (?e "Enum" my/imenu-enum-face)
+                           (?m "Message" my/imenu-struct-face)
+                           (?s "Service" my/imenu-impl-face))))))
 
 ;;;;;; Bazel
 
@@ -2227,11 +2174,11 @@
     (add-to-list 'consult-imenu-config
                  '(emacs-lisp-mode
                    :toplevel "Functions"
-                   :types ((?f "Functions" my/imenu-category-function-face)
-                           (?m "Macros" my/imenu-category-macro-face)
-                           (?p "Packages" my/imenu-category-package-face)
-                           (?t "Types" my/imenu-category-type-face)
-                           (?v "Variables" my/imenu-category-variable-face))))))
+                   :types ((?f "Functions" my/imenu-function-face)
+                           (?m "Macros" my/imenu-macro-face)
+                           (?p "Packages" my/imenu-package-face)
+                           (?t "Types" my/imenu-type-face)
+                           (?v "Variables" my/imenu-variable-face))))))
 
 (use-package paredit
   :hook
