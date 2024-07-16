@@ -24,6 +24,17 @@
 
 ;;;;; Themes
 
+(use-package theme
+  :ensure nil
+  :preface
+  (defvar my/default-theme 'ef-dark)
+  (defvar my/variable-pitch-headings
+    '((1 . (variable-pitch semibold 1.2))
+      (t . (variable-pitch semibold 1.1))))
+  :no-require
+  :hook
+  (elpaca-after-init . (lambda () (load-theme my/default-theme :no-confirm))))
+
 (use-package modus-themes
   :custom
   (modus-themes-italic-constructs t)
@@ -39,51 +50,40 @@
   (ef-themes-variable-pitch-ui t)
   (ef-themes-headings my/variable-pitch-headings))
 
-(use-package theme
-  :ensure nil
-  :no-require
-  :hook (elpaca-after-init . (lambda () (load-theme 'ef-dark :no-confirm))))
-
 ;;;;; Fonts
 
 (use-package fontaine
   :preface
-  ;; Variable pitch headings used by Modus and Ef themes.
-  (defvar my/variable-pitch-headings
-    '((1 . (variable-pitch semibold 1.2))
-      (t . (variable-pitch semibold 1.1))))
-
   ;; Can't seem to get `fontaine-mode' to work so doing this for now.
   (defun my/fontaine-reset (&rest _)
     "Apply the current font configuration."
-    (fontaine-set-preset (or fontaine-current-preset 'small)))
-
+    (fontaine-set-preset (or fontaine-current-preset 'regular)))
   :bind
   ("C-c x f" . fontaine-set-preset)
   :custom
   (fontaine-presets
-   '((small
-      :default-height 134
-      :mode-line-active-height 120
-      :mode-line-inactive-height 120
-      :line-number-height 112)
+   '((large
+      :default-height 140
+      :mode-line-active-height 130
+      :mode-line-inactive-height 130
+      :line-number-height 120)
      (regular)
      (t
       :default-family "Iosevka Comfy"
       :default-weight regular
-      :default-height 140
+      :default-height 134
       :fixed-pitch-height 1.0
       :fixed-pitch-serif-height 1.0
       :variable-pitch-family "Iosevka Comfy Duo"
       :variable-pitch-weight regular
       :variable-pitch-height 1.0
       :mode-line-active-family "Iosevka Comfy"
-      :mode-line-active-height 130
       :mode-line-inactive-family "Iosevka Comfy"
-      :mode-line-inactive-height 130
+      :mode-line-active-height 120
+      :mode-line-inactive-height 120
       :line-number-family "Iosevka Comfy"
       :line-number-slant italic
-      :line-number-height 120
+      :line-number-height 112
       :bold-weight bold
       :italic-slant italic)))
   :init
@@ -92,7 +92,7 @@
 (use-package font-lock
   :ensure nil
   :preface
-  ;; Create face aliases used in `consult-imenu-config'.
+  ;; Create face aliases to be used in `consult-imenu-config'.
   (put 'my/imenu-constant-face 'face-alias 'font-lock-constant-face)
   (put 'my/imenu-enum-face 'face-alias 'font-lock-type-face)
   (put 'my/imenu-function-face 'face-alias 'font-lock-function-name-face)
@@ -109,11 +109,25 @@
 
 ;;;;; Icons
 
-;; Run `nerd-icons-install-fonts' manually to install fonts.
+;; Run `nerd-icons-install-fonts' manually to install fonts for the first time.
 (use-package nerd-icons)
 
-;; Note: package-specific Nerd icon packages (e.g. `nerd-icons-dired') are
-;; grouped with the related package.
+(use-package nerd-icons-ibuffer
+  :hook (ibuffer-mode . nerd-icons-ibuffer-mode))
+
+;; Enables Vertico icons.
+(use-package nerd-icons-completion
+  :hook (vertico-mode . nerd-icons-completion-mode))
+
+(use-package nerd-icons-corfu
+  :after corfu
+  :defines corfu-margin-formatters
+  :init
+  (add-to-list 'corfu-margin-formatters 'nerd-icons-corfu-formatter)
+  :config
+  ;; Make `tempel-complete' look nice (use `nerd-icons-insert' to see icons).
+  (add-to-list 'nerd-icons-corfu-mapping
+               '(snippet :style "oct" :icon "heart" :face font-lock-string-face)))
 
 ;;;;; Mode Line
 
@@ -810,9 +824,6 @@
    ("/p" . ibuffer-vc-set-filter-groups-by-vc-root))
   :hook (ibuffer . ibuffer-vc-mode))
 
-(use-package nerd-icons-ibuffer
-  :hook (ibuffer-mode . nerd-icons-ibuffer-mode))
-
 ;;;; File System
 
 (use-package files
@@ -1036,11 +1047,6 @@
   (vertico-quick1 "asdfghjkl")
   (vertico-quick2 "asdfghjkl"))
 
-;; Enables Vertico icons.
-(use-package nerd-icons-completion
-  ;; Need to call `nerd-icons-completion-mode' late in the startup cycle.
-  :hook (elpaca-after-init . nerd-icons-completion-mode))
-
 ;;;; Completion System
 
 (use-package corfu
@@ -1117,15 +1123,6 @@
   ;; Persist Corfu history between Emacs sessions.
   (with-eval-after-load 'savehist
     (add-to-list 'savehist-additional-variables 'corfu-history)))
-
-(use-package nerd-icons-corfu
-  :after corfu
-  :init
-  (add-to-list 'corfu-margin-formatters 'nerd-icons-corfu-formatter)
-  :config
-  ;; Makes `tempel-complete' look nice (use `nerd-icons-insert' to see icons).
-  (add-to-list 'nerd-icons-corfu-mapping
-               '(snippet :style "oct" :icon "heart" :face font-lock-string-face)))
 
 ;; Dedicated completion commands.
 (use-package cape
@@ -2822,14 +2819,9 @@ specified then a task category will be determined by the item's tags."
   (org-appear-delay 0.6))
 
 (use-package org-roam
-  :preface
-  (declare-function org-roam-db-autosync-mode "org-roam")
   :bind
-  ("C-c n l" . org-roam-buffer-toggle)
-  ("C-c n f" . org-roam-node-find)
-  ("C-c n g" . org-roam-graph)
+  ("C-c n n" . org-roam-node-find)
   ("C-c n i" . org-roam-node-insert)
-  ("C-c n c" . org-roam-capture)
   ("C-c n t" . org-roam-tag-add)
   :hook (elpaca-after-init . org-roam-db-autosync-mode)
   :custom
@@ -2854,30 +2846,30 @@ specified then a task category will be determined by the item's tags."
         "- Use org-insert-link (C-c C-l), org-cliplink (C-c C-S-l), or paste URL here\n")
       :target (file "%<%Y%m%d%H%M%S>-${slug}.org")
       :empty-lines-before 1
-      :unnarrowed t)))
+      :unnarrowed t))))
+
+(use-package org-roam-dailies
+  :ensure nil
+  :bind
+  ("C-c j j" . org-roam-dailies-capture-today)
+  ("C-c j g" . org-roam-dailies-goto-date)
+  ("C-c j d" . org-roam-dailies-find-directory)
+  :custom
   (org-roam-dailies-directory "../journal")
   (org-roam-dailies-capture-templates
-   `(("d" "default" entry "* %?"
-      :target (file+head+olp "%<%Y-%m-%d>.org"
-                             "#+title: %<%Y-%m-%d>\n"
-                             ("Today")))))
-
-  ;; :config
-  ;; (require 'org-roam-protocol)
-  ;; (require 'org-roam-dailies)
-  )
+   '(("d" "default" entry "* %?"
+      :target (file+head "%<%Y-%m-%d>.org"
+                         "#+title: %<%Y-%m-%d>\n\n")))))
 
 ;;;; Emacs Server
 
 (use-package server
-  :disabled
   :ensure nil
   :preface
   (declare-function server-running-p "server")
   :custom
-  ;; TODO: Try other values.
   (server-client-instructions 1)
-  ;; :defer 1
+  :defer 1
   :config
   (unless (server-running-p)
     (server-start)))
