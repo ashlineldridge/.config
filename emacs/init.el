@@ -2823,12 +2823,14 @@ specified then a task category will be determined by the item's tags."
   ("C-c n n" . org-roam-node-find)
   ("C-c n i" . org-roam-node-insert)
   ("C-c n t" . org-roam-tag-add)
-  :hook (elpaca-after-init . org-roam-db-autosync-mode)
+  ("C-c n u" . org-roam-db-sync)
   :custom
   (org-roam-directory (expand-file-name "notes/" my/pkm-dir))
   ;; Disable `org-roam' completion as it's a bit annoying.
   (org-roam-completion-everywhere nil)
   (org-roam-completion-functions nil)
+  ;; Exclude dailies from the database.
+  (org-roam-file-exclude-regexp '("journal/"))
   (org-roam-node-display-template
    (concat "${title:60} " (propertize "${tags:*}" 'face 'org-tag)))
   (org-roam-capture-templates
@@ -2853,6 +2855,7 @@ specified then a task category will be determined by the item's tags."
   :bind
   ("C-c j j" . org-roam-dailies-capture-today)
   ("C-c j g" . org-roam-dailies-goto-date)
+  ("C-c j t" . org-roam-dailies-goto-today)
   ("C-c j d" . org-roam-dailies-find-directory)
   :custom
   (org-roam-dailies-directory "../journal")
