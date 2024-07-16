@@ -231,9 +231,7 @@
   :preface
   (defun my/repeat-echo-mode-line (keymap)
     "Display a repeat mode-line indicator for KEYMAP."
-    ;; The provided `repeat-echo-mode-line' doesn't work for me as it tries
-    ;; to represent an in-progress repeat as an additional mode which I think
-    ;; gets hidden by Minions. This looks cleaner anyway.
+    ;; See also `repeat-echo-mode-line'.
     (setq global-mode-string
           (when keymap (propertize "↻ " 'face 'mode-line-emphasis)))
     (force-mode-line-update t))
@@ -2854,9 +2852,10 @@ specified then a task category will be determined by the item's tags."
   :ensure nil
   :bind
   ("C-c j j" . org-roam-dailies-capture-today)
+  ("C-c j d" . org-roam-dailies-find-directory)
   ("C-c j g" . org-roam-dailies-goto-date)
   ("C-c j t" . org-roam-dailies-goto-today)
-  ("C-c j d" . org-roam-dailies-find-directory)
+  ("C-c j y" . org-roam-dailies-goto-yesterday)
   :custom
   (org-roam-dailies-directory "../journal")
   (org-roam-dailies-capture-templates
@@ -2882,9 +2881,9 @@ specified then a task category will be determined by the item's tags."
 (use-package time
   :ensure nil
   :custom
-  ;; (display-time-mode nil)
-  (display-time-default-load-average nil)
+  ;; Run `display-time-mode' to see time in mode line.
   (display-time-format "%H:%M")
+  (display-time-default-load-average nil)
   ;; Timezones to be displayed by `world-clock'. Zones names can be found
   ;; here: https://www.timezoneconverter.com/cgi-bin/tzc.
   (world-clock-list
