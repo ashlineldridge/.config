@@ -2250,7 +2250,7 @@
   ("C-c g f" . magit-file-dispatch)
   :custom
   (magit-verbose-messages t)
-  (magit-refresh-verbose nil)
+  (magit-refresh-verbose t)
   :config
   ;; Use `auto-revert-mode' instead.
   (magit-auto-revert-mode -1)
