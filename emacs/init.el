@@ -1668,7 +1668,7 @@
 
   :config
   ;; Tree-sitter produces a better imenu.
-  ;; (setq eglot-stay-out-of '(imenu))
+  (setq eglot-stay-out-of '(imenu))
 
   ;; Potential performance improving settings.
   ;; See: https://www.reddit.com/r/emacs/comments/1b25904/is_there_anything_i_can_do_to_make_eglots.
