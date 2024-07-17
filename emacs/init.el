@@ -784,17 +784,7 @@
   (add-to-list 'pulsar-pulse-functions 'winum-select-window-7)
   (add-to-list 'pulsar-pulse-functions 'winum-select-window-8)
   (add-to-list 'pulsar-pulse-functions 'winum-select-window-9)
-  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-1)
-  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-2)
-  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-3)
-  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-4)
-  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-5)
-  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-6)
-  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-7)
-  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-8)
-  (add-to-list 'pulsar-pulse-functions 'my/winum-move-buffer-9)
-  (add-to-list 'pulsar-pulse-functions 'xref-find-definitions)
-  (add-to-list 'pulsar-pulse-functions 'xref-find-definitions-other-window))
+  (add-to-list 'pulsar-pulse-functions 'xref-find-definitions))
 
 ;;;;; Templating
 
