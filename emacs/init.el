@@ -804,7 +804,8 @@
   :bind
   (("C-x C-b" . ibuffer)
    :map ibuffer-mode-map
-   ("M-o" . nil)))
+   ("M-o" . nil)
+   ("M-j" . nil)))
 
 (use-package ibuffer-vc
   :bind
