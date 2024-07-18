@@ -73,6 +73,11 @@
 (setq mode-line-format nil)
 (set-face-attribute 'default nil :background "#000000" :foreground "#ffffff")
 (set-face-attribute 'mode-line nil :background "#000000" :foreground "#ffffff" :box 'unspecified)
+;; Without the following hook, new frames will retain the blanked out features set above.
+(add-hook 'after-make-frame-functions
+          (lambda (&rest _)
+            (when-let ((theme (car custom-enabled-themes)))
+              (enable-theme theme))))
 
 ;; Configure environment variables here.
 (setenv "XDG_CONFIG_HOME" (expand-file-name "~/.config"))
