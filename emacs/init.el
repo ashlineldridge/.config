@@ -1236,6 +1236,7 @@
   (defun my/consult-project-file ()
     "Version of `project-find-file' that uses Consult sources."
     (interactive)
+    (require 'consult)
     (let ((consult-project-buffer-sources
            '(consult--source-project-buffer-hidden      ;; Narrow: ?p (hidden)
              consult--source-project-recent-file-hidden ;; Narrow: ?r (hidden)
@@ -1248,6 +1249,7 @@
   (defun my/consult-project-multi ()
     "Multi-source project finder to be used in `project-switch-commands'."
     (interactive)
+    (require 'consult)
     (let ((consult-project-buffer-sources
            '(consult--source-project-buffer      ;; Narrow: ?p (shown)
              consult--source-project-recent-file ;; Narrow: ?r (shown)
@@ -1257,6 +1259,7 @@
   (defun my/consult-read-file-name (prompt &optional dir _default mustmatch _initial pred)
     "Function to assign to `read-file-name-function' to enable previewing."
     (interactive)
+    (require 'consult)
     (let ((default-directory (or dir default-directory))
           (minibuffer-completing-file-name t))
       (consult--read #'read-file-name-internal :state (consult--file-preview)
@@ -1617,7 +1620,8 @@
   ;; See original value of `treesit-auto-langs' for the full set.
   (treesit-auto-langs '(bash dockerfile go gomod proto python rust))
   :config
-  (treesit-auto-add-to-auto-mode-alist treesit-auto-langs))
+  ;; Add all languages in `treesit-auto-langs' except Rust which uses Rustic.
+  (treesit-auto-add-to-auto-mode-alist '(bash dockerfile go gomod proto python)))
 
 ;;;;;; Eglot
 
