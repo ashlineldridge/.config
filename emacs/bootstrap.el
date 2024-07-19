@@ -67,6 +67,14 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
+;; Configure use-package behavior before it is loaded.
+(setq-default
+ use-package-always-defer t
+ use-package-always-ensure t
+ use-package-compute-statistics t
+ use-package-enable-imenu-support t
+ use-package-expand-minimally (not init-file-debug))
+
 ;; Install use-package support.
 (elpaca elpaca-use-package
   (elpaca-use-package-mode)
@@ -76,14 +84,6 @@
 (elpaca no-littering
   (require 'no-littering)
   (no-littering-theme-backups))
-
-;; Configure use-package behavior.
-(setq-default
- use-package-always-defer t
- use-package-always-ensure t
- use-package-compute-statistics t
- use-package-enable-imenu-support t
- use-package-expand-minimally (not init-file-debug))
 
 ;; Block until current queue is processed.
 (elpaca-wait)
