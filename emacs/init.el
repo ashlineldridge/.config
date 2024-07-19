@@ -11,11 +11,6 @@
 
 ;;; Code:
 
-;; TODO:
-;; 1. Invert use-package-always-ensure
-;; 2. Make sure all packages follow correct use-package symbol order
-;; 3. Refactor outline sections
-
 ;;;; Bootstrap
 
 (load (expand-file-name "bootstrap.el" user-emacs-directory))
