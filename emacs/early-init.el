@@ -47,12 +47,7 @@
  '(menu-bar-mode nil)
  '(scroll-bar-mode nil)
  ;; Ignore any changes made via the customization UI.
- `(custom-file ,(make-temp-file "emacs-custom-"))
- '(use-package-always-defer t)
- '(use-package-always-ensure t)
- '(use-package-compute-statistics t)
- '(use-package-enable-imenu-support t)
- `(use-package-expand-minimally ,(not init-file-debug)))
+ `(custom-file ,(make-temp-file "emacs-custom-")))
 
 ;; Enable functions that are disabled by default.
 (dolist (cmd '(narrow-to-region
