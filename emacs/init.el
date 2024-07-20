@@ -1678,40 +1678,7 @@
   (setq completion-category-defaults nil)
 
   ;; Style the inlay type hinting face.
-  (set-face-attribute 'eglot-inlay-hint-face nil :height 0.9 :slant 'italic)
-
-  ;; Customize configuration of LSP servers via `eglot-server-programs' below.
-  ;; Note that `:json-false' is used to disable features rather than `nil'.
-  ;; Run `eglot-stderr-buffer' when debugging LSP server errors.
-
-  ;; See: https://rust-analyzer.github.io/manual.html#configuration.
-  (add-to-list
-   'eglot-server-programs
-   '((rust-mode rust-ts-mode) .
-     ("rust-analyzer" :initializationOptions
-      (:procMacro (:enable t)
-       :cargo (:buildScripts (:enable t) :features "all")
-       ;; Use Clippy for extra lints.
-       :check (:command "clippy")
-       ;; WIP: Trying out this setting.
-       :diagnostics (:experimental (:enable t))
-       ;; Configure Rust inlay hints.
-       :inlayHints (:parameterHints (:enable :json-false)
-                    :closingBraceHints (:enable t
-                                        :minLines 20))))))
-
-  ;; See: https://github.com/golang/tools/blob/master/gopls/doc/inlayHints.md.
-  (add-to-list
-   'eglot-server-programs
-   '((go-mode go-ts-mode) .
-     ("gopls" :initializationOptions
-      (:hints (:parameterNames :json-false
-               :rangeVariableTypes t
-               :functionTypeParameters t
-               :assignVariableTypes t
-               :compositeLiteralFields t
-               :compositeLiteralTypes t
-               :constantValues t))))))
+  (set-face-attribute 'eglot-inlay-hint-face nil :height 0.9 :slant 'italic))
 
 (use-package eglot-x
   :ensure (:host github :repo "nemethf/eglot-x")
@@ -1854,6 +1821,11 @@
 
 ;;;;;; Rust
 
+(use-package rust-mode
+  :ensure nil
+  :custom
+  (rust-mode-treesitter-derive t))
+
 (use-package rust-ts-mode
   :ensure nil
   :defines consult-imenu-config
@@ -1913,31 +1885,49 @@
                            (?s "Struct" my/imenu-struct-face)
                            (?t "Trait" my/imenu-trait-face))))))
 
-;; Rustic doesn't yet integrate with Tree-sitter and so I just use Rustic for
-;; it's useful commands while keeping `rust-ts-mode' as the major mode for
-;; Rust files. See: https://github.com/brotzeit/rustic/issues/475.
+;; TODO: Look at latest Rustic commands.
 (use-package rustic
-  :after rust-ts-mode
-  :preface
-  ;; Every once in a while, Rustic will get used as the major mode instead of
-  ;; `rust-ts-mode'. This is an attempt to prevent that from happening.
-  (add-to-list 'major-mode-remap-alist '(rustic-mode . rust-ts-mode))
+  :ensure (:host github :repo "emacs-rustic/rustic")
   :bind
-  (:map rustic-compilation-mode-map
-   ("p" . previous-error-no-select)
-   :map rust-ts-mode-map
-   ;; TODO: Look at latest Rustic commands.
+  (:map rustic-mode-map
+   ("C-c" . nil)
    ("C-c b a" . rustic-cargo-add)
    ("C-c b b" . rustic-cargo-build)
+   ("C-c b B" . rustic-cargo-bench)
    ("C-c b c" . rustic-cargo-clean)
+   ("C-c b d" . rustic-cargo-doc)
    ("C-c b f" . rustic-cargo-fmt)
+   ("C-c b h" . rustic-cargo-check)
    ("C-c b l" . rustic-cargo-clippy)
+   ("C-c b L" . rustic-cargo-clippy-fix)
    ("C-c b o" . rustic-cargo-outdated)
    ("C-c b r" . rustic-cargo-run)
+   ("C-c b R" . rustic-cargo-rm)
    ("C-c b u" . rustic-cargo-update)
    ("C-c b U" . rustic-cargo-upgrade)
    ("C-c t ." . rustic-cargo-test-dwim)
-   ("C-c t t" . rustic-cargo-current-test)))
+   ("C-c t p" . rustic-cargo-test)
+   ("C-c t t" . rustic-cargo-current-test))
+  :custom
+  (rustic-lsp-client 'eglot)
+  :config
+  ;; See: https://rust-analyzer.github.io/manual.html#configuration.
+  ;; Note that `eglot-stderr-buffer' can be used to debug LSP server errors.
+  (with-eval-after-load 'eglot
+    (add-to-list
+     'eglot-server-programs
+     '((rustic-mode :language-id "rust") .
+       ("rust-analyzer" :initializationOptions
+        (:procMacro (:enable t)
+         :cargo (:buildScripts (:enable t) :features "all")
+         ;; Use Clippy for extra lints.
+         :check (:command "clippy")
+         ;; WIP: Trying out this setting.
+         :diagnostics (:experimental (:enable t))
+         ;; Configure Rust inlay hints.
+         :inlayHints (:parameterHints (:enable :json-false)
+                      :closingBraceHints (:enable t
+                                          :minLines 20))))))))
 
 ;;;;;; Go
 
@@ -1990,7 +1980,22 @@
                            (?t "New Type" my/imenu-type-face)
                            (?s "Struct" my/imenu-struct-face)
                            (?a "Type Alias" my/imenu-type-face)
-                           (?v "Variable" my/imenu-variable-face))))))
+                           (?v "Variable" my/imenu-variable-face)))))
+
+  ;; See: https://github.com/golang/tools/blob/master/gopls/doc/inlayHints.md.
+  ;; Note that `eglot-stderr-buffer' can be used to debug LSP server errors.
+  (with-eval-after-load 'eglot
+    (add-to-list
+     'eglot-server-programs
+     '((go-ts-mode :language-id "go") .
+       ("gopls" :initializationOptions
+        (:hints (:parameterNames :json-false
+                 :rangeVariableTypes t
+                 :functionTypeParameters t
+                 :assignVariableTypes t
+                 :compositeLiteralFields t
+                 :compositeLiteralTypes t
+                 :constantValues t)))))))
 
 (use-package gotest
   :after go-ts-mode
