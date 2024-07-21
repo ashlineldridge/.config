@@ -2847,6 +2847,14 @@ specified then a task category will be determined by the item's tags."
       :target (file+head "%<%Y-%m-%d>.org"
                          "#+title: %<%Y-%m-%d>\n\n")))))
 
+(use-package consult-org-roam
+  :bind
+  ("C-c n s" . consult-org-roam-search)
+  :hook (elpaca-after-init . consult-org-roam-mode)
+  :custom
+  (consult-org-roam-buffer-enabled nil)
+  (consult-org-roam-grep-func #'consult-ripgrep))
+
 ;;;; Emacs Server
 
 (use-package server
