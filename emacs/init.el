@@ -989,7 +989,8 @@
   :hook (elpaca-after-init . vertico-multiform-mode)
   :custom
   (vertico-multiform-categories
-   '((file (vertico-sort-function . my/vertico-sort-dirs-first))))
+   '((file (vertico-sort-function . my/vertico-sort-dirs-first))
+     (jinx buffer)))
   ;; Commands work better when the category is too broad. To customize display
   ;; of completions, reference the `consult-completion-in-region' command.
   (vertico-multiform-commands
@@ -2912,8 +2913,11 @@ specified then a task category will be determined by the item's tags."
 (use-package jinx
   :bind
   ("M-$" . jinx-correct)
-  ("C-M-$" . jinx-languages)
-  ("C-c x j" . jinx-mode))
+  ("C-M-$" . jinx-correct-all)
+  :hook (elpaca-after-init . global-jinx-mode)
+  :custom
+  ;; Default to US English. Run 'M-x jinx-languages' to switch.
+  (jinx-languages "en_US"))
 
 ;;;; Package Management
 
