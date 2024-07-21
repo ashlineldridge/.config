@@ -2915,7 +2915,10 @@ specified then a task category will be determined by the item's tags."
   :hook (elpaca-after-init . global-jinx-mode)
   :custom
   ;; Default to US English. Run 'M-x jinx-languages' to switch.
-  (jinx-languages "en_US"))
+  (jinx-languages "en_US")
+  :config
+  ;; Don't spellcheck strings in programming modes.
+  (add-to-list 'jinx-exclude-faces '(prog-mode font-lock-string-face)))
 
 ;;;; Package Management
 
