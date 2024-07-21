@@ -315,7 +315,7 @@
    ("3" . my/split-window-right))
   :custom
   (even-window-sizes nil)
-  ;; The following provides the default `display-buffer' behaviour for buffers
+  ;; The following provides the default `display-buffer' behavior for buffers
   ;; that are not managed by either Popper or Shackle.
   (display-buffer-base-action '((display-buffer-reuse-mode-window
                                  display-buffer-reuse-window
@@ -1334,20 +1334,9 @@
   (consult-narrow-key ",")
   (consult-preview-key 'any)
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
-  (consult-ripgrep-args
-   '("rg"
-     "--null"
-     "--line-buffered"
-     "--color=never"
-     "--max-columns=1000"
-     "--path-separator=/"
-     "--smart-case"
-     "--no-heading"
-     "--with-filename"
-     "--line-number"
-     "--search-zip"
-     "--hidden"
-     "--glob=!.git/"))
+  (consult-ripgrep-args "rg --null --line-buffered --color=never \
+    --max-columns=1000 --path-separator=/ --smart-case --no-heading \
+    --with-filename --line-number --search-zip --hidden --glob=!.git/")
   ;; Configure both `config-find' and `consult-fd' to follow symlinks, include
   ;; hidden files, and ignore the .git directory. The fd command needs to be
   ;; specifically told to allow matching across the full path (e.g. so you
@@ -2457,7 +2446,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
    :repeat-map my/vterm-repeat-map
    ("C-n" . vterm-next-prompt)
    ("C-p" . vterm-previous-prompt))
-
   :hook (vterm-mode . my/vterm-init)
   :custom
   (vterm-always-compile-module t)
@@ -2580,7 +2568,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (org-log-done 'time)
   ;; Leaving drawer logging disabled for now as I don't like the format of the
   ;; log items and I want to know when a task was created which doesn't happen
-  ;; without what apears to be quite a bit of custom code.
+  ;; without what appears to be quite a bit of custom code.
   (org-log-into-drawer nil)
   (org-log-states-order-reversed nil)   ; Make newest last
   (org-outline-path-complete-in-steps nil)
@@ -2599,7 +2587,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (org-tags-column 0)
   (org-todo-keywords
    `((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "HOLD(h)" "|" "DONE(d)")))
-  ;; See colours here: https://alexschroeder.ch/geocities/kensanata/colors.html.
+  ;; See colors here: https://alexschroeder.ch/geocities/kensanata/colors.html.
   (org-todo-keyword-faces
    `(("TODO" . (:foreground "DodgerBlue2" :weight bold))
      ("NEXT" . (:foreground "hot pink" :weight bold))
@@ -2912,6 +2900,8 @@ specified then a task category will be determined by the item's tags."
 
 (use-package jinx
   :bind
+  ("<f8>" . jinx-mode)
+  ("S-<f8>" . global-jinx-mode)
   ("M-$" . jinx-correct)
   ("C-M-$" . jinx-correct-all)
   :hook (elpaca-after-init . global-jinx-mode)
