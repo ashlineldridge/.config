@@ -2372,12 +2372,12 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (eshell-truncate-buffer)
       (message "Eshell buffer truncated.")))
 
-  (defalias 'eshell/v 'eshell-exec-visual)
-
   (defun eshell/d ()
     "Change current Eshell directory with `consult-dir'."
     (require 'consult-dir)
     (eshell/cd (consult-dir--pick)))
+
+  (defalias 'eshell/v 'eshell-exec-visual)
 
   :bind
   ("C-c e" . eshell)
