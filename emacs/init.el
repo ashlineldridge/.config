@@ -737,7 +737,6 @@
   (lin-face 'lin-green))
 
 (use-package pulsar
-  :defines pulsar-pulse-functions
   :hook (elpaca-after-init . pulsar-global-mode)
   ;; Some functionality is better accessed via hooks than by registering
   ;; functions in `pulsar-pulse-functions'.
@@ -746,8 +745,8 @@
   (next-error . pulsar-reveal-entry)
   (next-error . pulsar-recenter-center)
   :custom
-  (pulsar-delay 0.06)
-  (pulsar-iterations 12)
+  (pulsar-delay 0.05)
+  (pulsar-iterations 13)
   (pulsar-face 'pulsar-generic)
   :config
   ;; Add extra functions that should trigger Pulsar. I'm not using
@@ -764,6 +763,8 @@
   (add-to-list 'pulsar-pulse-functions 'eshell-previous-prompt)
   (add-to-list 'pulsar-pulse-functions 'flymake-goto-next-error)
   (add-to-list 'pulsar-pulse-functions 'flymake-goto-prev-error)
+  (add-to-list 'pulsar-pulse-functions 'isearch-repeat-backward)
+  (add-to-list 'pulsar-pulse-functions 'isearch-repeat-forward)
   (add-to-list 'pulsar-pulse-functions 'magit-section-backward)
   (add-to-list 'pulsar-pulse-functions 'magit-section-forward)
   (add-to-list 'pulsar-pulse-functions 'other-frame)
@@ -781,7 +782,11 @@
   (add-to-list 'pulsar-pulse-functions 'winum-select-window-7)
   (add-to-list 'pulsar-pulse-functions 'winum-select-window-8)
   (add-to-list 'pulsar-pulse-functions 'winum-select-window-9)
-  (add-to-list 'pulsar-pulse-functions 'xref-find-definitions))
+  (add-to-list 'pulsar-pulse-functions 'xref-find-definitions)
+  ;; Some functions (like those called by Embark) need to be advised.
+  (with-eval-after-load 'embark
+    (advice-add 'embark-next-symbol :after 'pulsar-pulse-line)
+    (advice-add 'embark-previous-symbol :after 'pulsar-pulse-line)))
 
 ;;;;; Templating
 
