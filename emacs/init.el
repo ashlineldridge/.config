@@ -1361,6 +1361,8 @@
     (setq xref-show-definitions-function #'consult-xref))
 
   :config
+  (require 'consult-org-roam)
+
   ;; Customize the list of sources shown by `consult-buffer'.
   (setq consult-buffer-sources
         '(consult--source-buffer                ;; Narrow: ?b (shown)
@@ -1368,6 +1370,7 @@
           my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
           my/consult-source-eshell-buffer       ;; Narrow: ?s (hidden)
           my/consult-source-magit-buffer        ;; Narrow: ?m (hidden)
+          org-roam-buffer-source                ;; Narrow: ?n (hidden)
           consult--source-file-register         ;; Narrow: ?g (shown)
           consult--source-bookmark              ;; Narrow: ?k (shown)
           consult--source-recent-file))         ;; Narrow: ?r (hidden)
@@ -1379,6 +1382,8 @@
    consult--source-project-buffer
    consult--source-project-buffer-hidden
    :name "Project Buffer" :narrow ?p
+   org-roam-buffer-source
+   :name "Note Buffer" :narrow ?n :hidden t
    consult--source-bookmark
    :name "Bookmark" :narrow ?k
    consult--source-file-register
