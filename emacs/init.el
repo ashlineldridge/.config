@@ -400,14 +400,18 @@
 (use-package winner
   :ensure nil
   :bind
-  (("M-o u" . winner-undo)
-   ("M-o r" . winner-redo)
-   :repeat-map my/window-repeat-map
-   ("u" . winner-undo)
-   ("r" . winner-redo))
+  ("M-o u" . winner-undo)
+  ("M-o r" . winner-redo)
   :hook (elpaca-after-init . winner-mode)
   :custom
-  (winner-dont-bind-my-keys t))
+  (winner-dont-bind-my-keys t)
+  :config
+  ;; Need to bind the repeat map after the package is loaded as Winner defines
+  ;; its own repeat map that we need to override.
+  (bind-keys :package winner
+             :repeat-map my/window-repeat-map
+             ("u" . winner-undo)
+             ("r" . winner-redo)))
 
 ;;;;; Tab Bar
 
