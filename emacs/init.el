@@ -69,8 +69,7 @@
       :default-weight light
       :mode-line-active-height 110
       :mode-line-inactive-height 110
-      :line-number-height 110
-      )
+      :line-number-height 110)
      (t
       :default-family "Iosevka Comfy"
       :default-weight regular
@@ -712,7 +711,9 @@
   (avy-all-windows 'all-frames)
   (avy-single-candidate-jump t)
   (avy-timeout-seconds 0.3)
-  (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l)))
+  (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  :config
+  (eldoc-add-command-completions "avy-goto-"))
 
 (use-package link-hint
   :bind
@@ -1515,8 +1516,8 @@
   ;; `prefix-help-command' but it keeps getting reverted so doing it this way.
   (with-eval-after-load 'help
     (fset #'describe-prefix-bindings #'embark-prefix-help-command))
-
   :config
+  (eldoc-add-command "embark-dwim")
   ;; Adapt the associated commands so that they are usable as Embark actions.
   ;; If commands don't behave properly with Embark, play with this. Look at
   ;; similar commands already in `embark-target-injection-hooks' and mimic.
@@ -1757,14 +1758,7 @@
   (eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
   (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p nil)
-  (eldoc-echo-area-display-truncation-message nil)
-  :config
-  ;; Register commands and command prefixes that can move point to a symbol
-  ;; where Eldoc documentation should be shown.
-  ;; TODO: Can this be lazily done after the init cycle is complete?
-  (eldoc-add-command "embark-dwim")
-  (eldoc-add-command-completions
-   "avy-goto-" "paredit-" "xref-find-" "xref-go-" "xref-goto-"))
+  (eldoc-echo-area-display-truncation-message nil))
 
 (use-package eldoc-box
   :bind
@@ -1801,7 +1795,9 @@
   :ensure nil
   :custom
   ;; Don't prompt by default (invoke with prefix arg to prompt).
-  (xref-prompt-for-identifier nil))
+  (xref-prompt-for-identifier nil)
+  :config
+  (eldoc-add-command-completions "xref-find-" "xref-go-" "xref-goto-"))
 
 ;;;;;; Outline
 
@@ -2183,8 +2179,9 @@
   ((lisp-mode
     emacs-lisp-mode
     inferior-emacs-lisp-mode) . paredit-mode)
-
   :config
+  (eldoc-add-command "paredit-backward" "paredit-forward"
+                     "paredit-backward-delete" "paredit-close-round")
   ;; Unbind keybindings that collide with things I find more useful.
   (dolist (key '("C-c C-M-l" "M-?" "M-q" "M-r" "M-s"))
     (define-key paredit-mode-map (kbd key) nil)))
