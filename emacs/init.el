@@ -2249,19 +2249,13 @@
   :custom
   (magit-verbose-messages t)
   (magit-refresh-verbose t)
+  (magit-refresh-status-buffer nil)
   :config
   ;; Use `auto-revert-mode' instead.
   (magit-auto-revert-mode -1)
   ;; Unbind keys used by winum.
   (dolist (key '("M-1" "M-2" "M-3" "M-4"))
-    (define-key magit-section-mode-map (kbd key) nil))
-
-  ;; Reluctantly remove status hooks that slow down Magit on large repos.
-  (remove-hook 'magit-status-headers-hook 'magit-insert-tags-header)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-upstream-or-recent)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-upstream)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpushed-to-pushremote)
-  (remove-hook 'magit-status-sections-hook 'magit-insert-unpulled-from-pushremote))
+    (define-key magit-section-mode-map (kbd key) nil)))
 
 (use-package browse-at-remote
   :bind
