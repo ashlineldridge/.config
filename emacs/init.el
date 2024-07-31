@@ -1169,7 +1169,8 @@
   (declare-function consult--file-state "consult")
   (declare-function consult--read "consult")
   (declare-function project--find-in-directory "project")
-  (defconst my/preview-key '(:debounce 0.3 any))
+  (defconst my/consult-auto-preview '(:debounce 0.3 any))
+  (defconst my/consult-manual-preview "M-.")
 
   (defvar my/consult-source-dired-buffer
     `(:name "Dired Buffer"
@@ -1221,7 +1222,7 @@
   (defvar my/consult-source-project-file
     `(:name "Project File"
       :narrow ?f
-      :preview-key ,my/preview-key
+      :preview-key ,my/consult-auto-preview
       :category file
       :face consult-file
       :history file-name-history
@@ -1281,8 +1282,8 @@
       (consult--read #'read-file-name-internal :state (consult--file-preview)
                      :prompt prompt
                      :initial (abbreviate-file-name default-directory)
-                     ;; Less disruptive for a commonly used command.
-                     :preview-key "M-."
+                     ;; Use manual preview for less disruption.
+                     :preview-key my/consult-manual-preview
                      :require-match mustmatch
                      :predicate pred)))
 
@@ -1397,24 +1398,24 @@
    consult--source-bookmark
    :name "Bookmark" :narrow ?k
    consult--source-file-register
-   :name "Register" :narrow ?g :preview-key my/preview-key
+   :name "Register" :narrow ?g :preview-key my/consult-auto-preview
    ;; Due to the value of `consult-preview-key' configured above, the preview
    ;; will be displayed immediately for most commands. This is generally fine,
    ;; but for commands that access unopened files I prefer to delay the preview
    ;; so I can skip past candidates without incurring the preview.
    consult--source-recent-file
-   :name "Recent File" :narrow ?r :hidden t :preview-key my/preview-key
+   :name "Recent File" :narrow ?r :hidden t :preview-key my/consult-auto-preview
    consult--source-project-recent-file
    consult--source-project-recent-file-hidden
-   :name "Recent Project File" :narrow ?r :preview-key my/preview-key
+   :name "Recent Project File" :narrow ?r :preview-key my/consult-auto-preview
    ;; Configure delayed preview for file finding (disabled by default).
    consult-find consult-fd
-   :state (consult--file-preview) :preview-key my/preview-key
+   :state (consult--file-preview) :preview-key my/consult-auto-preview
    ;; Configure delayed preview for commands/sources that relate to
    ;; unopened files and that preview automatically by default.
    consult-ripgrep consult-grep consult-git-grep consult--source-bookmark
    xref-find-references xref-find-references
-   :preview-key my/preview-key))
+   :preview-key my/consult-auto-preview))
 
 (use-package consult-dir
   :preface
@@ -2869,7 +2870,11 @@ specified then a task category will be determined by the item's tags."
   :hook (elpaca-after-init . consult-org-roam-mode)
   :custom
   (consult-org-roam-buffer-enabled nil)
-  (consult-org-roam-grep-func #'consult-ripgrep))
+  (consult-org-roam-grep-func #'consult-ripgrep)
+  :config
+  (with-eval-after-load 'org-roam
+    (consult-customize org-roam-node-find :preview-key my/consult-auto-preview)
+    (consult-customize org-roam-node-insert :preview-key my/consult-manual-preview)))
 
 ;;;; Emacs Server
 
