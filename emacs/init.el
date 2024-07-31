@@ -63,10 +63,18 @@
       :mode-line-inactive-height 130
       :line-number-height 120)
      (regular)
+     (small
+      :default-family "JetBrains Mono"
+      :default-height 120
+      :default-weight light
+      :mode-line-active-height 110
+      :mode-line-inactive-height 110
+      :line-number-height 110
+      )
      (t
       :default-family "Iosevka Comfy"
       :default-weight regular
-      :default-height 134
+      :default-height 130
       :fixed-pitch-height 1.0
       :fixed-pitch-serif-height 1.0
       :variable-pitch-family "Iosevka Comfy Duo"
@@ -78,7 +86,7 @@
       :mode-line-inactive-height 120
       :line-number-family "Iosevka Comfy"
       :line-number-slant italic
-      :line-number-height 112
+      :line-number-height 110
       :bold-weight bold
       :italic-slant italic)))
   :init
