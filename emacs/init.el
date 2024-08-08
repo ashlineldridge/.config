@@ -607,12 +607,21 @@
   ("C-M-k" . my/delete-to-eol)
   ("M-<backspace>" . my/delete-to-bol)
   ("M-k" . kill-current-buffer)
+  ("M-c" . capitalize-dwim)
+  ("M-l" . downcase-dwim)
+  ("M-u" . upcase-dwim)
   :hook
   (elpaca-after-init . column-number-mode)
   (prog-mode . my/truncate-lines)
   :config
   ;; Don't yank face properties (e.g. prevents pasting colors).
   (add-to-list 'yank-excluded-properties 'face))
+
+(use-package misc
+  :ensure nil
+  :bind
+  ;; Prefer `zap-up-to-char' which mirrors 'z' behavior for Avy.
+  ("M-z" . zap-up-to-char))
 
 ;;;;; Text
 
