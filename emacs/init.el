@@ -1509,6 +1509,8 @@
    ("C-h b" . embark-bindings)
    ;; Allow Embark to show keybindings under C-h as configured below.
    ("C-h C-h" . nil)
+   :map embark-general-map
+   ("&" . async-shell-command)
    :map minibuffer-local-map
    ("M-." . my/embark-force-preview))
   :custom
@@ -1535,7 +1537,10 @@
   (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
   (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
   (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit)))
+  (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(async-shell-command embark--ignore-target))
+  ;; Configure `async-shell-command' to run from directory associated with the candidate.
+  (setf (alist-get #'async-shell-command embark-around-action-hooks) '(embark--cd)))
 
 (use-package embark-consult)
 
