@@ -2252,6 +2252,9 @@
   :custom
   (vc-follow-symlinks t))
 
+;; Use external transient package as Magit requires a later version.
+(use-package transient)
+
 (use-package magit
   :preface
   (declare-function magit-auto-revert-mode "magit")
