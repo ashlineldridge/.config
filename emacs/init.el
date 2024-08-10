@@ -384,7 +384,8 @@
 (use-package frame
   :ensure nil
   :bind
-  (("M-o M-o" . other-frame)
+  (("C-x C-z" . nil) ;; Tired of accidentally minimizing.
+   ("M-o M-o" . other-frame)
    ("M-o M-n" . make-frame-command)
    ("M-o M-k" . delete-frame)
    ("M-o M-u" . undelete-frame))
@@ -837,6 +838,8 @@
 
 (use-package files
   :ensure nil
+  :bind
+  ("C-x C-r" . restart-emacs)
   :custom
   (confirm-kill-emacs #'yes-or-no-p)
   (delete-by-moving-to-trash t)
@@ -1343,7 +1346,6 @@
    ("C-x r l" . consult-register-load)
    ("C-x r s" . consult-register-store)
    ("C-x C-f" . my/consult-find-file)
-   ("C-x C-r" . consult-recent-file)
    ("C-x C-k k" . consult-kmacro)
    :map minibuffer-local-map
    ("M-s" . nil)
