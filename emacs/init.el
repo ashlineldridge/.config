@@ -1434,24 +1434,8 @@
 
 (use-package consult-dir
   :preface
+  (declare-function consult-dir--pick "consult-dir")
   (declare-function consult-dir--project-list-make "consult-dir")
-
-  (defun my/find-subdirs (&optional dir)
-    "Return a list of all subdirectories of DIR (else `default-directory')."
-    (when-let ((default-directory (or dir default-directory)))
-      (let ((command "fd -L -H -E .git/ -t=d -a -0 -c=never")
-            res)
-        (with-temp-buffer
-          (let ((status (process-file-shell-command command nil t))
-                (pt (point-min)))
-            (unless (zerop status)
-              (error "Error running command '%s' in directory '%s'" command default-directory))
-            (goto-char pt)
-            (while (search-forward "\0" nil t)
-              (push (buffer-substring-no-properties pt (1- (point)))
-                    res)
-              (setq pt (point)))))
-        (mapcar #'abbreviate-file-name (nreverse res)))))
 
   (defvar my/consult-dir-source-local-subdir
     `(:name "Local Subdir"
@@ -1473,15 +1457,41 @@
       :enabled ,#'my/project-current-root
       :items ,(lambda () (my/find-subdirs (my/project-current-root)))))
 
+  (defun my/find-subdirs (&optional dir)
+    "Return a list of all subdirectories of DIR (else `default-directory')."
+    (when-let ((default-directory (or dir default-directory)))
+      (let ((command "fd -L -H -E .git/ -t=d -a -0 -c=never")
+            res)
+        (with-temp-buffer
+          (let ((status (process-file-shell-command command nil t))
+                (pt (point-min)))
+            (unless (zerop status)
+              (error "Error running command '%s' in directory '%s'" command default-directory))
+            (goto-char pt)
+            (while (search-forward "\0" nil t)
+              (push (buffer-substring-no-properties pt (1- (point)))
+                    res)
+              (setq pt (point)))))
+        (mapcar #'abbreviate-file-name (nreverse res)))))
+
+  (defun my/consult-dir-cd ()
+    "Use `consult-dir' to change directory in Eshell."
+    (interactive)
+    (require 'consult-dir)
+    (eshell/cd (consult-dir--pick))
+    (eshell-send-input))
+
   :bind
   ("M-s d" . consult-dir)
   :custom
   (consult-dir-shadow-filenames nil)
   (consult-dir-default-command #'consult-dir-dired)
+  :init
+  (bind-keys :package esh-mode :map eshell-mode-map ("M-s M-d" . my/consult-dir-cd))
   :config
   (consult-customize
    consult-dir--source-bookmark :name "Bookmark" :narrow ?k
-   consult-dir--source-recentf :name "Recent" :narrow ?r :hidden t
+   consult-dir--source-recentf :name "Recent" :narrow ?r
    ;; Override `:items' to show all projects including the current one.
    consult-dir--source-project :name "Project" :narrow ?P :items #'consult-dir--project-dirs)
 
@@ -2300,6 +2310,7 @@
   :defines
   (eshell-buffer-maximum-lines eshell-prompt-regexp)
   :preface
+  (defalias 'eshell/v 'eshell-exec-visual)
   (declare-function eshell-bol "esh-mode")
   (declare-function eshell-truncate-buffer "esh-mode")
   (declare-function eshell-send-input "esh-mode")
@@ -2307,7 +2318,6 @@
   (declare-function eshell/cd "em-dirs")
   (declare-function eshell/pwd "em-dirs")
   (declare-function eshell-save-some-history "em-hist")
-  (declare-function consult-dir--pick "consult-dir")
 
   (defun my/eshell-init ()
     "Hook function executed when `eshell-mode' is run."
@@ -2408,13 +2418,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
       (eshell-truncate-buffer)
       (message "Eshell buffer truncated.")))
 
-  (defun eshell/d ()
-    "Change current Eshell directory with `consult-dir'."
-    (require 'consult-dir)
-    (eshell/cd (consult-dir--pick)))
-
-  (defalias 'eshell/v 'eshell-exec-visual)
-
   :bind
   ("C-c e" . eshell)
   :hook
@@ -2428,7 +2431,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "Welcome to Eshell\n\n")
   ;; The following commands will be started in `term-mode'.
-  (eshell-visual-commands '("top" "vi" "vim" "htop" "btm" "watch")))
+  (eshell-visual-commands '("top" "vi" "vim" "htop" "watch")))
 
 (use-package esh-mode
   :ensure nil
