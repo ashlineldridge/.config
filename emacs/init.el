@@ -566,6 +566,9 @@
 (use-package simple
   :ensure nil
   :preface
+  (declare-function move-end-of-line "simple")
+  (declare-function called-interactively-p "subr")
+
   (defun my/truncate-lines ()
     "Show long lines as truncated in the current buffer."
     (setq-local truncate-lines t))
@@ -593,6 +596,10 @@
           (delete-char -1)
         (delete-region (line-beginning-position) (point)))))
 
+  (defun my/minibuffer-history-eol (_)
+    "Move point to the end of line when called interactively."
+    (when (called-interactively-p) (move-end-of-line 1)))
+
   :custom
   (indent-tabs-mode nil)
   (mark-ring-max 10)
@@ -616,7 +623,10 @@
   (prog-mode . my/truncate-lines)
   :config
   ;; Don't yank face properties (e.g. prevents pasting colors).
-  (add-to-list 'yank-excluded-properties 'face))
+  (add-to-list 'yank-excluded-properties 'face)
+  ;; Move point to the end of the line when navigating minibuffer history.
+  (advice-add #'next-history-element :after #'my/minibuffer-history-eol)
+  (advice-add #'previous-history-element :after #'my/minibuffer-history-eol))
 
 (use-package misc
   :ensure nil
