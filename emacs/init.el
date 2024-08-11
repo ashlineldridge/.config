@@ -1139,6 +1139,7 @@
 
 ;; Dedicated completion commands.
 (use-package cape
+  :defines eshell-mode-map
   :bind
   ("C-c c d" . cape-dabbrev)
   ("C-c c h" . cape-history)
@@ -1147,7 +1148,9 @@
   ("C-c c o" . cape-elisp-symbol)
   ("C-c c a" . cape-abbrev)
   ("C-c c l" . cape-line)
-  ("C-c c w" . cape-dict))
+  ("C-c c w" . cape-dict)
+  :init
+  (bind-keys :package esh-mode :map eshell-mode-map ("C-c h" . cape-history)))
 
 ;; Orderless configuration mostly taken from:
 ;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
