@@ -631,7 +631,10 @@
 (use-package misc
   :ensure nil
   :bind
-  ;; Prefer `zap-up-to-char' which mirrors 'z' behavior for Avy.
+  ;; I prefer `zap-up-to-char' over `zap-to-char' for simple zapping and so
+  ;; override the keybinding below. For more extended use cases, I use Avy
+  ;; zapping which mimics `zap-up-to-char' when zapping forwards and
+  ;; `zap-to-char' when zapping backwards.
   ("M-z" . zap-up-to-char))
 
 ;;;;; Text
@@ -729,7 +732,7 @@
   ("M-g L" . avy-goto-end-of-line)
   :custom
   (avy-all-windows 'all-frames)
-  (avy-single-candidate-jump t)
+  (avy-single-candidate-jump nil)
   (avy-timeout-seconds 0.3)
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   :config
