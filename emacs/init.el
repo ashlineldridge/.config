@@ -1407,7 +1407,6 @@
   :init
   ;; Configure how registers are previewed and displayed.
   ;; See: https://github.com/minad/consult#use-package-example.
-  (setq register-preview-delay 0)
   (setq register-preview-function #'consult-register-format)
   (advice-add #'register-preview :override #'consult-register-window)
   ;; Use Consult to select xref locations with preview.
@@ -2435,12 +2434,25 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
     (interactive)
     (eshell-read-aliases-list))
 
-  (defun my/eshell-truncate-all ()
-    "Truncate all of the Eshell buffer."
+  (defun my/eshell-delete-previous-output ()
+    "Delete the previous interpreter output relative to point."
     (interactive)
-    (let ((eshell-buffer-maximum-lines 0))
-      (eshell-truncate-buffer)
-      (message "Eshell buffer truncated.")))
+    (save-excursion
+      (let ((inhibit-read-only t) start)
+        (eshell-previous-prompt)
+        (forward-line)
+        (setq start (point))
+        (eshell-next-prompt)
+        (forward-line -1)
+        (end-of-line)
+        (delete-region start (point))
+        (insert "*** output flushed ***"))))
+
+  (defun my/eshell-delete-previous-output-upward ()
+    "Delete the previous interpreter output and move to the previous prompt."
+    (interactive)
+    (my/eshell-delete-previous-output)
+    (eshell-previous-prompt))
 
   :bind
   ("C-c e" . eshell)
@@ -2454,7 +2466,6 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "Welcome to Eshell\n\n")
-  ;; The following commands will be started in `term-mode'.
   (eshell-visual-commands '("top" "vi" "vim" "htop" "watch")))
 
 (use-package esh-mode
@@ -2463,15 +2474,16 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (:map eshell-mode-map
    ("C-c C-o" . nil)
    ("C-c i" . my/eshell-insert-arg)
-   ("C-c C-<backspace>" . eshell-delete-output)
-   ("C-c C-S-<backspace>" . my/eshell-truncate-all)
+   ("C-c C-<backspace>" . my/eshell-delete-previous-output)
+   ("C-c C-S-<backspace>" . my/eshell-delete-previous-output-upward)
    ("C-S-<backspace>" . my/eshell-kill-whole-line)
    ("M-<backspace>" . my/eshell-delete-to-bol)
    :repeat-map eshell-prompt-repeat-map
    ("C-n" . nil)
    ("C-p" . nil)
    ("n" . eshell-next-prompt)
-   ("p" . eshell-previous-prompt)))
+   ("p" . eshell-previous-prompt)
+   ("C-S-<backspace>" . my/eshell-delete-previous-output-upward)))
 
 (use-package em-cmpl
   :ensure nil
