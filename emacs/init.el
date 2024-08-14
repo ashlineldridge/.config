@@ -737,6 +737,13 @@
   (avy-single-candidate-jump nil)
   (avy-timeout-seconds 0.3)
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (avy-dispatch-alist
+   '((?t . avy-action-teleport)
+     (?k . avy-action-kill-stay)
+     (?c . avy-action-copy)
+     (?y . avy-action-yank)
+     (?Y . avy-action-yank-line)
+     (?z . avy-action-zap-to-char)))
   :config
   (eldoc-add-command-completions "avy-goto-"))
 
