@@ -1021,10 +1021,10 @@
   :after vertico
   :ensure nil
   :preface
-  (declare-function vertico-sort-history-length-alpha "vertico")
+  (declare-function vertico-sort-alpha "vertico")
   (defun my/vertico-sort-dirs-first (files)
-    "Sorts FILES by directories then alphanumerically."
-    (setq files (vertico-sort-history-length-alpha files))
+    "Sorts FILES alphanumerically with directories listed first."
+    (setq files (vertico-sort-alpha files))
     (nconc (seq-filter (lambda (x) (string-suffix-p "/" x)) files)
            (seq-remove (lambda (x) (string-suffix-p "/" x)) files)))
   :bind
