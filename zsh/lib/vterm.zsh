@@ -19,5 +19,3 @@ ff() {
 ffo() {
     vterm_cmd find-file-other-window "${@:-.}"
 }
-
-printf "Welcome to Vterm\n\n"

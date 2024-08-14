@@ -2446,7 +2446,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
         (forward-line -1)
         (end-of-line)
         (delete-region start (point))
-        (insert "*** output flushed ***"))))
+        (insert "*** removed ***"))))
 
   (defun my/eshell-delete-previous-output-upward ()
     "Delete the previous interpreter output and move to the previous prompt."
@@ -2465,7 +2465,7 @@ buffer if necessary. If NAME is not specified, a buffer name will be generated."
   (eshell-buffer-maximum-lines 10000)
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
-  (eshell-banner-message "Welcome to Eshell\n\n")
+  (eshell-banner-message "")
   (eshell-visual-commands '("top" "vi" "vim" "htop" "watch")))
 
 (use-package esh-mode
