@@ -936,6 +936,8 @@
   :ensure nil
   :hook (elpaca-after-init . global-auto-revert-mode)
   :custom
+  (auto-revert-interval 2)
+  (auto-revert-verbose t)
   (global-auto-revert-non-file-buffers t))
 
 ;;;;; Project Management
