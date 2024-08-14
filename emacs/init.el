@@ -263,7 +263,9 @@
       (setq register-alist nil)
       (message "Cleared %d registers" len)))
   :bind
-  ("C-x r K" . my/clear-registers))
+  ("C-x r K" . my/clear-registers)
+  :custom
+  (register-preview-delay 1))
 
 ;;;; General History
 
