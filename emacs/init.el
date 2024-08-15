@@ -979,7 +979,7 @@
   :custom
   (project-prompt-project-dir)
   (project-switch-commands
-   '((my/consult-project-multi "File" ?f)
+   '((my/consult-project-file "File" ?f)
      (project-dired "Dired" ?j)
      (consult-ripgrep "Ripgrep" ?s)
      (magit-project-status "Magit" ?m)
@@ -1289,30 +1289,16 @@
                  (put-text-property 0 1 'multi-category `(file . ,file) part)
                  (push part items))))))))
 
-  ;; Designed to replace `project-find-file' (which doesn't provide preview),
-  ;; this command only shows project files by default but can show project
-  ;; buffers and project recent files if requested.
   (defun my/consult-project-file ()
-    "Version of `project-find-file' that uses Consult sources."
+    "Replacement for `project-find-file' that uses Consult sources."
     (interactive)
     (require 'consult)
-    (let ((consult-project-buffer-sources
-           '(consult--source-project-buffer-hidden      ;; Narrow: ?p (hidden)
-             consult--source-project-recent-file-hidden ;; Narrow: ?r (hidden)
-             my/consult-source-project-file)))          ;; Narrow: ?f (shown)
-      (consult-project-buffer)))
-
-  ;; Designed to be used in `project-switch-commands', this command provides
-  ;; quick insight into: what is open, what was open recently, and what is
-  ;; available for a given project.
-  (defun my/consult-project-multi ()
-    "Multi-source project finder to be used in `project-switch-commands'."
-    (interactive)
-    (require 'consult)
-    (let ((consult-project-buffer-sources
-           '(consult--source-project-buffer      ;; Narrow: ?p (shown)
-             consult--source-project-recent-file ;; Narrow: ?r (shown)
-             my/consult-source-project-file)))   ;; Narrow: ?f (shown)
+    ;; Prefer ?b over ?p in this context.
+    (let* ((proj-bufs `(:narrow ?b ,@consult--source-project-buffer-hidden))
+           (consult-project-buffer-sources
+            `(,proj-bufs                                 ;; Narrow: ?b (hidden)
+              consult--source-project-recent-file-hidden ;; Narrow: ?r (hidden)
+              my/consult-source-project-file)))          ;; Narrow: ?f (shown)
       (consult-project-buffer)))
 
   (defun my/consult-read-file-name (prompt &optional dir _default mustmatch _initial pred)
