@@ -727,11 +727,13 @@
 
 (use-package avy
   :bind
-  ("M-j" . avy-goto-word-1)
-  ("M-g w" . avy-goto-word-1)
-  ("M-g c" . avy-goto-char-timer)
-  ("M-g l" . avy-goto-line)
-  ("M-g L" . avy-goto-end-of-line)
+  (("M-j" . avy-goto-word-1)
+   ("M-g w" . avy-goto-word-1)
+   ("M-g c" . avy-goto-char-timer)
+   ("M-g l" . avy-goto-line)
+   ("M-g L" . avy-goto-end-of-line)
+   :map isearch-mode-map
+   ("M-j" . avy-isearch))
   :custom
   (avy-all-windows 'all-frames)
   (avy-single-candidate-jump nil)
