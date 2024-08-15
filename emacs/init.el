@@ -1013,6 +1013,11 @@
 
 (use-package vertico
   :ensure (:files (:defaults "extensions/*.el"))
+  :bind
+  (:map vertico-map
+   ;; Satisfy isearch muscle memory.
+   ("C-s" . vertico-next)
+   ("C-r" . vertico-previous))
   :hook (elpaca-after-init . vertico-mode)
   :custom
   (vertico-count 10)
