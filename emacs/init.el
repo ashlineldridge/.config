@@ -1339,6 +1339,7 @@
    ("M-s s" . consult-ripgrep)
    ("M-s =" . consult-focus-lines)
    ("M-g -" . consult-outline)
+   ("M-g e" . consult-compile-error)
    ("M-g f" . consult-flymake)
    ("M-g g" . consult-goto-line)
    ("M-g M-g" . consult-goto-line)
