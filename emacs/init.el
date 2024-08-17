@@ -737,7 +737,6 @@
   :bind
   (("M-j" . avy-goto-word-1)
    ("M-J" . avy-goto-char-in-line)
-   ("M-g w" . avy-goto-word-1)
    ("M-g c" . avy-goto-char-timer)
    ("M-g l" . avy-goto-line)
    ("M-g L" . avy-goto-end-of-line)
