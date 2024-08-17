@@ -163,6 +163,9 @@
 (use-package fringe
   :ensure nil
   :custom
+  ;; Zero fringe means that regular $ and \ characters will be used to
+  ;; indicate truncation and continuation respectively. Use '(0 . 8) to
+  ;; show the arrow characters in the fringe.
   (fringe-mode 0))
 
 (use-package olivetti
