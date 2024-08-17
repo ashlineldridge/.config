@@ -723,6 +723,17 @@
 ;;;;; Jumping Around
 
 (use-package avy
+  :preface
+  (declare-function avy-forward-item "avy")
+  (declare-function beginning-of-thing "thingatpt")
+  (defun my/avy-action-select-sexp (pt)
+    "Move to PT and select the sexp there."
+    (require 'thingatpt)
+    (goto-char pt)
+    (beginning-of-thing 'sexp)
+    (set-mark-command nil)
+    (forward-sexp)
+    (activate-mark))
   :bind
   (("M-j" . avy-goto-word-1)
    ("M-J" . avy-goto-char-in-line)
@@ -743,7 +754,8 @@
      (?c . avy-action-copy)
      (?y . avy-action-yank)
      (?Y . avy-action-yank-line)
-     (?z . avy-action-zap-to-char)))
+     (?z . avy-action-zap-to-char)
+     (?. . my/avy-action-select-sexp)))
   :config
   (eldoc-add-command-completions "avy-goto-"))
 
