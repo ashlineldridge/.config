@@ -48,11 +48,6 @@
 ;;;;; Fonts
 
 (use-package fontaine
-  :preface
-  ;; Can't seem to get `fontaine-mode' to work so doing this for now.
-  (defun my/fontaine-reset (&rest _)
-    "Apply the current font configuration."
-    (fontaine-set-preset (or fontaine-current-preset 'regular)))
   :bind
   ("C-c x f" . fontaine-set-preset)
   :custom
@@ -89,7 +84,9 @@
       :bold-weight bold
       :italic-slant italic)))
   :init
-  (add-hook 'enable-theme-functions #'my/fontaine-reset))
+  (add-hook 'enable-theme-functions
+            (lambda (&rest _)
+              (fontaine-set-preset (or fontaine-current-preset 'regular)))))
 
 (use-package font-lock
   :ensure nil
