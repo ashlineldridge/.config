@@ -805,10 +805,8 @@
   :config
   ;; Add extra functions that should trigger Pulsar. I'm not using
   ;; #'fn syntax here to avoid needing all the forward declarations.
-  (add-to-list 'pulsar-pulse-functions 'avy-goto-char-timer)
   (add-to-list 'pulsar-pulse-functions 'avy-goto-end-of-line)
   (add-to-list 'pulsar-pulse-functions 'avy-goto-line)
-  (add-to-list 'pulsar-pulse-functions 'avy-goto-word-1)
   (add-to-list 'pulsar-pulse-functions 'beginning-of-buffer)
   (add-to-list 'pulsar-pulse-functions 'beginning-of-defun)
   (add-to-list 'pulsar-pulse-functions 'end-of-buffer)
