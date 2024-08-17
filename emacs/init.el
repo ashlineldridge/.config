@@ -397,13 +397,21 @@
   :bind
   (("M-o >" . rotate-frame-clockwise)
    ("M-o <" . rotate-frame-anticlockwise)
-   ("M-o M-v" . flip-frame) ;; Flip [v]ertically.
-   ("M-o M-h" . flop-frame) ;; Flop [h]orizontally.
+   ("M-o M-=" . enlarge-window-horizontally)
+   ("M-o M--" . shrink-window-horizontally)
+   ("M-o M-+" . enlarge-window)
+   ("M-o M-_" . shrink-window)
+   ("M-o M-h" . flop-frame)
+   ("M-o M-v" . flip-frame)
    :repeat-map my/window-repeat-map
    (">" . rotate-frame-clockwise)
    ("<" . rotate-frame-anticlockwise)
-   ("M-v" . flip-frame)
-   ("M-h" . flop-frame)))
+   ("M-=" . enlarge-window-horizontally)
+   ("M--" . shrink-window-horizontally)
+   ("M-+" . enlarge-window)
+   ("M-_" . shrink-window)
+   ("M-h" . flop-frame)
+   ("M-v" . flip-frame)))
 
 ;;;;; Window History
 
