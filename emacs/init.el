@@ -748,6 +748,7 @@
   (avy-single-candidate-jump nil)
   (avy-timeout-seconds 0.3)
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (avy-styles-alist '((avy-isearch . post)))
   (avy-dispatch-alist
    '((?t . avy-action-teleport)
      (?k . avy-action-kill-stay)
