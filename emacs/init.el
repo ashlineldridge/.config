@@ -725,6 +725,7 @@
 (use-package avy
   :bind
   (("M-j" . avy-goto-word-1)
+   ("M-J" . avy-goto-char-in-line)
    ("M-g w" . avy-goto-word-1)
    ("M-g c" . avy-goto-char-timer)
    ("M-g l" . avy-goto-line)
@@ -2226,7 +2227,7 @@
   (eldoc-add-command "paredit-backward" "paredit-forward"
                      "paredit-backward-delete" "paredit-close-round")
   ;; Unbind keybindings that collide with things I find more useful.
-  (dolist (key '("C-c C-M-l" "M-?" "M-q" "M-r" "M-s"))
+  (dolist (key '("C-c C-M-l" "M-?" "M-q" "M-r" "M-s" "M-J"))
     (define-key paredit-mode-map (kbd key) nil)))
 
 (use-package elec-pair
