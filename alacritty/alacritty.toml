@@ -1,7 +1,7 @@
-import = ["/Users/ae/.config/alacritty/themes/ayu_dark.toml"]
+import = ["/Users/ae/.config/alacritty/themes/github_dark_high_contrast.toml"]
 
 [font]
-size = 15
+size = 14
 
 [font.bold]
 style = "Bold"
@@ -53,5 +53,5 @@ key = "W"
 mods = "Command"
 
 [window.padding]
-x = 8
-y = 4
+x = 0
+y = 0
