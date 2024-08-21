@@ -163,10 +163,7 @@
 (use-package fringe
   :ensure nil
   :custom
-  ;; Zero fringe means that regular $ and \ characters will be used to
-  ;; indicate truncation and continuation respectively. Use '(0 . 8) to
-  ;; show the arrow characters in the fringe.
-  (fringe-mode 0))
+  (fringe-mode 8))
 
 (use-package olivetti
   :bind
@@ -182,8 +179,7 @@
   :bind
   ("C-c x |" . display-fill-column-indicator-mode)
   ("C-c x n" . display-line-numbers-mode)
-  :hook
-  ((prog-mode conf-mode text-mode) . display-line-numbers-mode))
+  ("C-c x N" . global-display-line-numbers-mode))
 
 (use-package display-fill-column-indicator
   :ensure nil
