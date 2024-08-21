@@ -130,24 +130,17 @@
 
 ;;;;; Mode Line
 
-(use-package doom-modeline
-  :hook (elpaca-after-init . doom-modeline-mode)
-  :custom
-  (doom-modeline-bar-width 4)
-  (doom-modeline-buffer-encoding nil)
-  (doom-modeline-buffer-file-name-style 'truncate-upto-project)
-  (doom-modeline-buffer-state-icon t)
-  (doom-modeline-column-zero-based t)
-  (doom-modeline-height 20)
-  (doom-modeline-lsp t)
-  (doom-modeline-major-mode-icon nil)
-  (doom-modeline-minor-modes nil)
-  (doom-modeline-percent-position nil)
-  (doom-modeline-time-icon nil)
-  (doom-modeline-total-line-number t)
-  (doom-modeline-window-width-limit nil)
-  (doom-modeline-env-version nil)
-  (doom-modeline-check-simple-format t))
+(use-package mode-line
+  :ensure nil
+  :preface
+  (defun my/mode-line-init ()
+    "Initialize the mode line."
+    (dolist (segment '(mode-line-position mode-line-modes))
+      (setq-default mode-line-format
+                    (delete segment mode-line-format))))
+  :no-require
+  :hook
+  (elpaca-after-init . my/mode-line-init))
 
 ;;;;; Point/Cursor
 
@@ -227,17 +220,15 @@
 (use-package repeat
   :ensure nil
   :preface
-  (defun my/repeat-echo-mode-line (keymap)
-    "Display a repeat mode-line indicator for KEYMAP."
-    ;; See also `repeat-echo-mode-line'.
-    (setq global-mode-string
-          (when keymap (propertize "↻ " 'face 'mode-line-emphasis)))
-    (force-mode-line-update t))
+  (defun my/repeat-echo-message (keymap)
+    "Display a repeat mode indicator in the echo area for KEYMAP."
+    (message (if keymap "Repeating..." "")))
   :hook (elpaca-after-init . repeat-mode)
   :custom
+  (repeat-keep-prefix t)
   (repeat-exit-timeout 5)
   (repeat-exit-key (kbd "RET"))
-  (repeat-echo-function #'my/repeat-echo-mode-line))
+  (repeat-echo-function #'my/repeat-echo-message))
 
 ;;;; Bookmarks
 
@@ -521,13 +512,7 @@
        (with-current-buffer buf
          (unless (apply #'derived-mode-p my/popper-ignore-modes)
            (derived-mode-p 'compilation-mode))))))
-
-  ;; Taken from: https://github.com/seagle0128/.emacs.d/blob/8cbec0c132cd6de06a8c293598a720d377f3f5b9/lisp/init-window.el#L148.
-  (popper-mode-line
-   '(:eval (let ((face (if (doom-modeline--active)
-                           'mode-line-emphasis
-                         'mode-line-inactive)))
-             (format " %s " (nerd-icons-octicon "nf-oct-pin" :face face)))))
+  (popper-mode-line '(:eval (propertize " POP " 'face 'mode-line-emphasis)))
   :config
   ;; Workaround to ensure `popper-open-popup-alist' is up to date.
   ;; See: https://github.com/karthink/popper/issues/71.
