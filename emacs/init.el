@@ -2324,9 +2324,34 @@
     (define-key magit-section-mode-map (kbd key) nil)))
 
 (use-package browse-at-remote
+  :preface
+  (declare-function browse-at-remote "browse-at-remote")
+  (declare-function browse-at-remote-kill "browse-at-remote")
+  (declare-function browse-at-remote--get-local-branch "browse-at-remote")
+  (declare-function vc-git-branches "vc-git")
+
+  (defvar my/browse-at-remote-branch nil)
+  (defun my/browse-at-remote-local-branch (fn &rest args)
+    "Advises `browse-at-remote--get-local-branch' to override the branch name."
+    (or my/browse-at-remote-branch (apply fn args)))
+
+  (defun my/browse-at-remote (use-trunk &optional kill-only)
+    "Browse to the remote file (or KILL-ONLY) honoring USE-TRUNK."
+    (interactive "P")
+    (require 'vc-git)
+    (let ((my/browse-at-remote-branch
+           (when use-trunk (if (member "main" (vc-git-branches)) "main" "master"))))
+      (if kill-only (browse-at-remote-kill) (browse-at-remote))))
+
+  (defun my/browse-at-remote-kill (use-trunk)
+    "Add the remote file to the kill-ring honoring USE-TRUNK."
+    (interactive "P")
+    (my/browse-at-remote use-trunk t))
   :bind
-  (("C-c g o" . browse-at-remote)
-   ("C-c g k" . browse-at-remote-kill)))
+  (("C-c g o" . my/browse-at-remote)
+   ("C-c g l" . my/browse-at-remote-kill))
+  :config
+  (advice-add #'browse-at-remote--get-local-branch :around #'my/browse-at-remote-local-branch))
 
 ;;;; Diff
 
