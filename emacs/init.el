@@ -311,6 +311,9 @@
    ("3" . my/split-window-right))
   :custom
   (even-window-sizes nil)
+  ;; Prefer splitting by width and only when the window is quite wide.
+  (split-height-threshold nil)
+  (split-width-threshold 200)
   ;; The following provides the default `display-buffer' behavior for buffers
   ;; that are not managed by either Popper or Shackle.
   (display-buffer-base-action '((display-buffer-reuse-mode-window
