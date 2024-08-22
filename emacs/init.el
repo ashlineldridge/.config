@@ -1129,7 +1129,7 @@
   (corfu-on-exact-match 'quit)
   (corfu-count 16)
   (corfu-preview-current nil)
-  (corfu-min-width 60)
+  (corfu-min-width 80)
   (corfu-max-width 120)
   :config
   (add-to-list 'corfu-continue-commands #'my/corfu-move-to-minibuffer))
