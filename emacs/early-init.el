@@ -65,6 +65,7 @@
 
 ;; Blank out the screen to prevent the initial flash of white light which
 ;; doesn't look so great when using a dark theme (which is most of the time).
+(fringe-mode 0)
 (setq mode-line-format nil)
 (set-face-attribute 'default nil :background "#000000" :foreground "#ffffff")
 (set-face-attribute 'mode-line nil :background "#000000" :foreground "#ffffff" :box 'unspecified)

@@ -155,8 +155,7 @@
 
 (use-package fringe
   :ensure nil
-  :custom
-  (fringe-mode 8))
+  :hook (elpaca-after-init . (lambda () (fringe-mode 8))))
 
 (use-package olivetti
   :bind
