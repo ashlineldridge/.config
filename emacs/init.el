@@ -1172,18 +1172,21 @@
 
 ;; Dedicated completion commands.
 (use-package cape
-  :defines eshell-mode-map
   :bind
-  ("C-c c d" . cape-dabbrev)
-  ("C-c c h" . cape-history)
-  ("C-c c f" . cape-file)
-  ("C-c c k" . cape-keyword)
-  ("C-c c o" . cape-elisp-symbol)
-  ("C-c c a" . cape-abbrev)
-  ("C-c c l" . cape-line)
-  ("C-c c w" . cape-dict)
-  :init
-  (bind-keys :package esh-mode :map eshell-mode-map ("C-c h" . cape-history)))
+  ("M-'" . nil)
+  ("M-' a" . cape-abbrev)
+  ("M-' d" . cape-dabbrev)
+  ("M-' f" . cape-file)
+  ("M-' h" . cape-history)
+  ("M-' k" . cape-keyword)
+  ("M-' l" . cape-line)
+  ("M-' r" . cape-rfc1345)
+  ("M-' w" . cape-dict)
+  ("M-' :" . cape-emoji)
+  :custom
+  (cape-dabbrev-min-length 1)
+  (cape-dabbrev-check-other-buffers t)
+  (cape-line-buffer-function #'buffer-list))
 
 ;; Orderless configuration mostly taken from:
 ;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
@@ -1452,6 +1455,7 @@
    :preview-key my/consult-auto-preview))
 
 (use-package consult-dir
+  :defines eshell-mode-map
   :preface
   (declare-function consult-dir--pick "consult-dir")
   (declare-function consult-dir--project-list-make "consult-dir")
@@ -1935,7 +1939,6 @@
                            (?s "Struct" my/imenu-struct-face)
                            (?t "Trait" my/imenu-trait-face))))))
 
-;; TODO: Look at latest Rustic commands.
 (use-package rustic
   :ensure (:host github :repo "emacs-rustic/rustic")
   :bind
