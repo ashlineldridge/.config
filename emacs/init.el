@@ -147,17 +147,23 @@
   :init
   (cursory-set-preset 'box))
 
-;;;;; Margins
+;;;;; Margins/Padding
 
-(use-package fringe
-  :ensure nil
-  :hook (elpaca-after-init . (lambda () (fringe-mode 8))))
+(use-package spacious-padding
+  :hook (elpaca-after-init . spacious-padding-mode)
+  :custom
+  (spacious-padding-subtle-mode-line t)
+  (spacious-padding-widths
+   '(:internal-border-width 12
+     :fringe-width 8
+     :right-divider-width 20
+     :mode-line-width 2)))
 
 (use-package olivetti
   :bind
   ("<f7>" . olivetti-mode)
   :custom
-  (olivetti-body-width 90)
+  (olivetti-body-width 100)
   (olivetti-style 'fancy))
 
 ;;;;; Lines and Columns
