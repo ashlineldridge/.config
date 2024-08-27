@@ -995,9 +995,10 @@
   :custom
   ;; Disable built-in `auto-save-mode' as this replaces it.
   (auto-save-default nil)
+  (super-save-silent t)
   (super-save-auto-save-when-idle t)
-  (super-save-idle-duration 30)
-  (super-save-max-buffer-size 100000))
+  (super-save-idle-duration 5)
+  (super-save-max-buffer-size nil))
 
 ;;;; Minibuffer
 
