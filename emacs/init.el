@@ -794,7 +794,7 @@
   :custom
   (pulsar-delay 0.05)
   (pulsar-iterations 13)
-  (pulsar-face 'pulsar-generic)
+  (pulsar-face 'pulsar-cyan)
   :config
   ;; Add extra functions that should trigger Pulsar. I'm not using
   ;; #'fn syntax here to avoid needing all the forward declarations.
