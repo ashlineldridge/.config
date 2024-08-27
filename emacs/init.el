@@ -349,19 +349,11 @@
    ("C-M-6" . my/winum-move-buffer-6)
    ("C-M-7" . my/winum-move-buffer-7)
    ("C-M-8" . my/winum-move-buffer-8)
-   ("C-M-9" . my/winum-move-buffer-9)
-   :repeat-map my/window-repeat-map
-   ("M-0" . winum-select-window-0-or-10)
-   ("M-1" . winum-select-window-1)
-   ("M-2" . winum-select-window-2)
-   ("M-3" . winum-select-window-3)
-   ("M-4" . winum-select-window-4)
-   ("M-5" . winum-select-window-5)
-   ("M-6" . winum-select-window-6)
-   ("M-7" . winum-select-window-7)
-   ("M-8" . winum-select-window-8)
-   ("M-9" . winum-select-window-9))
-  :hook (elpaca-after-init . winum-mode))
+   ("C-M-9" . my/winum-move-buffer-9))
+  :hook (elpaca-after-init . winum-mode)
+  :custom
+  ;; Winum mode line segment is managed by mode line package.
+  (winum-auto-setup-mode-line nil))
 
 (use-package frame
   :ensure nil
