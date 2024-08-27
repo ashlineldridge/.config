@@ -218,16 +218,11 @@
 
 (use-package repeat
   :ensure nil
-  :preface
-  (defun my/repeat-echo-message (keymap)
-    "Display a repeat mode indicator in the echo area for KEYMAP."
-    (message (if keymap "Repeating..." "")))
   :hook (elpaca-after-init . repeat-mode)
   :custom
   (repeat-keep-prefix t)
   (repeat-exit-timeout 5)
-  (repeat-exit-key (kbd "RET"))
-  (repeat-echo-function #'my/repeat-echo-message))
+  (repeat-exit-key (kbd "RET")))
 
 ;;;; Bookmarks
 
