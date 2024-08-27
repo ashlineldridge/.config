@@ -495,6 +495,9 @@
   (popper-echo-dispatch-keys nil)
   ;; Display popup but don't select it.
   (popper-display-function #'popper-display-popup-at-bottom)
+  ;; Popper mode line segment is managed by custom mode line package. Setting
+  ;; this to nil removes the mode line entirely which I don't want.
+  (popper-mode-line "")
   (popper-reference-buffers
    '("\\*Async Shell Command\\*"
      "\\*Backtrace\\*"
@@ -514,7 +517,6 @@
        (with-current-buffer buf
          (unless (apply #'derived-mode-p my/popper-ignore-modes)
            (derived-mode-p 'compilation-mode))))))
-  (popper-mode-line '(:eval (propertize " POP " 'face 'mode-line-emphasis)))
   :config
   ;; Workaround to ensure `popper-open-popup-alist' is up to date.
   ;; See: https://github.com/karthink/popper/issues/71.
