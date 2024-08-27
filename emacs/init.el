@@ -1173,16 +1173,15 @@
 ;; Dedicated completion commands.
 (use-package cape
   :bind
-  ("M-'" . nil)
-  ("M-' a" . cape-abbrev)
-  ("M-' d" . cape-dabbrev)
-  ("M-' f" . cape-file)
-  ("M-' h" . cape-history)
-  ("M-' k" . cape-keyword)
-  ("M-' l" . cape-line)
-  ("M-' r" . cape-rfc1345)
-  ("M-' w" . cape-dict)
-  ("M-' :" . cape-emoji)
+  ("C-' a" . cape-abbrev)
+  ("C-' d" . cape-dabbrev)
+  ("C-' f" . cape-file)
+  ("C-' h" . cape-history)
+  ("C-' k" . cape-keyword)
+  ("C-' l" . cape-line)
+  ("C-' r" . cape-rfc1345)
+  ("C-' w" . cape-dict)
+  ("C-' :" . cape-emoji)
   :custom
   (cape-dabbrev-min-length 1)
   (cape-dabbrev-check-other-buffers t)
