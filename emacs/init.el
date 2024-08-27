@@ -130,17 +130,13 @@
 
 ;;;;; Mode Line
 
-(use-package mode-line
-  :ensure nil
-  :preface
-  (defun my/mode-line-init ()
-    "Initialize the mode line."
-    (dolist (segment '(mode-line-position mode-line-modes))
-      (setq-default mode-line-format
-                    (delete segment mode-line-format))))
-  :no-require
+(use-package smol
+  :if (file-exists-p "~/dev/home/smol")
+  :load-path "~/dev/home/smol"
   :hook
-  (elpaca-after-init . my/mode-line-init))
+  (elpaca-after-init . smol-init)
+  :custom
+  (smol-string-truncate-length 80))
 
 ;;;;; Point/Cursor
 
