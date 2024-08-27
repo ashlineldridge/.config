@@ -1607,9 +1607,11 @@
 (use-package wgrep
   :bind
   (:map grep-mode-map
-   ("C-c C-w" . wgrep-change-to-wgrep-mode))
+   ("C-c C-w" . wgrep-change-to-wgrep-mode)
+   ("C-c C-c" . wgrep-finish-edit))
   :custom
-  (wgrep-auto-save-buffer t))
+  (wgrep-auto-save-buffer t)
+  (wgrep-change-readonly-file t))
 
 (use-package substitute
   :commands substitute-report-operation
