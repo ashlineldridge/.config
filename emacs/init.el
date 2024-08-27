@@ -833,6 +833,8 @@
     (advice-add 'embark-next-symbol :after 'pulsar-pulse-line)
     (advice-add 'embark-previous-symbol :after 'pulsar-pulse-line)))
 
+(use-package rainbow-mode)
+
 ;;;;; Templating
 
 (use-package tempel
