@@ -165,7 +165,7 @@
   :custom
   (spacious-padding-subtle-mode-line t)
   (spacious-padding-widths
-   '(:internal-border-width 12
+   '(:internal-border-width 20
      :fringe-width 8
      :right-divider-width 20
      :mode-line-width 2)))
