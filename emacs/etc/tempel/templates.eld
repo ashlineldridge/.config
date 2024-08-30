@@ -40,6 +40,16 @@
 ;; Note: Sometimes using Tempel templates in Tree-sitter modes can result in
 ;; odd indentation (typically of the closing brace). See this discussion for
 ;; how to handle: https://github.com/minad/tempel/discussions/125.
+;;
+;; Note 1: Use the form: (loop "loop {" n> r> n> "}" >) for correct indentation
+;; in Tree-sitter modes. Both n> and r> are required to get correct indentation
+;; when a region is select and unselected. The final > is required to correctly
+;; indent the closing brace. The last n> is sometimes but not always required
+;; to get correct indentation of the closing brace.
+;;
+;; Note 2: Use n> whenever the following line could be indented. If no indentation
+;; is required, the major mode should prevent it, but without this the following
+;; line won't be indented when it should be.
 
 fundamental-mode ;; Available everywhere
 
@@ -47,18 +57,18 @@ fundamental-mode ;; Available everywhere
 
 prog-mode
 
+(bug (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "BUG: ")
 (fixme (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "FIXME: ")
+(hack (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "HACK: ")
 (todo (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "TODO: ")
 (todo-me (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "TODO(ashlin.eldridge): ")
-(bug (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "BUG: ")
-(hack (if (derived-mode-p 'emacs-lisp-mode) ";; " comment-start) "HACK: ")
 
 emacs-lisp-mode inferior-emacs-lisp-mode
 
 (declare-function "(declare-function " p " \"" q "\")")
-(defconst "(defvar " p " " p n> "\"" p "\")")
+(defconst "(defvar " p " " p n> "\"" q "\")")
 (defun "(defun " p " (" p ")" n> "\"" p "\"" n> r> ")")
-(defvar "(defvar " p " " p n> "\"" p "\")")
+(defvar "(defvar " p " " p n> "\"" q "\")")
 (dolist "(dolist (" p ")" n> r> ")")
 (if-let "(if-let (" p ")" n> r> ")")
 (if-let* "(if-let* (" p ")" n> r> ")")
@@ -73,58 +83,53 @@ emacs-lisp-mode inferior-emacs-lisp-mode
 eshell-mode
 
 (sink "> (my/eshell-sink)")
-(sink-with-id "> (my/eshell-sink \"" p "\")")
+(sink-with-id "> (my/eshell-sink \"" q "\")")
 
 org-mode
 
-(begin "#+begin_" (s name) n> r> n "#+end_" name)
-(begin-quote "#+begin_quote" n> r> n> "#+end_quote")
-(begin-example "#+begin_example" n> r> n> "#+end_example")
+(begin "#+begin_" (s name) n> r> n> "#+end_" name)
 (begin-comment "#+begin_comment" n> r> n> "#+end_comment")
+(begin-example "#+begin_example" n> r> n> "#+end_example")
+(begin-quote "#+begin_quote" n> r> n> "#+end_quote")
 (begin-src "#+begin_src " p n> q n> "#+end_src")
 
 go-mode go-ts-mode
 
-(const-block "const (" n> q n ")" >)
+(const-block "const (" n> q n> ")" >)
 (ctx "ctx := context.Background()")
 (ctx-cancel "ctx, cancel := context.WithCancel(context.Background())" n> "defer cancel()")
-(fmt-printf "fmt.Printf(\"" p " %v\\n\", " q ")")
-(fmt-println "fmt.Println(" q ")")
-(for "for " p "{" n> q n "}" >)
-(for-range "for " p ", " p " := range " p " {" n> q n "}" >)
-(func "func " p "(" p ") " p " {" n> q n "}" >)
-(if "if " p " {" n> r> n "}" >)
-(if-else "if " p " {" n> p n "} else {" > n> q n "}" >)
-(if-else-if "if " p " {" n> p n "} else if " > p " {" n> q n "}" >)
-(if-else-if-else "if " p " {" n> p n "} else if " > p " {" n> p n "} else {" > n> q n "}" >)
-(if-err "if err != nil {" n> q n "}" >)
-(if-err-compact "if err := " p "; err != nil {" n> q n "}" >)
-(if-err-propagate "if err != nil {" n> "return errors.Propagate(err)" n "}" >)
-(import-block "import (" n> q n ")" >)
-(init "func init() {" n> q n "}" >)
-(interface "type " p " interface {" n> q n "}" >)
-(main "func main() {" n> q n "}" >)
+(for "for " p "{" n> r> n> "}" >)
+(for-range "for " p ", " p " := range " p " {" n> r> n> "}" >)
+(func "func " p "(" p ") " p " {" n> r> n> "}" >)
+(if-err "if err != nil {" n> r> n> "}" >)
+(if-err-compact "if err := " p "; err != nil {" n> r> n> "}" >)
+(if-err-propagate "if err != nil {" n> "return errors.Propagate(err)" n> "}" >)
+(import-block "import (" n> q n> ")" >)
+(init "func init() {" n> q n> "}" >)
+(interface "type " p " interface {" n> q n> "}" >)
+(main "func main() {" n> q n> "}" >)
 (map "map[" p "]" q)
-(select "select {" n> "case " p ":" n> q n "}" >)
-(struct "type " p " struct {" n> q n "}" >)
-(switch "switch " p " {" n> "case " p ":" q n "}" >)
-(test "func Test" p " (t *testing.T) { " n> q n "}" >)
+(printf "fmt.Printf(\"" p " %v\\n\", " q ")")
+(println "fmt.Println(" q ")")
+(select "select {" n> "case " p ":" n> q n> "}" >)
+(struct "type " p " struct {" n> q n> "}" >)
+(switch "switch " p " {" n> "case " p ":" q n> "}" >)
+(test "func Test" p "(t *testing.T) { " n> q n> "}" >)
 
 rust-mode rust-ts-mode
 
-(dbg "dbg!(" r> ")")
-(derive "#[derive(" r> ")]")
-(fn "fn " p "(" p ") {" n> r> n> "}")
-(fn-return "fn " p "(" p ") -> " p " {" n> r> n> "}")
-(if "if " p " {" n> r> n> "}")
-(if-else "if " p " {" n> r> n> "} else {" n> p n> "}")
-(if-else-if "if " p " {" n> r> n> "} else if " p " {" n> p n> "}")
-(loop "loop {" n> r> n> "}")
-(main "fn main() {" n> r> n> "}")
-(main-tokio "#[tokio::main]" n> "async fn main() {" n> r> n> "}")
-(new "pub fn new(" p ") -> Self {" n> "Self {}" n> "}" g)
-(test "#[test]" n> "fn " p "() {" n> "assert_eq!(1 + 1, 2);" n> "}")
-(test-mod "#[cfg(test)]" n> "mod tests {" n> "use super::*;" n n> "#[test]" n> "fn it_works() {" n> "assert_eq!(1 + 1, 2);" n> "}" n> "}")
+(dbg "dbg!(" r ")")
+(derive "#[derive(" q ")]")
+(fn "fn " p "(" p ") {" q "}")
+(fn-new "pub fn new(" p ") -> Self {" n> "Self {" q "}" n> "}" >)
+(fn-return "fn " p "(" p ") -> " p " {" q "}")
+(loop "loop {" n> r> n> "}" >)
+(main "fn main() {" n> r> n> "}" >)
+(main-tokio "#[tokio::main]" n> "async fn main() {" n> r> n> "}" >)
+(print "print!(" p ")")
+(println "println!(" p ")")
+(test "#[test]" n> "fn " p "() {" q "}" >)
+(test-mod "#[cfg(test)]" n> "mod tests {" n> "use super::*;" n n> "#[test]" n> "fn it_works() { assert_eq!(1 + 1, 2); }" n> "}" >)
 
 ;; Local Variables:
 ;; eval: (outline-minor-mode 1)
