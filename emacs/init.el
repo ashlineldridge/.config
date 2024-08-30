@@ -604,11 +604,11 @@
   ;; Don't show M-x commands that don't work in the current mode.
   (read-extended-command-predicate #'command-completion-default-include-p)
   :bind
+  ([remap kill-buffer] . kill-current-buffer)
   ("<escape>" . keyboard-escape-quit)
   ("C-S-k" . my/copy-to-eol)
   ("C-M-k" . my/delete-to-eol)
   ("M-<backspace>" . my/delete-to-bol)
-  ("M-k" . kill-current-buffer)
   ("M-c" . capitalize-dwim)
   ("M-l" . downcase-dwim)
   ("M-u" . upcase-dwim)
