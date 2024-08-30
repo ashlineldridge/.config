@@ -439,7 +439,7 @@
   (shackle-rules
    ;; More reliable to match by regex than by major mode as some commands
    ;; don't set the major mode until after they've called `display-buffer'.
-   '(("\\*eshell-output\\*" :select t :other t :regexp t)
+   '(("\\*eshell-output" :select nil :other t :regexp t)
      ("\\*helpful" :select nil :other t :regexp t)
      ("\\*rg\\*" :select t :other t :regexp t)
      ("\\*Occur\\*" :select t :other t :regexp t)
@@ -2433,11 +2433,14 @@
               components (cdr components)))
       (concat str (cl-reduce (lambda (a b) (concat a "/" b)) components))))
 
-  (defun my/eshell-sink (&optional name)
+  (defun my/eshell-sink (&optional id)
     "Return a reference to a buffer for sinking Eshell command output.
-If NAME is specified, a reference to that buffer will be returned, creating the
-buffer if necessary. If NAME is not specified, a buffer name will be generated."
-    (let* ((name (or name (generate-new-buffer-name "*eshell-output*")))
+The name of the returned buffer will have the name *eshell-output* if ID is
+nil, otherwise it will have the name *eshell-output-<ID>*. In either case,
+if a buffer with that name already exists, then a new buffer will be created
+with a numbered suffix."
+    (let* ((name (if id (format "*eshell-output-%s" id) "*eshell-output*"))
+           (name (generate-new-buffer-name name))
            (buf (get-buffer-create name)))
       (display-buffer buf)
       buf))

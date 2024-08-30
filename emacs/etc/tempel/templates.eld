@@ -73,7 +73,7 @@ emacs-lisp-mode inferior-emacs-lisp-mode
 eshell-mode
 
 (sink "> (my/eshell-sink)")
-(sink-named "> (my/eshell-sink \"" p "\")")
+(sink-with-id "> (my/eshell-sink \"" p "\")")
 
 org-mode
 
