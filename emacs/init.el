@@ -1717,7 +1717,8 @@
     rust-ts-mode
     sh-mode
     bash-ts-mode
-    haskell-mode) . eglot-ensure)
+    haskell-mode
+    zig-mode) . eglot-ensure)
   (eglot-managed-mode . my/eglot-init)
 
   :custom
@@ -2112,6 +2113,10 @@
   ;; to perform this mapping but it doesn't seem to work when the major mode
   ;; is called directly like it is by `go-playground'.
   (advice-add #'go-playground :after #'go-ts-mode))
+
+;;;;;; Zig
+
+(use-package zig-mode)
 
 ;;;;;; Haskell
 
