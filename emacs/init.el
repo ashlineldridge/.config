@@ -1374,8 +1374,6 @@
    ("C-x p f" . my/consult-project-file)
    ("C-x r b" . consult-bookmark)
    ("C-x r r" . consult-register)
-   ("C-x r l" . consult-register-load)
-   ("C-x r s" . consult-register-store)
    ("C-x C-f" . my/consult-find-file)
    ("C-x C-k k" . consult-kmacro)
    :map minibuffer-local-map
@@ -1419,6 +1417,11 @@
     (setq xref-show-definitions-function #'consult-xref))
 
   :config
+  ;; Make `consult-register' behave the same as `insert-register' by first
+  ;; deleting the region if active.
+  (advice-add #'consult-register :before
+              (lambda (&rest _) (when mark-active (delete-active-region))))
+
   ;; Customize the list of sources shown by `consult-buffer'.
   (setq consult-buffer-sources
         '(consult--source-buffer                ;; Narrow: ?b (shown)
