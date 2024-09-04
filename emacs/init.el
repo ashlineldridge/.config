@@ -747,7 +747,7 @@
   (avy-styles-alist '((avy-isearch . post)))
   (avy-dispatch-alist
    '((?t . avy-action-teleport)
-     (?k . avy-action-kill-stay)
+     (?K . avy-action-kill-stay)
      (?c . avy-action-copy)
      (?y . avy-action-yank)
      (?Y . avy-action-yank-line)
