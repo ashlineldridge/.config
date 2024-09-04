@@ -126,8 +126,8 @@ rust-mode rust-ts-mode
 (loop "loop {" n> r> n> "}" >)
 (main "fn main() {" n> r> n> "}" >)
 (maintokio "#[tokio::main]" n> "async fn main() {" n> r> n> "}" >)
-(print "print!(" p ")")
-(println "println!(" p ")")
+(print "print!(" q ")")
+(println "println!(" q ")")
 (test "#[test]" n> "fn " p "() {" q "}" >)
 (testmod "#[cfg(test)]" n> "mod tests {" n> "use super::*;" n n> "#[test]" n> "fn it_works() { assert_eq!(1 + 1, 2); }" n> "}" >)
 
