@@ -511,6 +511,7 @@
      "\\*apheleia-"
      "\\*chronosphere-"
      "\\*eldoc"
+     "shell-output:"
      "CAPTURE-.*\\.org"
      ;; Match all modes that derive from compilation-mode but do not derive
      ;; from a member of `my/popper-ignore-modes'.
@@ -596,6 +597,19 @@
     "Move point to the end of line when called interactively."
     (when (called-interactively-p) (move-end-of-line 1)))
 
+  (defun my/async-shell-command ()
+    "Call `async-shell-command' and name the output buffer specifically."
+    (interactive)
+    (let* ((prompt (format-message "Shell command in `%s': "
+                                   (abbreviate-file-name default-directory)))
+           (command (read-shell-command prompt))
+           (buffer (generate-new-buffer
+                    (format "shell-output: %s: %s (%s)"
+                            default-directory
+                            command
+                            (format-time-string "%Y-%m-%dT%H:%M:%S%z")))))
+      (async-shell-command command buffer)))
+
   :custom
   (indent-tabs-mode nil)
   (mark-ring-max 10)
@@ -607,6 +621,7 @@
   (read-extended-command-predicate #'command-completion-default-include-p)
   :bind
   ([remap kill-buffer] . kill-current-buffer)
+  ([remap async-shell-command] . my/async-shell-command)
   ("<escape>" . keyboard-escape-quit)
   ("C-S-k" . my/copy-to-eol)
   ("C-M-k" . my/delete-to-eol)
@@ -979,8 +994,14 @@
                          (project-remember-projects-under file)))))
       (message "Found %d new projects" found)))
 
+  (defun my/project-async-shell-command ()
+    "Execute a s asynchronously from the root of the current project."
+    (interactive)
+    (let ((default-directory (project-root (project-current t))))
+      (my/async-shell-command)))
+
   :bind
-  ("C-M-&" . project-async-shell-command)
+  ("C-M-&" . my/project-async-shell-command)
   ("C-x p j" . project-dired)
   ("C-x p u" . my/project-update-list)
   :custom
@@ -991,7 +1012,7 @@
      (consult-ripgrep "Ripgrep" ?s)
      (magit-project-status "Magit" ?m)
      (project-eshell "Eshell" ?e)
-     (project-async-shell-command "Async shell" ?&))))
+     (my/project-async-shell-command "Async shell" ?&))))
 
 ;;;;; Auto-Save
 
