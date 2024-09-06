@@ -833,6 +833,8 @@
   (add-to-list 'pulsar-pulse-functions 'other-frame)
   (add-to-list 'pulsar-pulse-functions 'pop-global-mark)
   (add-to-list 'pulsar-pulse-functions 'set-mark-command)
+  (add-to-list 'pulsar-pulse-functions 'treesit-beginning-of-defun)
+  (add-to-list 'pulsar-pulse-functions 'treesit-end-of-defun)
   (add-to-list 'pulsar-pulse-functions 'vterm-next-prompt)
   (add-to-list 'pulsar-pulse-functions 'vterm-previous-prompt)
   (add-to-list 'pulsar-pulse-functions 'winum-select-window-0)
