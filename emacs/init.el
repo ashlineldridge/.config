@@ -607,7 +607,7 @@
                     (format "shell-output: %s: %s (%s)"
                             default-directory
                             command
-                            (format-time-string "%Y-%m-%dT%H:%M:%S%z")))))
+                            (format-time-string "%Y-%m-%dT%H:%M:%S")))))
       (async-shell-command command buffer)))
 
   :custom
