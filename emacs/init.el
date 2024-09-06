@@ -597,10 +597,14 @@
     "Move point to the end of line when called interactively."
     (when (called-interactively-p) (move-end-of-line 1)))
 
-  (defun my/async-shell-command ()
-    "Call `async-shell-command' and name the output buffer specifically."
-    (interactive)
-    (let* ((prompt (format-message "Shell command in `%s': "
+  (defun my/async-shell-command (&optional arg)
+    "Run `async-shell-command' and name the output buffer uniquely.
+When ARG is non-nil, the working directory may be selected, otherwise
+`default-directory' is used."
+    (interactive "P")
+    (let* ((default-directory (if arg (read-directory-name "In directory: ")
+                                default-directory))
+           (prompt (format-message "Shell command in `%s': "
                                    (abbreviate-file-name default-directory)))
            (command (read-shell-command prompt))
            (buffer (generate-new-buffer
@@ -996,10 +1000,13 @@
                          (project-remember-projects-under file)))))
       (message "Found %d new projects" found)))
 
-  (defun my/project-async-shell-command ()
-    "Execute a s asynchronously from the root of the current project."
-    (interactive)
-    (let ((default-directory (project-root (project-current t))))
+  (defun my/project-async-shell-command (&optional arg)
+    "Execute a command asynchronously from the root of a project.
+When ARG is non-nil or there is no active project, the project may be selected,
+otherwise the currently active project is used."
+    (interactive "P")
+    (let ((default-directory (if arg (funcall project-prompter)
+                               (project-root (project-current t)))))
       (my/async-shell-command)))
 
   :bind
