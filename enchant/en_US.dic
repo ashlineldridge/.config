@@ -123,3 +123,5 @@ toolchain
 unselected
 retryable
 cardinality
+breakpoint
+debuggable
