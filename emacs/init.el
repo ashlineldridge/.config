@@ -1918,6 +1918,9 @@ otherwise the currently active project is used."
 
 (use-package rust-mode
   :ensure nil
+  :bind
+  (:map rust-mode-map
+   ("C-c C-d" . nil))
   :custom
   (rust-mode-treesitter-derive t))
 
