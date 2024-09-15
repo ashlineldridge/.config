@@ -3103,9 +3103,7 @@ specified then a task category will be determined by the item's tags."
 (use-package chronosphere
   :if (file-exists-p "~/dev/home/chronosphere")
   :load-path "~/dev/home/chronosphere"
-  :hook (elpaca-after-init . chronosphere-init)
-  :bind-keymap
-  ("C-c SPC" . chronosphere-map))
+  :hook (elpaca-after-init . chronosphere-init))
 
 ;;; End:
 (provide 'init)
