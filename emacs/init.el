@@ -376,11 +376,13 @@
 (use-package frame
   :ensure nil
   :bind
-  (("C-x C-z" . nil) ;; Tired of accidentally minimizing.
-   ("M-o M-o" . other-frame)
-   ("M-o M-n" . make-frame-command)
-   ("M-o M-k" . delete-frame)
-   ("M-o M-u" . undelete-frame))
+  ;; Remove silly `suspend-frame' bindings.
+  ("C-z" . nil)
+  ("C-x C-z" . nil)
+  ("M-o M-o" . other-frame)
+  ("M-o M-n" . make-frame-command)
+  ("M-o M-k" . delete-frame)
+  ("M-o M-u" . undelete-frame)
   :hook (elpaca-after-init . undelete-frame-mode))
 
 (use-package transpose-frame
