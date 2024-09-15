@@ -2235,6 +2235,20 @@ otherwise the currently active project is used."
 
 ;;;;;; Lisp
 
+(use-package lisp
+  :ensure nil
+  :preface
+  (declare-function kill-region "simple")
+  (defun my/kill-defun ()
+    "Kill the defun following point."
+    (interactive)
+    (let ((start (point)))
+      (end-of-defun)
+      (kill-region start (point))))
+  :bind
+  ("M-k" . kill-sexp)
+  ("M-K" . my/kill-defun))
+
 (use-package elisp-mode
   :ensure nil
   :preface
