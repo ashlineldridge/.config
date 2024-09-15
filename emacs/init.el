@@ -1033,7 +1033,7 @@ otherwise the currently active project is used."
   (auto-save-default nil)
   (super-save-silent t)
   (super-save-auto-save-when-idle t)
-  (super-save-idle-duration 5)
+  (super-save-idle-duration 30)
   (super-save-max-buffer-size nil))
 
 ;;;; Minibuffer
@@ -2732,7 +2732,7 @@ with a numbered suffix."
   ;; log items and I want to know when a task was created which doesn't happen
   ;; without what appears to be quite a bit of custom code.
   (org-log-into-drawer nil)
-  (org-log-states-order-reversed nil)   ; Make newest last
+  (org-log-states-order-reversed nil) ;; Make newest last
   (org-outline-path-complete-in-steps nil)
   (org-pretty-entities t)
   (org-priority-default org-priority-lowest)
