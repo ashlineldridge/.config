@@ -506,7 +506,6 @@
      "\\*Backtrace\\*"
      "\\*Breakpoints\\*"
      "\\*Call Hierarchy\\*"
-     "\\*Flymake"
      "\\*Messages\\*"
      "\\*Shell Command Output\\*"
      "\\*Warnings\\*"
@@ -1876,13 +1875,15 @@ otherwise the currently active project is used."
    ("p" . flymake-goto-prev-error))
   :hook (prog-mode . flymake-mode)
   :custom
+  (flymake-start-on-save-buffer nil)
   (flymake-no-changes-timeout 0.5)
-  (flymake-start-on-save-buffer))
+  (flymake-wrap-around nil)
+  (flymake-show-diagnostics-at-end-of-line nil))
 
 (use-package flymake-proc
   :ensure nil
-  :config
-  (remove-hook 'flymake-diagnostic-functions 'flymake-proc-legacy-flymake))
+  :custom
+  (flymake-proc-compilation-prevents-syntax-check t))
 
 ;;;;;; Xref
 
@@ -2237,7 +2238,6 @@ otherwise the currently active project is used."
 (use-package elisp-mode
   :ensure nil
   :preface
-  (declare-function flymake-eldoc-function "flymake")
   (defun my/elisp-init ()
     "Init function for `emacs-lisp-mode'."
     (setq-local outline-regexp ";;;+ [^\n]")
@@ -2245,12 +2245,7 @@ otherwise the currently active project is used."
     (setq-local completion-at-point-functions
                 (list
                  #'elisp-completion-at-point
-                 #'cape-file))
-    (setq-local eldoc-documentation-functions
-                (list
-                 #'elisp-eldoc-funcall
-                 #'flymake-eldoc-function
-                 #'elisp-eldoc-var-docstring-with-value)))
+                 #'cape-file)))
 
   (defun my/elisp-flymake-byte-compile (fn &rest args)
     "Advises `elisp-flymake-byte-compile' to remove vterm from `load-path'."
