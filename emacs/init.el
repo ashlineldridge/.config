@@ -696,6 +696,9 @@ When ARG is non-nil, the working directory may be selected, otherwise
 ;;;;; Undo/Redo
 
 (use-package undo-tree
+  :bind
+  (:map undo-tree-map
+   ("M-_" . nil))
   :hook (elpaca-after-init . global-undo-tree-mode)
   :custom
   (undo-tree-auto-save-history t)
@@ -1374,13 +1377,14 @@ otherwise the currently active project is used."
   (("M-i" . consult-imenu)
    ("M-I" . consult-imenu-multi)
    ("M-y" . consult-yank-pop)
+   ("M-_" . consult-focus-lines)
+   ("C-M-_" . consult-keep-lines)
    ("M-s a" . consult-org-agenda)
    ("M-s f" . consult-fd)
    ("M-s l" . consult-line)
    ("M-s L" . consult-line-multi)
    ("M-s p" . my/consult-project-file)
    ("M-s s" . consult-ripgrep)
-   ("M-s =" . consult-focus-lines)
    ("M-g -" . consult-outline)
    ("M-g e" . consult-compile-error)
    ("M-g f" . consult-flymake)
