@@ -1641,7 +1641,7 @@ otherwise the currently active project is used."
 (use-package rg
   :bind
   ("M-s M-s" . rg)
-  ("M-s M-l" . rg-literal))
+  ("M-s M-S" . rg-literal))
 
 (use-package wgrep
   :bind
