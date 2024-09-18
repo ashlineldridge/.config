@@ -788,9 +788,6 @@ When ARG is non-nil, the working directory may be selected, otherwise
   :custom
   (hl-line-sticky-flag nil))
 
-(use-package hl-todo
-  :hook (elpaca-after-init . global-hl-todo-mode))
-
 (use-package hi-lock
   :ensure nil
   :bind
