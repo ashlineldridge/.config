@@ -2348,7 +2348,10 @@ otherwise the currently active project is used."
   (vc-follow-symlinks t))
 
 ;; Use external transient package as Magit requires a later version.
-(use-package transient)
+(use-package transient
+  :hook
+  ;; Hide popper whenever a transient buffer is shown.
+  (transient-setup-buffer . my/popper-close))
 
 (use-package magit
   :preface
