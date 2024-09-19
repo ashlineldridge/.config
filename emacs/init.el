@@ -48,45 +48,45 @@
 ;;;;; Fonts
 
 (use-package fontaine
+  :preface
+  (defconst my/fixed-family "Iosevka Comfy")
+  (defconst my/variable-family "Iosevka Comfy Motion Duo")
+
+  (defun my/fontaine-apply-preset (&rest _)
+    "Apply the current (or default) Fontaine preset."
+    (fontaine-set-preset (or fontaine-current-preset 'regular)))
   :bind
   ("C-c x f" . fontaine-set-preset)
   :custom
   (fontaine-presets
-   '((large
-      :default-height 140
-      :mode-line-active-height 130
-      :mode-line-inactive-height 130
-      :line-number-height 120)
-     (regular)
-     (small
-      :default-family "Iosevka Comfy Wide Motion"
-      :default-height 130
+   `((small
+      :default-family ,my/fixed-family
+      :default-height 120
       :default-weight regular
-      :mode-line-active-height 120
-      :mode-line-inactive-height 120
+      :mode-line-active-height 110
+      :mode-line-inactive-height 110
       :line-number-height 110)
+     (regular)
      (t
-      :default-family "Iosevka Comfy"
+      :default-family ,my/fixed-family
       :default-weight regular
       :default-height 130
       :fixed-pitch-height 1.0
       :fixed-pitch-serif-height 1.0
-      :variable-pitch-family "Iosevka Comfy Duo"
+      :variable-pitch-family ,my/variable-family
       :variable-pitch-weight regular
       :variable-pitch-height 1.0
-      :mode-line-active-family "Iosevka Comfy"
-      :mode-line-inactive-family "Iosevka Comfy"
+      :mode-line-active-family ,my/fixed-family
+      :mode-line-inactive-family ,my/fixed-family
       :mode-line-active-height 120
       :mode-line-inactive-height 120
-      :line-number-family "Iosevka Comfy"
+      :line-number-family ,my/fixed-family
       :line-number-slant italic
       :line-number-height 110
       :bold-weight bold
       :italic-slant italic)))
   :init
-  (add-hook 'enable-theme-functions
-            (lambda (&rest _)
-              (fontaine-set-preset (or fontaine-current-preset 'regular)))))
+  (add-hook 'enable-theme-functions #'my/fontaine-apply-preset))
 
 (use-package font-lock
   :ensure nil
@@ -159,7 +159,9 @@
     (when spacious-padding-mode
       (spacious-padding-mode -1)
       (spacious-padding-mode 1)))
-  :hook (elpaca-after-init . spacious-padding-mode)
+  :hook
+  (elpaca-after-init . spacious-padding-mode)
+  (spacious-padding-mode . my/fontaine-apply-preset)
   :bind
   ("C-c x _" . my/spacious-padding-toggle-subtle-mode-line)
   :custom
