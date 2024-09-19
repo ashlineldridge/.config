@@ -477,6 +477,12 @@
       (popper-kill-latest-popup)
       (popper-open-latest)))
 
+  (defun my/popper-close ()
+    "Close the popper window if it is displayed."
+    (interactive)
+    (when popper-open-popup-alist
+      (popper-close-latest)))
+
   :bind
   (("M-o o" . popper-toggle)
    ("M-o t" . popper-toggle-type)
@@ -695,23 +701,14 @@ When ARG is non-nil, the working directory may be selected, otherwise
 
 ;;;;; Undo/Redo
 
-(use-package undo-tree
-  :bind
-  (:map undo-tree-map
-   ("M-_" . nil))
-  :hook (elpaca-after-init . global-undo-tree-mode)
-  :custom
-  (undo-tree-auto-save-history t)
-  (undo-tree-visualizer-timestamps t)
-  (undo-tree-visualizer-diff t))
-
 (use-package vundo
-  ;; HOLD: Undo-tree just feels more solid right now. Try Vundo again in the
-  ;; future and wire up support for saving undo history between sessions.
-  ;; See https://github.com/casouri/vundo/issues/97.
-  :disabled
   :bind
-  ("C-x u" . vundo))
+  ("C-x u" . vundo)
+  :custom
+  (vundo-glyph-alist vundo-unicode-symbols)
+  :config
+  (set-face-attribute 'vundo-default nil :family "Iosevka Comfy Fixed")
+  (add-hook 'vundo-pre-enter-hook #'my/popper-close))
 
 ;;;;; Region Expansion
 
