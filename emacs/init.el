@@ -59,11 +59,11 @@
       :line-number-height 120)
      (regular)
      (small
-      :default-family "JetBrains Mono"
-      :default-height 120
-      :default-weight light
-      :mode-line-active-height 110
-      :mode-line-inactive-height 110
+      :default-family "Iosevka Comfy Wide Motion"
+      :default-height 130
+      :default-weight regular
+      :mode-line-active-height 120
+      :mode-line-inactive-height 120
       :line-number-height 110)
      (t
       :default-family "Iosevka Comfy"
