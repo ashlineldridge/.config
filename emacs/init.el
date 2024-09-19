@@ -1213,6 +1213,7 @@ otherwise the currently active project is used."
   ("C-' h" . cape-history)
   ("C-' k" . cape-keyword)
   ("C-' l" . cape-line)
+  ("C-' o" . cape-elisp-symbol)
   ("C-' r" . cape-rfc1345)
   ("C-' w" . cape-dict)
   ("C-' :" . cape-emoji)
