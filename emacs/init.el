@@ -460,6 +460,7 @@
   (declare-function popper--update-popups "popper")
   (defvar my/popper-default-height 10)
   (defvar my/popper-ignore-modes '(grep-mode rg-mode))
+  (defvar my/popper-should-restore nil)
 
   (defun my/popper-toggle-height ()
     "Toggle the height of the popup window."
@@ -472,31 +473,36 @@
       (popper-close-latest)
       (popper-open-latest)))
 
-  (defun my/popper-kill-popup-stay-open ()
-    "Kill the current popup but stay open if there are others."
+  (defun my/popper-kill-buffer-stay-open ()
+    "Kill the current popup buffer but stay open if there are others."
     (interactive)
     (when popper-open-popup-alist
       (popper-kill-latest-popup)
       (popper-open-latest)))
 
-  (defun my/popper-close ()
-    "Close the popper window if it is displayed."
+  (defun my/popper-hide ()
+    "Hide the popper window if it is shown."
     (interactive)
+    (setq my/popper-should-restore popper-open-popup-alist)
     (when popper-open-popup-alist
-      (popper-close-latest)
-      t))
+      (popper-close-latest)))
+
+  (defun my/popper-restore ()
+    "Restore the Popper window if it was previously shown."
+    (when my/popper-should-restore
+      (popper-open-latest)))
 
   :bind
   (("M-o o" . popper-toggle)
    ("M-o t" . popper-toggle-type)
    ("M-o h" . my/popper-toggle-height)
-   ("M-o k" . my/popper-kill-popup-stay-open)
+   ("M-o k" . my/popper-kill-buffer-stay-open)
    ("M-o <tab>" . popper-cycle)
    :repeat-map my/window-repeat-map
    ("o" . popper-toggle)
    ("t" . popper-toggle-type)
    ("h" . my/popper-toggle-height)
-   ("k" . my/popper-kill-popup-stay-open)
+   ("k" . my/popper-kill-buffer-stay-open)
    ("<tab>" . popper-cycle))
   :hook
   (elpaca-after-init . popper-mode)
@@ -707,11 +713,13 @@ When ARG is non-nil, the working directory may be selected, otherwise
 (use-package vundo
   :bind
   ("C-x u" . vundo)
+  :hook
+  (vundo-pre-enter . my/popper-hide)
+  (vundo-post-exit . my/popper-restore)
   :custom
   (vundo-glyph-alist vundo-unicode-symbols)
   :config
-  (set-face-attribute 'vundo-default nil :family "Iosevka Comfy Fixed")
-  (add-hook 'vundo-pre-enter-hook #'my/popper-close))
+  (set-face-attribute 'vundo-default nil :family "Iosevka Comfy Fixed"))
 
 ;;;;; Region Expansion
 
@@ -2352,18 +2360,9 @@ otherwise the currently active project is used."
 
 ;; Use external transient package as Magit requires a later version.
 (use-package transient
-  :preface
-  (defvar my/transient-restore-popper nil)
-  (defun my/transient-close-popper ()
-    "Close the Popper window if it is currently shown."
-    (setq my/transient-restore-popper (my/popper-close)))
-  (defun my/transient-restore-popper ()
-    "Restore the Popper window if it was previously shown."
-    (when my/transient-restore-popper
-      (popper-open-latest)))
   :hook
-  (transient-setup-buffer . my/transient-close-popper)
-  (transient-exit-hook . my/transient-restore-popper))
+  (transient-setup-buffer . my/popper-hide)
+  (transient-exit . my/popper-restore))
 
 (use-package magit
   :preface
