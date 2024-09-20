@@ -1791,8 +1791,10 @@ otherwise the currently active project is used."
   :ensure (:host github :repo "jdtsmith/eglot-booster")
   :hook (eglot-managed-mode . eglot-booster-mode))
 
-;; Adapt Eglot to use Tempel rather than Yasnippet for placeholder completion.
 (use-package eglot-tempel
+  ;; TODO: Disabling for now as not working as expected.
+  ;; Could be this issue: https://github.com/fejfighter/eglot-tempel/issues/10.
+  :disabled
   :hook (elpaca-after-init . eglot-tempel-mode))
 
 (use-package consult-eglot
