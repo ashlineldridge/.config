@@ -483,7 +483,8 @@
     "Close the popper window if it is displayed."
     (interactive)
     (when popper-open-popup-alist
-      (popper-close-latest)))
+      (popper-close-latest)
+      t))
 
   :bind
   (("M-o o" . popper-toggle)
@@ -2351,9 +2352,18 @@ otherwise the currently active project is used."
 
 ;; Use external transient package as Magit requires a later version.
 (use-package transient
+  :preface
+  (defvar my/transient-restore-popper nil)
+  (defun my/transient-close-popper ()
+    "Close the Popper window if it is currently shown."
+    (setq my/transient-restore-popper (my/popper-close)))
+  (defun my/transient-restore-popper ()
+    "Restore the Popper window if it was previously shown."
+    (when my/transient-restore-popper
+      (popper-open-latest)))
   :hook
-  ;; Hide popper whenever a transient buffer is shown.
-  (transient-setup-buffer . my/popper-close))
+  (transient-setup-buffer . my/transient-close-popper)
+  (transient-exit-hook . my/transient-restore-popper))
 
 (use-package magit
   :preface
