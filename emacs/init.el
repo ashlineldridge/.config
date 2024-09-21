@@ -520,7 +520,6 @@
    ("<tab>" . popper-cycle))
   :hook
   (elpaca-after-init . popper-mode)
-  (elpaca-after-init . popper-echo-mode)
   :custom
   (popper-window-height my/popper-default-height)
   ;; Just tab to cycle through popups.
