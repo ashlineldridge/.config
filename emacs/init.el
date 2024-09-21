@@ -460,49 +460,63 @@
   (declare-function popper--update-popups "popper")
   (defvar my/popper-default-height 10)
   (defvar my/popper-ignore-modes '(grep-mode rg-mode))
-  (defvar my/popper-should-restore nil)
+  (defvar my/popper-should-resume nil)
+
+  (defun my/popper-shown-p ()
+    "Return whether the Popper window is currently shown."
+    (popper--update-popups)
+    (not (null popper-open-popup-alist)))
+
+  (defun my/popper-toggle ()
+    "Toggle display of the Popper window."
+    (interactive)
+    ;; Workaround as `popper-open-popup-alist' isn't updated when switching
+    ;; between frames. See: https://github.com/karthink/popper/issues/71.
+    (if (my/popper-shown-p)
+        (popper-close-latest)
+      (popper-open-latest)))
 
   (defun my/popper-toggle-height ()
-    "Toggle the height of the popup window."
+    "Toggle the height of the Popper window."
     (interactive)
     (setq popper-window-height
           (if (eq popper-window-height my/popper-default-height)
               (* 2 my/popper-default-height)
             my/popper-default-height))
-    (when popper-open-popup-alist
+    (when (my/popper-shown-p)
       (popper-close-latest)
       (popper-open-latest)))
 
   (defun my/popper-kill-buffer-stay-open ()
-    "Kill the current popup buffer but stay open if there are others."
+    "Kill the current Popper buffer but stay open if there are others."
     (interactive)
-    (when popper-open-popup-alist
+    (when (my/popper-shown-p)
       (popper-kill-latest-popup)
       (popper-open-latest)))
 
-  (defun my/popper-hide ()
-    "Hide the popper window if it is shown."
+  (defun my/popper-pause ()
+    "Temporarily hide the Popper window (e.g. while a transient is shown)."
     (interactive)
-    (setq my/popper-should-restore popper-open-popup-alist)
-    (when popper-open-popup-alist
+    (setq my/popper-should-resume (my/popper-shown-p))
+    (when my/popper-should-resume
       (popper-close-latest)))
 
-  (defun my/popper-restore ()
-    "Restore the Popper window if it was previously shown."
-    (when my/popper-should-restore
+  (defun my/popper-resume ()
+    "Restore the temporarily hidden Popper window."
+    (when my/popper-should-resume
       (popper-open-latest)))
 
   :bind
-  (("M-o o" . popper-toggle)
-   ("M-o t" . popper-toggle-type)
-   ("M-o h" . my/popper-toggle-height)
+  (("M-o h" . my/popper-toggle-height)
    ("M-o k" . my/popper-kill-buffer-stay-open)
+   ("M-o o" . my/popper-toggle)
+   ("M-o t" . popper-toggle-type)
    ("M-o <tab>" . popper-cycle)
    :repeat-map my/window-repeat-map
-   ("o" . popper-toggle)
-   ("t" . popper-toggle-type)
    ("h" . my/popper-toggle-height)
    ("k" . my/popper-kill-buffer-stay-open)
+   ("o" . my/popper-toggle)
+   ("t" . popper-toggle-type)
    ("<tab>" . popper-cycle))
   :hook
   (elpaca-after-init . popper-mode)
@@ -534,11 +548,7 @@
      (lambda (buf)
        (with-current-buffer buf
          (unless (apply #'derived-mode-p my/popper-ignore-modes)
-           (derived-mode-p 'compilation-mode))))))
-  :config
-  ;; Workaround to ensure `popper-open-popup-alist' is up to date.
-  ;; See: https://github.com/karthink/popper/issues/71.
-  (advice-add #'popper-toggle :before (lambda (&rest _) (popper--update-popups))))
+           (derived-mode-p 'compilation-mode)))))))
 
 ;;;; Help System
 
@@ -714,8 +724,8 @@ When ARG is non-nil, the working directory may be selected, otherwise
   :bind
   ("C-x u" . vundo)
   :hook
-  (vundo-pre-enter . my/popper-hide)
-  (vundo-post-exit . my/popper-restore)
+  (vundo-pre-enter . my/popper-pause)
+  (vundo-post-exit . my/popper-resume)
   :custom
   (vundo-glyph-alist vundo-unicode-symbols)
   :config
@@ -2360,9 +2370,16 @@ otherwise the currently active project is used."
 
 ;; Use external transient package as Magit requires a later version.
 (use-package transient
+  :preface
+  (declare-function transient--show "transient")
   :hook
-  (transient-setup-buffer . my/popper-hide)
-  (transient-exit . my/popper-restore))
+  (transient-exit . my/popper-resume)
+  :config
+  ;; I would prefer to use `transient-setup-buffer-hook' but it gets called
+  ;; multiple times when an incorrect transient keybinding is used. The advice
+  ;; below ensures that `my/popper-pause' is only called once.
+  (advice-add #'transient--show
+              :before (lambda () (unless transient--showp (my/popper-pause)))))
 
 (use-package magit
   :preface
@@ -2458,7 +2475,7 @@ otherwise the currently active project is used."
   (defun my/eshell-pre-command ()
     "Eshell pre-command hook function."
     ;; Temporarily set TERM as certain shell commands use this to decide whether
-    ;; output in color. This setting is reverted in `my/eshell-post-command'.
+    ;; to output in color. This setting is reverted in `my/eshell-post-command'.
     (setenv "TERM" "xterm-256color")
     ;; Save history after command is entered but before it is invoked.
     ;; Otherwise, history is not saved until the eshell buffer is quit.
