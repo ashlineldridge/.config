@@ -69,13 +69,14 @@
      (regular)
      (t
       :default-family ,my/fixed-family
-      :default-weight regular
       :default-height 130
+      :default-weight regular
+      :fixed-pitch-family ,my/fixed-family
       :fixed-pitch-height 1.0
-      :fixed-pitch-serif-height 1.0
+      :fixed-pitch-weight regular
       :variable-pitch-family ,my/variable-family
-      :variable-pitch-weight regular
       :variable-pitch-height 1.0
+      :variable-pitch-weight regular
       :mode-line-active-family ,my/fixed-family
       :mode-line-inactive-family ,my/fixed-family
       :mode-line-active-height 120
