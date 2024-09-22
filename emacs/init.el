@@ -1128,7 +1128,6 @@ otherwise the currently active project is used."
 
 (use-package vertico-repeat
   :ensure nil
-  ;; :defines savehist-additional-variables
   :hook (minibuffer-setup . vertico-repeat-save)
   :bind
   ("C-c '" . vertico-repeat-select)
@@ -1140,9 +1139,15 @@ otherwise the currently active project is used."
 (use-package vertico-quick
   :after vertico
   :ensure nil
+  :preface
+  (defun my/quick-insert-apostrophe ()
+    "Insert an apostrophe character (because it is bound to quick commands)."
+    (interactive)
+    (insert "'"))
   :bind
   (:map vertico-map
-   ("'" . vertico-quick-exit))
+   ("'" . vertico-quick-exit)
+   ("M-'" . my/quick-insert-apostrophe))
   :custom
   (vertico-quick1 "asdfghjkl")
   (vertico-quick2 "asdfghjkl"))
@@ -1210,7 +1215,8 @@ otherwise the currently active project is used."
   :ensure nil
   :bind
   (:map corfu-map
-   ("'" . corfu-quick-complete))
+   ("'" . corfu-quick-complete)
+   ("M-'" . my/quick-insert-apostrophe))
   :custom
   (corfu-quick1 "asdfghjkl")
   (corfu-quick2 "asdfghjkl"))
