@@ -761,17 +761,6 @@ When ARG is non-nil, the working directory may be selected, otherwise
 ;;;;; Jumping Around
 
 (use-package avy
-  :preface
-  (declare-function avy-forward-item "avy")
-  (declare-function beginning-of-thing "thingatpt")
-  (defun my/avy-action-select-sexp (pt)
-    "Move to PT and select the sexp there."
-    (require 'thingatpt)
-    (goto-char pt)
-    (beginning-of-thing 'sexp)
-    (set-mark-command nil)
-    (forward-sexp)
-    (activate-mark))
   :bind
   (("M-j" . avy-goto-word-1)
    ("M-J" . avy-goto-char-in-line)
@@ -787,13 +776,13 @@ When ARG is non-nil, the working directory may be selected, otherwise
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   (avy-styles-alist '((avy-isearch . post)))
   (avy-dispatch-alist
-   '((?t . avy-action-teleport)
+   '((?c . avy-action-copy)
      (?K . avy-action-kill-stay)
-     (?c . avy-action-copy)
+     (?m . avy-action-mark)
+     (?t . avy-action-teleport)
      (?y . avy-action-yank)
      (?Y . avy-action-yank-line)
-     (?z . avy-action-zap-to-char)
-     (?. . my/avy-action-select-sexp)))
+     (?z . avy-action-zap-to-char)))
   :config
   (eldoc-add-command-completions "avy-goto-"))
 
