@@ -1930,7 +1930,10 @@ otherwise the currently active project is used."
   (setf (alist-get 'go-ts-mode apheleia-mode-alist) 'goimports)
   ;; Use Ormolu for formatting Haskell files.
   (setf (alist-get 'haskell-mode apheleia-mode-alist) 'ormolu)
-  (setf (alist-get 'ormolu apheleia-formatters) '("ormolu" "--stdin-input-file" ".")))
+  (setf (alist-get 'ormolu apheleia-formatters) '("ormolu" "--stdin-input-file" "."))
+  ;; Use OpenTofu instead of Terraform.
+  (setf (alist-get 'terraform-mode apheleia-mode-alist) 'tofu)
+  (setf (alist-get 'tofu apheleia-formatters) '("tofu" "fmt" "-")))
 
 ;;;;; Programming Languages
 
