@@ -2702,8 +2702,8 @@ with a numbered suffix."
                 (append electric-pair-text-pairs my/org-extra-electric-pairs)))
 
   :bind
-  (("C-c C-o" . org-open-at-point-global)
-   ("C-c o l" . org-store-link)
+  (("C-c o l" . org-toggle-link-display)
+   ("C-c C-o" . org-open-at-point-global)
    ("C-c o s" . org-save-all-org-buffers)
    ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
    ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
@@ -2986,8 +2986,9 @@ specified then a task category will be determined by the item's tags."
 (use-package org-appear
   :hook (org-mode . org-appear-mode)
   :custom
-  (org-appear-autolinks t)
-  (org-appear-delay 0.6))
+  ;; Don't auto-show links as it's too distracting.
+  (org-appear-autolinks nil)
+  (org-appear-delay 0.5))
 
 (use-package org-roam
   :bind
