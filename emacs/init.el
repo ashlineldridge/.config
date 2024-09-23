@@ -2566,7 +2566,8 @@ with a numbered suffix."
     "Delete the previous interpreter output and move to the previous prompt."
     (interactive)
     (my/eshell-delete-previous-output)
-    (eshell-previous-prompt))
+    (eshell-previous-prompt)
+    (recenter))
 
   :bind
   ("C-c e" . eshell)
