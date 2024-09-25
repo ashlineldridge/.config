@@ -1180,6 +1180,7 @@ otherwise the currently active project is used."
   (corfu-preview-current nil)
   (corfu-min-width 80)
   (corfu-max-width 120)
+  (corfu-scroll-margin 4)
   :config
   (add-to-list 'corfu-continue-commands #'my/corfu-move-to-minibuffer))
 
