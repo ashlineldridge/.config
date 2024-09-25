@@ -1692,6 +1692,7 @@ otherwise the currently active project is used."
   :ensure nil
   :custom
   (compilation-ask-about-save nil)
+  (compilation-max-output-line-length nil)
   :bind
   ("C-c b 1" . compile)
   ("C-c b 2" . recompile))
