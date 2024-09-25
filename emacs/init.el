@@ -2706,14 +2706,12 @@ with a numbered suffix."
                 (append electric-pair-pairs my/org-extra-electric-pairs))
     (setq-local electric-pair-text-pairs
                 (append electric-pair-text-pairs my/org-extra-electric-pairs)))
-
   :bind
   (("C-c C-o" . org-open-at-point-global)
    ("C-c o l" . org-toggle-link-display)
    ("C-c o s" . org-save-all-org-buffers)
    :map org-mode-map
-   ("C-'" . nil)
-   ("C-c C-S-l" . org-cliplink))
+   ("C-'" . nil))
   :hook (org-mode . my/org-init)
   :custom
   (org-auto-align-tags nil)
@@ -2987,7 +2985,14 @@ specified then a task category will be determined by the item's tags."
   ("C-c o c" . (lambda () (interactive) (org-capture nil "c")))
   ("C-c o m" . (lambda () (interactive) (org-capture nil "m"))))
 
-(use-package org-cliplink)
+(use-package org-cliplink
+  :after org
+  :bind
+  (:map org-mode-map
+   ;; Use `org-insert-link' (C-c C-l) to insert links with a user-provided
+   ;; description as well as for editing links/descriptions. Use `org-cliplink'
+   ;; below to insert a link with the page title as the description.
+   ("C-c C-S-l" . org-cliplink)))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
