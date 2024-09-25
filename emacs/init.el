@@ -2707,13 +2707,9 @@ with a numbered suffix."
                 (append electric-pair-text-pairs my/org-extra-electric-pairs)))
 
   :bind
-  (("C-c o l" . org-toggle-link-display)
-   ("C-c C-o" . org-open-at-point-global)
+  (("C-c C-o" . org-open-at-point-global)
+   ("C-c o l" . org-toggle-link-display)
    ("C-c o s" . org-save-all-org-buffers)
-   ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
-   ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
-   ("C-c o c" . (lambda () (interactive) (org-capture nil "c")))
-   ("C-c o m" . (lambda () (interactive) (org-capture nil "m")))
    :map org-mode-map
    ("C-'" . nil)
    ("C-c C-S-l" . org-cliplink))
@@ -2980,6 +2976,15 @@ specified then a task category will be determined by the item's tags."
   :config
   ;; Save all org buffers before quitting the agenda ('s' saves immediately).
   (advice-add #'org-agenda-quit :before #'org-save-all-org-buffers))
+
+(use-package org-capture
+  :ensure nil
+  :bind
+  ("C-c o g" . org-capture-goto-last-stored)
+  ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
+  ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
+  ("C-c o c" . (lambda () (interactive) (org-capture nil "c")))
+  ("C-c o m" . (lambda () (interactive) (org-capture nil "m"))))
 
 (use-package org-cliplink)
 
