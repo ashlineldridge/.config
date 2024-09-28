@@ -2754,6 +2754,7 @@ with a numbered suffix."
   (org-fontify-done-headline t)
   (org-fontify-quote-and-verse-blocks t)
   (org-hide-emphasis-markers t)
+  (org-image-actual-width nil)
   (org-log-done 'time)
   ;; Leaving drawer logging disabled for now as I don't like the format of the
   ;; log items and I want to know when a task was created which doesn't happen
