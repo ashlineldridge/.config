@@ -2868,8 +2868,21 @@ specified then a task category will be determined by the item's tags."
     (interactive)
     (my/org-agenda-refile-personal-or-work my/gtd-someday-file))
 
+  (defun my/org-agenda-new-frame (keys)
+    "Open the org agenda indicated by KEYS in a new frame."
+    (select-frame (make-frame))
+    (set-frame-size (selected-frame) 700 (display-pixel-height) t)
+    (set-frame-position (selected-frame) 0 0)
+    (org-agenda nil keys))
+
+  (defun my/org-agenda-new-frame-work ()
+    "Open the work org agenda in a new frame."
+    (interactive)
+    (my/org-agenda-new-frame "dw"))
+
   :bind
   (("C-c o a" . org-agenda)
+   ("C-c o w" . my/org-agenda-new-frame-work)
    :map org-agenda-mode-map
    ("r" . nil) ;; Allows 'r' to be bound as a prefix key.
    ("r r" . org-agenda-refile)
