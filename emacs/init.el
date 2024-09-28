@@ -2528,12 +2528,11 @@ with a numbered suffix."
 
   (defun my/eshell-insert-arg (&optional n)
     "Insert the Nth argument (from the end) of the previous command."
-    (interactive "p")
-    (when-let* ((num-args (length eshell-last-arguments))
-                (n (min n num-args))
-                (arg (nth (- num-args n) eshell-last-arguments))
-                (arg (if (numberp arg) (number-to-string arg) arg)))
-      (insert (substring-no-properties arg))))
+    (interactive (list (prefix-numeric-value (or current-prefix-arg 0))))
+    (when-let* ((args (flatten-list eshell-last-arguments))
+                (num-args (length args))
+                (arg (nth (max 0 (- num-args n 1)) args)))
+      (insert (substring-no-properties (format "%s" arg)))))
 
   (defun my/eshell-kill-whole-line ()
     "Eshell version of `kill-whole-line' that respects the prompt."
