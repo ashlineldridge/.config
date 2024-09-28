@@ -1799,7 +1799,19 @@ otherwise the currently active project is used."
   (set-face-attribute 'eglot-inlay-hint-face nil :height 0.9 :slant 'italic))
 
 (use-package eglot-x
+  :after eglot
   :ensure (:host github :repo "nemethf/eglot-x")
+  :bind
+  ;; Most of the LSP extension commands below only apply to rust-analyzer.
+  (:map eglot-mode-map
+   ("C-c / c" . eglot-x-find-crate)
+   ("C-c / m" . eglot-x-view-recursive-memory-layout)
+   ("C-c / o" . eglot-x-open-external-documentation)
+   ("C-c / r" . eglot-x-ask-runnables)
+   ("C-c / s" . eglot-x-structural-search-replace)
+   ("C-c / t" . eglot-x-ask-related-tests)
+   ("C-c / w" . eglot-x-reload-workspace)
+   ("C-c / x" . eglot-x-expand-macro))
   :hook (eglot-managed-mode . eglot-x-setup))
 
 ;; Speed up Eglot.
