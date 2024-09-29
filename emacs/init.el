@@ -2882,8 +2882,6 @@ specified then a task category will be determined by the item's tags."
   (defun my/org-agenda-new-frame (keys)
     "Open the org agenda indicated by KEYS in a new frame."
     (select-frame (make-frame))
-    (set-frame-size (selected-frame) 700 (display-pixel-height) t)
-    (set-frame-position (selected-frame) 0 0)
     (org-agenda nil keys))
 
   (defun my/org-agenda-new-frame-work ()

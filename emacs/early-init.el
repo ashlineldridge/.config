@@ -59,8 +59,10 @@
 ;; Configure frame parameters.
 (setq default-frame-alist
       (append '((undecorated-round . t)
-                (width . (text-pixels . 800))
-                (height . (text-pixels . 900)))
+                (top . 0.5)
+                (left . 0.5)
+                (width . (text-pixels . 700))
+                (height . (text-pixels . 600)))
               default-frame-alist))
 
 ;; Blank out the screen to prevent the initial flash of white light which
