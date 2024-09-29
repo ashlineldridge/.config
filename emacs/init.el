@@ -2701,7 +2701,6 @@ with a numbered suffix."
   (defvar my/gtd-archive-file (expand-file-name "archive.org" my/gtd-dir))
   (defvar my/gtd-bookmarks-file (expand-file-name "bookmarks.org" my/gtd-dir))
   (defvar my/gtd-coffee-file (expand-file-name "coffee.org" my/gtd-dir))
-  (defvar my/gtd-music-file (expand-file-name "music.org" my/gtd-dir))
 
   ;; Extra electric pairs to use in org mode.
   (defvar my/org-extra-electric-pairs '((?/ . ?/) (?= . ?=) (?~ . ?~)))
@@ -2749,14 +2748,7 @@ with a numbered suffix."
         "  - Breakdown: 50g/70g/60g/60g/60g on 45s with no extra agitation\n"
         "  - Next time: Grind a bit finer\n"
         "- Taste notes:\n"
-        "  - Yum yum\n") :jump-to-captured t)
-     ("m" "Music" entry
-      (file+olp+datetree ,my/gtd-music-file "Music" "Albums")
-      ,(concat
-	"* %?[[https://open.spotify.com/album/4VNqy9FUAFCvwE6XqrtlOn?si=r3jW-T5QSBqiygbwpzv5fQ][Tom Waits: Bone Machine]] :experimental:rock:jazz:halloffame:\n"
-        "- Year: 2023\n"
-        "- Rating: 5/5\n"
-        "- Notes: Gud allbum.\n"))))
+        "  - Yum yum\n") :jump-to-captured t)))
   (org-catch-invisible-edits 'show-and-error)
   (org-confirm-babel-evaluate nil)
   (org-default-notes-file my/gtd-inbox-file)
