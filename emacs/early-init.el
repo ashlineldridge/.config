@@ -59,8 +59,6 @@
 ;; Configure frame parameters.
 (setq default-frame-alist
       (append '((undecorated-round . t)
-                (top . 0.5)
-                (left . 0.5)
                 (width . (text-pixels . 700))
                 (height . (text-pixels . 600)))
               default-frame-alist))
