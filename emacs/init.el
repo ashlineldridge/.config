@@ -560,7 +560,7 @@
 (use-package helpful
   :bind
   ("C-h c" . helpful-callable)
-  ("C-h C-." . helpful-at-point)
+  ("C-h ," . helpful-at-point)
   ;; Replace `describe-*' bindings with Helpful where possible.
   ([remap describe-function] . helpful-function)
   ([remap describe-symbol] . helpful-symbol)
@@ -1889,9 +1889,18 @@ otherwise the currently active project is used."
 
 (use-package eldoc
   :ensure nil
+  :preface
+  (defun my/eldoc-new-frame ()
+    "Open Eldoc documentation buffer in a new frame."
+    (interactive)
+    (select-frame (make-frame))
+    (let ((display-buffer-alist))
+      (eldoc-doc-buffer t)))
   :bind
   ("C-h ." . eldoc-doc-buffer)
+  ("C-h C-." . my/eldoc-new-frame)
   ("C-h t" . eldoc-mode)
+  ("C-h T" . global-eldoc-mode)
   :hook (elpaca-after-init . global-eldoc-mode)
   :custom
   (eldoc-idle-delay 0.1)
@@ -1899,12 +1908,6 @@ otherwise the currently active project is used."
   (eldoc-echo-area-prefer-doc-buffer t)
   (eldoc-echo-area-use-multiline-p nil)
   (eldoc-echo-area-display-truncation-message nil))
-
-(use-package eldoc-box
-  :bind
-  ("C-h ," . eldoc-box-help-at-point)
-  :custom
-  (eldoc-box-clear-with-C-g t))
 
 ;;;;;; Flymake
 
