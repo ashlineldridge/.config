@@ -72,6 +72,7 @@ emacs-lisp-mode inferior-emacs-lisp-mode
 (dolist "(dolist (" p ")" n> r> ")")
 (iflet "(if-let (" p ")" n> r> ")")
 (iflett "(if-let* (" p ")" n> r> ")")
+(int "(interactive" q ")")
 (lambda "(lambda (" p ") " r> ")")
 (let "(let (" p ")" n> r> ")")
 (lett "(let* (" p ")" n> r> ")")
