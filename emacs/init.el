@@ -690,7 +690,8 @@ When ARG is non-nil, the working directory may be selected, otherwise
   ;; override the keybinding below. For more extended use cases, I use Avy
   ;; zapping which mimics `zap-up-to-char' when zapping forwards and
   ;; `zap-to-char' when zapping backwards.
-  ("M-z" . zap-up-to-char))
+  ("M-z" . zap-up-to-char)
+  ("C-M-<return>" . duplicate-dwim))
 
 ;;;;; Text
 
