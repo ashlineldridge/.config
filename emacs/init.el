@@ -589,7 +589,6 @@
 (use-package simple
   :ensure nil
   :preface
-  (declare-function move-end-of-line "simple")
   (declare-function called-interactively-p "subr")
 
   (defun my/truncate-lines ()
@@ -619,9 +618,22 @@
           (delete-char -1)
         (delete-region (line-beginning-position) (point)))))
 
+  (defun my/open-line-below ()
+    "Open line below and indent point without breaking the current line."
+    (interactive)
+    (end-of-line)
+    (newline-and-indent))
+
+  (defun my/open-line-above ()
+    "Open line below and indent point without breaking the current line."
+    (interactive)
+    (forward-line -1)
+    (my/open-line-below))
+
   (defun my/minibuffer-history-eol (_)
     "Move point to the end of line when called interactively."
-    (when (called-interactively-p) (move-end-of-line 1)))
+    (when (called-interactively-p)
+      (end-of-line)))
 
   (defun my/async-shell-command (&optional arg)
     "Run `async-shell-command' and name the output buffer uniquely.
@@ -655,6 +667,8 @@ When ARG is non-nil, the working directory may be selected, otherwise
   ("<escape>" . keyboard-escape-quit)
   ("C-S-k" . my/copy-to-eol)
   ("C-M-k" . my/delete-to-eol)
+  ("C-<return>" . my/open-line-below)
+  ("C-S-<return>" . my/open-line-above)
   ("M-<backspace>" . my/delete-to-bol)
   ("M-c" . capitalize-dwim)
   ("M-l" . downcase-dwim)
