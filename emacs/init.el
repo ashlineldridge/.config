@@ -1682,8 +1682,9 @@ otherwise the currently active project is used."
 
 (use-package rg
   :bind
-  ("M-s M-s" . rg)
-  ("M-s M-S" . rg-literal))
+  ("M-s M-s r" . rg)
+  ("M-s M-s m" . rg-menu)
+  ("M-s M-s l" . rg-literal))
 
 (use-package wgrep
   :bind
