@@ -1067,7 +1067,15 @@ otherwise the currently active project is used."
   (super-save-silent t)
   (super-save-auto-save-when-idle t)
   (super-save-idle-duration 30)
-  (super-save-max-buffer-size nil))
+  (super-save-max-buffer-size nil)
+  (super-save-triggers '(async-shell-command
+                         consult-buffer
+                         eshell
+                         next-buffer
+                         pop-global-mark
+                         previous-buffer
+                         select-frame
+                         winum-select-window-by-number)))
 
 ;;;; Minibuffer
 
