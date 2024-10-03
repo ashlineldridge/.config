@@ -665,6 +665,7 @@ When ARG is non-nil, the working directory may be selected, otherwise
   ([remap kill-buffer] . kill-current-buffer)
   ([remap async-shell-command] . my/async-shell-command)
   ("<escape>" . keyboard-escape-quit)
+  ("C-c x l" . toggle-truncate-lines)
   ("C-S-k" . my/copy-to-eol)
   ("C-M-k" . my/delete-to-eol)
   ("C-<return>" . my/open-line-below)
