@@ -461,12 +461,30 @@
   (declare-function popper--update-popups "popper")
   (defvar my/popper-default-height 10)
   (defvar my/popper-ignore-modes '(grep-mode rg-mode))
-  (defvar my/popper-should-resume nil)
+  (defvar my/popper-temp-should-resume nil)
+
+  (defun my/popper-show ()
+    "Ensure the Popper window is shown."
+    (unless (my/popper-shown-p)
+      (my/popper-toggle)))
 
   (defun my/popper-shown-p ()
     "Return whether the Popper window is currently shown."
     (popper--update-popups)
     (not (null popper-open-popup-alist)))
+
+  (defun my/popper-window ()
+    "Return the current Popper window if it is shown."
+    (popper--update-popups)
+    (car (car popper-open-popup-alist)))
+
+  (defun my/popper-exec (fn)
+    "Exec FN with the current Popper window selected."
+    (my/popper-show)
+    (when-let ((pop-win (my/popper-window)))
+      (with-selected-window pop-win
+        (let ((cursor-type nil))
+          (apply fn nil)))))
 
   (defun my/popper-toggle ()
     "Toggle display of the Popper window."
@@ -488,6 +506,13 @@
       (popper-close-latest)
       (popper-open-latest)))
 
+  (defun my/popper-select ()
+    "Select the current Popper window, opening it if needed."
+    (interactive)
+    (my/popper-show)
+    (when-let ((win (my/popper-window)))
+      (select-window win)))
+
   (defun my/popper-kill-buffer-stay-open ()
     "Kill the current Popper buffer but stay open if there are others."
     (interactive)
@@ -495,30 +520,46 @@
       (popper-kill-latest-popup)
       (popper-open-latest)))
 
-  (defun my/popper-pause ()
+  (defun my/popper-temp-pause ()
     "Temporarily hide the Popper window (e.g. while a transient is shown)."
     (interactive)
-    (setq my/popper-should-resume (my/popper-shown-p))
-    (when my/popper-should-resume
+    (setq my/popper-temp-should-resume (my/popper-shown-p))
+    (when my/popper-temp-should-resume
       (popper-close-latest)))
 
-  (defun my/popper-resume ()
+  (defun my/popper-temp-resume ()
     "Restore the temporarily hidden Popper window."
-    (when my/popper-should-resume
+    (when my/popper-temp-should-resume
       (popper-open-latest)))
+
+  (defun my/popper-scroll-up ()
+    "Scroll the Popper window up."
+    (interactive)
+    (my/popper-exec #'my/pixel-scroll-partial-up))
+
+  (defun my/popper-scroll-down ()
+    "Scroll the Popper window down."
+    (interactive)
+    (my/popper-exec #'my/pixel-scroll-partial-down))
 
   :bind
   (("M-o h" . my/popper-toggle-height)
    ("M-o k" . my/popper-kill-buffer-stay-open)
    ("M-o o" . my/popper-toggle)
+   ("M-o p" . my/popper-select)
    ("M-o t" . popper-toggle-type)
    ("M-o <tab>" . popper-cycle)
+   ("M-o <up>" . my/popper-scroll-up)
+   ("M-o <down>" . my/popper-scroll-down)
    :repeat-map my/window-repeat-map
    ("h" . my/popper-toggle-height)
    ("k" . my/popper-kill-buffer-stay-open)
    ("o" . my/popper-toggle)
+   ("p" . my/popper-select)
    ("t" . popper-toggle-type)
-   ("<tab>" . popper-cycle))
+   ("<tab>" . popper-cycle)
+   ("<up>" . my/popper-scroll-up)
+   ("<down>" . my/popper-scroll-down))
   :hook
   (elpaca-after-init . popper-mode)
   :custom
@@ -740,8 +781,8 @@ When ARG is non-nil, the working directory may be selected, otherwise
   :bind
   ("C-x u" . vundo)
   :hook
-  (vundo-pre-enter . my/popper-pause)
-  (vundo-post-exit . my/popper-resume)
+  (vundo-pre-enter . my/popper-temp-pause)
+  (vundo-post-exit . my/popper-temp-resume)
   :custom
   (vundo-glyph-alist vundo-unicode-symbols)
   :config
@@ -1856,7 +1897,6 @@ otherwise the currently active project is used."
 
 (use-package eglot-tempel
   ;; TODO: Disabling for now as not working as expected.
-  ;; Could be this issue: https://github.com/fejfighter/eglot-tempel/issues/10.
   :disabled
   :hook (elpaca-after-init . eglot-tempel-mode))
 
@@ -2423,13 +2463,13 @@ otherwise the currently active project is used."
   :preface
   (declare-function transient--show "transient")
   :hook
-  (transient-exit . my/popper-resume)
+  (transient-exit . my/popper-temp-resume)
   :config
   ;; I would prefer to use `transient-setup-buffer-hook' but it gets called
   ;; multiple times when an incorrect transient keybinding is used. The advice
-  ;; below ensures that `my/popper-pause' is only called once.
+  ;; below ensures that `my/popper-temp-pause' is only called once.
   (advice-add #'transient--show
-              :before (lambda () (unless transient--showp (my/popper-pause)))))
+              :before (lambda () (unless transient--showp (my/popper-temp-pause)))))
 
 (use-package magit
   :preface
