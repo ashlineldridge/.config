@@ -203,28 +203,65 @@
   (declare-function pixel-scroll-precision-interpolate "pixel-scroll")
   (defvar my/pixel-scroll-factor 0.25)
 
-  (defun my/pixel-scroll-page (&optional factor)
+  (defun my/pixel-scroll (factor)
     "Scroll up by the page's height multiplied by FACTOR."
-    (let* ((factor (or factor 1.0))
-           (window-height (window-text-height nil t))
-           (delta (* window-height factor)))
+    (let* ((height (window-text-height nil t))
+           (delta (* height factor)))
       (pixel-scroll-precision-interpolate delta nil 1)))
+
+  (defun my/pixel-scroll-page-up ()
+    "Scroll up by the page height."
+    (interactive)
+    (my/pixel-scroll 1.0))
+
+  (defun my/pixel-scroll-page-down ()
+    "Scroll down by the page height."
+    (interactive)
+    (my/pixel-scroll -1.0))
 
   (defun my/pixel-scroll-partial-up ()
     "Scroll up by `my/pixel-scroll-factor' times the page height."
     (interactive)
-    (my/pixel-scroll-page my/pixel-scroll-factor))
+    (my/pixel-scroll my/pixel-scroll-factor))
 
   (defun my/pixel-scroll-partial-down ()
     "Scroll down by `my/pixel-scroll-factor' times the page height."
     (interactive)
-    (my/pixel-scroll-page (- my/pixel-scroll-factor)))
+    (my/pixel-scroll (- my/pixel-scroll-factor)))
+
+  (defun my/pixel-scroll-page-up-other-window ()
+    "Scroll the other window up by the page height."
+    (interactive)
+    (with-selected-window (other-window-for-scrolling)
+      (my/pixel-scroll 1.0)))
+
+  (defun my/pixel-scroll-page-down-other-window ()
+    "Scroll down by the page height."
+    (interactive)
+    (with-selected-window (other-window-for-scrolling)
+      (my/pixel-scroll -1.0)))
+
+  (defun my/pixel-scroll-partial-up-other-window ()
+    "Scroll the other window up by `my/pixel-scroll-factor' times the page height."
+    (interactive)
+    (with-selected-window (other-window-for-scrolling)
+      (my/pixel-scroll my/pixel-scroll-factor)))
+
+  (defun my/pixel-scroll-partial-down-other-window ()
+    "Scroll the other window down by `my/pixel-scroll-factor' times page height."
+    (interactive)
+    (with-selected-window (other-window-for-scrolling)
+      (my/pixel-scroll (- my/pixel-scroll-factor))))
 
   :bind
-  ([remap scroll-up-command] . pixel-scroll-interpolate-down)
-  ([remap scroll-down-command] . pixel-scroll-interpolate-up)
+  ("M-v" . my/pixel-scroll-page-up)
+  ("C-v" . my/pixel-scroll-page-down)
+  ("C-M-S-v" . my/pixel-scroll-page-up-other-window)
+  ("C-M-v" . my/pixel-scroll-page-down-other-window)
   ("M-S-<up>" . my/pixel-scroll-partial-up)
   ("M-S-<down>" . my/pixel-scroll-partial-down)
+  ("C-M-<up>" . my/pixel-scroll-partial-up-other-window)
+  ("C-M-<down>" . my/pixel-scroll-partial-down-other-window)
   :hook (elpaca-after-init . pixel-scroll-precision-mode)
   :custom
   (pixel-scroll-precision-interpolate-page t))
@@ -478,13 +515,13 @@
     (popper--update-popups)
     (car (car popper-open-popup-alist)))
 
-  (defun my/popper-exec (fn)
+  (defun my/popper-exec (fn &rest args)
     "Exec FN with the current Popper window selected."
     (my/popper-show)
     (when-let ((pop-win (my/popper-window)))
       (with-selected-window pop-win
         (let ((cursor-type nil))
-          (apply fn nil)))))
+          (apply fn args)))))
 
   (defun my/popper-toggle ()
     "Toggle display of the Popper window."
@@ -535,12 +572,22 @@
   (defun my/popper-scroll-up ()
     "Scroll the Popper window up."
     (interactive)
-    (my/popper-exec #'my/pixel-scroll-partial-up))
+    (my/popper-exec #'my/pixel-scroll 0.5))
 
   (defun my/popper-scroll-down ()
     "Scroll the Popper window down."
     (interactive)
-    (my/popper-exec #'my/pixel-scroll-partial-down))
+    (my/popper-exec #'my/pixel-scroll -0.5))
+
+  (defun my/popper-beginning-of-buffer ()
+    "Move point to the beginning of the current Popper buffer."
+    (interactive)
+    (my/popper-exec #'beginning-of-buffer))
+
+  (defun my/popper-end-of-buffer ()
+    "Move point to the end of the current Popper buffer."
+    (interactive)
+    (my/popper-exec #'end-of-buffer))
 
   :bind
   (("M-o h" . my/popper-toggle-height)
@@ -549,17 +596,17 @@
    ("M-o p" . my/popper-select)
    ("M-o t" . popper-toggle-type)
    ("M-o <tab>" . popper-cycle)
-   ("M-o <up>" . my/popper-scroll-up)
-   ("M-o <down>" . my/popper-scroll-down)
+   ("C-M-S-<up>" . my/popper-scroll-up)
+   ("C-M-S-<down>" . my/popper-scroll-down)
+   ("C-M-S-<left>" . my/popper-beginning-of-buffer)
+   ("C-M-S-<right>" . my/popper-end-of-buffer)
    :repeat-map my/window-repeat-map
    ("h" . my/popper-toggle-height)
    ("k" . my/popper-kill-buffer-stay-open)
    ("o" . my/popper-toggle)
    ("p" . my/popper-select)
    ("t" . popper-toggle-type)
-   ("<tab>" . popper-cycle)
-   ("<up>" . my/popper-scroll-up)
-   ("<down>" . my/popper-scroll-down))
+   ("<tab>" . popper-cycle))
   :hook
   (elpaca-after-init . popper-mode)
   :custom
@@ -706,15 +753,19 @@ When ARG is non-nil, the working directory may be selected, otherwise
   ([remap kill-buffer] . kill-current-buffer)
   ([remap async-shell-command] . my/async-shell-command)
   ("<escape>" . keyboard-escape-quit)
+  ("M-c" . capitalize-dwim)
+  ("M-l" . downcase-dwim)
+  ("M-u" . upcase-dwim)
   ("C-c x l" . toggle-truncate-lines)
   ("C-S-k" . my/copy-to-eol)
   ("C-M-k" . my/delete-to-eol)
   ("C-<return>" . my/open-line-below)
   ("C-S-<return>" . my/open-line-above)
   ("M-<backspace>" . my/delete-to-bol)
-  ("M-c" . capitalize-dwim)
-  ("M-l" . downcase-dwim)
-  ("M-u" . upcase-dwim)
+  ("M-S-<left>" . beginning-of-buffer)
+  ("M-S-<right>" . end-of-buffer)
+  ("C-M-<left>" . beginning-of-buffer-other-window)
+  ("C-M-<right>" . end-of-buffer-other-window)
   :hook
   (elpaca-after-init . column-number-mode)
   (prog-mode . my/truncate-lines)
@@ -2405,7 +2456,8 @@ otherwise the currently active project is used."
   (eldoc-add-command "paredit-backward" "paredit-forward"
                      "paredit-backward-delete" "paredit-close-round")
   ;; Unbind keybindings that collide with things I find more useful.
-  (dolist (key '("C-c C-M-l" "M-?" "M-q" "M-r" "M-s" "M-J"))
+  (dolist (key '("M-?" "M-q" "M-r" "M-s" "M-J"
+                 "C-c C-M-l" "C-M-<left>" "C-M-<right>"))
     (define-key paredit-mode-map (kbd key) nil)))
 
 (use-package elec-pair
@@ -2798,7 +2850,9 @@ with a numbered suffix."
   (("C-c C-o" . org-open-at-point-global)
    ("C-c o s" . org-save-all-org-buffers)
    :map org-mode-map
-   ("C-'" . nil))
+   ("C-'" . nil)
+   ("M-S-<up>" . nil)
+   ("M-S-<down>" . nil))
   :hook (org-mode . my/org-init)
   :custom
   (org-auto-align-tags nil)
