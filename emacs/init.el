@@ -1870,6 +1870,7 @@ otherwise the currently active project is used."
 ;;;;;; Eglot
 
 (use-package eglot
+  :ensure nil
   :preface
   (declare-function eglot-inlay-hints-mode "eglot")
   (declare-function eglot-completion-at-point "eglot")
