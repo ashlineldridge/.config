@@ -2530,8 +2530,9 @@ otherwise the currently active project is used."
   :bind
   ("C-c g c" . magit-clone)
   ("C-c g s" . magit-status)
-  ("C-c g d" . magit-dispatch)
-  ("C-c g f" . magit-file-dispatch)
+  ("C-c g d" . magit-file-dispatch)
+  ("C-c g f" . magit-find-file)
+  ("C-c g F" . magit-find-file-other-window)
   :custom
   (magit-verbose-messages t)
   (magit-refresh-verbose t)
