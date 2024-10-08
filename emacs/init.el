@@ -869,12 +869,21 @@ When ARG is non-nil, the working directory may be selected, otherwise
 ;;;;; Jumping Around
 
 (use-package avy
+  :preface
+  (declare-function avy-goto-end-of-line "avy")
+  (defun my/avy-goto-end-of-line ()
+    "Same as `avy-goto-end-of-line' but show the overlay as a postfix."
+    ;; Can't use `avy-styles-alist' as `avy-goto-end-of-line' wraps `avy-goto-line'.
+    (interactive)
+    (require 'avy)
+    (let ((avy-style 'post))
+      (call-interactively #'avy-goto-end-of-line)))
   :bind
   (("M-j" . avy-goto-word-1)
    ("M-J" . avy-goto-char-in-line)
    ("M-g c" . avy-goto-char-timer)
    ("M-g l" . avy-goto-line)
-   ("M-g L" . avy-goto-end-of-line)
+   ("M-g L" . my/avy-goto-end-of-line)
    :map isearch-mode-map
    ("M-j" . avy-isearch))
   :custom
@@ -936,7 +945,6 @@ When ARG is non-nil, the working directory may be selected, otherwise
   :config
   ;; Add extra functions that should trigger Pulsar. I'm not using
   ;; #'fn syntax here to avoid needing all the forward declarations.
-  (add-to-list 'pulsar-pulse-functions 'avy-goto-end-of-line)
   (add-to-list 'pulsar-pulse-functions 'avy-goto-line)
   (add-to-list 'pulsar-pulse-functions 'beginning-of-buffer)
   (add-to-list 'pulsar-pulse-functions 'beginning-of-defun)
@@ -950,6 +958,7 @@ When ARG is non-nil, the working directory may be selected, otherwise
   (add-to-list 'pulsar-pulse-functions 'isearch-repeat-forward)
   (add-to-list 'pulsar-pulse-functions 'magit-section-backward)
   (add-to-list 'pulsar-pulse-functions 'magit-section-forward)
+  (add-to-list 'pulsar-pulse-functions 'my/avy-goto-end-of-line)
   (add-to-list 'pulsar-pulse-functions 'other-frame)
   (add-to-list 'pulsar-pulse-functions 'pop-global-mark)
   (add-to-list 'pulsar-pulse-functions 'set-mark-command)
