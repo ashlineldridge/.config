@@ -742,8 +742,8 @@ When ARG is non-nil, the working directory may be selected, otherwise
 
   :custom
   (indent-tabs-mode nil)
-  (mark-ring-max 10)
-  (global-mark-ring-max 10)
+  (mark-ring-max 32)
+  (global-mark-ring-max 64)
   (set-mark-command-repeat-pop t)
   (shell-command-prompt-show-cwd t)
   (async-shell-command-buffer 'new-buffer)
