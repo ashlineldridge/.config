@@ -1921,7 +1921,6 @@ otherwise the currently active project is used."
   :ensure nil
   :preface
   (declare-function eglot-inlay-hints-mode "eglot")
-  (declare-function eglot-completion-at-point "eglot")
   (declare-function jsonrpc--log-event "subr")
 
   (defun my/eglot-init ()
@@ -1929,9 +1928,12 @@ otherwise the currently active project is used."
     (eglot-inlay-hints-mode 1)
     (setq-local eglot-cache-session-completions nil)
     (setq-local completion-at-point-functions
-                (list
-                 #'eglot-completion-at-point
-                 #'cape-file)))
+                '(eglot-completion-at-point
+                  cape-file))
+    (setq-local eldoc-documentation-functions
+                '(flymake-eldoc-function
+                  eglot-signature-eldoc-function
+                  eglot-hover-eldoc-function)))
   :bind
   (:map eglot-mode-map
    ("M-g ^" . eglot-find-implementation)
@@ -2469,9 +2471,11 @@ otherwise the currently active project is used."
     (setq-local outline-regexp ";;;+ [^\n]")
     (outline-minor-mode 1)
     (setq-local completion-at-point-functions
-                (list
-                 #'elisp-completion-at-point
-                 #'cape-file)))
+                '(elisp-completion-at-point cape-file))
+    (setq-local eldoc-documentation-functions
+                '(flymake-eldoc-function
+                  elisp-eldoc-var-docstring-with-value
+                  elisp-eldoc-funcall)))
 
   (defun my/elisp-flymake-byte-compile (fn &rest args)
     "Advises `elisp-flymake-byte-compile' to remove vterm from `load-path'."
