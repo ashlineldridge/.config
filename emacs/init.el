@@ -3285,7 +3285,7 @@ specified then a task category will be determined by the item's tags."
   :hook (elpaca-after-init . display-time-mode)
   :custom
   ;; Run `display-time-mode' to see time in mode line.
-  (display-time-format "%a %e %b, %I:%M %p")
+  (display-time-format "%a %e %b, %H:%M")
   (display-time-default-load-average nil)
   ;; Timezones to be displayed by `world-clock'. Zones names can be found
   ;; here: https://www.timezoneconverter.com/cgi-bin/tzc.
