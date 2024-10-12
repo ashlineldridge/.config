@@ -329,6 +329,9 @@
 (use-package window
   :ensure nil
   :preface
+  (declare-function winum-get-number "winum")
+  (defvar my/other-window-for-scrolling nil)
+
   (defun my/split-window-below ()
     "Split window below and move point to the new window."
     (interactive)
@@ -340,6 +343,43 @@
     (interactive)
     (split-window-right)
     (other-window 1))
+
+  (defun my/clear-pinned-other-window-for-scrolling ()
+    "Clear the currently pinned other-window for scrolling."
+    (interactive)
+    (if my/other-window-for-scrolling
+        (progn
+          (setq my/other-window-for-scrolling nil)
+          (message "Cleared pinned window"))
+      (message "No pinned window")))
+
+  (defun my/pin-other-window-for-scrolling (arg)
+    "Pin the window to be used for other-window scrolling.
+When a prefix ARG is specified, the currently pinned window is cleared.
+Likewise, if the selected window number is <= 0, the pinned window is cleared."
+    (interactive "P")
+    (if arg
+        (my/clear-pinned-other-window-for-scrolling)
+      (let ((num (read-number "Window: ")))
+        (if (<= num 0)
+            (my/clear-pinned-other-window-for-scrolling)
+          (if-let ((win (winum-get-window-by-number num)))
+              (progn
+                (setq my/other-window-for-scrolling win)
+                (message "Pinned window %d for scrolling" num))
+            (error "Invalid window: %d" num))))))
+
+  (defun my/other-window-for-scrolling ()
+    "Custom window selection for scrolling other window."
+    ;; First look for a left or right window to avoid scrolling the Popper
+    ;; window which has a dedicated scrolling command.
+    (or (when (and (window-live-p my/other-window-for-scrolling)
+                   (not (eq my/other-window-for-scrolling (selected-window))))
+          my/other-window-for-scrolling)
+        (window-in-direction 'left)
+        (window-in-direction 'right)
+        (next-window)))
+
   :bind
   (("M-[" . previous-buffer)
    ("M-]" . next-buffer)
@@ -349,6 +389,7 @@
    ("M-o 1" . delete-other-windows)
    ("M-o 2" . my/split-window-below)
    ("M-o 3" . my/split-window-right)
+   ("M-o *" . my/pin-other-window-for-scrolling)
    :repeat-map my/window-repeat-map
    ("=" . balance-windows)
    ("0" . delete-window)
@@ -360,6 +401,8 @@
   ;; Prefer splitting by width and only when the window is quite wide.
   (split-height-threshold nil)
   (split-width-threshold 200)
+  ;; Override how window is selected by `other-window-for-scrolling'.
+  (other-window-scroll-default #'my/other-window-for-scrolling)
   ;; The following provides the default `display-buffer' behavior for buffers
   ;; that are not managed by either Popper or Shackle.
   (display-buffer-base-action '((display-buffer-reuse-mode-window
@@ -472,10 +515,8 @@
 
 ;;;;; Window Orchestration
 
-;; Use Shackle for managing windows that aren't considered to be "popups" by
-;; Popper. Shackle basically replaces the manual configuration of
-;; `display-buffer-base-action' and `display-buffer-alist' with a simpler
-;; syntax.
+;; Shackle replaces the configuration of `display-buffer-base-action'
+;; and `display-buffer-alist' with a simpler syntax.
 (use-package shackle
   :hook (elpaca-after-init . shackle-mode)
   :custom
@@ -1489,12 +1530,10 @@ otherwise the currently active project is used."
     "Replacement for `project-find-file' that uses Consult sources."
     (interactive)
     (require 'consult)
-    ;; Prefer ?b over ?p in this context.
-    (let* ((proj-bufs `(:narrow ?b ,@consult--source-project-buffer-hidden))
-           (consult-project-buffer-sources
-            `(,proj-bufs                                 ;; Narrow: ?b (hidden)
-              consult--source-project-recent-file-hidden ;; Narrow: ?r (hidden)
-              my/consult-source-project-file)))          ;; Narrow: ?f (shown)
+    (let* ((consult-project-buffer-sources
+            `((:narrow ?b ,@consult--source-project-buffer) ;; Narrow: ?b (shown)
+              my/consult-source-project-file                ;; Narrow: ?f (shown)
+              consult--source-project-recent-file-hidden))) ;; Narrow: ?r (hidden)
       (consult-project-buffer)))
 
   (defun my/consult-read-file-name (prompt &optional dir _default mustmatch _initial pred)
@@ -1530,10 +1569,10 @@ otherwise the currently active project is used."
    ("M-_" . consult-focus-lines)
    ("C-M-_" . consult-keep-lines)
    ("M-s a" . consult-org-agenda)
-   ("M-s f" . consult-fd)
+   ("M-s f" . my/consult-project-file)
+   ("M-s F" . consult-fd)
    ("M-s l" . consult-line)
    ("M-s L" . consult-line-multi)
-   ("M-s p" . my/consult-project-file)
    ("M-s s" . consult-ripgrep)
    ("M-g -" . consult-outline)
    ("M-g e" . consult-compile-error)
