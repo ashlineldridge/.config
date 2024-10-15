@@ -2515,9 +2515,7 @@ otherwise the currently active project is used."
 
 (use-package elec-pair
   :ensure nil
-  :hook (elpaca-after-init . electric-pair-mode)
-  :config
-  (add-to-list 'electric-pair-pairs '(?` . ?`)))
+  :hook (elpaca-after-init . electric-pair-mode))
 
 (use-package rainbow-delimiters
   :hook
