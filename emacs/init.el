@@ -3245,6 +3245,7 @@ specified then a task category will be determined by the item's tags."
   ("C-c j d" . org-roam-dailies-find-directory)
   ("C-c j g" . org-roam-dailies-goto-date)
   ("C-c j t" . org-roam-dailies-goto-today)
+  ("C-c j T" . org-roam-dailies-goto-tomorrow)
   ("C-c j y" . org-roam-dailies-goto-yesterday)
   :custom
   (org-roam-dailies-directory my/org-journal-dir)
