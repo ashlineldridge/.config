@@ -2872,17 +2872,20 @@ with a numbered suffix."
   (declare-function org-get-tags "org")
   (declare-function org-refile-get-targets "org-refile")
 
-  ;; GTD (agenda) & PKM (notes) paths.
-  (defvar my/gtd-dir (expand-file-name "~/dev/home/gtd/"))
-  (defvar my/pkm-dir (expand-file-name "~/dev/home/pkm/"))
-  (defvar my/gtd-inbox-file (expand-file-name "inbox.org" my/gtd-dir))
-  (defvar my/gtd-personal-file (expand-file-name "personal.org" my/gtd-dir))
-  (defvar my/gtd-work-file (expand-file-name "work.org" my/gtd-dir))
-  (defvar my/gtd-recurring-file (expand-file-name "recurring.org" my/gtd-dir))
-  (defvar my/gtd-someday-file (expand-file-name "someday.org" my/gtd-dir))
-  (defvar my/gtd-archive-file (expand-file-name "archive.org" my/gtd-dir))
-  (defvar my/gtd-bookmarks-file (expand-file-name "bookmarks.org" my/gtd-dir))
-  (defvar my/gtd-coffee-file (expand-file-name "coffee.org" my/gtd-dir))
+  ;; Paths into repository (also named 'org') that contains all of my notes,
+  ;; journal entries, tasks, bookmarks, etc.
+  (defvar my/org-notes-dir (expand-file-name "~/dev/home/org/notes/"))
+  (defvar my/org-journal-dir (expand-file-name "~/dev/home/org/journal/"))
+  (defvar my/org-tasks-dir (expand-file-name "~/dev/home/org/tasks/"))
+  (defvar my/org-other-dir (expand-file-name "~/dev/home/org/other/"))
+  (defvar my/org-inbox-file (expand-file-name "inbox.org" my/org-tasks-dir))
+  (defvar my/org-personal-file (expand-file-name "personal.org" my/org-tasks-dir))
+  (defvar my/org-work-file (expand-file-name "work.org" my/org-tasks-dir))
+  (defvar my/org-recurring-file (expand-file-name "recurring.org" my/org-tasks-dir))
+  (defvar my/org-someday-file (expand-file-name "someday.org" my/org-tasks-dir))
+  (defvar my/org-archive-file (expand-file-name "archive.org" my/org-tasks-dir))
+  (defvar my/org-bookmarks-file (expand-file-name "bookmarks.org" my/org-other-dir))
+  (defvar my/org-coffee-file (expand-file-name "coffee.org" my/org-other-dir))
 
   ;; Extra electric pairs to use in org mode.
   (defvar my/org-extra-electric-pairs '((?/ . ?/) (?= . ?=) (?~ . ?~)))
@@ -2913,13 +2916,13 @@ with a numbered suffix."
      (plain-list-item . nil)))
   (org-capture-templates
    `(("i" "Inbox" entry
-      (file+headline ,my/gtd-inbox-file "Inbox")
+      (file+headline ,my/org-inbox-file "Inbox")
       "* TODO %i%?")
      ("b" "Bookmark" entry
-      (file+olp+datetree ,my/gtd-bookmarks-file "Bookmarks")
+      (file+olp+datetree ,my/org-bookmarks-file "Bookmarks")
       "* %(org-cliplink-capture)%?\n")
      ("c" "Coffee Journal" entry
-      (file+olp+datetree ,my/gtd-coffee-file "Coffee Journal" "Log")
+      (file+olp+datetree ,my/org-coffee-file "Coffee Journal" "Log")
       ,(concat
 	"* 6%?:00 AM\n"
         "- Beans: Use org-store-link (C-c o l) then org-insert-link (C-c C-l)\n"
@@ -2934,8 +2937,8 @@ with a numbered suffix."
         "  - Yum yum\n") :jump-to-captured t)))
   (org-catch-invisible-edits 'show-and-error)
   (org-confirm-babel-evaluate nil)
-  (org-default-notes-file my/gtd-inbox-file)
-  (org-directory my/gtd-dir)
+  (org-default-notes-file my/org-inbox-file)
+  (org-directory my/org-tasks-dir)
   (org-ellipsis " 》")
   (org-fontify-done-headline t)
   (org-fontify-quote-and-verse-blocks t)
@@ -2951,11 +2954,11 @@ with a numbered suffix."
   (org-pretty-entities t)
   (org-priority-default org-priority-lowest)
   (org-refile-targets
-   `((,my/gtd-archive-file :level . 1)
-     (,my/gtd-inbox-file :level . 1)
-     (,my/gtd-personal-file :level . 1)
-     (,my/gtd-work-file :level . 1)
-     (,my/gtd-someday-file :level . 1)))
+   `((,my/org-archive-file :level . 1)
+     (,my/org-inbox-file :level . 1)
+     (,my/org-personal-file :level . 1)
+     (,my/org-work-file :level . 1)
+     (,my/org-someday-file :level . 1)))
   ;; Show refile headlines as nested paths.
   (org-refile-use-outline-path t)
   (org-special-ctrl-a/e t)
@@ -3032,28 +3035,29 @@ specified then a task category will be determined by the item's tags."
   (defun my/org-agenda-refile-personal ()
     "Refile the current org agenda item into the personal list."
     (interactive)
-    (my/org-agenda-refile my/gtd-personal-file "Personal"))
+    (my/org-agenda-refile my/org-personal-file "Personal"))
 
   (defun my/org-agenda-refile-work ()
     "Refile the current org agenda item into the work list."
     (interactive)
-    (my/org-agenda-refile my/gtd-work-file "Work"))
+    (my/org-agenda-refile my/org-work-file "Work"))
 
   (defun my/org-agenda-refile-inbox ()
     "Refile the current org agenda item into the inbox."
     (interactive)
-    (my/org-agenda-refile my/gtd-inbox-file "Inbox"))
+    (my/org-agenda-refile my/org-inbox-file "Inbox"))
 
   (defun my/org-agenda-refile-archive ()
     "Refile the current org agenda item into the archive."
     (interactive)
-    (my/org-agenda-refile-personal-or-work my/gtd-archive-file))
+    (my/org-agenda-refile-personal-or-work my/org-archive-file))
 
   (defun my/org-agenda-refile-someday ()
     "Refile the current org agenda item into the someday."
     (interactive)
-    (my/org-agenda-refile-personal-or-work my/gtd-someday-file))
+    (my/org-agenda-refile-personal-or-work my/org-someday-file))
 
+  ;; TODO: See also org-agenda-window-setup
   (defun my/org-agenda-new-frame (keys)
     "Open the org agenda indicated by KEYS in a new frame."
     (select-frame (make-frame))
@@ -3090,75 +3094,75 @@ specified then a task category will be determined by the item's tags."
       ((alltodo
 	""
 	((org-agenda-overriding-header "Inbox")
-	 (org-agenda-files '(,my/gtd-inbox-file))))
+	 (org-agenda-files '(,my/org-inbox-file))))
        (alltodo
         ""
         ((org-agenda-overriding-header "Work")
-         (org-agenda-files '(,my/gtd-work-file))
+         (org-agenda-files '(,my/org-work-file))
          (org-agenda-sorting-strategy '(user-defined-up priority-down))))
        (alltodo
         ""
         ((org-agenda-overriding-header "Personal")
-         (org-agenda-files '(,my/gtd-personal-file))
+         (org-agenda-files '(,my/org-personal-file))
          (org-agenda-sorting-strategy '(user-defined-up priority-down))))))
      ("dp" "Personal Tasks"
       ((todo
 	"PROG"
         ((org-agenda-overriding-header "Progress")
-	 (org-agenda-files '(,my/gtd-personal-file))
+	 (org-agenda-files '(,my/org-personal-file))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"NEXT"
         ((org-agenda-overriding-header "Next")
-	 (org-agenda-files '(,my/gtd-personal-file))
+	 (org-agenda-files '(,my/org-personal-file))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
         "HOLD"
         ((org-agenda-overriding-header "Hold")
-	 (org-agenda-files '(,my/gtd-personal-file))
+	 (org-agenda-files '(,my/org-personal-file))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
         "TODO"
         ((org-agenda-overriding-header "Backlog")
-	 (org-agenda-files '(,my/gtd-personal-file))
+	 (org-agenda-files '(,my/org-personal-file))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (alltodo
 	""
 	((org-agenda-overriding-header "Inbox")
-	 (org-agenda-files '(,my/gtd-inbox-file)))))
+	 (org-agenda-files '(,my/org-inbox-file)))))
       ((org-agenda-tag-filter-preset '("-@work"))))
      ("dw" "Work Tasks"
       ((todo
 	"PROG"
         ((org-agenda-overriding-header "Progress")
-	 (org-agenda-files '(,my/gtd-work-file))
+	 (org-agenda-files '(,my/org-work-file))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"NEXT"
         ((org-agenda-overriding-header "Next")
-	 (org-agenda-files '(,my/gtd-work-file))
+	 (org-agenda-files '(,my/org-work-file))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"HOLD"
         ((org-agenda-overriding-header "Hold")
-	 (org-agenda-files '(,my/gtd-work-file))
+	 (org-agenda-files '(,my/org-work-file))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (todo
 	"TODO"
         ((org-agenda-overriding-header "Backlog")
-	 (org-agenda-files '(,my/gtd-work-file))
+	 (org-agenda-files '(,my/org-work-file))
 	 (org-agenda-sorting-strategy '(priority-down))))
        (alltodo
 	""
 	((org-agenda-overriding-header "Inbox")
-	 (org-agenda-files '(,my/gtd-inbox-file)))))
+	 (org-agenda-files '(,my/org-inbox-file)))))
       ((org-agenda-tag-filter-preset '("-@personal"))))))
   (org-agenda-files
    (list
-    my/gtd-inbox-file
-    my/gtd-personal-file
-    my/gtd-work-file
-    my/gtd-recurring-file))
+    my/org-inbox-file
+    my/org-personal-file
+    my/org-work-file
+    my/org-recurring-file))
   ;; Following variable allows customization of the agenda columns.
   (org-agenda-prefix-format
    '((agenda . " %i %-16:c%?-12t% s")
@@ -3211,12 +3215,10 @@ specified then a task category will be determined by the item's tags."
   ("C-c n t" . org-roam-tag-add)
   ("C-c n u" . org-roam-db-sync)
   :custom
-  (org-roam-directory (expand-file-name "notes/" my/pkm-dir))
+  (org-roam-directory my/org-notes-dir)
   ;; Disable `org-roam' completion as it's a bit annoying.
   (org-roam-completion-everywhere nil)
   (org-roam-completion-functions nil)
-  ;; Exclude dailies from the database.
-  (org-roam-file-exclude-regexp '("journal/"))
   (org-roam-node-display-template
    (concat "${title:60} " (propertize "${tags:*}" 'face 'org-tag)))
   (org-roam-capture-templates
@@ -3245,7 +3247,7 @@ specified then a task category will be determined by the item's tags."
   ("C-c j t" . org-roam-dailies-goto-today)
   ("C-c j y" . org-roam-dailies-goto-yesterday)
   :custom
-  (org-roam-dailies-directory "../journal")
+  (org-roam-dailies-directory my/org-journal-dir)
   (org-roam-dailies-capture-templates
    '(("d" "default" entry "* %?"
       :target (file+head "%<%Y-%m-%d>.org"
