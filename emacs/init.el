@@ -1049,7 +1049,7 @@ When ARG is non-nil, the working directory may be selected, otherwise
 (use-package ibuffer-vc
   :bind
   (:map ibuffer-mode-map
-   ("/p" . ibuffer-vc-set-filter-groups-by-vc-root))
+   ("/V" . ibuffer-vc-set-filter-groups-by-vc-root))
   :hook (ibuffer . ibuffer-vc-mode))
 
 ;;;; File System
