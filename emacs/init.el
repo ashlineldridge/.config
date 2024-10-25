@@ -1366,7 +1366,7 @@ otherwise the currently active project is used."
   (corfu-auto-delay 0.3)
   (corfu-preselect 'directory)
   (corfu-quit-at-boundary 'separator)
-  (corfu-on-exact-match 'quit)
+  (corfu-on-exact-match nil)
   (corfu-count 16)
   (corfu-preview-current nil)
   (corfu-min-width 80)
