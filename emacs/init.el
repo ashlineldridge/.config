@@ -679,6 +679,21 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
          (unless (apply #'derived-mode-p my/popper-ignore-modes)
            (derived-mode-p 'compilation-mode)))))))
 
+;;;; Transient
+
+;; Use external transient as some packages require a later version.
+(use-package transient
+  :preface
+  (declare-function transient--show "transient")
+  :hook
+  (transient-exit . my/popper-temp-resume)
+  :config
+  ;; I would prefer to use `transient-setup-buffer-hook' but it gets called
+  ;; multiple times when an incorrect transient keybinding is used. The advice
+  ;; below ensures that `my/popper-temp-pause' is only called once.
+  (advice-add #'transient--show
+              :before (lambda () (unless transient--showp (my/popper-temp-pause)))))
+
 ;;;; Help System
 
 (use-package help-fns
@@ -2561,19 +2576,6 @@ otherwise the currently active project is used."
   :custom
   (vc-follow-symlinks t))
 
-;; Use external transient package as Magit requires a later version.
-(use-package transient
-  :preface
-  (declare-function transient--show "transient")
-  :hook
-  (transient-exit . my/popper-temp-resume)
-  :config
-  ;; I would prefer to use `transient-setup-buffer-hook' but it gets called
-  ;; multiple times when an incorrect transient keybinding is used. The advice
-  ;; below ensures that `my/popper-temp-pause' is only called once.
-  (advice-add #'transient--show
-              :before (lambda () (unless transient--showp (my/popper-temp-pause)))))
-
 (use-package magit
   :preface
   (declare-function magit-auto-revert-mode "magit")
@@ -3308,13 +3310,11 @@ specified then a task category will be determined by the item's tags."
 
 ;;;; Calculator
 
-;; Transient menu interface for `calc'. Use 'C-x *' to launch `calc-dispatch'.
-(use-package casual-calc
-  :defines calc-mode-map
-  :after calc
+(use-package calc
+  :ensure nil
   :bind
-  (:map calc-mode-map
-   ("C-o" . casual-calc-tmenu)))
+  ;; Use also 'C-x *' to launch `calc-dispatch'.
+  ("C-x C-*" . full-calc))
 
 ;;;; Spelling
 
