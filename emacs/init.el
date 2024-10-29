@@ -2216,6 +2216,8 @@ otherwise the currently active project is used."
                            (?t "Trait" my/imenu-trait-face))))))
 
 (use-package rustic
+  ;; So that rustic takes precedence in `auto-mode-alist'.
+  :after rust-mode
   :ensure (:host github :repo "emacs-rustic/rustic")
   :bind
   (:map rustic-mode-map
