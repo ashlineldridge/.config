@@ -2729,19 +2729,6 @@ with a numbered suffix."
                 (arg (nth (max 0 (- num-args n 1)) args)))
       (insert (substring-no-properties (format "%s" arg)))))
 
-  (defun my/eshell-kill-whole-line ()
-    "Eshell version of `kill-whole-line' that respects the prompt."
-    (interactive)
-    (eshell-bol)
-    (kill-line))
-
-  (defun my/eshell-delete-to-bol ()
-    "Eshell version of `my/delete-to-bol' that respects the prompt."
-    (interactive)
-    (let ((to (point)))
-      (eshell-bol)
-      (delete-region (point) to)))
-
   (defun my/eshell-refresh-aliases ()
     "Refresh Eshell aliases."
     (interactive)
@@ -2797,14 +2784,11 @@ with a numbered suffix."
    ("C-c i" . my/eshell-insert-arg)
    ("M-O" . my/eshell-mark-previous-output)
    ("C-M-O" . my/eshell-delete-previous-output)
-   ("C-S-<backspace>" . my/eshell-kill-whole-line)
-   ("M-<backspace>" . my/eshell-delete-to-bol)
    :repeat-map eshell-prompt-repeat-map
    ("C-n" . nil)
    ("C-p" . nil)
    ("n" . eshell-next-prompt)
-   ("p" . eshell-previous-prompt)
-   ("C-S-<backspace>" . my/eshell-delete-previous-output-upward)))
+   ("p" . eshell-previous-prompt)))
 
 (use-package em-cmpl
   :ensure nil
