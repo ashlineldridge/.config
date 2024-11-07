@@ -2647,7 +2647,6 @@ otherwise the currently active project is used."
   :preface
   (defalias 'eshell/v 'eshell-exec-visual)
   (declare-function eshell-bol "esh-mode")
-  (declare-function eshell-truncate-buffer "esh-mode")
   (declare-function eshell-send-input "esh-mode")
   (declare-function eshell-read-aliases-list "esh-alias")
   (declare-function eshell/cd "em-dirs")
@@ -2748,26 +2747,32 @@ with a numbered suffix."
     (interactive)
     (eshell-read-aliases-list))
 
+  (defun my/eshell-mark-previous-output (&optional arg)
+    "Like `eshell-mark-output' but keeps searching upwards for output."
+    (interactive "P")
+    (let ((from-line (line-number-at-pos))
+          start end total-lines)
+      (when (eshell-previous-prompt)
+        (setq total-lines (- from-line (line-number-at-pos) 1))
+        (if (> total-lines 0)
+            (progn
+              (forward-line 1)
+              (setq start (point))
+              (eshell-next-prompt)
+              (forward-line -1)
+              (setq end (pos-eol))
+              (goto-char start)
+              (push-mark end)
+              (when arg (narrow-to-region start end))
+              total-lines)
+          (my/eshell-mark-previous-output arg)))))
+
   (defun my/eshell-delete-previous-output ()
     "Delete the previous interpreter output relative to point."
     (interactive)
-    (save-excursion
-      (let ((inhibit-read-only t) start)
-        (eshell-previous-prompt)
-        (forward-line)
-        (setq start (point))
-        (eshell-next-prompt)
-        (forward-line -1)
-        (end-of-line)
-        (delete-region start (point))
-        (insert "*** removed ***"))))
-
-  (defun my/eshell-delete-previous-output-upward ()
-    "Delete the previous interpreter output and move to the previous prompt."
-    (interactive)
-    (my/eshell-delete-previous-output)
-    (eshell-previous-prompt)
-    (recenter))
+    (when (my/eshell-mark-previous-output)
+      (delete-region (point) (mark))
+      (delete-indentation)))
 
   :bind
   ("C-c e" . eshell)
@@ -2789,8 +2794,8 @@ with a numbered suffix."
   (:map eshell-mode-map
    ("C-c C-o" . nil)
    ("C-c i" . my/eshell-insert-arg)
-   ("C-c C-<backspace>" . my/eshell-delete-previous-output)
-   ("C-c C-S-<backspace>" . my/eshell-delete-previous-output-upward)
+   ("M-O" . my/eshell-mark-previous-output)
+   ("C-M-O" . my/eshell-delete-previous-output)
    ("C-S-<backspace>" . my/eshell-kill-whole-line)
    ("M-<backspace>" . my/eshell-delete-to-bol)
    :repeat-map eshell-prompt-repeat-map
