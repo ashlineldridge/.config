@@ -2665,7 +2665,7 @@ otherwise the currently active project is used."
     (setq-local corfu-auto nil)
     (setq-local corfu-popupinfo-mode nil)
     ;; Make outline work with eshell prompts.
-    (setq-local outline-regexp eshell-prompt-regexp))
+    (setq-local outline-regexp (concat eshell-prompt-regexp ".+")))
 
   (defun my/eshell-pre-command ()
     "Eshell pre-command hook function."
