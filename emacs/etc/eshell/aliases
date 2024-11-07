@@ -21,14 +21,15 @@ alias less echo
 alias more echo
 
 ;; Common tools.
-alias g git $*
 alias bz bazel $*
-alias tf terraform $*
+alias g git $*
+alias h helm $*
+alias j just $*
 alias k kubectl $*
 alias kctx kubectx $1
 alias kns kubens $1
-alias h helm $*
 alias ku kustomize $*
+alias tf terraform $*
 
 ;; Replace ls with eza.
 alias ls eza --group-directories-first $*
