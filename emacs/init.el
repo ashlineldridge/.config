@@ -1321,14 +1321,13 @@ otherwise the currently active project is used."
   :after vertico
   :ensure nil
   :preface
-  (defun my/quick-insert-apostrophe ()
-    "Insert an apostrophe character (because it is bound to quick commands)."
+  (defun my/insert-apostrophe ()
+    "Insert an apostrophe character (as it is often bound to quick commands)."
     (interactive)
     (insert "'"))
   :bind
   (:map vertico-map
-   ("'" . vertico-quick-exit)
-   ("M-'" . my/quick-insert-apostrophe))
+   ("'" . vertico-quick-exit))
   :custom
   (vertico-quick1 "asdfghjkl")
   (vertico-quick2 "asdfghjkl"))
@@ -1397,8 +1396,7 @@ otherwise the currently active project is used."
   :ensure nil
   :bind
   (:map corfu-map
-   ("'" . corfu-quick-complete)
-   ("M-'" . my/quick-insert-apostrophe))
+   ("'" . corfu-quick-complete))
   :custom
   (corfu-quick1 "asdfghjkl")
   (corfu-quick2 "asdfghjkl"))
