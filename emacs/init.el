@@ -2772,7 +2772,8 @@ with a numbered suffix."
     (interactive)
     (when (my/eshell-mark-previous-output)
       (delete-region (point) (mark))
-      (delete-indentation)))
+      (delete-indentation)
+      (eshell-previous-prompt)))
 
   :bind
   ("C-c e" . eshell)
