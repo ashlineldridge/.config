@@ -781,7 +781,7 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
 
   (defun my/async-shell-command (&optional arg)
     "Run `async-shell-command' and name the output buffer uniquely.
-When ARG is non-nil, the working directory may be selected, otherwise
+When prefix ARG is passed, the working directory may be selected, otherwise
 `default-directory' is used."
     (interactive "P")
     (let* ((default-directory (if arg (read-directory-name "In directory: ")
@@ -1193,8 +1193,8 @@ When ARG is non-nil, the working directory may be selected, otherwise
 
   (defun my/project-async-shell-command (&optional arg)
     "Execute a command asynchronously from the root of a project.
-When ARG is non-nil or there is no active project, the project may be selected,
-otherwise the currently active project is used."
+When prefix ARG is passed or there is no active project, the project may be
+selected, otherwise the currently active project is used."
     (interactive "P")
     (let ((default-directory (if arg (funcall project-prompter)
                                (project-root (project-current t)))))
@@ -2734,9 +2734,9 @@ with a numbered suffix."
     (interactive)
     (eshell-read-aliases-list))
 
-  (defun my/eshell-mark-previous-output (&optional arg)
-    "Like `eshell-mark-output' but keeps searching upwards for output."
-    (interactive "P")
+  (defun my/eshell-mark-previous-output ()
+    "Search upwards for the last interpreter output and mark it."
+    (interactive)
     (let ((from-line (line-number-at-pos))
           start end total-lines)
       (when (eshell-previous-prompt)
@@ -2750,9 +2750,18 @@ with a numbered suffix."
               (setq end (pos-eol))
               (goto-char start)
               (push-mark end)
-              (when arg (narrow-to-region start end))
               total-lines)
-          (my/eshell-mark-previous-output arg)))))
+          (my/eshell-mark-previous-output)))))
+
+  (defun my/eshell-narrow-previous-output (&optional arg)
+    "Narrow to the previous interpreter output (or widen if prefix ARG passed)."
+    (interactive "P")
+    (if arg
+        (progn
+          (widen)
+          (goto-char (point-max)))
+      (when (my/eshell-mark-previous-output)
+        (narrow-to-region (point) (mark)))))
 
   (defun my/eshell-delete-previous-output ()
     "Delete the previous interpreter output relative to point."
@@ -2783,7 +2792,8 @@ with a numbered suffix."
    ("C-c C-o" . nil)
    ("C-c i" . my/eshell-insert-arg)
    ("M-O" . my/eshell-mark-previous-output)
-   ("C-M-O" . my/eshell-delete-previous-output)
+   ("C-M-O" . my/eshell-narrow-previous-output)
+   ("M-S-<backspace>" . my/eshell-delete-previous-output)
    :repeat-map eshell-prompt-repeat-map
    ("C-n" . nil)
    ("C-p" . nil)
