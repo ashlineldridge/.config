@@ -1905,7 +1905,7 @@ selected, otherwise the currently active project is used."
   :preface
   (declare-function treesit-auto-install-all "treesit-auto")
 
-  ;; For now, to upgrade grammars, delete ~/.config/emacs/var/treesit-auto,
+  ;; For now, to upgrade grammars, delete ~/.config/emacs/var/tree-sitter,
   ;; re-open Emacs, and then run `my/treesit-auto-install-all'.
   (defun my/treesit-auto-install-all ()
     "Wrapper around `treesit-auto-install-all' that respects no-littering."
@@ -2012,8 +2012,6 @@ selected, otherwise the currently active project is used."
   :hook (eglot-managed-mode . eglot-booster-mode))
 
 (use-package eglot-tempel
-  ;; TODO: Disabling for now as not working as expected.
-  :disabled
   :hook (elpaca-after-init . eglot-tempel-mode))
 
 (use-package consult-eglot
