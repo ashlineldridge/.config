@@ -537,7 +537,8 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
   (declare-function popper-open-latest "popper")
   (declare-function popper-kill-latest-popup "popper")
   (declare-function popper--update-popups "popper")
-  (defvar my/popper-default-height 10)
+  (defvar my/popper-default-height 13)
+  (defvar my/popper-large-height 20)
   (defvar my/popper-ignore-modes '(grep-mode rg-mode))
   (defvar my/popper-temp-should-resume nil)
 
@@ -578,7 +579,7 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
     (interactive)
     (setq popper-window-height
           (if (eq popper-window-height my/popper-default-height)
-              (* 2 my/popper-default-height)
+              my/popper-large-height
             my/popper-default-height))
     (when (my/popper-shown-p)
       (popper-close-latest)
