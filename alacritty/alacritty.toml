@@ -1,4 +1,3 @@
-import = ["/Users/ae/.config/alacritty/themes/github_dark_high_contrast.toml"]
 
 [font]
 size = 14
@@ -55,3 +54,6 @@ mods = "Command"
 [window.padding]
 x = 0
 y = 0
+
+[general]
+import = ["/Users/ae/.config/alacritty/themes/github_dark_high_contrast.toml"]
