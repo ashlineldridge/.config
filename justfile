@@ -24,9 +24,8 @@ install-emacs: clean-emacs
     @echo ">>> Installing/updating Emacs"
     brew install emacs-plus@{{emacs-version}} \
         --with-imagemagick \
-        --with-poll \
         --with-native-comp \
-        --with-modern-black-variant-icon
+        --with-c9rgreen-sonoma-icon
     # The entire application is copied rather than creating an alias as that
     # seems to screw with the icon that gets shown by Raycast/Spotlight.
     sudo rm -rf /Applications/Emacs.app
