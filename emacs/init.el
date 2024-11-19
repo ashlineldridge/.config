@@ -1072,18 +1072,8 @@ When prefix ARG is passed, the working directory may be selected, otherwise
 
 (use-package files
   :ensure nil
-  :preface
-  (defun my/save-all-buffers ()
-    "Save all modified file-visiting buffers and don't ask questions."
-    (interactive)
-    (message (if (save-some-buffers t)
-                 "Saved modified buffers"
-               "(No buffers need to be saved)")))
   :bind
   ("C-x C-r" . restart-emacs)
-  ;; Shorter keybindings for saving.
-  ("M-'"  . save-buffer)
-  ("C-M-'" . my/save-all-buffers)
   :custom
   (confirm-kill-emacs #'yes-or-no-p)
   (delete-by-moving-to-trash t)
