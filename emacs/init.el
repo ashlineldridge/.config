@@ -1201,7 +1201,7 @@ selected, otherwise the currently active project is used."
    '((my/consult-project-file "File" ?f)
      (project-dired "Dired" ?j)
      (consult-ripgrep "Ripgrep" ?s)
-     (magit-project-status "Magit" ?m)
+     (magit-project-status "Magit" ?g)
      (project-eshell "Eshell" ?e)
      (my/project-async-shell-command "Async shell" ?&))))
 
@@ -1452,7 +1452,7 @@ selected, otherwise the currently active project is used."
   (declare-function consult--file-state "consult")
   (declare-function consult--read "consult")
   (declare-function project--find-in-directory "project")
-  (defconst my/consult-auto-preview '(:debounce 0.3 any))
+  (defconst my/consult-delayed-preview '(:debounce 0.3 any))
   (defconst my/consult-manual-preview "M-.")
 
   (defvar my/consult-source-dired-buffer
@@ -1472,7 +1472,7 @@ selected, otherwise the currently active project is used."
 
   (defvar my/consult-source-magit-buffer
     `(:name "Magit Buffer"
-      :narrow ?m
+      :narrow ?g
       :hidden t
       :category buffer
       :face consult-buffer
@@ -1505,7 +1505,7 @@ selected, otherwise the currently active project is used."
   (defvar my/consult-source-project-file
     `(:name "Project File"
       :narrow ?f
-      :preview-key ,my/consult-auto-preview
+      :preview-key ,my/consult-delayed-preview
       :category file
       :face consult-file
       :history file-name-history
@@ -1598,7 +1598,9 @@ selected, otherwise the currently active project is used."
    ("C-x p b" . consult-project-buffer)
    ("C-x p f" . my/consult-project-file)
    ("C-x r b" . consult-bookmark)
+   ("C-x r i" . consult-register-load)
    ("C-x r r" . consult-register)
+   ("C-x r s" . consult-register-store)
    ("C-x C-f" . my/consult-find-file)
    ("C-x C-k k" . consult-kmacro)
    :map minibuffer-local-map
@@ -1614,6 +1616,9 @@ selected, otherwise the currently active project is used."
   ;; Type C-, (defined above) to display prefix help. Alternatively, type
   ;; ',' followed by C-h (or ?) to call `embark-prefix-help-command'.
   (consult-narrow-key ",")
+  ;; Default to immediate preview. For commands that can access unopened files,
+  ;; I prefer either delayed or manual preview (configured further below) so
+  ;; that I can skip past candidates without incurring the preview.
   (consult-preview-key 'any)
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
   (consult-ripgrep-args "rg --null --line-buffered --color=never \
@@ -1652,10 +1657,10 @@ selected, otherwise the currently active project is used."
         '(consult--source-buffer                ;; Narrow: ?b (shown)
           consult--source-project-buffer-hidden ;; Narrow: ?p (hidden)
           my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
-          my/consult-source-eshell-buffer       ;; Narrow: ?s (hidden)
-          my/consult-source-magit-buffer        ;; Narrow: ?m (hidden)
-          consult--source-file-register         ;; Narrow: ?g (shown)
-          consult--source-bookmark              ;; Narrow: ?k (shown)
+          my/consult-source-eshell-buffer       ;; Narrow: ?e (hidden)
+          my/consult-source-magit-buffer        ;; Narrow: ?g (hidden)
+          consult--source-file-register         ;; Narrow: ?R (shown)
+          consult--source-bookmark              ;; Narrow: ?m (shown)
           consult--source-recent-file))         ;; Narrow: ?r (hidden)
 
   ;; Customize individual Consult sources.
@@ -1666,26 +1671,22 @@ selected, otherwise the currently active project is used."
    consult--source-project-buffer-hidden
    :name "Project Buffer" :narrow ?p
    consult--source-bookmark
-   :name "Bookmark" :narrow ?k
+   :name "Bookmark" :narrow ?m :preview-key my/consult-delayed-preview
    consult--source-file-register
-   :name "Register" :narrow ?g :preview-key my/consult-auto-preview
-   ;; Due to the value of `consult-preview-key' configured above, the preview
-   ;; will be displayed immediately for most commands. This is generally fine,
-   ;; but for commands that access unopened files I prefer to delay the preview
-   ;; so I can skip past candidates without incurring the preview.
+   :name "Register" :narrow ?R :preview-key my/consult-delayed-preview
    consult--source-recent-file
-   :name "Recent File" :narrow ?r :hidden t :preview-key my/consult-auto-preview
+   :name "Recent File" :narrow ?r :hidden t :preview-key my/consult-delayed-preview
    consult--source-project-recent-file
    consult--source-project-recent-file-hidden
-   :name "Recent Project File" :narrow ?r :preview-key my/consult-auto-preview
+   :name "Recent Project File" :narrow ?r :preview-key my/consult-delayed-preview
    ;; Configure delayed preview for file finding (disabled by default).
    consult-find consult-fd
-   :state (consult--file-preview) :preview-key my/consult-auto-preview
+   :state (consult--file-preview) :preview-key my/consult-delayed-preview
    ;; Configure delayed preview for commands/sources that relate to
    ;; unopened files and that preview automatically by default.
-   consult-ripgrep consult-grep consult-git-grep consult--source-bookmark
+   consult-ripgrep consult-grep consult-git-grep
    xref-find-references xref-find-references
-   :preview-key my/consult-auto-preview))
+   :preview-key my/consult-delayed-preview))
 
 (use-package consult-dir
   :defines eshell-mode-map
@@ -3175,8 +3176,7 @@ specified then a task category will be determined by the item's tags."
   ("C-c o l" . org-capture-goto-last-stored)
   ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
   ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
-  ("C-c o c" . (lambda () (interactive) (org-capture nil "c")))
-  ("C-c o m" . (lambda () (interactive) (org-capture nil "m"))))
+  ("C-c o c" . (lambda () (interactive) (org-capture nil "c"))))
 
 (use-package org-cliplink
   :after org
@@ -3254,7 +3254,7 @@ specified then a task category will be determined by the item's tags."
   (consult-org-roam-grep-func #'consult-ripgrep)
   :config
   (with-eval-after-load 'org-roam
-    (consult-customize org-roam-node-find :preview-key my/consult-auto-preview)
+    (consult-customize org-roam-node-find :preview-key my/consult-delayed-preview)
     (consult-customize org-roam-node-insert :preview-key my/consult-manual-preview)))
 
 ;;;; Emacs Server
