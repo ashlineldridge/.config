@@ -950,10 +950,10 @@ When prefix ARG is passed, the working directory may be selected, otherwise
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   (avy-styles-alist '((avy-isearch . post)))
   (avy-dispatch-alist
-   '((?c . avy-action-copy)
-     (?K . avy-action-kill-stay)
+   '((?K . avy-action-kill-stay)
      (?m . avy-action-mark)
      (?t . avy-action-teleport)
+     (?w . avy-action-copy)
      (?y . avy-action-yank)
      (?Y . avy-action-yank-line)
      (?z . avy-action-zap-to-char)))
