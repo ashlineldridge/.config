@@ -2074,6 +2074,15 @@ selected, otherwise the currently active project is used."
   (eldoc-echo-area-use-multiline-p nil)
   (eldoc-echo-area-display-truncation-message nil))
 
+(use-package eldoc-box
+  :bind
+  ("M-p" . eldoc-box-help-at-point)
+  :hook
+  ;; Reset the eldoc-box frame so that its padding isn't affected.
+  (spacious-padding-mode . eldoc-box-reset-frame)
+  :custom
+  (eldoc-box-clear-with-C-g t))
+
 ;;;;;; Flymake
 
 (use-package flymake
