@@ -2054,16 +2054,8 @@ selected, otherwise the currently active project is used."
 
 (use-package eldoc
   :ensure nil
-  :preface
-  (defun my/eldoc-new-frame ()
-    "Open Eldoc documentation buffer in a new frame."
-    (interactive)
-    (select-frame (make-frame))
-    (let ((display-buffer-alist))
-      (eldoc-doc-buffer t)))
   :bind
   ("C-h ." . eldoc-doc-buffer)
-  ("C-h C-." . my/eldoc-new-frame)
   ("C-h t" . eldoc-mode)
   ("C-h T" . global-eldoc-mode)
   :hook (elpaca-after-init . global-eldoc-mode)
@@ -2076,7 +2068,7 @@ selected, otherwise the currently active project is used."
 
 (use-package eldoc-box
   :bind
-  ("M-p" . eldoc-box-help-at-point)
+  ("C-h C-." . eldoc-box-help-at-point)
   :hook
   ;; Reset the eldoc-box frame so that its padding isn't affected.
   (spacious-padding-mode . eldoc-box-reset-frame)
