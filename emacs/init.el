@@ -51,7 +51,6 @@
   :preface
   (defconst my/fixed-family "Iosevka Comfy")
   (defconst my/variable-family "Iosevka Comfy Motion Duo")
-
   (defun my/fontaine-apply-preset (&rest _)
     "Apply the current (or default) Fontaine preset."
     (fontaine-set-preset (or fontaine-current-preset 'regular)))
@@ -172,13 +171,6 @@
      :fringe-width 8
      :right-divider-width 20
      :mode-line-width 2)))
-
-(use-package olivetti
-  :bind
-  ("<f7>" . olivetti-mode)
-  :custom
-  (olivetti-body-width 100)
-  (olivetti-style 'fancy))
 
 ;;;;; Lines and Columns
 
