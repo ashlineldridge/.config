@@ -19,6 +19,7 @@ alias bz=bazel
 alias g=git
 alias h=helm
 alias hf=helmfile
+alias j=just
 alias k=kubectl
 alias kb=kubebuilder
 alias kctx=kubectx
