@@ -767,6 +767,12 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
     (forward-line -1)
     (my/open-line-below))
 
+  (defun my/expand-line ()
+    "Expand the current line."
+    (interactive)
+    (set-mark (line-beginning-position))
+    (end-of-line))
+
   (defun my/minibuffer-history-eol (_)
     "Move point to the end of line when called interactively."
     (when (called-interactively-p)
@@ -805,6 +811,7 @@ When prefix ARG is passed, the working directory may be selected, otherwise
   ("M-c" . capitalize-dwim)
   ("M-l" . downcase-dwim)
   ("M-u" . upcase-dwim)
+  ("C-*" . my/expand-line)
   ("C-c x l" . toggle-truncate-lines)
   ("C-S-k" . my/copy-to-eol)
   ("C-M-k" . my/delete-to-eol)
