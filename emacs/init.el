@@ -1113,14 +1113,15 @@ When prefix ARG is passed, the working directory may be selected, otherwise
    ;; Without this, repeat mode takes over and j calls `dired-jump' again.
    ("j" . nil))
   :hook
-  (dired-mode . dired-hide-details-mode)
+  (dired-mode . my/truncate-lines)
   :custom
+  (delete-by-moving-to-trash t)
+  (dired-free-space nil)
   (dired-recursive-copies 'always)
   (dired-recursive-deletes 'always)
+  (dired-hide-details-hide-symlink-targets nil)
   (dired-kill-when-opening-new-dired-buffer t)
-  (dired-free-space nil)
-  (dired-listing-switches "-AGFhlv --group-directories-first --time-style=long-iso")
-  (dired-hide-details-hide-symlink-targets t))
+  (dired-listing-switches "-AGFhlv --group-directories-first --time-style=long-iso"))
 
 (use-package dired-aux
   :ensure nil
@@ -2577,6 +2578,7 @@ selected, otherwise the currently active project is used."
   :custom
   (magit-verbose-messages t)
   (magit-refresh-verbose t)
+  (magit-delete-by-moving-to-trash t)
   (magit-refresh-status-buffer nil)
   :config
   ;; Use `auto-revert-mode' instead.
