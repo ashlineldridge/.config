@@ -1088,7 +1088,12 @@ When prefix ARG is passed, the working directory may be selected, otherwise
   :ensure nil
   :bind
   ("C-x C-r" . restart-emacs)
+  :hook (elpaca-after-init . auto-save-visited-mode)
   :custom
+  ;; Disable `auto-save-mode' which saves buffers to separate files in favor of
+  ;; `auto-save-visited-mode' which saves file-visiting buffers to their files.
+  (auto-save-default nil)
+  (auto-save-visited-interval 5)
   (confirm-kill-emacs #'yes-or-no-p)
   (delete-by-moving-to-trash t)
   ;; Use GNU ls (used by dired and supports grouping directories first).
@@ -1218,26 +1223,6 @@ selected, otherwise the currently active project is used."
      (magit-project-status "Magit" ?g)
      (project-eshell "Eshell" ?e)
      (my/project-async-shell-command "Async shell" ?&))))
-
-;;;;; Auto-Save
-
-(use-package super-save
-  :hook (elpaca-after-init . super-save-mode)
-  :custom
-  ;; Disable built-in `auto-save-mode' as this replaces it.
-  (auto-save-default nil)
-  (super-save-silent t)
-  (super-save-auto-save-when-idle t)
-  (super-save-idle-duration 30)
-  (super-save-max-buffer-size nil)
-  (super-save-triggers '(async-shell-command
-                         consult-buffer
-                         eshell
-                         next-buffer
-                         pop-global-mark
-                         previous-buffer
-                         select-frame
-                         winum-select-window-by-number)))
 
 ;;;; Minibuffer
 
