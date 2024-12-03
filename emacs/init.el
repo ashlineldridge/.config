@@ -865,6 +865,11 @@ When prefix ARG is passed, the working directory may be selected, otherwise
 
 (use-package delsel
   :ensure nil
+  :preface
+  (defun my/maybe-delete-selection (&rest _)
+    "Delete region if `delete-selection-mode' is enabled."
+    (when (and delete-selection-mode mark-active)
+      (delete-active-region)))
   :hook (elpaca-after-init . delete-selection-mode))
 
 (use-package iso-transl
@@ -926,7 +931,9 @@ When prefix ARG is passed, the working directory may be selected, otherwise
 
 (use-package avy
   :preface
+  (declare-function avy-action-copy "avy")
   (declare-function avy-goto-end-of-line "avy")
+
   (defun my/avy-goto-end-of-line ()
     "Same as `avy-goto-end-of-line' but show the overlay as a postfix."
     ;; Can't use `avy-styles-alist' as `avy-goto-end-of-line' wraps `avy-goto-line'.
@@ -934,6 +941,13 @@ When prefix ARG is passed, the working directory may be selected, otherwise
     (require 'avy)
     (let ((avy-style 'post))
       (call-interactively #'avy-goto-end-of-line)))
+
+  (defun my/avy-action-yank (pt)
+    "Same as `avy-action-yank' but respects `delete-selection-mode'."
+    (avy-action-copy pt)
+    (my/maybe-delete-selection)
+    (yank))
+
   :bind
   (("M-j" . avy-goto-word-1)
    ("M-J" . avy-goto-char-in-line)
@@ -942,6 +956,7 @@ When prefix ARG is passed, the working directory may be selected, otherwise
    ("M-g L" . my/avy-goto-end-of-line)
    :map isearch-mode-map
    ("M-j" . avy-isearch))
+
   :custom
   (avy-all-windows 'all-frames)
   (avy-single-candidate-jump nil)
@@ -949,13 +964,13 @@ When prefix ARG is passed, the working directory may be selected, otherwise
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   (avy-styles-alist '((avy-isearch . post)))
   (avy-dispatch-alist
-   '((?K . avy-action-kill-stay)
-     (?m . avy-action-mark)
+   '((?m . avy-action-mark)
      (?t . avy-action-teleport)
      (?w . avy-action-copy)
-     (?y . avy-action-yank)
-     (?Y . avy-action-yank-line)
-     (?z . avy-action-zap-to-char)))
+     (?y . my/avy-action-yank)
+     (?z . avy-action-zap-to-char)
+     (?x . avy-action-kill-stay)))
+
   :config
   (eldoc-add-command-completions "avy-goto-"))
 
@@ -1648,8 +1663,7 @@ selected, otherwise the currently active project is used."
   :config
   ;; Make `consult-register' behave the same as `insert-register' by first
   ;; deleting the region if active.
-  (advice-add #'consult-register :before
-              (lambda (&rest _) (when mark-active (delete-active-region))))
+  (advice-add #'consult-register :before #'my/maybe-delete-selection)
 
   ;; Customize the list of sources shown by `consult-buffer'.
   (setq consult-buffer-sources
