@@ -2578,8 +2578,9 @@ selected, otherwise the currently active project is used."
   :custom
   (magit-verbose-messages t)
   (magit-refresh-verbose t)
-  (magit-delete-by-moving-to-trash t)
   (magit-refresh-status-buffer nil)
+  (magit-delete-by-moving-to-trash t)
+  (magit-diff-refine-hunk 'all)
   :config
   ;; Use `auto-revert-mode' instead.
   (magit-auto-revert-mode -1)
