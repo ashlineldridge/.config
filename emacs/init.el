@@ -1222,6 +1222,7 @@ selected, otherwise the currently active project is used."
      (project-dired "Dired" ?j)
      (consult-ripgrep "Ripgrep" ?s)
      (magit-project-status "Magit" ?g)
+     (project-vc-dir "VC" ?v)
      (project-eshell "Eshell" ?e)
      (my/project-async-shell-command "Async shell" ?&))))
 
@@ -2561,29 +2562,50 @@ selected, otherwise the currently active project is used."
 
 ;;;; Version Control
 
-(use-package vc-hooks
+(use-package vc
   :ensure nil
+  :defines vc-dir-mode-map
   :custom
-  (vc-follow-symlinks t))
+  (vc-follow-symlinks t)
+  :bind
+  ;; Consolidate keybindings into a single `use-package' form as VC commands
+  ;; are spread over many sub-packages. Requires need to be correct below.
+  (:map vc-prefix-map
+   ("<return>" . vc-dir-root)
+   ("a" . vc-register)
+   ("B" . vc-annotate)
+   ("e" . vc-ediff)
+   ("F" . vc-update)
+   ("k" . vc-revert)
+   ("K" . vc-delete-file)
+   :map vc-dir-mode-map
+   ("a" . vc-register)
+   ("B" . vc-annotate)
+   ("e" . vc-ediff)
+   ("F" . vc-update)
+   ("k" . vc-revert)
+   ("K" . vc-dir-delete-file))
+  :config
+  (require 'vc-dir))
 
 (use-package magit
   :preface
   (declare-function magit-auto-revert-mode "magit")
   :bind
+  ("C-c g <return>" . magit-status)
   ("C-c g c" . magit-clone)
-  ("C-c g s" . magit-status)
-  ("C-c g d" . magit-file-dispatch)
-  ("C-c g f" . magit-find-file)
-  ("C-c g F" . magit-find-file-other-window)
+  ("C-c g f" . magit-fetch)
+  ("C-c g r" . magit-rebase)
+  ("C-c g v" . magit-find-file)
+  ("C-c g ." . magit-file-dispatch)
   :custom
+  (magit-auto-revert-mode nil) ;; Use `auto-revert-mode' instead.
   (magit-verbose-messages t)
   (magit-refresh-verbose t)
   (magit-refresh-status-buffer nil)
   (magit-delete-by-moving-to-trash t)
   (magit-diff-refine-hunk 'all)
   :config
-  ;; Use `auto-revert-mode' instead.
-  (magit-auto-revert-mode -1)
   ;; Unbind keys used by winum.
   (dolist (key '("M-1" "M-2" "M-3" "M-4"))
     (define-key magit-section-mode-map (kbd key) nil)))
