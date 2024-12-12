@@ -811,7 +811,7 @@ When prefix ARG is passed, the working directory may be selected, otherwise
   ("M-c" . capitalize-dwim)
   ("M-l" . downcase-dwim)
   ("M-u" . upcase-dwim)
-  ("C-*" . my/expand-line)
+  ("M-*" . my/expand-line)
   ("C-c x l" . toggle-truncate-lines)
   ("C-S-k" . my/copy-to-eol)
   ("C-M-k" . my/delete-to-eol)
