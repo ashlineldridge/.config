@@ -3101,7 +3101,8 @@ specified then a task category will be determined by the item's tags."
         ""
         ((org-agenda-overriding-header "Personal")
          (org-agenda-files '(,my/org-personal-file))
-         (org-agenda-sorting-strategy '(user-defined-up priority-down))))))
+         (org-agenda-sorting-strategy '(user-defined-up priority-down)))))
+      ((org-agenda-buffer-name "*Org Agenda (All)*")))
      ("dp" "Personal Tasks"
       ((todo
 	"PROG"
@@ -3127,7 +3128,8 @@ specified then a task category will be determined by the item's tags."
 	""
 	((org-agenda-overriding-header "Inbox")
 	 (org-agenda-files '(,my/org-inbox-file)))))
-      ((org-agenda-tag-filter-preset '("-@work"))))
+      ((org-agenda-tag-filter-preset '("-@work"))
+       (org-agenda-buffer-name "*Org Agenda (Personal)*")))
      ("dw" "Work Tasks"
       ((todo
 	"PROG"
@@ -3153,7 +3155,8 @@ specified then a task category will be determined by the item's tags."
 	""
 	((org-agenda-overriding-header "Inbox")
 	 (org-agenda-files '(,my/org-inbox-file)))))
-      ((org-agenda-tag-filter-preset '("-@personal"))))))
+      ((org-agenda-tag-filter-preset '("-@personal"))
+       (org-agenda-buffer-name "*Org Agenda (Work)*")))))
   (org-agenda-files
    (list
     my/org-inbox-file
@@ -3167,6 +3170,7 @@ specified then a task category will be determined by the item's tags."
      (tags . " %i %-16:c")
      (search . " %i %-16:c")))
   (org-agenda-span 'week)
+  (org-agenda-sticky t)
   (org-agenda-start-with-log-mode t)
   (org-agenda-tags-column 0)
   (org-agenda-window-setup 'current-window)
