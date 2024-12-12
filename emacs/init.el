@@ -2980,6 +2980,7 @@ with a numbered suffix."
 (use-package org-agenda
   :ensure nil
   :preface
+  (declare-function org-agenda-redo-all "org-agenda")
   (declare-function org-agenda-quit "org-agenda")
 
   ;; Order of Org agenda items.
@@ -3065,6 +3066,11 @@ specified then a task category will be determined by the item's tags."
     (interactive)
     (my/org-agenda-new-frame "dw"))
 
+  (defun my/org-agenda-redo-all-exhaustive ()
+    "Rebuild all agenda views in all agenda buffers."
+    (interactive)
+    (org-agenda-redo-all t))
+
   :bind
   (("C-c o a" . org-agenda)
    ("C-c o w" . my/org-agenda-new-frame-work)
@@ -3076,6 +3082,7 @@ specified then a task category will be determined by the item's tags."
    ("r a" . my/org-agenda-refile-archive)
    ("r s" . my/org-agenda-refile-someday)
    ("r i" . my/org-agenda-refile-inbox)
+   ("g" . my/org-agenda-redo-all-exhaustive)
    ("k" . org-agenda-kill)
    ("?" . which-key-show-major-mode))
 
