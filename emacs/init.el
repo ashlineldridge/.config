@@ -1456,50 +1456,30 @@ selected, otherwise the currently active project is used."
   (defconst my/consult-delayed-preview '(:debounce 0.3 any))
   (defconst my/consult-manual-preview "M-.")
 
+  (defun my/consult-source-buffer (name narrow mode)
+    "Return a Consult buffer source with NAME, NARROW key and MODE target."
+    `(:name ,name
+      :narrow ,narrow
+      :hidden t
+      :category buffer
+      :face consult-buffer
+      :history buffer-name-history
+      :state ,#'consult--buffer-state
+      :items
+      ,(lambda ()
+         (consult--buffer-query
+          :sort 'visibility
+          :as #'buffer-name
+          :mode mode))))
+
+  (defvar my/consult-source-agenda-buffer
+    (my/consult-source-buffer "Agenda Buffer" ?a 'org-agenda-mode))
   (defvar my/consult-source-dired-buffer
-    `(:name "Dired Buffer"
-      :narrow ?d
-      :hidden t
-      :category buffer
-      :face consult-buffer
-      :history buffer-name-history
-      :state ,#'consult--buffer-state
-      :items
-      ,(lambda ()
-         (consult--buffer-query
-          :sort 'visibility
-          :as #'buffer-name
-          :mode 'dired-mode))))
-
-  (defvar my/consult-source-magit-buffer
-    `(:name "Magit Buffer"
-      :narrow ?g
-      :hidden t
-      :category buffer
-      :face consult-buffer
-      :history buffer-name-history
-      :state ,#'consult--buffer-state
-      :items
-      ,(lambda ()
-         (consult--buffer-query
-          :sort 'visibility
-          :as #'buffer-name
-          :mode 'magit-status-mode))))
-
+    (my/consult-source-buffer "Dired Buffer" ?d 'dired-mode))
   (defvar my/consult-source-eshell-buffer
-    `(:name "Eshell Buffer"
-      :narrow ?e
-      :hidden t
-      :category buffer
-      :face consult-buffer
-      :history buffer-name-history
-      :state ,#'consult--buffer-state
-      :items
-      ,(lambda ()
-         (consult--buffer-query
-          :sort 'visibility
-          :as #'buffer-name
-          :mode 'eshell-mode))))
+    (my/consult-source-buffer "Eshell Buffer" ?e 'eshell-mode))
+  (defvar my/consult-source-magit-buffer
+    (my/consult-source-buffer "Magit Buffer" ?g 'magit-status-mode))
 
   ;; Consult source for all project files. This has largely been adapted from
   ;; the implementation of `consult--source-project-recent-file'.
@@ -1656,6 +1636,7 @@ selected, otherwise the currently active project is used."
   (setq consult-buffer-sources
         '(consult--source-buffer                ;; Narrow: ?b (shown)
           consult--source-project-buffer-hidden ;; Narrow: ?p (hidden)
+          my/consult-source-agenda-buffer       ;; Narrow: ?a (hidden)
           my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
           my/consult-source-eshell-buffer       ;; Narrow: ?e (hidden)
           my/consult-source-magit-buffer        ;; Narrow: ?g (hidden)
