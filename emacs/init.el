@@ -1480,6 +1480,8 @@ selected, otherwise the currently active project is used."
     (my/consult-source-buffer "Eshell Buffer" ?e 'eshell-mode))
   (defvar my/consult-source-magit-buffer
     (my/consult-source-buffer "Magit Buffer" ?g 'magit-status-mode))
+  (defvar my/consult-source-vc-buffer
+    (my/consult-source-buffer "VC Buffer" ?v 'vc-dir-mode))
 
   ;; Consult source for all project files. This has largely been adapted from
   ;; the implementation of `consult--source-project-recent-file'.
@@ -1640,7 +1642,7 @@ selected, otherwise the currently active project is used."
           my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
           my/consult-source-eshell-buffer       ;; Narrow: ?e (hidden)
           my/consult-source-magit-buffer        ;; Narrow: ?g (hidden)
-          consult--source-file-register         ;; Narrow: ?R (shown)
+          my/consult-source-vc-buffer           ;; Narrow: ?v (hidden)
           consult--source-bookmark              ;; Narrow: ?m (shown)
           consult--source-recent-file))         ;; Narrow: ?r (hidden)
 
@@ -1653,8 +1655,6 @@ selected, otherwise the currently active project is used."
    :name "Project Buffer" :narrow ?p
    consult--source-bookmark
    :name "Bookmark" :narrow ?m :preview-key my/consult-delayed-preview
-   consult--source-file-register
-   :name "Register" :narrow ?R :preview-key my/consult-delayed-preview
    consult--source-recent-file
    :name "Recent File" :narrow ?r :hidden t :preview-key my/consult-delayed-preview
    consult--source-project-recent-file
