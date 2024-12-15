@@ -1439,9 +1439,14 @@ selected, otherwise the currently active project is used."
   :hook (elpaca-after-init . marginalia-mode))
 
 (use-package consult
-  :defines (xref-show-xrefs-function xref-show-definitions-function)
+  :defines (my/org-someday-file
+            my/org-archive-file
+            org-agenda-files
+            xref-show-xrefs-function
+            xref-show-definitions-function)
   :preface
   (declare-function consult-completion-in-region "consult")
+  (declare-function consult-org-agenda "consult-org")
   (declare-function consult-register-format "consult-register")
   (declare-function consult-register-window "consult-register")
   (declare-function consult-xref "consult-xref")
@@ -1549,13 +1554,21 @@ selected, otherwise the currently active project is used."
     (let ((read-file-name-function #'my/consult-read-file-name))
       (call-interactively #'find-file-other-window)))
 
+  (defun my/consult-org-agenda (arg)
+    "Version of `consult-org-agenda' that includes extra files if ARG is non-nil."
+    (interactive "P")
+    (require 'org)
+    (let* ((extra-files (when arg `(,my/org-someday-file ,my/org-archive-file)))
+           (org-agenda-files (append org-agenda-files extra-files)))
+      (consult-org-agenda)))
+
   :bind
   (("M-i" . consult-imenu)
    ("M-I" . consult-imenu-multi)
    ("M-y" . consult-yank-pop)
    ("M-_" . consult-focus-lines)
    ("C-M-_" . consult-keep-lines)
-   ("M-s a" . consult-org-agenda)
+   ("M-s a" . my/consult-org-agenda)
    ("M-s f" . my/consult-project-file)
    ("M-s F" . consult-fd)
    ("M-s l" . consult-line)
@@ -2560,6 +2573,7 @@ selected, otherwise the currently active project is used."
    ("k" . vc-revert)
    ("K" . vc-delete-file)
    :map vc-dir-mode-map
+   ("M-s a" . nil)
    ("a" . vc-register)
    ("B" . vc-annotate)
    ("e" . vc-ediff)
@@ -2901,37 +2915,24 @@ with a numbered suffix."
   :bind
   (("C-c C-o" . org-open-at-point-global)
    ("C-c o s" . org-save-all-org-buffers)
+   ("C-c o l" . org-refile-goto-last-stored)
    :map org-mode-map
    ("C-'" . nil)
    ("M-S-<up>" . nil)
    ("M-S-<down>" . nil))
   :hook (org-mode . my/org-init)
   :custom
+  ;; The `org-agenda-files' variable is actually defined in the org package
+  ;; rather than org-agenda package.
+  (org-agenda-files
+   `(,my/org-inbox-file
+     ,my/org-personal-file
+     ,my/org-work-file
+     ,my/org-recurring-file))
   (org-auto-align-tags nil)
   (org-blank-before-new-entry
    '((heading . nil)
      (plain-list-item . nil)))
-  (org-capture-templates
-   `(("i" "Inbox" entry
-      (file+headline ,my/org-inbox-file "Inbox")
-      "* TODO %i%?")
-     ("b" "Bookmark" entry
-      (file+olp+datetree ,my/org-bookmarks-file "Bookmarks")
-      "* %(org-cliplink-capture)%?\n")
-     ("c" "Coffee Journal" entry
-      (file+olp+datetree ,my/org-coffee-file "Coffee Journal" "Log")
-      ,(concat
-	"* 6%?:00 AM\n"
-        "- Beans: Use org-store-link (C-c o l) then org-insert-link (C-c C-l)\n"
-        "- Grind: KM47C+PO @ 3.0.0\n"
-        "- Water: Brisbane tap @ 95°C\n"
-        "- Brew method: V60 4:6\n"
-        "- Brew notes:\n"
-        "  - Coffee / water: 20g coffee / 300g water\n"
-        "  - Breakdown: 50g/70g/60g/60g/60g on 45s with no extra agitation\n"
-        "  - Next time: Grind a bit finer\n"
-        "- Taste notes:\n"
-        "  - Yum yum\n") :jump-to-captured t)))
   (org-catch-invisible-edits 'show-and-error)
   (org-confirm-babel-evaluate nil)
   (org-default-notes-file my/org-inbox-file)
@@ -2962,10 +2963,10 @@ with a numbered suffix."
   (org-startup-indented t)
   (org-tags-column 0)
   (org-todo-keywords
-   `((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "HOLD(h)" "|" "DONE(d)")))
+   '((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "HOLD(h)" "|" "DONE(d)")))
   ;; See colors here: https://alexschroeder.ch/geocities/kensanata/colors.html.
   (org-todo-keyword-faces
-   `(("TODO" . (:foreground "DodgerBlue2" :weight bold))
+   '(("TODO" . (:foreground "DodgerBlue2" :weight bold))
      ("NEXT" . (:foreground "hot pink" :weight bold))
      ("PROG" . (:foreground "CadetBlue1" :weight bold))
      ("HOLD" . (:foreground "orange1" :weight bold))
@@ -3055,17 +3056,6 @@ specified then a task category will be determined by the item's tags."
     (interactive)
     (my/org-agenda-refile-personal-or-work my/org-someday-file))
 
-  ;; TODO: See also org-agenda-window-setup
-  (defun my/org-agenda-new-frame (keys)
-    "Open the org agenda indicated by KEYS in a new frame."
-    (select-frame (make-frame))
-    (org-agenda nil keys))
-
-  (defun my/org-agenda-new-frame-work ()
-    "Open the work org agenda in a new frame."
-    (interactive)
-    (my/org-agenda-new-frame "dw"))
-
   (defun my/org-agenda-redo-all-exhaustive ()
     "Rebuild all agenda views in all agenda buffers."
     (interactive)
@@ -3073,7 +3063,6 @@ specified then a task category will be determined by the item's tags."
 
   :bind
   (("C-c o a" . org-agenda)
-   ("C-c o w" . my/org-agenda-new-frame-work)
    :map org-agenda-mode-map
    ("r" . nil) ;; Allows 'r' to be bound as a prefix key.
    ("r r" . org-agenda-refile)
@@ -3164,12 +3153,6 @@ specified then a task category will be determined by the item's tags."
 	 (org-agenda-files '(,my/org-inbox-file)))))
       ((org-agenda-tag-filter-preset '("-@personal"))
        (org-agenda-buffer-name "*Org Agenda (Work)*")))))
-  (org-agenda-files
-   (list
-    my/org-inbox-file
-    my/org-personal-file
-    my/org-work-file
-    my/org-recurring-file))
   ;; Following variable allows customization of the agenda columns.
   (org-agenda-prefix-format
    '((agenda . " %i %-16:c%?-12t% s")
@@ -3189,10 +3172,32 @@ specified then a task category will be determined by the item's tags."
 (use-package org-capture
   :ensure nil
   :bind
-  ("C-c o l" . org-capture-goto-last-stored)
   ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
   ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
-  ("C-c o c" . (lambda () (interactive) (org-capture nil "c"))))
+  ("C-c o c" . (lambda () (interactive) (org-capture nil "c")))
+  ("C-c o L" . org-capture-goto-last-stored)
+  :custom
+  (org-capture-templates
+   `(("i" "Inbox" entry
+      (file+headline ,my/org-inbox-file "Inbox")
+      "* TODO %i%?")
+     ("b" "Bookmark" entry
+      (file+olp+datetree ,my/org-bookmarks-file "Bookmarks")
+      "* %(org-cliplink-capture)%?\n")
+     ("c" "Coffee Journal" entry
+      (file+olp+datetree ,my/org-coffee-file "Coffee Journal" "Log")
+      ,(concat
+	"* 6%?:00 AM\n"
+        "- Beans: Use org-store-link (C-c o l) then org-insert-link (C-c C-l)\n"
+        "- Grind: KM47C+PO @ 3.0.0\n"
+        "- Water: Brisbane tap @ 95°C\n"
+        "- Brew method: V60 4:6\n"
+        "- Brew notes:\n"
+        "  - Coffee / water: 20g coffee / 300g water\n"
+        "  - Breakdown: 50g/70g/60g/60g/60g on 45s with no extra agitation\n"
+        "  - Next time: Grind a bit finer\n"
+        "- Taste notes:\n"
+        "  - Yum yum\n") :jump-to-captured t))))
 
 (use-package org-cliplink
   :after org
