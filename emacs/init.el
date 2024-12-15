@@ -521,6 +521,7 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
      ("\\*rg\\*" :select t :other t :regexp t)
      ("\\*Occur\\*" :select t :other t :regexp t)
      ("\\*Pp" :select nil :other t :regexp t)
+     ("\\*vc-diff" :select nil :other t :regexp t)
      ("^magit-diff:" :select nil :other t :regexp t))))
 
 (use-package popper
@@ -1093,7 +1094,7 @@ When prefix ARG is passed, the working directory may be selected, otherwise
   ;; Disable `auto-save-mode' which saves buffers to separate files in favor of
   ;; `auto-save-visited-mode' which saves file-visiting buffers to their files.
   (auto-save-default nil)
-  (auto-save-visited-interval 5)
+  (auto-save-visited-interval 10)
   (confirm-kill-emacs #'yes-or-no-p)
   (delete-by-moving-to-trash t)
   ;; Use GNU ls (used by dired and supports grouping directories first).
@@ -2566,7 +2567,6 @@ selected, otherwise the currently active project is used."
   ;; are spread over many sub-packages. Requires need to be correct below.
   (:map vc-prefix-map
    ("<return>" . vc-dir-root)
-   ("a" . vc-register)
    ("B" . vc-annotate)
    ("e" . vc-ediff)
    ("F" . vc-update)
@@ -2574,7 +2574,6 @@ selected, otherwise the currently active project is used."
    ("K" . vc-delete-file)
    :map vc-dir-mode-map
    ("M-s a" . nil)
-   ("a" . vc-register)
    ("B" . vc-annotate)
    ("e" . vc-ediff)
    ("F" . vc-update)
@@ -2582,6 +2581,15 @@ selected, otherwise the currently active project is used."
    ("K" . vc-dir-delete-file))
   :config
   (require 'vc-dir))
+
+;; The `log-edit' package is used by VC for entering commit messages. Based on
+;; todos in the code, it looks like it will be moved into VC at some point.
+(use-package log-edit
+  :ensure nil
+  :custom
+  ;; Remove unnecessary/unwanted hook functions like `log-edit-show-files'.
+  (log-edit-hook '(log-edit-insert-message-template
+                   log-edit-insert-changelog)))
 
 (use-package magit
   :preface
