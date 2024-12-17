@@ -1075,12 +1075,14 @@ When prefix ARG is passed, the working directory may be selected, otherwise
   (("C-x C-b" . ibuffer)
    :map ibuffer-mode-map
    ("M-o" . nil)
-   ("M-j" . nil)))
+   ("M-j" . nil)
+   ;; Trade /v for grouping by VC root which I use more.
+   ("/V" . ibuffer-filter-by-visiting-file)))
 
 (use-package ibuffer-vc
   :bind
   (:map ibuffer-mode-map
-   ("/V" . ibuffer-vc-set-filter-groups-by-vc-root))
+   ("/v" . ibuffer-vc-set-filter-groups-by-vc-root))
   :hook (ibuffer . ibuffer-vc-mode))
 
 ;;;; File System
@@ -1282,6 +1284,7 @@ selected, otherwise the currently active project is used."
      (jinx buffer)))
   ;; Commands work better when the category is too broad. To customize display
   ;; of completions, reference the `consult-completion-in-region' command.
+  ;; Use `vertico-multiform-buffer' (M-B) to toggle between multiform displays.
   (vertico-multiform-commands
    '((consult-imenu buffer)
      (consult-outline buffer))))
