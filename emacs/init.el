@@ -2808,14 +2808,13 @@ with a numbered suffix."
   (:map eshell-mode-map
    ("C-c C-o" . nil)
    ("C-c i" . my/eshell-insert-arg)
+   ;; Defun-style prompt navigation.
+   ("C-M-a" . eshell-previous-prompt)
+   ("C-M-e" . eshell-next-prompt)
+   ;; Output marking/deletion.
    ("M-O" . my/eshell-mark-previous-output)
    ("C-M-O" . my/eshell-narrow-previous-output)
-   ("M-S-<backspace>" . my/eshell-delete-previous-output)
-   :repeat-map eshell-prompt-repeat-map
-   ("C-n" . nil)
-   ("C-p" . nil)
-   ("n" . eshell-next-prompt)
-   ("p" . eshell-previous-prompt)))
+   ("M-S-<backspace>" . my/eshell-delete-previous-output)))
 
 (use-package em-cmpl
   :ensure nil
@@ -2829,6 +2828,12 @@ with a numbered suffix."
   (:map eshell-hist-mode-map
    ("M-s" . nil)
    ("M-r" . nil)))
+
+(use-package em-prompt
+  :ensure nil
+  :config
+  ;; Don't want the repeat keys as I use defun-style navigation.
+  (setq eshell-prompt-repeat-map (make-sparse-keymap)))
 
 ;; I much prefer Eshell but have Vterm as an escape hatch when I need a proper
 ;; terminal emulator. Just call 'M-x vterm' rather than wasting a keybinding.
