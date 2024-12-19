@@ -826,6 +826,7 @@ When prefix ARG is passed, the working directory may be selected, otherwise
   ("M-l" . downcase-dwim)
   ("M-u" . upcase-dwim)
   ("M-*" . my/expand-line)
+  ("C-c x SPC" . delete-trailing-whitespace)
   ("C-c x l" . toggle-truncate-lines)
   ("C-S-k" . my/copy-to-eol)
   ("C-M-k" . my/delete-to-eol)
@@ -922,19 +923,6 @@ When prefix ARG is passed, the working directory may be selected, otherwise
   ("C-+" . expreg-contract))
 
 ;;;;; Whitespace
-
-(use-package whitespace
-  :ensure nil
-  :preface
-  (defun my/toggle-show-trailing-whitespace ()
-    "Toggle visibility of trailing whitespace."
-    (interactive)
-    (setq show-trailing-whitespace (not show-trailing-whitespace))
-    (message "%s trailing whitespace in current buffer"
-             (if show-trailing-whitespace "Showing" "Hiding")))
-  :bind
-  ("C-c x w" . my/toggle-show-trailing-whitespace)
-  ("C-c x W" . delete-trailing-whitespace))
 
 (use-package ws-butler
   :hook ((text-mode prog-mode) . ws-butler-mode)
