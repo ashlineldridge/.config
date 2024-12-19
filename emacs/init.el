@@ -322,6 +322,7 @@
   :ensure nil
   :preface
   (declare-function winum-get-number "winum")
+  (declare-function winum--check-for-scope-change "winum")
   (defvar my/other-window-for-scrolling nil)
 
   (defun my/split-window-below ()
@@ -407,6 +408,7 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
   (declare-function winum-select-window-by-number "winum")
   ;; Define an empty keymap as I want to bind my own keys.
   (defvar winum-keymap (make-sparse-keymap))
+
   (defun my/winum-move-buffer (n)
     "Move the current buffer to window N."
     (when (winum-get-window-by-number n)
@@ -414,6 +416,7 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
         (switch-to-prev-buffer)
         (winum-select-window-by-number n)
         (switch-to-buffer buffer nil t))))
+
   (defun my/winum-move-buffer-1 () (interactive) (my/winum-move-buffer 1))
   (defun my/winum-move-buffer-2 () (interactive) (my/winum-move-buffer 2))
   (defun my/winum-move-buffer-3 () (interactive) (my/winum-move-buffer 3))
@@ -423,30 +426,40 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
   (defun my/winum-move-buffer-7 () (interactive) (my/winum-move-buffer 7))
   (defun my/winum-move-buffer-8 () (interactive) (my/winum-move-buffer 8))
   (defun my/winum-move-buffer-9 () (interactive) (my/winum-move-buffer 9))
+
+  (defun my/winum-toggle-scope ()
+    "Toggle `winum-scope' to allow/disallow jumping between frames."
+    (interactive)
+    (setq winum-scope (if (eq winum-scope 'global) 'frame-local 'global))
+    (winum--check-for-scope-change))
+
   :bind
-  (("M-0" . winum-select-window-0-or-10)
-   ("M-1" . winum-select-window-1)
-   ("M-2" . winum-select-window-2)
-   ("M-3" . winum-select-window-3)
-   ("M-4" . winum-select-window-4)
-   ("M-5" . winum-select-window-5)
-   ("M-6" . winum-select-window-6)
-   ("M-7" . winum-select-window-7)
-   ("M-8" . winum-select-window-8)
-   ("M-9" . winum-select-window-9)
-   ("C-M-1" . my/winum-move-buffer-1)
-   ("C-M-2" . my/winum-move-buffer-2)
-   ("C-M-3" . my/winum-move-buffer-3)
-   ("C-M-4" . my/winum-move-buffer-4)
-   ("C-M-5" . my/winum-move-buffer-5)
-   ("C-M-6" . my/winum-move-buffer-6)
-   ("C-M-7" . my/winum-move-buffer-7)
-   ("C-M-8" . my/winum-move-buffer-8)
-   ("C-M-9" . my/winum-move-buffer-9))
+  ("M-0" . winum-select-window-0-or-10)
+  ("M-1" . winum-select-window-1)
+  ("M-2" . winum-select-window-2)
+  ("M-3" . winum-select-window-3)
+  ("M-4" . winum-select-window-4)
+  ("M-5" . winum-select-window-5)
+  ("M-6" . winum-select-window-6)
+  ("M-7" . winum-select-window-7)
+  ("M-8" . winum-select-window-8)
+  ("M-9" . winum-select-window-9)
+  ("C-M-1" . my/winum-move-buffer-1)
+  ("C-M-2" . my/winum-move-buffer-2)
+  ("C-M-3" . my/winum-move-buffer-3)
+  ("C-M-4" . my/winum-move-buffer-4)
+  ("C-M-5" . my/winum-move-buffer-5)
+  ("C-M-6" . my/winum-move-buffer-6)
+  ("C-M-7" . my/winum-move-buffer-7)
+  ("C-M-8" . my/winum-move-buffer-8)
+  ("C-M-9" . my/winum-move-buffer-9)
+  ("C-c x w" . my/winum-toggle-scope)
   :hook (elpaca-after-init . winum-mode)
   :custom
   ;; Winum mode line segment is managed by mode line package.
-  (winum-auto-setup-mode-line nil))
+  (winum-auto-setup-mode-line nil)
+  ;; Most of the time, this is what I want.
+  (winum-scope 'frame-local))
 
 (use-package frame
   :ensure nil
