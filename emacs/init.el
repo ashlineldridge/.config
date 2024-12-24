@@ -960,7 +960,7 @@ When prefix ARG is passed, the working directory may be selected, otherwise
    ("M-j" . avy-isearch))
 
   :custom
-  (avy-all-windows 'all-frames)
+  (avy-all-windows t) ;; Alternatively, use 'all-frames.
   (avy-single-candidate-jump nil)
   (avy-timeout-seconds 0.3)
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
