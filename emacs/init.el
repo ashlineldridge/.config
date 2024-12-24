@@ -1090,7 +1090,18 @@ When prefix ARG is passed, the working directory may be selected, otherwise
 
 (use-package files
   :ensure nil
+  :preface
+  (defun my/kill-buffer-maybe-save ()
+    "Kill the current buffer after saving if required."
+    (interactive)
+    (when (and buffer-file-name (buffer-modified-p))
+      (save-buffer))
+    (kill-current-buffer))
+
   :bind
+  ;; Shorter save/quit buffer bindings.
+  ("M-'" . save-buffer)
+  ("M-\"" . my/kill-buffer-maybe-save)
   ("C-x C-r" . restart-emacs)
   :hook (elpaca-after-init . auto-save-visited-mode)
   :custom
@@ -2514,7 +2525,7 @@ selected, otherwise the currently active project is used."
   (eldoc-add-command "paredit-backward" "paredit-forward"
                      "paredit-backward-delete" "paredit-close-round")
   ;; Unbind keybindings that collide with things I find more useful.
-  (dolist (key '("M-?" "M-q" "M-r" "M-s" "M-J"
+  (dolist (key '("M-?" "M-\"" "M-q" "M-r" "M-s" "M-J"
                  "C-c C-M-l" "C-M-<left>" "C-M-<right>"))
     (define-key paredit-mode-map (kbd key) nil)))
 
