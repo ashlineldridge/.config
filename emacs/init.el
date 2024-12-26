@@ -22,7 +22,7 @@
 (use-package theme
   :ensure nil
   :preface
-  (defvar my/default-theme 'ef-dark)
+  (defvar my/default-theme 'ef-dream)
   (defvar my/variable-pitch-headings
     '((1 . (variable-pitch semibold 1.2))
       (t . (variable-pitch semibold 1.1))))
@@ -165,7 +165,7 @@
   :bind
   ("C-c x _" . my/spacious-padding-toggle-subtle-mode-line)
   :custom
-  (spacious-padding-subtle-mode-line t)
+  (spacious-padding-subtle-mode-line nil)
   (spacious-padding-widths
    '(:internal-border-width 20
      :fringe-width 8
