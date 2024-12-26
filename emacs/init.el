@@ -1699,7 +1699,6 @@ selected, otherwise the currently active project is used."
    :preview-key my/consult-delayed-preview))
 
 (use-package consult-dir
-  :defines eshell-mode-map
   :preface
   (declare-function consult-dir--pick "consult-dir")
   (declare-function consult-dir--project-list-make "consult-dir")
@@ -1753,8 +1752,6 @@ selected, otherwise the currently active project is used."
   :custom
   (consult-dir-shadow-filenames nil)
   (consult-dir-default-command #'consult-dir-dired)
-  :init
-  (bind-keys :package esh-mode :map eshell-mode-map ("M-s M-d" . my/consult-dir-cd))
   :config
   (consult-customize
    consult-dir--source-bookmark :name "Bookmark" :narrow ?k
@@ -2675,9 +2672,11 @@ selected, otherwise the currently active project is used."
 (use-package eshell
   :ensure nil
   :defines
-  (eshell-buffer-maximum-lines eshell-prompt-regexp)
+  (eshell-mode-map eshell-hist-mode-map eshell-prompt-regexp)
   :preface
   (defalias 'eshell/v 'eshell-exec-visual)
+  ;; Don't want the prompt repeat keys as I use defun-style navigation.
+  (defvar eshell-prompt-repeat-map (make-sparse-keymap))
   (declare-function eshell-bol "esh-mode")
   (declare-function eshell-send-input "esh-mode")
   (declare-function eshell-read-aliases-list "esh-alias")
@@ -2804,7 +2803,25 @@ with a numbered suffix."
       (eshell-previous-prompt)))
 
   :bind
-  ("C-c e" . eshell)
+  ;; For convenience, consolidate Eshell keybindings here rather than in
+  ;; separate `use-package' forms (requires below are necessary).
+  (("C-c e" . eshell)
+   :map eshell-mode-map
+   ("C-c C-o" . nil)
+   ("C-c i" . my/eshell-insert-arg)
+   ;; Defun-style prompt navigation.
+   ("C-M-a" . eshell-previous-prompt)
+   ("C-M-e" . eshell-next-prompt)
+   ;; Output marking/deletion.
+   ("M-O" . my/eshell-mark-previous-output)
+   ("C-M-O" . my/eshell-narrow-previous-output)
+   ("M-S-<backspace>" . my/eshell-delete-previous-output)
+   ;; Jump between Eshell directories using `consult-dir'.
+   ("M-s M-d" . my/consult-dir-cd)
+   :map eshell-hist-mode-map
+   ("M-s" . nil)
+   ("M-r" . nil))
+
   :hook
   (eshell-mode . my/eshell-init)
   (eshell-pre-command . my/eshell-pre-command)
@@ -2815,40 +2832,10 @@ with a numbered suffix."
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "")
-  (eshell-visual-commands '("top" "vi" "vim" "htop" "watch")))
-
-(use-package esh-mode
-  :ensure nil
-  :bind
-  (:map eshell-mode-map
-   ("C-c C-o" . nil)
-   ("C-c i" . my/eshell-insert-arg)
-   ;; Defun-style prompt navigation.
-   ("C-M-a" . eshell-previous-prompt)
-   ("C-M-e" . eshell-next-prompt)
-   ;; Output marking/deletion.
-   ("M-O" . my/eshell-mark-previous-output)
-   ("C-M-O" . my/eshell-narrow-previous-output)
-   ("M-S-<backspace>" . my/eshell-delete-previous-output)))
-
-(use-package em-cmpl
-  :ensure nil
-  :bind
-  (:map eshell-cmpl-mode-map
-   ("C-c SPC" . nil)))
-
-(use-package em-hist
-  :ensure nil
-  :bind
-  (:map eshell-hist-mode-map
-   ("M-s" . nil)
-   ("M-r" . nil)))
-
-(use-package em-prompt
-  :ensure nil
+  (eshell-visual-commands '("top" "vi" "vim" "htop" "watch"))
   :config
-  ;; Don't want the repeat keys as I use defun-style navigation.
-  (setq eshell-prompt-repeat-map (make-sparse-keymap)))
+  (require 'esh-mode)
+  (require 'em-hist))
 
 ;; I much prefer Eshell but have Vterm as an escape hatch when I need a proper
 ;; terminal emulator. Just call 'M-x vterm' rather than wasting a keybinding.
@@ -3046,7 +3033,7 @@ with a numbered suffix."
 If CATEGORY is specified it must equal \\='personal or \\='work; if it is not
 specified then a task category will be determined by the item's tags."
     (interactive)
-    (let* ((hdm  (org-get-at-bol 'org-hd-marker))
+    (let* ((hdm (org-get-at-bol 'org-hd-marker))
 	   (tags (with-current-buffer (marker-buffer hdm) (org-get-tags hdm))))
       (cond ((or (eq 'personal category) (member "@personal" tags))
              (my/org-agenda-refile file "Personal"))
