@@ -7,21 +7,20 @@ go-bin-dir    := "~/dev/go/bin"
 default:
     @just --list
 
-install-brew-pkgs:
+brew-install:
     @echo ">>> Installing Brew packages"
     brew bundle
 
-install-cargo-bins:
+cargo-install:
     @echo ">>> Installing Cargo binaries"
     # TODO
 
-install-go-bins:
+go-install:
     @echo ">>> Installing Go binaries"
     # TODO
 
-alias update-emacs := install-emacs
-install-emacs: clean-emacs
-    @echo ">>> Installing/updating Emacs"
+emacs-install: emacs-clean
+    @echo ">>> Installing Emacs"
     brew install emacs-plus@{{emacs-version}} \
         --with-imagemagick \
         --with-native-comp \
@@ -32,12 +31,12 @@ install-emacs: clean-emacs
     sudo cp -r /opt/homebrew/opt/emacs-plus@{{emacs-version}}/Emacs.app /Applications/
     sudo chown -R {{mac-user}}:{{mac-group}} /Applications/Emacs.app
 
-uninstall-emacs:
+emacs-uninstall:
     @echo ">>> Uninstalling Emacs"
     brew uninstall emacs-plus@{{emacs-version}}
     sudo rm -rf /Applications/Emacs.app
 
-clean-emacs:
+emacs-clean:
     @echo ">>> Cleaning all Emacs packages"
     rm -rf emacs/var/elpaca
     rm -rf emacs/var/eln-cache
@@ -46,25 +45,25 @@ clean-emacs:
     @echo
     @echo "Open Emacs and then M-x my/treesit-auto-install-all"
 
-dump-brew-pkgs:
-    @echo ">>> Saving list of Brew packages"
+brew-dump:
+    @echo ">>> Dumping list of Brew packages"
     brew bundle dump -f
 
-dump-cargo-bins:
-    @echo ">>> Saving list of Cargo binaries"
+cargo-dump:
+    @echo ">>> Dumping list of Cargo binaries"
     ls -1 {{cargo-bin-dir}} > cargo-bins.txt
 
-dump-go-bins:
-    @echo ">>> Saving list of Go binaries"
+go-dump:
+    @echo ">>> Dumping list of Go binaries"
     ls -1 {{go-bin-dir}} > go-bins.txt
 
-# As not all programs respect XDG conventions, this recipe creates symlinks
-# back to files in this repo so that they get source controlled.
-create-symlinks:
+symlink-install:
+    # As not all programs respect XDG conventions, this recipe creates symlinks
+    # back to files in this repo so that they get source controlled.
     @echo ">>> Installing symlinks"
     ln -sf ~/.config/zsh/lib/env.zsh ~/.zshenv
     mkdir -p ~/.local/share/gnupg
     ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
 
-dump-all: dump-cargo-bins dump-go-bins dump-brew-pkgs
-install-all: create-symlinks install-brew-pkgs install-cargo-bins install-go-bins install-emacs
+dump: cargo-dump go-dump brew-dump
+install: symlink-install brew-install cargo-install go-install emacs-install

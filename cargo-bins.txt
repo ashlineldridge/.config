@@ -1,3 +1,4 @@
+bacon
 buck2
 bunyan
 cargo
@@ -8,6 +9,7 @@ cargo-miri
 cargo-outdated
 cargo-rm
 cargo-set-version
+cargo-udeps
 cargo-upgrade
 clippy-driver
 reindeer
