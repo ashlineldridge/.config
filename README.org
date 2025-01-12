@@ -1,16 +1,3 @@
 * .config
 
-My dot files including Emacs configuration.
-
-To set up a new computer, clone this repo into =~/.config=, install [[https://brew.sh/][Homebrew]] and then =brew install just=. Once =just= is installed, run =just install-all= to install the Homebrew packages, Emacs, Cargo & Go binaries, etc.
-
-To remove all Emacs packages and native compilation files, run =just clean-emacs=. To update Emacs, run =just update-emacs= (which is just an alias for =just install-emacs=).
-
-Note: Sometimes after a major macOS upgrade I've needed to do the following to get Emacs working again:
-#+begin_src bash
-xcode-select --install
-brew reinstall gcc
-brew reinstall libgccjit
-
-# And then update LIBRARY_PATH in ~/.config/emacs/early-init.el
-#+end_src
+My dot files repository (mostly [[file:emacs/init.el][Emacs config]]).
