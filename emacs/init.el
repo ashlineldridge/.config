@@ -22,7 +22,7 @@
 (use-package theme
   :ensure nil
   :preface
-  (defvar my/default-theme 'ef-dream)
+  (defvar my/default-theme 'ef-dark)
   (defvar my/variable-pitch-headings
     '((1 . (variable-pitch semibold 1.2))
       (t . (variable-pitch semibold 1.1))))
@@ -84,9 +84,7 @@
       :line-number-slant italic
       :line-number-height 110
       :bold-weight bold
-      :italic-slant italic)))
-  :init
-  (add-hook 'enable-theme-functions #'my/fontaine-apply-preset))
+      :italic-slant italic))))
 
 (use-package font-lock
   :ensure nil
