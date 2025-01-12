@@ -190,71 +190,73 @@
 (use-package pixel-scroll
   :ensure nil
   :preface
+  (declare-function pixel-line-height "pixel-scroll")
   (declare-function pixel-scroll-precision-interpolate "pixel-scroll")
-  (defvar my/pixel-scroll-factor 0.25)
+  (defvar my/pixel-scroll-lines 2)
 
-  (defun my/pixel-scroll (factor)
-    "Scroll up by the page's height multiplied by FACTOR."
-    (let* ((height (window-text-height nil t))
-           (delta (* height factor)))
-      (pixel-scroll-precision-interpolate delta nil 1)))
+  (defun my/pixel-scroll (delta)
+    "Scroll up by DELTA pixels."
+    (pixel-scroll-precision-interpolate delta nil 1))
 
-  (defun my/pixel-scroll-page-up ()
+  (defun my/pixel-scroll-up-page ()
     "Scroll up by the page height."
     (interactive)
-    (my/pixel-scroll 1.0))
+    (my/pixel-scroll (window-pixel-height)))
 
-  (defun my/pixel-scroll-page-down ()
+  (defun my/pixel-scroll-down-page ()
     "Scroll down by the page height."
     (interactive)
-    (my/pixel-scroll -1.0))
+    (my/pixel-scroll (- (window-pixel-height))))
 
-  (defun my/pixel-scroll-partial-up ()
-    "Scroll up by `my/pixel-scroll-factor' times the page height."
+  (defun my/pixel-scroll-up-lines (&optional lines)
+    "Scroll up by LINES."
     (interactive)
-    (my/pixel-scroll my/pixel-scroll-factor))
+    (my/pixel-scroll (* (or lines my/pixel-scroll-lines) (pixel-line-height))))
 
-  (defun my/pixel-scroll-partial-down ()
-    "Scroll down by `my/pixel-scroll-factor' times the page height."
+  (defun my/pixel-scroll-down-lines (&optional lines)
+    "Scroll down by LINES."
     (interactive)
-    (my/pixel-scroll (- my/pixel-scroll-factor)))
+    (my/pixel-scroll (- (* (or lines my/pixel-scroll-lines) (pixel-line-height)))))
 
-  (defun my/pixel-scroll-page-up-other-window ()
+  (defun my/pixel-scroll-up-page-other-window ()
     "Scroll the other window up by the page height."
     (interactive)
     (with-selected-window (other-window-for-scrolling)
-      (my/pixel-scroll 1.0)))
+      (my/pixel-scroll-up-page)))
 
-  (defun my/pixel-scroll-page-down-other-window ()
+  (defun my/pixel-scroll-down-page-other-window ()
     "Scroll down by the page height."
     (interactive)
     (with-selected-window (other-window-for-scrolling)
-      (my/pixel-scroll -1.0)))
+      (my/pixel-scroll-down-page)))
 
-  (defun my/pixel-scroll-partial-up-other-window ()
-    "Scroll the other window up by `my/pixel-scroll-factor' times the page height."
+  (defun my/pixel-scroll-up-lines-other-window (&optional lines)
+    "Scroll the other window up by LINES."
     (interactive)
     (with-selected-window (other-window-for-scrolling)
-      (my/pixel-scroll my/pixel-scroll-factor)))
+      (my/pixel-scroll-up-lines lines)))
 
-  (defun my/pixel-scroll-partial-down-other-window ()
-    "Scroll the other window down by `my/pixel-scroll-factor' times page height."
+  (defun my/pixel-scroll-down-lines-other-window (&optional lines)
+    "Scroll the other window down by LINES."
     (interactive)
     (with-selected-window (other-window-for-scrolling)
-      (my/pixel-scroll (- my/pixel-scroll-factor))))
+      (my/pixel-scroll-down-lines lines)))
 
   :bind
-  ("M-v" . my/pixel-scroll-page-up)
-  ("C-v" . my/pixel-scroll-page-down)
-  ("C-M-S-v" . my/pixel-scroll-page-up-other-window)
-  ("C-M-v" . my/pixel-scroll-page-down-other-window)
-  ("M-S-<up>" . my/pixel-scroll-partial-up)
-  ("M-S-<down>" . my/pixel-scroll-partial-down)
-  ("C-M-<up>" . my/pixel-scroll-partial-up-other-window)
-  ("C-M-<down>" . my/pixel-scroll-partial-down-other-window)
+  ("M-v" . my/pixel-scroll-up-page)
+  ("C-v" . my/pixel-scroll-down-page)
+  ("M-V" . my/pixel-scroll-up-page-other-window)
+  ("C-V" . my/pixel-scroll-down-page-other-window)
+  ("M-S-<up>" . my/pixel-scroll-up-lines)
+  ("M-S-<down>" . my/pixel-scroll-down-lines)
+  ("C-M-<up>" . my/pixel-scroll-up-lines-other-window)
+  ("C-M-<down>" . my/pixel-scroll-down-lines-other-window)
   :hook (elpaca-after-init . pixel-scroll-precision-mode)
   :custom
-  (pixel-scroll-precision-interpolate-page t))
+  (pixel-scroll-precision-interpolate-page t)
+  :init
+  ;; Prevent recentering of point by specifying a value > 100 (see docs).
+  (setq scroll-conservatively 101))
 
 ;;;; Repeating
 
@@ -615,15 +617,15 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
     (when my/popper-temp-should-resume
       (popper-open-latest)))
 
-  (defun my/popper-scroll-up ()
-    "Scroll the Popper window up."
+  (defun my/popper-scroll-up-lines (&optional lines)
+    "Scroll the Popper window up by LINES."
     (interactive)
-    (my/popper-exec #'my/pixel-scroll 0.5))
+    (my/popper-exec #'my/pixel-scroll-up-lines lines))
 
-  (defun my/popper-scroll-down ()
-    "Scroll the Popper window down."
+  (defun my/popper-scroll-down-lines (&optional lines)
+    "Scroll the Popper window up by LINES."
     (interactive)
-    (my/popper-exec #'my/pixel-scroll -0.5))
+    (my/popper-exec #'my/pixel-scroll-down-lines lines))
 
   (defun my/popper-beginning-of-buffer ()
     "Move point to the beginning of the current Popper buffer."
@@ -642,8 +644,8 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
    ("M-o p" . my/popper-select)
    ("M-o t" . popper-toggle-type)
    ("M-o <tab>" . popper-cycle)
-   ("C-M-S-<up>" . my/popper-scroll-up)
-   ("C-M-S-<down>" . my/popper-scroll-down)
+   ("C-M-S-<up>" . my/popper-scroll-up-lines)
+   ("C-M-S-<down>" . my/popper-scroll-down-lines)
    ("C-M-S-<left>" . my/popper-beginning-of-buffer)
    ("C-M-S-<right>" . my/popper-end-of-buffer)
    :repeat-map my/window-repeat-map
@@ -2926,13 +2928,10 @@ with a numbered suffix."
     (setq-local electric-pair-text-pairs
                 (append electric-pair-text-pairs my/org-extra-electric-pairs)))
   :bind
-  (("C-c C-o" . org-open-at-point-global)
-   ("C-c o s" . org-save-all-org-buffers)
-   ("C-c o l" . org-refile-goto-last-stored)
-   :map org-mode-map
-   ("C-'" . nil)
-   ("M-S-<up>" . nil)
-   ("M-S-<down>" . nil))
+  ("C-c C-o" . org-open-at-point-global)
+  ("C-c o s" . org-save-all-org-buffers)
+  ("C-c o l" . org-refile-goto-last-stored)
+
   :hook (org-mode . my/org-init)
   :custom
   ;; The `org-agenda-files' variable is actually defined in the org package
@@ -2989,7 +2988,12 @@ with a numbered suffix."
 
   :config
   ;; Make it easier to create `org-babel' code blocks.
-  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp")))
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+
+  ;; Unset conflicting org keybindings.
+  (dolist (key '("C-'" "M-S-<up>" "M-S-<down>" "M-S-<left>" "M-S-<right>"
+                 "C-M-S-<left>" "C-M-S-<right>"))
+    (define-key org-mode-map (kbd key) nil)))
 
 (use-package org-agenda
   :ensure nil
