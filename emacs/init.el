@@ -778,8 +778,10 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
   (defun my/open-line-above ()
     "Open line below and indent point without breaking the current line."
     (interactive)
+    (beginning-of-line)
+    (newline)
     (forward-line -1)
-    (my/open-line-below))
+    (indent-according-to-mode))
 
   (defun my/expand-line ()
     "Expand the current line."
