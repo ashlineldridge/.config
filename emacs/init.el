@@ -246,7 +246,7 @@
   ("M-v" . my/pixel-scroll-up-page)
   ("C-v" . my/pixel-scroll-down-page)
   ("M-V" . my/pixel-scroll-up-page-other-window)
-  ("C-V" . my/pixel-scroll-down-page-other-window)
+  ("C-S-v" . my/pixel-scroll-down-page-other-window)
   ("M-S-<up>" . my/pixel-scroll-up-lines)
   ("M-S-<down>" . my/pixel-scroll-down-lines)
   ("C-M-<up>" . my/pixel-scroll-up-lines-other-window)
