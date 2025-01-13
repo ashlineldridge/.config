@@ -1206,18 +1206,8 @@ When prefix ARG is passed, the working directory may be selected, otherwise
     "Update list of known projects."
     (interactive)
     (project-forget-zombie-projects)
-    (my/project-remember-projects-under '("~/dev/home" "~/dev/work")))
-
-  (defun my/project-remember-projects-under (dirs)
-    "Remember all projects one level under each of DIRS."
-    (let ((found 0)
-          (files (mapcan (lambda (dir) (directory-files dir t)) dirs)))
-      (dolist (file files)
-        (when (and (file-directory-p file)
-                   (not (member file '("." ".."))))
-          (setq found (+ found
-                         (project-remember-projects-under file)))))
-      (message "Found %d new projects" found)))
+    (project-remember-projects-under "~/dev/home")
+    (project-remember-projects-under "~/dev/work"))
 
   (defun my/project-async-shell-command (&optional arg)
     "Execute a command asynchronously from the root of a project.
