@@ -51,11 +51,13 @@
   :preface
   (defconst my/fixed-family "Iosevka Comfy")
   (defconst my/variable-family "Iosevka Comfy Motion Duo")
-  (defun my/fontaine-apply-preset (&rest _)
+  (defun my/fontaine-apply-preset ()
     "Apply the current (or default) Fontaine preset."
     (fontaine-set-preset (or fontaine-current-preset 'regular)))
   :bind
   ("C-c x f" . fontaine-set-preset)
+  :hook
+  (elpaca-after-init . my/fontaine-apply-preset)
   :custom
   (fontaine-presets
    `((small
@@ -159,7 +161,6 @@
       (spacious-padding-mode 1)))
   :hook
   (elpaca-after-init . spacious-padding-mode)
-  (spacious-padding-mode . my/fontaine-apply-preset)
   :bind
   ("C-c x _" . my/spacious-padding-toggle-subtle-mode-line)
   :custom
