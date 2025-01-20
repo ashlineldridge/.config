@@ -193,11 +193,10 @@
   :preface
   (declare-function pixel-line-height "pixel-scroll")
   (declare-function pixel-scroll-precision-interpolate "pixel-scroll")
-  (defvar my/pixel-scroll-lines 2)
 
-  (defun my/pixel-scroll (delta)
-    "Scroll up by DELTA pixels."
-    (pixel-scroll-precision-interpolate delta nil 1))
+  (defun my/pixel-scroll (delta &optional factor)
+    "Scroll up by DELTA pixels with scale FACTOR (defaults to 1.0)."
+    (pixel-scroll-precision-interpolate delta nil (or factor 1.0)))
 
   (defun my/pixel-scroll-up-page ()
     "Scroll up by the page height."
@@ -209,15 +208,15 @@
     (interactive)
     (my/pixel-scroll (- (window-pixel-height))))
 
-  (defun my/pixel-scroll-up-lines (&optional lines)
-    "Scroll up by LINES."
+  (defun my/pixel-scroll-up-lines ()
+    "Scroll up by a line factor."
     (interactive)
-    (my/pixel-scroll (* (or lines my/pixel-scroll-lines) (pixel-line-height))))
+    (my/pixel-scroll (pixel-line-height) 2.0))
 
-  (defun my/pixel-scroll-down-lines (&optional lines)
-    "Scroll down by LINES."
+  (defun my/pixel-scroll-down-lines ()
+    "Scroll down by a line factor."
     (interactive)
-    (my/pixel-scroll (- (* (or lines my/pixel-scroll-lines) (pixel-line-height)))))
+    (my/pixel-scroll (- (pixel-line-height)) 2.0))
 
   (defun my/pixel-scroll-up-page-other-window ()
     "Scroll the other window up by the page height."
@@ -231,17 +230,17 @@
     (with-selected-window (other-window-for-scrolling)
       (my/pixel-scroll-down-page)))
 
-  (defun my/pixel-scroll-up-lines-other-window (&optional lines)
-    "Scroll the other window up by LINES."
+  (defun my/pixel-scroll-up-lines-other-window ()
+    "Scroll the other window up by a line factor."
     (interactive)
     (with-selected-window (other-window-for-scrolling)
-      (my/pixel-scroll-up-lines lines)))
+      (my/pixel-scroll-up-lines)))
 
-  (defun my/pixel-scroll-down-lines-other-window (&optional lines)
-    "Scroll the other window down by LINES."
+  (defun my/pixel-scroll-down-lines-other-window ()
+    "Scroll the other window down by a line factor."
     (interactive)
     (with-selected-window (other-window-for-scrolling)
-      (my/pixel-scroll-down-lines lines)))
+      (my/pixel-scroll-down-lines)))
 
   :bind
   ("M-v" . my/pixel-scroll-up-page)
@@ -618,15 +617,15 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
     (when my/popper-temp-should-resume
       (popper-open-latest)))
 
-  (defun my/popper-scroll-up-lines (&optional lines)
-    "Scroll the Popper window up by LINES."
+  (defun my/popper-scroll-up-lines ()
+    "Scroll the Popper window up by a line factor."
     (interactive)
-    (my/popper-exec #'my/pixel-scroll-up-lines lines))
+    (my/popper-exec #'my/pixel-scroll-up-lines))
 
-  (defun my/popper-scroll-down-lines (&optional lines)
-    "Scroll the Popper window up by LINES."
+  (defun my/popper-scroll-down-lines ()
+    "Scroll the Popper window down by a line factor."
     (interactive)
-    (my/popper-exec #'my/pixel-scroll-down-lines lines))
+    (my/popper-exec #'my/pixel-scroll-down-lines))
 
   (defun my/popper-beginning-of-buffer ()
     "Move point to the beginning of the current Popper buffer."
