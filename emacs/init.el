@@ -2076,6 +2076,9 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
   (defun my/go-ts-mode-init ()
     "Init function for `go-ts-mode'."
     (setq-local tab-width go-ts-mode-indent-offset)
+    ;; Don't let tests use cached results (buffer local var used by `gotest').
+    (setq-local go-test-args "-count 1")
+    ;; Improvements for imenu.
     (setq-local treesit-defun-name-function #'my/treesit-go-defun-name)
     (setq-local treesit-simple-imenu-settings
                 '(("Constant" "\\`const_spec\\'" nil nil)
@@ -2141,13 +2144,6 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
     (require 'gotest)
     (let ((go-test-verbose t))
       (funcall fn)))
-
-  (defun my/go-test-toggle-verbose ()
-    "Toggle verbose mode for Go tests."
-    (interactive)
-    (setq-local go-test-args (if go-test-args nil "-v"))
-    (message "Go test args: %s" go-test-args))
-
   :bind
   (:map go-ts-mode-map
    ("C-c b r" . go-run)
@@ -2156,7 +2152,6 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
    ("C-c t p" . go-test-current-project)
    ("C-c t b" . go-test-current-benchmark)
    ("C-c t c" . go-test-current-coverage)
-   ("C-c t v" . my/go-test-toggle-verbose)
    ("C-c t T" . (lambda () (interactive) (my/go-test-verbose #'go-test-current-test)))
    ("C-c t F" . (lambda () (interactive) (my/go-test-verbose #'go-test-current-file)))
    ("C-c t P" . (lambda () (interactive) (my/go-test-verbose #'go-test-current-project)))))
