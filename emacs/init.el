@@ -520,186 +520,33 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
 
 ;;;;; Window Orchestration
 
-;; Shackle replaces the configuration of `display-buffer-base-action'
-;; and `display-buffer-alist' with a simpler syntax.
+;; Shackle provides a simpler syntax for managing `display-buffer-alist'.
 (use-package shackle
   :hook (elpaca-after-init . shackle-mode)
   :custom
   (shackle-default-rule nil)
+  ;; Default number of lines shown by aligned windows. Match `vertico-count'
+  ;; as then bottom aligned popups use the same number of lines as Vertico.
+  (shackle-default-size 10)
   (shackle-rules
    ;; More reliable to match by regex than by major mode as some commands
    ;; don't set the major mode until after they've called `display-buffer'.
-   '(("\\*eshell-output" :select nil :other t :regexp t)
-     ("\\*helpful" :select nil :other t :regexp t)
-     ("\\*rg\\*" :select t :other t :regexp t)
-     ("\\*Occur\\*" :select t :other t :regexp t)
-     ("\\*Pp" :select nil :other t :regexp t)
-     ("\\*vc-diff" :select nil :other t :regexp t)
-     ("^magit-diff:" :select nil :other t :regexp t))))
-
-(use-package popper
-  :preface
-  (declare-function popper-close-latest "popper")
-  (declare-function popper-open-latest "popper")
-  (declare-function popper-kill-latest-popup "popper")
-  (declare-function popper--update-popups "popper")
-  (defvar my/popper-default-height 13)
-  (defvar my/popper-large-height 20)
-  (defvar my/popper-ignore-modes '(grep-mode rg-mode))
-  (defvar my/popper-temp-should-resume nil)
-
-  (defun my/popper-show ()
-    "Ensure the Popper window is shown."
-    (unless (my/popper-shown-p)
-      (my/popper-toggle)))
-
-  (defun my/popper-shown-p ()
-    "Return whether the Popper window is currently shown."
-    (popper--update-popups)
-    (not (null popper-open-popup-alist)))
-
-  (defun my/popper-window ()
-    "Return the current Popper window if it is shown."
-    (popper--update-popups)
-    (car (car popper-open-popup-alist)))
-
-  (defun my/popper-exec (fn &rest args)
-    "Exec FN with the current Popper window selected."
-    (my/popper-show)
-    (when-let ((pop-win (my/popper-window)))
-      (with-selected-window pop-win
-        (let ((cursor-type nil))
-          (apply fn args)))))
-
-  (defun my/popper-toggle ()
-    "Toggle display of the Popper window."
-    (interactive)
-    ;; Workaround as `popper-open-popup-alist' isn't updated when switching
-    ;; between frames. See: https://github.com/karthink/popper/issues/71.
-    (if (my/popper-shown-p)
-        (popper-close-latest)
-      (popper-open-latest)))
-
-  (defun my/popper-toggle-height ()
-    "Toggle the height of the Popper window."
-    (interactive)
-    (setq popper-window-height
-          (if (eq popper-window-height my/popper-default-height)
-              my/popper-large-height
-            my/popper-default-height))
-    (when (my/popper-shown-p)
-      (popper-close-latest)
-      (popper-open-latest)))
-
-  (defun my/popper-select ()
-    "Select the current Popper window, opening it if needed."
-    (interactive)
-    (my/popper-show)
-    (when-let ((win (my/popper-window)))
-      (select-window win)))
-
-  (defun my/popper-kill-buffer-stay-open ()
-    "Kill the current Popper buffer but stay open if there are others."
-    (interactive)
-    (when (my/popper-shown-p)
-      (popper-kill-latest-popup)
-      (popper-open-latest)))
-
-  (defun my/popper-temp-pause ()
-    "Temporarily hide the Popper window (e.g. while a transient is shown)."
-    (interactive)
-    (setq my/popper-temp-should-resume (my/popper-shown-p))
-    (when my/popper-temp-should-resume
-      (popper-close-latest)))
-
-  (defun my/popper-temp-resume ()
-    "Restore the temporarily hidden Popper window."
-    (when my/popper-temp-should-resume
-      (popper-open-latest)))
-
-  (defun my/popper-scroll-up-lines ()
-    "Scroll the Popper window up by a line factor."
-    (interactive)
-    (my/popper-exec #'my/pixel-scroll-up-lines))
-
-  (defun my/popper-scroll-down-lines ()
-    "Scroll the Popper window down by a line factor."
-    (interactive)
-    (my/popper-exec #'my/pixel-scroll-down-lines))
-
-  (defun my/popper-beginning-of-buffer ()
-    "Move point to the beginning of the current Popper buffer."
-    (interactive)
-    (my/popper-exec #'beginning-of-buffer))
-
-  (defun my/popper-end-of-buffer ()
-    "Move point to the end of the current Popper buffer."
-    (interactive)
-    (my/popper-exec #'end-of-buffer))
-
-  :bind
-  (("M-o h" . my/popper-toggle-height)
-   ("M-o k" . my/popper-kill-buffer-stay-open)
-   ("M-o o" . my/popper-toggle)
-   ("M-o p" . my/popper-select)
-   ("M-o t" . popper-toggle-type)
-   ("M-o <tab>" . popper-cycle)
-   ("C-M-S-<up>" . my/popper-scroll-up-lines)
-   ("C-M-S-<down>" . my/popper-scroll-down-lines)
-   ("C-M-S-<left>" . my/popper-beginning-of-buffer)
-   ("C-M-S-<right>" . my/popper-end-of-buffer)
-   :repeat-map my/window-repeat-map
-   ("h" . my/popper-toggle-height)
-   ("k" . my/popper-kill-buffer-stay-open)
-   ("o" . my/popper-toggle)
-   ("p" . my/popper-select)
-   ("t" . popper-toggle-type)
-   ("<tab>" . popper-cycle))
-  :hook
-  (elpaca-after-init . popper-mode)
-  :custom
-  (popper-window-height my/popper-default-height)
-  ;; Just tab to cycle through popups.
-  (popper-echo-dispatch-keys nil)
-  ;; Display popup but don't select it.
-  (popper-display-function #'popper-display-popup-at-bottom)
-  ;; Popper mode line segment is managed by custom mode line package. Setting
-  ;; this to nil removes the mode line entirely which I don't want.
-  (popper-mode-line "")
-  (popper-reference-buffers
-   '("\\*Async Shell Command\\*"
-     "\\*Backtrace\\*"
-     "\\*Breakpoints\\*"
-     "\\*Call Hierarchy\\*"
-     "\\*Messages\\*"
-     "\\*Shell Command Output\\*"
-     "\\*Warnings\\*"
-     "\\*apheleia-"
-     "\\*chronosphere-"
-     "\\*eldoc"
-     "shell-output:"
-     "CAPTURE-.*\\.org"
-     ;; Match all modes that derive from compilation-mode but do not derive
-     ;; from a member of `my/popper-ignore-modes'.
-     (lambda (buf)
-       (with-current-buffer buf
-         (unless (apply #'derived-mode-p my/popper-ignore-modes)
-           (derived-mode-p 'compilation-mode)))))))
+   '(("CAPTURE-.*\\.org" :regexp t :select t :popup t :align 'below)
+     ("\\*Async Shell Command\\*" :regexp t :select nil :other t)
+     ("\\*Go Test\\*" :regexp t :select nil :other t)
+     ("\\*Occur\\*" :regexp t :select t :other t)
+     ("\\*Pp" :regexp t :select nil :other t)
+     ("\\*eldoc" :regexp t :select nil :other t)
+     ("\\*helpful" :regexp t :select nil :other t)
+     ("\\*rg\\*"  :regexp t :select t :other t)
+     ("\\*vc-diff" :regexp t :select nil :other t)
+     ("^magit-diff:" :regexp t :select nil :other t)
+     ("\\*eshell-output" :regexp t :select nil :other t))))
 
 ;;;; Transient
 
 ;; Use external transient as some packages require a later version.
-(use-package transient
-  :preface
-  (declare-function transient--show "transient")
-  :hook
-  (transient-exit . my/popper-temp-resume)
-  :config
-  ;; I would prefer to use `transient-setup-buffer-hook' but it gets called
-  ;; multiple times when an incorrect transient keybinding is used. The advice
-  ;; below ensures that `my/popper-temp-pause' is only called once.
-  (advice-add #'transient--show
-              :before (lambda () (unless transient--showp (my/popper-temp-pause)))))
+(use-package transient)
 
 ;;;; Help System
 
@@ -794,35 +641,17 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
     (when (called-interactively-p)
       (end-of-line)))
 
-  (defun my/async-shell-command (&optional arg)
-    "Run `async-shell-command' and name the output buffer uniquely.
-When prefix ARG is passed, the working directory may be selected, otherwise
-`default-directory' is used."
-    (interactive "P")
-    (let* ((default-directory (if arg (read-directory-name "In directory: ")
-                                default-directory))
-           (prompt (format-message "Shell command in `%s': "
-                                   (abbreviate-file-name default-directory)))
-           (command (read-shell-command prompt))
-           (buffer (generate-new-buffer
-                    (format "shell-output: %s: %s (%s)"
-                            default-directory
-                            command
-                            (format-time-string "%Y-%m-%dT%H:%M:%S")))))
-      (async-shell-command command buffer)))
-
   :custom
   (indent-tabs-mode nil)
   (mark-ring-max 32)
   (global-mark-ring-max 64)
   (set-mark-command-repeat-pop t)
   (shell-command-prompt-show-cwd t)
-  (async-shell-command-buffer 'new-buffer)
+  (async-shell-command-buffer 'rename-buffer)
   ;; Don't show M-x commands that don't work in the current mode.
   (read-extended-command-predicate #'command-completion-default-include-p)
   :bind
   ([remap kill-buffer] . kill-current-buffer)
-  ([remap async-shell-command] . my/async-shell-command)
   ("<escape>" . keyboard-escape-quit)
   ("M-c" . capitalize-dwim)
   ("M-l" . downcase-dwim)
@@ -909,9 +738,6 @@ When prefix ARG is passed, the working directory may be selected, otherwise
 (use-package vundo
   :bind
   ("C-x u" . vundo)
-  :hook
-  (vundo-pre-enter . my/popper-temp-pause)
-  (vundo-post-exit . my/popper-temp-resume)
   :custom
   (vundo-glyph-alist vundo-unicode-symbols)
   :config
@@ -1209,17 +1035,8 @@ When prefix ARG is passed, the working directory may be selected, otherwise
     (project-remember-projects-under "~/dev/home")
     (project-remember-projects-under "~/dev/work"))
 
-  (defun my/project-async-shell-command (&optional arg)
-    "Execute a command asynchronously from the root of a project.
-When prefix ARG is passed or there is no active project, the project may be
-selected, otherwise the currently active project is used."
-    (interactive "P")
-    (let ((default-directory (if arg (funcall project-prompter)
-                               (project-root (project-current t)))))
-      (my/async-shell-command)))
-
   :bind
-  ("C-M-&" . my/project-async-shell-command)
+  ("C-M-&" . project-async-shell-command)
   ("C-x p j" . project-dired)
   ("C-x p u" . my/project-update-list)
   :custom
@@ -1231,7 +1048,7 @@ selected, otherwise the currently active project is used."
      (magit-project-status "Magit" ?g)
      (project-vc-dir "VC" ?v)
      (project-eshell "Eshell" ?e)
-     (my/project-async-shell-command "Async shell" ?&))))
+     (project-async-shell-command "Async shell" ?&))))
 
 ;;;; Minibuffer
 
