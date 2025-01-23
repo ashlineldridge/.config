@@ -186,78 +186,6 @@
   :custom
   (fill-column 80))
 
-;;;;; Scrolling
-
-(use-package pixel-scroll
-  :ensure nil
-  :preface
-  (declare-function pixel-line-height "pixel-scroll")
-  (declare-function pixel-scroll-precision-interpolate "pixel-scroll")
-
-  (defun my/pixel-scroll (delta &optional factor)
-    "Scroll up by DELTA pixels with scale FACTOR (defaults to 1.0)."
-    (pixel-scroll-precision-interpolate delta nil (or factor 1.0)))
-
-  (defun my/pixel-scroll-up-page ()
-    "Scroll up by the page height."
-    (interactive)
-    (my/pixel-scroll (window-pixel-height)))
-
-  (defun my/pixel-scroll-down-page ()
-    "Scroll down by the page height."
-    (interactive)
-    (my/pixel-scroll (- (window-pixel-height))))
-
-  (defun my/pixel-scroll-up-lines ()
-    "Scroll up by a line factor."
-    (interactive)
-    (my/pixel-scroll (pixel-line-height) 2.0))
-
-  (defun my/pixel-scroll-down-lines ()
-    "Scroll down by a line factor."
-    (interactive)
-    (my/pixel-scroll (- (pixel-line-height)) 2.0))
-
-  (defun my/pixel-scroll-up-page-other-window ()
-    "Scroll the other window up by the page height."
-    (interactive)
-    (with-selected-window (other-window-for-scrolling)
-      (my/pixel-scroll-up-page)))
-
-  (defun my/pixel-scroll-down-page-other-window ()
-    "Scroll down by the page height."
-    (interactive)
-    (with-selected-window (other-window-for-scrolling)
-      (my/pixel-scroll-down-page)))
-
-  (defun my/pixel-scroll-up-lines-other-window ()
-    "Scroll the other window up by a line factor."
-    (interactive)
-    (with-selected-window (other-window-for-scrolling)
-      (my/pixel-scroll-up-lines)))
-
-  (defun my/pixel-scroll-down-lines-other-window ()
-    "Scroll the other window down by a line factor."
-    (interactive)
-    (with-selected-window (other-window-for-scrolling)
-      (my/pixel-scroll-down-lines)))
-
-  :bind
-  ("M-v" . my/pixel-scroll-up-page)
-  ("C-v" . my/pixel-scroll-down-page)
-  ("M-V" . my/pixel-scroll-up-page-other-window)
-  ("C-S-v" . my/pixel-scroll-down-page-other-window)
-  ("M-S-<up>" . my/pixel-scroll-up-lines)
-  ("M-S-<down>" . my/pixel-scroll-down-lines)
-  ("C-M-<up>" . my/pixel-scroll-up-lines-other-window)
-  ("C-M-<down>" . my/pixel-scroll-down-lines-other-window)
-  :hook (elpaca-after-init . pixel-scroll-precision-mode)
-  :custom
-  (pixel-scroll-precision-interpolate-page t)
-  :init
-  ;; Prevent recentering of point by specifying a value > 100 (see docs).
-  (setq scroll-conservatively 101))
-
 ;;;; Repeating
 
 (use-package repeat
@@ -308,7 +236,7 @@
      register-alist
      extended-command-history)))
 
-;;;; Window and Frame Management
+;;;; Windows and Frames
 
 (use-package ns-win
   :ensure nil
@@ -316,63 +244,10 @@
   (mac-command-modifier 'meta)
   (mac-option-modifier nil))
 
-;;;;; Window Movement
+;;;;; Window Basics
 
 (use-package window
   :ensure nil
-  :preface
-  (declare-function winum-get-number "winum")
-  (declare-function winum--check-for-scope-change "winum")
-  (defvar my/other-window-for-scrolling nil)
-
-  (defun my/split-window-below ()
-    "Split window below and move point to the new window."
-    (interactive)
-    (split-window-below)
-    (other-window 1))
-
-  (defun my/split-window-right ()
-    "Split window right and move point to the new window."
-    (interactive)
-    (split-window-right)
-    (other-window 1))
-
-  (defun my/clear-pinned-other-window-for-scrolling ()
-    "Clear the currently pinned other-window for scrolling."
-    (interactive)
-    (if my/other-window-for-scrolling
-        (progn
-          (setq my/other-window-for-scrolling nil)
-          (message "Cleared pinned window"))
-      (message "No pinned window")))
-
-  (defun my/pin-other-window-for-scrolling (arg)
-    "Pin the window to be used for other-window scrolling.
-When a prefix ARG is specified, the currently pinned window is cleared.
-Likewise, if the selected window number is <= 0, the pinned window is cleared."
-    (interactive "P")
-    (if arg
-        (my/clear-pinned-other-window-for-scrolling)
-      (let ((num (read-number "Window: ")))
-        (if (<= num 0)
-            (my/clear-pinned-other-window-for-scrolling)
-          (if-let ((win (winum-get-window-by-number num)))
-              (progn
-                (setq my/other-window-for-scrolling win)
-                (message "Pinned window %d for scrolling" num))
-            (error "Invalid window: %d" num))))))
-
-  (defun my/other-window-for-scrolling ()
-    "Custom window selection for scrolling other window."
-    ;; First look for a left or right window to avoid scrolling the Popper
-    ;; window which has a dedicated scrolling command.
-    (or (when (and (window-live-p my/other-window-for-scrolling)
-                   (not (eq my/other-window-for-scrolling (selected-window))))
-          my/other-window-for-scrolling)
-        (window-in-direction 'left)
-        (window-in-direction 'right)
-        (next-window)))
-
   :bind
   (("M-[" . previous-buffer)
    ("M-]" . next-buffer)
@@ -380,27 +255,29 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
    ("M-o =" . balance-windows)
    ("M-o 0" . delete-window)
    ("M-o 1" . delete-other-windows)
-   ("M-o 2" . my/split-window-below)
-   ("M-o 3" . my/split-window-right)
-   ("M-o *" . my/pin-other-window-for-scrolling)
+   ("M-o 2" . split-window-below)
+   ("M-o 3" . split-window-right)
    :repeat-map my/window-repeat-map
    ("=" . balance-windows)
    ("0" . delete-window)
    ("1" . delete-other-windows)
-   ("2" . my/split-window-below)
-   ("3" . my/split-window-right))
+   ("2" . split-window-below)
+   ("3" . split-window-right))
+
   :custom
   (even-window-sizes nil)
   ;; Prefer splitting by width and only when the window is quite wide.
   (split-height-threshold nil)
   (split-width-threshold 200)
-  ;; Override how window is selected by `other-window-for-scrolling'.
-  (other-window-scroll-default #'my/other-window-for-scrolling)
-  ;; The following provides the default `display-buffer' behavior for buffers
-  ;; that are not managed by either Popper or Shackle.
-  (display-buffer-base-action '((display-buffer-reuse-mode-window
-                                 display-buffer-reuse-window
-                                 display-buffer-same-window))))
+  ;; WORK-IN-PROGRESS: Almighty buffer display configuration.
+  ;; See: https://protesilaos.com/codelog/2024-02-08-emacs-window-rules-display-buffer-alist
+  (display-buffer-alist
+   `(("\\*Occur\\*"
+      (display-buffer-reuse-mode-window display-buffer-below-selected)
+      (dedicated . t)
+      (window-height . fit-window-to-buffer)))))
+
+;;;;; Window Movement
 
 (use-package winum
   :preface
@@ -427,12 +304,6 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
   (defun my/winum-move-buffer-8 () (interactive) (my/winum-move-buffer 8))
   (defun my/winum-move-buffer-9 () (interactive) (my/winum-move-buffer 9))
 
-  (defun my/winum-toggle-scope ()
-    "Toggle `winum-scope' to allow/disallow jumping between frames."
-    (interactive)
-    (setq winum-scope (if (eq winum-scope 'global) 'frame-local 'global))
-    (winum--check-for-scope-change))
-
   :bind
   ("M-0" . winum-select-window-0-or-10)
   ("M-1" . winum-select-window-1)
@@ -453,13 +324,116 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
   ("C-M-7" . my/winum-move-buffer-7)
   ("C-M-8" . my/winum-move-buffer-8)
   ("C-M-9" . my/winum-move-buffer-9)
-  ("C-c x w" . my/winum-toggle-scope)
   :hook (elpaca-after-init . winum-mode)
   :custom
   ;; Winum mode line segment is managed by mode line package.
   (winum-auto-setup-mode-line nil)
   ;; Most of the time, this is what I want.
   (winum-scope 'frame-local))
+
+;;;;; Window History
+
+(use-package winner
+  :ensure nil
+  :bind
+  ("M-o u" . winner-undo)
+  ("M-o r" . winner-redo)
+  :hook (elpaca-after-init . winner-mode)
+  :custom
+  (winner-dont-bind-my-keys t)
+  :config
+  ;; Need to bind the repeat map after the package is loaded as Winner defines
+  ;; its own repeat map that we need to override.
+  (bind-keys :package winner
+             :repeat-map my/window-repeat-map
+             ("u" . winner-undo)
+             ("r" . winner-redo)))
+
+;;;;; Window Scrolling
+
+(use-package pixel-scroll
+  :ensure nil
+  :preface
+  (declare-function pixel-line-height "pixel-scroll")
+  (declare-function pixel-scroll-precision-interpolate "pixel-scroll")
+
+  (defun my/scroll-delta (delta &optional factor)
+    "Scroll up by DELTA pixels with scale FACTOR (defaults to 1.0)."
+    (pixel-scroll-precision-interpolate delta nil (or factor 1.0)))
+
+  (defun my/scroll-up-page ()
+    "Scroll up by the page height."
+    (interactive)
+    (my/scroll-delta (window-text-height nil t)))
+
+  (defun my/scroll-down-page ()
+    "Scroll down by the page height."
+    (interactive)
+    (my/scroll-delta (- (window-text-height nil t))))
+
+  (defun my/scroll-up-lines ()
+    "Scroll up by a line factor."
+    (interactive)
+    (my/scroll-delta (pixel-line-height) 2.0))
+
+  (defun my/scroll-down-lines ()
+    "Scroll down by a line factor."
+    (interactive)
+    (my/scroll-delta (- (pixel-line-height)) 2.0))
+
+  (defun my/scroll-up-page-other-window ()
+    "Scroll the other window up by the page height."
+    (interactive)
+    (with-selected-window (other-window-for-scrolling)
+      (my/scroll-up-page)))
+
+  (defun my/scroll-down-page-other-window ()
+    "Scroll down by the page height."
+    (interactive)
+    (with-selected-window (other-window-for-scrolling)
+      (my/scroll-down-page)))
+
+  (defun my/scroll-up-lines-other-window ()
+    "Scroll the other window up by a line factor."
+    (interactive)
+    (with-selected-window (other-window-for-scrolling)
+      (my/scroll-up-lines)))
+
+  (defun my/scroll-down-lines-other-window ()
+    "Scroll the other window down by a line factor."
+    (interactive)
+    (with-selected-window (other-window-for-scrolling)
+      (my/scroll-down-lines)))
+
+  (defun my/other-window-for-scrolling ()
+    "Custom window selection for scrolling other window."
+    ;; Prioritize right, then left, then next.
+    (or (window-in-direction 'right)
+        (window-in-direction 'left)
+        (next-window)))
+
+  :bind
+  ("M-v" . my/scroll-up-page)
+  ("C-v" . my/scroll-down-page)
+  ("<prior>" . my/scroll-up-page)
+  ("<next>" . my/scroll-down-page)
+  ;; Use the `C-M' chorded keybinds for scrolling the other window. This
+  ;; chord is also used for other window keybindings in other packages.
+  ("C-M-<prior>" . my/scroll-up-page-other-window)
+  ("C-M-<next>" . my/scroll-down-page-other-window)
+  ("C-M-<up>" . my/scroll-up-lines-other-window)
+  ("C-M-<down>" . my/scroll-down-lines-other-window)
+  ;; Also replace existing keybinds for scrolling the other window.
+  ("M-<prior>" . my/scroll-up-page-other-window)
+  ("M-<next>" . my/scroll-down-page-other-window)
+  ("C-M-S-v" . my/scroll-up-page-other-window)
+  ("C-M-v" . my/scroll-down-page-other-window)
+  :hook (elpaca-after-init . pixel-scroll-precision-mode)
+  :init
+  ;; Prevent recentering of point by specifying a value > 100 (see docs).
+  (setq scroll-conservatively 101))
+
+;;;;; Frame Management
 
 (use-package frame
   :ensure nil
@@ -493,24 +467,6 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
    ("M-h" . flop-frame)
    ("M-v" . flip-frame)))
 
-;;;;; Window History
-
-(use-package winner
-  :ensure nil
-  :bind
-  ("M-o u" . winner-undo)
-  ("M-o r" . winner-redo)
-  :hook (elpaca-after-init . winner-mode)
-  :custom
-  (winner-dont-bind-my-keys t)
-  :config
-  ;; Need to bind the repeat map after the package is loaded as Winner defines
-  ;; its own repeat map that we need to override.
-  (bind-keys :package winner
-             :repeat-map my/window-repeat-map
-             ("u" . winner-undo)
-             ("r" . winner-redo)))
-
 ;;;;; Tab Bar
 
 (use-package tab-bar
@@ -518,32 +474,7 @@ Likewise, if the selected window number is <= 0, the pinned window is cleared."
   :custom
   (tab-bar-show nil))
 
-;;;;; Window Orchestration
-
-;; Shackle provides a simpler syntax for managing `display-buffer-alist'.
-(use-package shackle
-  :hook (elpaca-after-init . shackle-mode)
-  :custom
-  (shackle-default-rule nil)
-  ;; Default number of lines shown by aligned windows. Match `vertico-count'
-  ;; as then bottom aligned popups use the same number of lines as Vertico.
-  (shackle-default-size 10)
-  (shackle-rules
-   ;; More reliable to match by regex than by major mode as some commands
-   ;; don't set the major mode until after they've called `display-buffer'.
-   '(("CAPTURE-.*\\.org" :regexp t :select t :popup t :align 'below)
-     ("\\*Async Shell Command\\*" :regexp t :select nil :other t)
-     ("\\*Go Test\\*" :regexp t :select nil :other t)
-     ("\\*Occur\\*" :regexp t :select t :other t)
-     ("\\*Pp" :regexp t :select nil :other t)
-     ("\\*eldoc" :regexp t :select nil :other t)
-     ("\\*helpful" :regexp t :select nil :other t)
-     ("\\*rg\\*"  :regexp t :select t :other t)
-     ("\\*vc-diff" :regexp t :select nil :other t)
-     ("^magit-diff:" :regexp t :select nil :other t)
-     ("\\*eshell-output" :regexp t :select nil :other t))))
-
-;;;; Transient
+;;;;; Transient
 
 ;; Use external transient as some packages require a later version.
 (use-package transient)
