@@ -282,17 +282,18 @@
 (use-package winum
   :preface
   (declare-function winum-get-window-by-number "winum")
-  (declare-function winum-select-window-by-number "winum")
   ;; Define an empty keymap as I want to bind my own keys.
   (defvar winum-keymap (make-sparse-keymap))
 
   (defun my/winum-move-buffer (n)
     "Move the current buffer to window N."
-    (when (winum-get-window-by-number n)
-      (let ((buffer (current-buffer)))
-        (switch-to-prev-buffer)
-        (winum-select-window-by-number n)
-        (switch-to-buffer buffer nil t))))
+    (when-let ((win (winum-get-window-by-number n))
+               (buf (current-buffer))
+               (pnt (point)))
+      (switch-to-prev-buffer)
+      (select-window win)
+      (switch-to-buffer buf nil t)
+      (goto-char pnt)))
 
   (defun my/winum-move-buffer-1 () (interactive) (my/winum-move-buffer 1))
   (defun my/winum-move-buffer-2 () (interactive) (my/winum-move-buffer 2))
