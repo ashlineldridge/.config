@@ -2638,6 +2638,9 @@ with a numbered suffix."
   :preface
   (declare-function org-get-tags "org")
   (declare-function org-refile-get-targets "org-refile")
+  (declare-function org-refile-goto-last-stored "org-refile")
+  (declare-function org-capture-goto-last-stored "org-capture")
+  (declare-function bookmark-get-bookmark-record "bookmark")
 
   ;; Paths into repository (also named 'org') that contains all of my notes,
   ;; journal entries, tasks, bookmarks, etc.
@@ -2668,10 +2671,22 @@ with a numbered suffix."
                 (append electric-pair-pairs my/org-extra-electric-pairs))
     (setq-local electric-pair-text-pairs
                 (append electric-pair-text-pairs my/org-extra-electric-pairs)))
+
+  (defun my/org-goto-last-dwim ()
+    "Navigate to the last org \"thing\"."
+    (interactive)
+    (let* ((refile-bm (bookmark-get-bookmark-record "org-refile-last-stored"))
+           (capture-bm (bookmark-get-bookmark-record "org-capture-last-stored"))
+           (refile-time (alist-get 'last-modified refile-bm))
+           (capture-time (alist-get 'last-modified capture-bm)))
+      (if (time-less-p capture-time refile-time)
+          (org-refile-goto-last-stored)
+        (org-capture-goto-last-stored))))
+
   :bind
   ("C-c C-o" . org-open-at-point-global)
   ("C-c o s" . org-save-all-org-buffers)
-  ("C-c o l" . org-refile-goto-last-stored)
+  ("C-c o l" . my/org-goto-last-dwim)
 
   :hook (org-mode . my/org-init)
   :custom
@@ -2933,7 +2948,6 @@ specified then a task category will be determined by the item's tags."
   ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
   ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
   ("C-c o c" . (lambda () (interactive) (org-capture nil "c")))
-  ("C-c o L" . org-capture-goto-last-stored)
   :custom
   (org-capture-templates
    `(("i" "Inbox" entry
