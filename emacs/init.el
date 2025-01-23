@@ -1361,7 +1361,9 @@
    ("C-," . consult-narrow-help)
    ("?" . consult-narrow-help)
    :map isearch-mode-map
-   ("C-c h" . consult-isearch-history))
+   ("M-e" . consult-isearch-history)
+   ("M-s l" . consult-line)
+   ("M-s L" . consult-line-multi))
 
   :custom
   ;; Type ',' followed by a prefix key to narrow the available candidates.
@@ -1521,6 +1523,7 @@
       (save-selected-window
         (let ((embark-quit-after-action nil))
           (embark-dwim)))))
+
   :commands embark-prefix-help-command
   :bind
   (("C-." . embark-act)
@@ -1532,6 +1535,7 @@
    ("&" . async-shell-command)
    :map minibuffer-local-map
    ("M-." . my/embark-force-preview))
+
   :custom
   ;; Just show the minimal "Act" prompt (the default starts with minimal
   ;; and then `embark-mixed-indicator-delay' kicks in and the verbose screen
@@ -1540,12 +1544,14 @@
   (embark-indicators (list #'embark-minimal-indicator))
   ;; Use this key to switch Embark to the keymap prompter.
   (embark-keymap-prompter-key ",")
+
   :init
   ;; Use Embark to show keybindings under a prefix rather than the default
   ;; `describe-prefix-bindings'. It should be possible to just use set
   ;; `prefix-help-command' but it keeps getting reverted so doing it this way.
   (with-eval-after-load 'help
     (fset #'describe-prefix-bindings #'embark-prefix-help-command))
+
   :config
   (eldoc-add-command "embark-dwim")
   ;; Adapt the associated commands so that they are usable as Embark actions.
