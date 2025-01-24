@@ -282,49 +282,52 @@
 (use-package winum
   :preface
   (declare-function winum-get-window-by-number "winum")
+  (declare-function winum-select-window-by-number "winum")
+
   ;; Define an empty keymap as I want to bind my own keys.
   (defvar winum-keymap (make-sparse-keymap))
 
-  (defun my/winum-move-buffer (n)
-    "Move the current buffer to window N."
-    (when-let ((win (winum-get-window-by-number n))
-               (buf (current-buffer))
-               (pnt (point)))
-      (switch-to-prev-buffer)
-      (select-window win)
-      (switch-to-buffer buf nil t)
-      (goto-char pnt)))
+  (defun my/winum (num arg)
+    "Select, delete, or mirror to window NUM based on ARG."
+    (cond
+     ;; Select the window on no prefix arg.
+     ((= arg 1) (winum-select-window-by-number num) (pulsar-pulse-line))
+     ;; Delete the window on single prefix arg.
+     ((= arg 4) (winum-select-window-by-number (- num)))
+     ;; Mirror the window on double prefix arg.
+     ((= arg 16) (when-let ((window (winum-get-window-by-number num))
+                            (buffer (current-buffer))
+                            (point (point))
+                            (start (window-start)))
+                   (with-selected-window window
+                     (switch-to-buffer buffer nil t)
+                     (set-window-point window point)
+                     (set-window-start window start t))))
+     (t (error "Unrecognized prefix"))))
 
-  (defun my/winum-move-buffer-1 () (interactive) (my/winum-move-buffer 1))
-  (defun my/winum-move-buffer-2 () (interactive) (my/winum-move-buffer 2))
-  (defun my/winum-move-buffer-3 () (interactive) (my/winum-move-buffer 3))
-  (defun my/winum-move-buffer-4 () (interactive) (my/winum-move-buffer 4))
-  (defun my/winum-move-buffer-5 () (interactive) (my/winum-move-buffer 5))
-  (defun my/winum-move-buffer-6 () (interactive) (my/winum-move-buffer 6))
-  (defun my/winum-move-buffer-7 () (interactive) (my/winum-move-buffer 7))
-  (defun my/winum-move-buffer-8 () (interactive) (my/winum-move-buffer 8))
-  (defun my/winum-move-buffer-9 () (interactive) (my/winum-move-buffer 9))
+  (defun my/winum-0 () (interactive) (my/winum 0 1))
+  (defun my/winum-1 (arg) (interactive "p") (my/winum 1 arg))
+  (defun my/winum-2 (arg) (interactive "p") (my/winum 2 arg))
+  (defun my/winum-3 (arg) (interactive "p") (my/winum 3 arg))
+  (defun my/winum-4 (arg) (interactive "p") (my/winum 4 arg))
+  (defun my/winum-5 (arg) (interactive "p") (my/winum 5 arg))
+  (defun my/winum-6 (arg) (interactive "p") (my/winum 6 arg))
+  (defun my/winum-7 (arg) (interactive "p") (my/winum 7 arg))
+  (defun my/winum-8 (arg) (interactive "p") (my/winum 8 arg))
+  (defun my/winum-9 (arg) (interactive "p") (my/winum 9 arg))
 
   :bind
-  ("M-0" . winum-select-window-0-or-10)
-  ("M-1" . winum-select-window-1)
-  ("M-2" . winum-select-window-2)
-  ("M-3" . winum-select-window-3)
-  ("M-4" . winum-select-window-4)
-  ("M-5" . winum-select-window-5)
-  ("M-6" . winum-select-window-6)
-  ("M-7" . winum-select-window-7)
-  ("M-8" . winum-select-window-8)
-  ("M-9" . winum-select-window-9)
-  ("C-M-1" . my/winum-move-buffer-1)
-  ("C-M-2" . my/winum-move-buffer-2)
-  ("C-M-3" . my/winum-move-buffer-3)
-  ("C-M-4" . my/winum-move-buffer-4)
-  ("C-M-5" . my/winum-move-buffer-5)
-  ("C-M-6" . my/winum-move-buffer-6)
-  ("C-M-7" . my/winum-move-buffer-7)
-  ("C-M-8" . my/winum-move-buffer-8)
-  ("C-M-9" . my/winum-move-buffer-9)
+  ("M-0" . my/winum-0)
+  ("M-1" . my/winum-1)
+  ("M-2" . my/winum-2)
+  ("M-3" . my/winum-3)
+  ("M-4" . my/winum-4)
+  ("M-5" . my/winum-5)
+  ("M-6" . my/winum-6)
+  ("M-7" . my/winum-7)
+  ("M-8" . my/winum-8)
+  ("M-9" . my/winum-9)
+
   :hook (elpaca-after-init . winum-mode)
   :custom
   ;; Winum mode line segment is managed by mode line package.
@@ -418,6 +421,8 @@
   ("C-v" . my/scroll-down-page)
   ("<prior>" . my/scroll-up-page)
   ("<next>" . my/scroll-down-page)
+  ("M-S-<up>" . my/scroll-up-lines)
+  ("M-S-<down>" . my/scroll-down-lines)
   ;; Use the `C-M' chorded keybinds for scrolling the other window. This
   ;; chord is also used for other window keybindings in other packages.
   ("C-M-<prior>" . my/scroll-up-page-other-window)
@@ -799,16 +804,6 @@
   (add-to-list 'pulsar-pulse-functions 'treesit-end-of-defun)
   (add-to-list 'pulsar-pulse-functions 'vterm-next-prompt)
   (add-to-list 'pulsar-pulse-functions 'vterm-previous-prompt)
-  (add-to-list 'pulsar-pulse-functions 'winum-select-window-0)
-  (add-to-list 'pulsar-pulse-functions 'winum-select-window-1)
-  (add-to-list 'pulsar-pulse-functions 'winum-select-window-2)
-  (add-to-list 'pulsar-pulse-functions 'winum-select-window-3)
-  (add-to-list 'pulsar-pulse-functions 'winum-select-window-4)
-  (add-to-list 'pulsar-pulse-functions 'winum-select-window-5)
-  (add-to-list 'pulsar-pulse-functions 'winum-select-window-6)
-  (add-to-list 'pulsar-pulse-functions 'winum-select-window-7)
-  (add-to-list 'pulsar-pulse-functions 'winum-select-window-8)
-  (add-to-list 'pulsar-pulse-functions 'winum-select-window-9)
   (add-to-list 'pulsar-pulse-functions 'xref-find-definitions)
   ;; Some functions (like those called by Embark) need to be advised.
   (with-eval-after-load 'embark
