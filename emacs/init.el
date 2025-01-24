@@ -282,28 +282,31 @@
 (use-package winum
   :preface
   (declare-function winum-get-window-by-number "winum")
-  (declare-function winum-select-window-by-number "winum")
+  (declare-function winum--switch-to-window "winum")
 
   ;; Define an empty keymap as I want to bind my own keys.
   (defvar winum-keymap (make-sparse-keymap))
 
   (defun my/winum (num arg)
-    "Select, delete, or mirror to window NUM based on ARG."
-    (cond
-     ;; Select the window on no prefix arg.
-     ((= arg 1) (winum-select-window-by-number num) (pulsar-pulse-line))
-     ;; Delete the window on single prefix arg.
-     ((= arg 4) (winum-select-window-by-number (- num)))
-     ;; Mirror the window on double prefix arg.
-     ((= arg 16) (when-let ((window (winum-get-window-by-number num))
-                            (buffer (current-buffer))
-                            (point (point))
-                            (start (window-start)))
-                   (with-selected-window window
-                     (switch-to-buffer buffer nil t)
-                     (set-window-point window point)
-                     (set-window-start window start t))))
-     (t (error "Unrecognized prefix"))))
+    "Select, delete window or buffer, or mirror to window NUM based on ARG."
+    (if-let ((window (winum-get-window-by-number num)))
+        (cond
+         ;; Select the window on no prefix arg.
+         ((= arg 1) (winum--switch-to-window window) (pulsar-pulse-line))
+         ;; Delete the window on single prefix arg.
+         ((= arg 4) (delete-window window))
+         ;; Delete the window's buffer on double prefix arg.
+         ((= arg 16) (kill-buffer (window-buffer window)))
+         ;; Mirror the window on triple prefix arg.
+         ((= arg 64) (let ((buffer (current-buffer))
+                           (point (point))
+                           (start (window-start)))
+                       (with-selected-window window
+                         (switch-to-buffer buffer nil t)
+                         (set-window-point window point)
+                         (set-window-start window start t))))
+         (t (error "Unrecognized prefix arg %d" arg)))
+      (error "No window numbered %d" num)))
 
   (defun my/winum-0 () (interactive) (my/winum 0 1))
   (defun my/winum-1 (arg) (interactive "p") (my/winum 1 arg))
