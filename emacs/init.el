@@ -294,7 +294,7 @@
   (defvar winum-keymap (make-sparse-keymap))
 
   (defun my/winum (num arg)
-    "Select, delete window or buffer, or mirror to window NUM based on ARG."
+    "Act on window identified by NUM based on ARG."
     (if-let ((window (winum-get-window-by-number num)))
         (cond
          ;; Select the window on no prefix arg.
@@ -303,14 +303,16 @@
          ((= arg 4) (delete-window window))
          ;; Delete the window's buffer on double prefix arg.
          ((= arg 16) (kill-buffer (window-buffer window)))
-         ;; Mirror the window on triple prefix arg.
-         ((= arg 64) (let ((buffer (current-buffer))
-                           (point (point))
-                           (start (window-start)))
-                       (with-selected-window window
-                         (switch-to-buffer buffer nil t)
-                         (set-window-point window point)
-                         (set-window-start window start t))))
+         ;; Delete the window and buffer on triple prefix arg.
+         ((= arg 64) (with-selected-window window (kill-buffer-and-window)))
+         ;; Mirror the window on quadruple prefix arg.
+         ((= arg 256) (let ((buffer (current-buffer))
+                            (point (point))
+                            (start (window-start)))
+                        (with-selected-window window
+                          (switch-to-buffer buffer nil t)
+                          (set-window-point window point)
+                          (set-window-start window start t))))
          (t (error "Unrecognized prefix arg %d" arg)))
       (error "No window numbered %d" num)))
 
