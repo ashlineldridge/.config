@@ -253,16 +253,21 @@
    ("M-]" . next-buffer)
    ("M-q" . bury-buffer)
    ("M-o =" . balance-windows)
+   ("M-o o" . other-window)
    ("M-o 0" . delete-window)
    ("M-o 1" . delete-other-windows)
    ("M-o 2" . split-window-below)
    ("M-o 3" . split-window-right)
+   ("M-o M-=" . enlarge-window-horizontally)
+   ("M-o M--" . shrink-window-horizontally)
+   ("M-o M-+" . enlarge-window)
+   ("M-o M-_" . shrink-window)
    :repeat-map my/window-repeat-map
-   ("=" . balance-windows)
-   ("0" . delete-window)
-   ("1" . delete-other-windows)
-   ("2" . split-window-below)
-   ("3" . split-window-right))
+   ("o" . other-window)
+   ("M-=" . enlarge-window-horizontally)
+   ("M--" . shrink-window-horizontally)
+   ("M-+" . enlarge-window)
+   ("M-_" . shrink-window))
 
   :custom
   (even-window-sizes nil)
@@ -464,26 +469,6 @@
   ("M-o M-u" . undelete-frame)
   :hook (elpaca-after-init . undelete-frame-mode))
 
-(use-package transpose-frame
-  :bind
-  (("M-o >" . rotate-frame-clockwise)
-   ("M-o <" . rotate-frame-anticlockwise)
-   ("M-o M-=" . enlarge-window-horizontally)
-   ("M-o M--" . shrink-window-horizontally)
-   ("M-o M-+" . enlarge-window)
-   ("M-o M-_" . shrink-window)
-   ("M-o M-h" . flop-frame)
-   ("M-o M-v" . flip-frame)
-   :repeat-map my/window-repeat-map
-   (">" . rotate-frame-clockwise)
-   ("<" . rotate-frame-anticlockwise)
-   ("M-=" . enlarge-window-horizontally)
-   ("M--" . shrink-window-horizontally)
-   ("M-+" . enlarge-window)
-   ("M-_" . shrink-window)
-   ("M-h" . flop-frame)
-   ("M-v" . flip-frame)))
-
 ;;;;; Tab Bar
 
 (use-package tab-bar
@@ -514,7 +499,7 @@
   ([remap describe-command] . helpful-command)
   ([remap describe-key] . helpful-key)
   :custom
-  ;; Required so that I can tell Shackle NOT to select Helpful buffers.
+  ;; Don't select the helpful buffer.
   (helpful-switch-buffer-function #'display-buffer))
 
 (use-package which-key
