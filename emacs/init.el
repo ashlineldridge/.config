@@ -469,6 +469,11 @@
   ("M-o M-u" . undelete-frame)
   :hook (elpaca-after-init . undelete-frame-mode))
 
+;;;;; Transient
+
+;; Use external transient as some packages require a later version.
+(use-package transient)
+
 ;;;;; Tab Bar
 
 (use-package tab-bar
@@ -476,10 +481,10 @@
   :custom
   (tab-bar-show nil))
 
-;;;;; Transient
+;;;;; Breadcrumb
 
-;; Use external transient as some packages require a later version.
-(use-package transient)
+(use-package breadcrumb
+  :hook (elpaca-after-init . breadcrumb-mode))
 
 ;;;; Help System
 
