@@ -2751,10 +2751,6 @@ with a numbered suffix."
 (use-package org-agenda
   :ensure nil
   :preface
-  (declare-function org-agenda-redo-all "org-agenda")
-  (declare-function org-agenda-quit "org-agenda")
-
-  ;; Order of Org agenda items.
   (defvar my/org-agenda-todo-sort-order '("PROG" "NEXT" "TODO" "HOLD" "DONE"))
   (defun my/org-agenda-cmp-todo (a b)
     "Custom compares agenda items A and B based on their todo keywords."
@@ -2781,13 +2777,12 @@ with a numbered suffix."
                           (and
                            (string= heading (nth 0 refloc))
                            (string= file (nth 1 refloc))))
-                        (org-refile-get-targets)) nil))
+                        (org-refile-get-targets)) t))
 
   (defun my/org-agenda-refile-personal-or-work (file &optional category)
     "Refile the current org agenda item into FILE under Personal/ or Work/.
 If CATEGORY is specified it must equal \\='personal or \\='work; if it is not
 specified then a task category will be determined by the item's tags."
-    (interactive)
     (let* ((hdm (org-get-at-bol 'org-hd-marker))
 	   (tags (with-current-buffer (marker-buffer hdm) (org-get-tags hdm))))
       (cond ((or (eq 'personal category) (member "@personal" tags))
@@ -2826,11 +2821,6 @@ specified then a task category will be determined by the item's tags."
     (interactive)
     (my/org-agenda-refile-personal-or-work my/org-someday-file))
 
-  (defun my/org-agenda-redo-all-exhaustive ()
-    "Rebuild all agenda views in all agenda buffers."
-    (interactive)
-    (org-agenda-redo-all t))
-
   :bind
   (("C-c o a" . org-agenda)
    :map org-agenda-mode-map
@@ -2841,7 +2831,6 @@ specified then a task category will be determined by the item's tags."
    ("r a" . my/org-agenda-refile-archive)
    ("r s" . my/org-agenda-refile-someday)
    ("r i" . my/org-agenda-refile-inbox)
-   ("g" . my/org-agenda-redo-all-exhaustive)
    ("k" . org-agenda-kill)
    ("?" . which-key-show-major-mode))
 
@@ -2933,11 +2922,7 @@ specified then a task category will be determined by the item's tags."
   (org-agenda-sticky t)
   (org-agenda-start-with-log-mode t)
   (org-agenda-tags-column 0)
-  (org-agenda-window-setup 'current-window)
-
-  :config
-  ;; Save all org buffers before quitting the agenda ('s' saves immediately).
-  (advice-add #'org-agenda-quit :before #'org-save-all-org-buffers))
+  (org-agenda-window-setup 'current-window))
 
 (use-package org-capture
   :ensure nil
