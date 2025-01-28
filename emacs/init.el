@@ -581,8 +581,8 @@
 
   :custom
   (indent-tabs-mode nil)
-  (mark-ring-max 32)
-  (global-mark-ring-max 64)
+  (mark-ring-max 16)
+  (global-mark-ring-max 16)
   (set-mark-command-repeat-pop t)
   (shell-command-prompt-show-cwd t)
   (async-shell-command-buffer 'rename-buffer)
