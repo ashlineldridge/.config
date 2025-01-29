@@ -1955,7 +1955,9 @@
                            (?t "Trait" my/imenu-trait-face))))))
 
 (use-package rustic
-  ;; So that rustic takes precedence in `auto-mode-alist'.
+  ;; TODO: Loading rustic after rust-mode is meant to ensure that the entry
+  ;; that rustic adds to `auto-mode-alist' takes precedence over rust-mode and
+  ;; rust-ts-mode but this doesn't always work. Further investigation needed.
   :after rust-mode
   :ensure (:host github :repo "emacs-rustic/rustic")
   :bind
@@ -2780,7 +2782,7 @@ with a numbered suffix."
                         (org-refile-get-targets)) t))
 
   (defun my/org-agenda-refile-personal-or-work (file &optional category)
-    "Refile the current org agenda item into FILE under Personal/ or Work/.
+    "Refile the current agenda item into FILE under Personal/ or Work/.
 If CATEGORY is specified it must equal \\='personal or \\='work; if it is not
 specified then a task category will be determined by the item's tags."
     (let* ((hdm (org-get-at-bol 'org-hd-marker))
@@ -2797,27 +2799,27 @@ specified then a task category will be determined by the item's tags."
                  (t (message "Bad selection")))))))
 
   (defun my/org-agenda-refile-personal ()
-    "Refile the current org agenda item into the personal list."
+    "Refile the current agenda item into the personal backlog."
     (interactive)
     (my/org-agenda-refile my/org-personal-file "Personal"))
 
   (defun my/org-agenda-refile-work ()
-    "Refile the current org agenda item into the work list."
+    "Refile the current agenda item into the work backlog."
     (interactive)
     (my/org-agenda-refile my/org-work-file "Work"))
 
   (defun my/org-agenda-refile-inbox ()
-    "Refile the current org agenda item into the inbox."
+    "Refile the current agenda item into the inbox."
     (interactive)
     (my/org-agenda-refile my/org-inbox-file "Inbox"))
 
   (defun my/org-agenda-refile-archive ()
-    "Refile the current org agenda item into the archive."
+    "Refile the current agenda item into the archive."
     (interactive)
     (my/org-agenda-refile-personal-or-work my/org-archive-file))
 
   (defun my/org-agenda-refile-someday ()
-    "Refile the current org agenda item into the someday."
+    "Refile the current agenda item into the someday list."
     (interactive)
     (my/org-agenda-refile-personal-or-work my/org-someday-file))
 
