@@ -569,9 +569,10 @@
     (indent-according-to-mode))
 
   (defun my/expand-line ()
-    "Expand the current line."
+    "Expand/mark the current line from the margin."
     (interactive)
-    (set-mark (line-beginning-position))
+    (back-to-indentation)
+    (set-mark (point))
     (end-of-line))
 
   (defun my/minibuffer-history-eol (_)
@@ -581,6 +582,8 @@
 
   :custom
   (indent-tabs-mode nil)
+  ;; Allow shift-selection to continue any active region.
+  (shift-select-mode 'permanent)
   (mark-ring-max 16)
   (global-mark-ring-max 16)
   (set-mark-command-repeat-pop t)
