@@ -1909,12 +1909,7 @@
 
   (defun my/rust-ts-mode-init ()
     "Init function for `rust-ts-mode'."
-    ;; Override the default function used by tree-sitter to turn a node into
-    ;; the name that is displayed by imenu.
-    (setq-local treesit-defun-name-function #'my/treesit-rust-defun-name)
-
-    ;; Override the imenu 'categories for Rust as the defaults leave out quite
-    ;; a few node types. See possible node types here:
+    ;; Custom Rust node types. See possible node types here:
     ;; https://github.com/tree-sitter/tree-sitter-rust/blob/0a70e15da977489d954c219af9b50b8a722630ee/src/node-types.json.
     (setq-local treesit-simple-imenu-settings
                 '(("Associated Type" "\\`type_item\\'" nil nil)
@@ -1926,20 +1921,15 @@
                   ("Module" "\\`mod_item\\'" nil nil)
                   ("Static" "\\`static_item\\'" nil nil)
                   ("Struct" "\\`struct_item\\'" nil nil)
-                  ("Trait" "\\`trait_item\\'" nil nil))))
+                  ("Trait" "\\`trait_item\\'" nil nil)))
+    ;; Install custom function for Rust node names.
+    (setq-local treesit-defun-name-function #'my/treesit-rust-defun-name))
 
-  ;; Custom function to be used for `treesit-defun-name-function' that
-  ;; handles a wider range of node types.
   (defun my/treesit-rust-defun-name (node)
     "Return the defun name of NODE for Rust node types."
     (pcase (treesit-node-type node)
-      ("const_item"
+      ((or "const_item" "macro_definition" "trait_item")
        (treesit-node-text (treesit-node-child-by-field-name node "name") t))
-      ("macro_definition"
-       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
-      ("trait_item"
-       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
-      ;; Call the default value of `treesit-defun-name-function'.
       (_ (rust-ts-mode--defun-name node))))
 
   :hook (rust-ts-mode . my/rust-ts-mode-init)
@@ -2019,8 +2009,8 @@
     (setq-local tab-width go-ts-mode-indent-offset)
     ;; Don't let tests use cached results (buffer local var used by `gotest').
     (setq-local go-test-args "-count 1")
-    ;; Improvements for imenu.
-    (setq-local treesit-defun-name-function #'my/treesit-go-defun-name)
+    ;; Custom Go node types. See possible node types here:
+    ;; https://github.com/tree-sitter/tree-sitter-go/blob/bbaa67a180cfe0c943e50c55130918be8efb20bd/src/node-types.json.
     (setq-local treesit-simple-imenu-settings
                 '(("Constant" "\\`const_spec\\'" nil nil)
                   ("Function" "\\`function_declaration\\'" nil nil)
@@ -2030,16 +2020,14 @@
                   ("Struct" "\\`type_declaration\\'" go-ts-mode--struct-node-p nil)
                   ("Type Alias" "\\`type_declaration\\'" go-ts-mode--alias-node-p nil)
                   ;; Unfortunately, this also includes local variables.
-                  ("Variable" "\\`var_spec\\'" nil nil))))
+                  ("Variable" "\\`var_spec\\'" nil nil)))
+    ;; Install custom function for Go node names.
+    (setq-local treesit-defun-name-function #'my/treesit-go-defun-name))
 
   (defun my/treesit-go-defun-name (node)
     "Return the defun name of NODE for Go node types."
-    ;; See possible node types here:
-    ;; https://github.com/tree-sitter/tree-sitter-go/blob/bbaa67a180cfe0c943e50c55130918be8efb20bd/src/node-types.json.
     (pcase (treesit-node-type node)
-      ("const_spec"
-       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
-      ("var_spec"
+      ((or "const_spec" "var_spec")
        (treesit-node-text (treesit-node-child-by-field-name node "name") t))
       (_ (go-ts-mode--defun-name node))))
 
