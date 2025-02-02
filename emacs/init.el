@@ -274,15 +274,17 @@
   ;; Prefer splitting by width and only when the window is quite wide.
   (split-height-threshold nil)
   (split-width-threshold 200)
-  ;; WORK-IN-PROGRESS: Almighty buffer display configuration.
+  ;; WORK-IN-PROGRESS: Display buffer configuration.
   ;; See: https://protesilaos.com/codelog/2024-02-08-emacs-window-rules-display-buffer-alist
   ;; See: https://github.com/ashlineldridge/.config/blob/b92a568ec77f69170bc06523b163020f73962464/emacs/init.el#L534C6-L534C69
   ;; See: https://github.com/protesilaos/dotfiles/blob/d16ad4d8d54e1d06ec1cbe7a62568d408651847e/emacs/.emacs.d/prot-emacs-modules/prot-emacs-window.el#L66
   (display-buffer-alist
    `(;; No window.
-     ("\\*\\(Async Shell Command\\|Warnings\\)\\*"
-      (display-buffer-no-window)
-      (allow-no-window . t))
+     ("\\*Async Shell Command\\*"
+      ;; Note that some buffers additionally require the `allow-no-window'
+      ;; option to be specified. The downside of this is that it breaks other-
+      ;; window commands such as `consult-buffer-other-window'.
+      (display-buffer-no-window))
      ;; Below current window.
      ("CAPTURE-.*\\.org"
       (display-buffer-below-selected)
