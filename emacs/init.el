@@ -2235,16 +2235,15 @@
                   elisp-eldoc-var-docstring-with-value
                   elisp-eldoc-funcall)))
 
-  (defun my/elisp-flymake-byte-compile (fn &rest args)
-    "Advises `elisp-flymake-byte-compile' to remove vterm from `load-path'."
-    ;; Don't let Vterm onto Flymake's load path as it oddly blocks it.
-    (let* ((alt-load-path (seq-filter (lambda (d) (not (string-match-p "elpaca/builds/vterm" d))) load-path))
-           (elisp-flymake-byte-compile-load-path (append elisp-flymake-byte-compile-load-path alt-load-path)))
+  (defun my/elisp-flymake-load-path (fn &rest args)
+    "Advises `elisp-flymake-byte-compile' so that Flymake uses `load-path'."
+    (let* ((elisp-flymake-byte-compile-load-path
+            (append elisp-flymake-byte-compile-load-path load-path)))
       (apply fn args)))
   :hook
   (emacs-lisp-mode . my/elisp-init)
   :config
-  (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-byte-compile)
+  (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-load-path)
   ;; This configuration is from consult-imenu.el with the fonts changed.
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
