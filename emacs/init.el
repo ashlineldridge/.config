@@ -300,8 +300,8 @@
   ;; Define an empty keymap as I want to bind my own keys.
   (defvar winum-keymap (make-sparse-keymap))
 
-  (defun my/winum (num arg)
-    "Act on window identified by NUM based on ARG."
+  (defun my/winum-select (num arg)
+    "Select or delete window NUM based on prefix ARG."
     (if-let ((window (winum-get-window-by-number num)))
         (cond
          ;; Select the window on no prefix arg.
@@ -310,41 +310,47 @@
          ((= arg 4) (delete-window window))
          ;; Delete the window's buffer on double prefix arg.
          ((= arg 16) (kill-buffer (window-buffer window)))
-         ;; Delete the window and buffer on triple prefix arg.
-         ((= arg 64) (with-selected-window window (kill-buffer-and-window)))
-         ;; Mirror the window on quadruple prefix arg.
-         ((= arg 256) (let ((buffer (current-buffer))
-                            (point (point))
-                            (start (window-start)))
-                        (with-selected-window window
-                          (switch-to-buffer buffer nil t)
-                          (set-window-point window point)
-                          (set-window-start window start t))))
-         (t (error "Unrecognized prefix arg %d" arg)))
+         ;; Otherwise, delete the window and buffer.
+         (t (with-selected-window window (kill-buffer-and-window))))
       (error "No window numbered %d" num)))
 
-  (defun my/winum-0 () (interactive) (my/winum 0 1))
-  (defun my/winum-1 (arg) (interactive "p") (my/winum 1 arg))
-  (defun my/winum-2 (arg) (interactive "p") (my/winum 2 arg))
-  (defun my/winum-3 (arg) (interactive "p") (my/winum 3 arg))
-  (defun my/winum-4 (arg) (interactive "p") (my/winum 4 arg))
-  (defun my/winum-5 (arg) (interactive "p") (my/winum 5 arg))
-  (defun my/winum-6 (arg) (interactive "p") (my/winum 6 arg))
-  (defun my/winum-7 (arg) (interactive "p") (my/winum 7 arg))
-  (defun my/winum-8 (arg) (interactive "p") (my/winum 8 arg))
-  (defun my/winum-9 (arg) (interactive "p") (my/winum 9 arg))
+  (defun my/winum-move (num arg)
+    "Move or copy window NUM based on prefix ARG."
+    (if-let ((target-window (winum-get-window-by-number num))
+             (current-window (selected-window))
+             (current-buffer (current-buffer))
+             (current-point (point))
+             (current-start (window-start)))
+        (progn
+          (when (not arg) (switch-to-prev-buffer))
+          (select-window target-window)
+          (switch-to-buffer current-buffer nil t)
+          (set-window-point target-window current-point)
+          (set-window-start target-window current-start t)
+          (when arg (select-window current-window))
+          (pulsar-pulse-line))
+      (error "No window numbered %d" num)))
 
   :bind
-  ("M-0" . my/winum-0)
-  ("M-1" . my/winum-1)
-  ("M-2" . my/winum-2)
-  ("M-3" . my/winum-3)
-  ("M-4" . my/winum-4)
-  ("M-5" . my/winum-5)
-  ("M-6" . my/winum-6)
-  ("M-7" . my/winum-7)
-  ("M-8" . my/winum-8)
-  ("M-9" . my/winum-9)
+  ("M-0" . (lambda () (interactive) (my/winum-select 0 1)))
+  ("M-1" . (lambda (arg) (interactive "p") (my/winum-select 1 arg)))
+  ("M-2" . (lambda (arg) (interactive "p") (my/winum-select 2 arg)))
+  ("M-3" . (lambda (arg) (interactive "p") (my/winum-select 3 arg)))
+  ("M-4" . (lambda (arg) (interactive "p") (my/winum-select 4 arg)))
+  ("M-5" . (lambda (arg) (interactive "p") (my/winum-select 5 arg)))
+  ("M-6" . (lambda (arg) (interactive "p") (my/winum-select 6 arg)))
+  ("M-7" . (lambda (arg) (interactive "p") (my/winum-select 7 arg)))
+  ("M-8" . (lambda (arg) (interactive "p") (my/winum-select 8 arg)))
+  ("M-9" . (lambda (arg) (interactive "p") (my/winum-select 9 arg)))
+  ("C-M-1" . (lambda (arg) (interactive "P") (my/winum-move 1 arg)))
+  ("C-M-2" . (lambda (arg) (interactive "P") (my/winum-move 2 arg)))
+  ("C-M-3" . (lambda (arg) (interactive "P") (my/winum-move 3 arg)))
+  ("C-M-4" . (lambda (arg) (interactive "P") (my/winum-move 4 arg)))
+  ("C-M-5" . (lambda (arg) (interactive "P") (my/winum-move 5 arg)))
+  ("C-M-6" . (lambda (arg) (interactive "P") (my/winum-move 6 arg)))
+  ("C-M-7" . (lambda (arg) (interactive "P") (my/winum-move 7 arg)))
+  ("C-M-8" . (lambda (arg) (interactive "P") (my/winum-move 8 arg)))
+  ("C-M-9" . (lambda (arg) (interactive "P") (my/winum-move 9 arg)))
 
   :hook (elpaca-after-init . winum-mode)
   :custom
@@ -2516,7 +2522,7 @@ with a numbered suffix."
               total-lines)
           (my/eshell-mark-previous-output)))))
 
-  (defun my/eshell-narrow-previous-output (&optional arg)
+  (defun my/eshell-narrow-previous-output (arg)
     "Narrow to the previous interpreter output (or widen if prefix ARG passed)."
     (interactive "P")
     (if arg
