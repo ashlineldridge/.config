@@ -492,6 +492,8 @@
 ;;;;; Breadcrumb
 
 (use-package breadcrumb
+  ;; Preferring a simpler look for now.
+  :disabled
   :hook (elpaca-after-init . breadcrumb-mode))
 
 ;;;; Help System
