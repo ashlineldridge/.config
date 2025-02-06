@@ -218,7 +218,10 @@
   :bind
   ("C-x r K" . my/clear-registers)
   :custom
-  (register-preview-delay 1))
+  (register-preview-delay 1)
+  :config
+  ;; Make `insert-register' obey `delete-selection-mode'.
+  (advice-add #'insert-register :before #'my/maybe-delete-selection))
 
 ;;;; General History
 
@@ -1411,10 +1414,6 @@
     (setq xref-show-definitions-function #'consult-xref))
 
   :config
-  ;; Make `consult-register' behave the same as `insert-register' by first
-  ;; deleting the region if active.
-  (advice-add #'consult-register :before #'my/maybe-delete-selection)
-
   ;; Customize the list of sources shown by `consult-buffer'.
   (setq consult-buffer-sources
         '(consult--source-buffer                ;; Narrow: ?b (shown)
