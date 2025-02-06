@@ -291,7 +291,10 @@
      ;; Below current window.
      ("CAPTURE-.*\\.org"
       (display-buffer-below-selected)
-      (window-height . 10)))))
+      (window-height . 10))
+     ;; Same window.
+     ("\\(\\*vc-dir\\*\\|magit: \\)"
+      (display-buffer-same-window)))))
 
 ;;;;; Window Movement
 
