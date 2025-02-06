@@ -1228,8 +1228,6 @@
   (declare-function consult--file-state "consult")
   (declare-function consult--read "consult")
   (declare-function project--find-in-directory "project")
-  (defconst my/consult-delayed-preview '(:debounce 0.3 any))
-  (defconst my/consult-manual-preview "M-.")
 
   (defun my/consult-source-buffer (name narrow mode)
     "Return a Consult buffer source with NAME, NARROW key and MODE target."
@@ -1263,7 +1261,6 @@
   (defvar my/consult-source-project-file
     `(:name "Project File"
       :narrow ?f
-      :preview-key ,my/consult-delayed-preview
       :category file
       :face consult-file
       :history file-name-history
@@ -1307,8 +1304,6 @@
       (consult--read #'read-file-name-internal :state (consult--file-preview)
                      :prompt prompt
                      :initial (abbreviate-file-name default-directory)
-                     ;; Use manual preview for less disruption.
-                     :preview-key my/consult-manual-preview
                      :require-match mustmatch
                      :predicate pred)))
 
@@ -1384,10 +1379,9 @@
   ;; Type C-, (defined above) to display prefix help. Alternatively, type
   ;; ',' followed by C-h (or ?) to call `embark-prefix-help-command'.
   (consult-narrow-key ",")
-  ;; Default to immediate preview. For commands that can access unopened files,
-  ;; I prefer either delayed or manual preview (configured further below) so
-  ;; that I can skip past candidates without incurring the preview.
-  (consult-preview-key 'any)
+  ;; Default to manual preview as it prevents the screen from jumping resulting
+  ;; in a cleaner experience which I prefer.
+  (consult-preview-key "M-.")
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
   (consult-ripgrep-args "rg --null --line-buffered --color=never \
     --max-columns=1000 --path-separator=/ --smart-case --no-heading \
@@ -1435,20 +1429,22 @@
    consult--source-project-buffer-hidden
    :name "Project Buffer" :narrow ?p
    consult--source-bookmark
-   :name "Bookmark" :narrow ?m :preview-key my/consult-delayed-preview
+   :name "Bookmark" :narrow ?m
    consult--source-recent-file
-   :name "Recent File" :narrow ?r :hidden t :preview-key my/consult-delayed-preview
+   :name "Recent File" :narrow ?r :hidden t
    consult--source-project-recent-file
    consult--source-project-recent-file-hidden
-   :name "Recent Project File" :narrow ?r :preview-key my/consult-delayed-preview
-   ;; Configure delayed preview for file finding (disabled by default).
+   :name "Recent Project File" :narrow ?r
+   ;; Allow preview for commands that don't support it by default.
    consult-find consult-fd
-   :state (consult--file-preview) :preview-key my/consult-delayed-preview
-   ;; Configure delayed preview for commands/sources that relate to
-   ;; unopened files and that preview automatically by default.
-   consult-ripgrep consult-grep consult-git-grep
-   xref-find-references xref-find-references
-   :preview-key my/consult-delayed-preview))
+   :state (consult--file-preview)
+   ;; Configure automatic preview for the following commands. This should be
+   ;; limited to commands where immediate preview is a more natural UX. I'd
+   ;; prefer to avoid delayed preview (via :debounce) and force a cleaner split
+   ;; between manual and immediate previewing.
+   consult-line consult-line-multi consult-imenu consult-imenu-multi
+   consult-mark consult-global-mark consult-xref
+   :preview-key 'any))
 
 (use-package consult-dir
   :preface
@@ -3028,11 +3024,7 @@ specified then a task category will be determined by the item's tags."
   :hook (elpaca-after-init . consult-org-roam-mode)
   :custom
   (consult-org-roam-buffer-enabled nil)
-  (consult-org-roam-grep-func #'consult-ripgrep)
-  :config
-  (with-eval-after-load 'org-roam
-    (consult-customize org-roam-node-find :preview-key my/consult-delayed-preview)
-    (consult-customize org-roam-node-insert :preview-key my/consult-manual-preview)))
+  (consult-org-roam-grep-func #'consult-ripgrep))
 
 ;;;; Emacs Server
 
