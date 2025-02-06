@@ -310,13 +310,11 @@
     "Select or delete window NUM based on prefix ARG."
     (if-let ((window (winum-get-window-by-number num)))
         (cond
-         ;; Select the window on no prefix arg.
+         ;; Select window on no prefix, delete window on single prefix, delete
+         ;; window buffer on double prefix, and delete both on triple prefix.
          ((= arg 1) (winum--switch-to-window window) (pulsar-pulse-line))
-         ;; Delete the window on single prefix arg.
          ((= arg 4) (delete-window window))
-         ;; Delete the window's buffer on double prefix arg.
          ((= arg 16) (kill-buffer (window-buffer window)))
-         ;; Otherwise, delete the window and buffer.
          (t (with-selected-window window (kill-buffer-and-window))))
       (error "No window numbered %d" num)))
 
