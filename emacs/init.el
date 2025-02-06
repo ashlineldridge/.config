@@ -60,14 +60,14 @@
   (elpaca-after-init . my/fontaine-apply-preset)
   :custom
   (fontaine-presets
-   `((small
+   `((regular)
+     (large
       :default-family ,my/fixed-family
-      :default-height 120
+      :default-height 140
       :default-weight regular
-      :mode-line-active-height 110
-      :mode-line-inactive-height 110
-      :line-number-height 110)
-     (regular)
+      :mode-line-active-height 130
+      :mode-line-inactive-height 130
+      :line-number-height 120)
      (t
       :default-family ,my/fixed-family
       :default-height 130
