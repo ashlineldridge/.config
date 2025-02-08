@@ -247,13 +247,6 @@
   (mac-command-modifier 'meta)
   (mac-option-modifier nil))
 
-;; Prevent the minibuffer from making windows and buffers jump around.
-(use-package stillness-mode
-  :hook (elpaca-after-init . stillness-mode)
-  :custom
-  ;; Make point sit directly above the minibuffer when it is moved.
-  (stillness-mode-minibuffer-point-offset 2))
-
 ;;;;; Window Basics
 
 (use-package window
