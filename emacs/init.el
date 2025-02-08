@@ -1439,11 +1439,13 @@
    consult-find consult-fd
    :state (consult--file-preview)
    ;; Configure automatic preview for the following commands. This should be
-   ;; limited to commands where immediate preview is a more natural UX. I'd
+   ;; limited to commands where immediate preview is the natural UX. I'd
    ;; prefer to avoid delayed preview (via :debounce) and force a cleaner split
    ;; between manual and immediate previewing.
-   consult-line consult-line-multi consult-imenu consult-imenu-multi
-   consult-mark consult-global-mark consult-xref
+   consult-compile-error consult-flymake consult-focus-lines
+   consult-goto-line consult-history consult-imenu consult-imenu-multi
+   consult-keep-lines consult-line consult-line-multi consult-mark
+   consult-global-mark consult-outline consult-xref consult-yank-pop
    :preview-key 'any))
 
 (use-package consult-dir
