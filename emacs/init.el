@@ -235,9 +235,9 @@
    '(kill-ring
      search-ring
      regexp-search-ring
-     ;; Far from perfect as doesn't persist if contains certain register types.
-     register-alist
-     extended-command-history)))
+     extended-command-history
+     ;; Not perfect as doesn't persist if contains certain register types.
+     register-alist)))
 
 ;;;; Windows and Frames
 
@@ -541,32 +541,25 @@
   :preface
   (declare-function called-interactively-p "subr")
 
-  (defun my/truncate-lines ()
-    "Show long lines as truncated in the current buffer."
-    (setq-local truncate-lines t))
-
-  (defun my/copy-to-eol ()
-    "Copy the text from point to the end of the line."
+  (defun my/kill-ring-save ()
+    "Copy the current region or line."
     (interactive)
-    (kill-ring-save (point) (line-end-position)))
+    (if (region-active-p)
+        (copy-region-as-kill nil nil t)
+      (copy-region-as-kill (line-beginning-position) (line-end-position))))
 
-  (defun my/delete-to-eol ()
-    "Delete the text from point to the end of the line."
+  (defun my/kill-line-backward ()
+    "Kill from point to the beginning of the line."
     (interactive)
-    (let ((point (point))
-          (end (line-end-position)))
-      (if (eq point end)
-          (delete-char 1 nil)
-        (delete-region point end))))
+    (kill-line 0))
 
-  (defun my/delete-to-bol ()
-    "Delete the text from point to the beginning of the line."
-    (interactive)
-    (let ((point (point))
-          (begin (line-beginning-position)))
-      (if (eq point begin)
-          (delete-char -1)
-        (delete-region (line-beginning-position) (point)))))
+  (defun my/zap-to-char-backward (arg char)
+    "Backward `zap-to-char' for the ARGth occurrance of CHAR."
+    (interactive
+     (list
+      (prefix-numeric-value current-prefix-arg)
+      (read-char-from-minibuffer "Zap back to char: " nil 'read-char-history)))
+    (zap-to-char (- arg) char t))
 
   (defun my/open-line-below ()
     "Open line below and indent point without breaking the current line."
@@ -589,6 +582,10 @@
     (set-mark (point))
     (end-of-line))
 
+  (defun my/truncate-lines ()
+    "Show long lines as truncated in the current buffer."
+    (setq-local truncate-lines t))
+
   (defun my/minibuffer-history-eol (_)
     "Move point to the end of line when called interactively."
     (when (called-interactively-p)
@@ -598,6 +595,8 @@
   (indent-tabs-mode nil)
   ;; Allow shift-selection to continue any active region.
   (shift-select-mode 'permanent)
+  ;; Prefer smaller (default is 120).
+  (kill-ring-max 60)
   (mark-ring-max 16)
   (global-mark-ring-max 16)
   (set-mark-command-repeat-pop t)
@@ -606,23 +605,27 @@
   ;; Don't show M-x commands that don't work in the current mode.
   (read-extended-command-predicate #'command-completion-default-include-p)
   :bind
-  ([remap kill-buffer] . kill-current-buffer)
   ("<escape>" . keyboard-escape-quit)
+  ("M-*" . my/expand-line)
   ("M-c" . capitalize-dwim)
   ("M-l" . downcase-dwim)
   ("M-u" . upcase-dwim)
-  ("M-*" . my/expand-line)
-  ("C-c x SPC" . delete-trailing-whitespace)
-  ("C-c x l" . toggle-truncate-lines)
-  ("C-S-k" . my/copy-to-eol)
-  ("C-M-k" . my/delete-to-eol)
+  ("M-k" . my/kill-line-backward)
+  ("M-w" . my/kill-ring-save)
+  ;; I prefer `zap-up-to-char' when zapping forward and `zap-to-char' when
+  ;; zapping backward. This also mimics the zapping behavior of Avy. Some of
+  ;; the following commands are from misc.el but bound here for simplicity.
+  ("M-z" . zap-up-to-char)
+  ("M-Z" . my/zap-to-char-backward)
+  ("C-M-<return>" . duplicate-dwim)
   ("C-<return>" . my/open-line-below)
   ("C-S-<return>" . my/open-line-above)
-  ("M-<backspace>" . my/delete-to-bol)
   ("M-S-<left>" . beginning-of-buffer)
   ("M-S-<right>" . end-of-buffer)
   ("C-M-<left>" . beginning-of-buffer-other-window)
   ("C-M-<right>" . end-of-buffer-other-window)
+  ("C-c x SPC" . delete-trailing-whitespace)
+  ("C-c x l" . toggle-truncate-lines)
   :hook
   (elpaca-after-init . column-number-mode)
   (prog-mode . my/truncate-lines)
@@ -632,16 +635,6 @@
   ;; Move point to the end of the line when navigating minibuffer history.
   (advice-add #'next-history-element :after #'my/minibuffer-history-eol)
   (advice-add #'previous-history-element :after #'my/minibuffer-history-eol))
-
-(use-package misc
-  :ensure nil
-  :bind
-  ;; I prefer `zap-up-to-char' over `zap-to-char' for simple zapping and so
-  ;; override the keybinding below. For more extended use cases, I use Avy
-  ;; zapping which mimics `zap-up-to-char' when zapping forwards and
-  ;; `zap-to-char' when zapping backwards.
-  ("M-z" . zap-up-to-char)
-  ("C-M-<return>" . duplicate-dwim))
 
 ;;;;; Text
 
@@ -817,7 +810,6 @@
   (add-to-list 'pulsar-pulse-functions 'my/avy-goto-end-of-line)
   (add-to-list 'pulsar-pulse-functions 'other-frame)
   (add-to-list 'pulsar-pulse-functions 'pop-global-mark)
-  (add-to-list 'pulsar-pulse-functions 'set-mark-command)
   (add-to-list 'pulsar-pulse-functions 'treesit-beginning-of-defun)
   (add-to-list 'pulsar-pulse-functions 'treesit-end-of-defun)
   (add-to-list 'pulsar-pulse-functions 'vterm-next-prompt)
@@ -1330,7 +1322,6 @@
   :bind
   (("M-i" . consult-imenu)
    ("M-I" . consult-imenu-multi)
-   ("M-y" . consult-yank-pop)
    ("M-_" . consult-focus-lines)
    ("C-M-_" . consult-keep-lines)
    ("M-s a" . my/consult-org-agenda)
@@ -1445,7 +1436,7 @@
    consult-compile-error consult-flymake consult-focus-lines
    consult-goto-line consult-history consult-imenu consult-imenu-multi
    consult-keep-lines consult-line consult-line-multi consult-mark
-   consult-global-mark consult-outline consult-xref consult-yank-pop
+   consult-global-mark consult-outline consult-xref
    :preview-key 'any))
 
 (use-package consult-dir
@@ -2200,20 +2191,6 @@
   (yaml-mode . (lambda () (electric-indent-local-mode -1))))
 
 ;;;;;; Lisp
-
-(use-package lisp
-  :ensure nil
-  :preface
-  (declare-function kill-region "simple")
-  (defun my/kill-defun ()
-    "Kill the defun following point."
-    (interactive)
-    (let ((start (point)))
-      (end-of-defun)
-      (kill-region start (point))))
-  :bind
-  ("M-k" . kill-sexp)
-  ("M-K" . my/kill-defun))
 
 (use-package elisp-mode
   :ensure nil
