@@ -601,8 +601,8 @@
   (indent-tabs-mode nil)
   ;; Allow shift-selection to continue any active region.
   (shift-select-mode 'permanent)
-  ;; Prefer smaller (default is 120).
-  (kill-ring-max 60)
+  ;; Kill more, remember more.
+  (kill-ring-max 1000)
   (mark-ring-max 16)
   (global-mark-ring-max 16)
   (set-mark-command-repeat-pop t)
