@@ -821,6 +821,8 @@
   (add-to-list 'pulsar-pulse-functions 'vterm-next-prompt)
   (add-to-list 'pulsar-pulse-functions 'vterm-previous-prompt)
   (add-to-list 'pulsar-pulse-functions 'xref-find-definitions)
+  (add-to-list 'pulsar-pulse-functions 'xref-go-back)
+  (add-to-list 'pulsar-pulse-functions 'xref-go-forward)
   ;; Some functions (like those called by Embark) need to be advised.
   (with-eval-after-load 'embark
     (advice-add 'embark-next-symbol :after 'pulsar-pulse-line)
