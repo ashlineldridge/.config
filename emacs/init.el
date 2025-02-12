@@ -64,7 +64,9 @@
      (large
       :default-family ,my/fixed-family
       :default-height 140
-      :default-weight regular
+      :default-weight semibold
+      :fixed-pitch-weight semibold
+      :variable-pitch-weight semibold
       :mode-line-active-height 130
       :mode-line-inactive-height 130
       :line-number-height 120)
