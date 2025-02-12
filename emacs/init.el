@@ -108,6 +108,12 @@
   (put 'my/imenu-type-face 'face-alias 'font-lock-type-face)
   (put 'my/imenu-variable-face 'face-alias 'font-lock-variable-name-face))
 
+(use-package face-remap
+  :ensure nil
+  :config
+  ;; Makes things like breadcrumb look better when scaling text.
+  (setq-default text-scale-remap-header-line t))
+
 ;;;;; Icons
 
 ;; Run `nerd-icons-install-fonts' manually to install fonts for the first time.
@@ -498,8 +504,6 @@
 ;;;;; Breadcrumb
 
 (use-package breadcrumb
-  ;; Preferring a simpler look for now.
-  :disabled
   :hook (elpaca-after-init . breadcrumb-mode))
 
 ;;;; Help System
