@@ -472,8 +472,14 @@
   ("C-M-v" . my/scroll-down-page-other-window)
   :hook (elpaca-after-init . pixel-scroll-precision-mode)
   :init
-  ;; Prevent recentering of point by specifying a value > 100 (see docs).
-  (setq scroll-conservatively 101))
+  ;; The default value of 0 causes point to be recentered when it scrolls off
+  ;; screen. A value of 101 (or above) will mean that point is never recentered,
+  ;; though for some commands (e.g. xref navigation) it can cause point to be
+  ;; shown in an awkward position when you want recentering to occur. A value of
+  ;; 1 provides a good balance such that point is prevented from scrolling off
+  ;; screen but it is recentered when moving by one line doesn't bring point on
+  ;; screen again (e.g. during xref navigation).
+  (setq scroll-conservatively 1))
 
 ;;;;; Frame Management
 
