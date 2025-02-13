@@ -306,6 +306,9 @@
 
 ;;;;; Window Movement
 
+;; TODO: Replace winum with ace-window and use ace actions to perform the
+;; additional functionality created below. Don't use overlays and continue
+;; to show the window ID in the mode line for a simpler experience.
 (use-package winum
   :preface
   (declare-function winum-get-window-by-number "winum")
