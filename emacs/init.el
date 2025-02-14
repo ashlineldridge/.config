@@ -313,7 +313,7 @@
   (declare-function aw-window-list "ace-window")
 
   (defun my/ace-window ()
-    "Custom Ace window selection."
+    "Custom Ace window command that modifies the cursor during selection."
     (interactive)
     (blink-cursor-suspend)
     (let ((orig (face-attribute 'cursor :background)))
@@ -327,25 +327,26 @@
     "Ace window action to delete window and buffer."
     (aw-delete-window window t))
 
-  (defun my/ace-embark-buffer ()
-    "Embark action to switch window and run `switch-to-buffer'."
-    (interactive)
-    (my/ace-window)
-    (call-interactively #'switch-to-buffer))
+  (defmacro my/define-ace-embark-action (name map fn)
+    "Macro to define an Embark action that switches windows and then runs FN."
+    `(progn
+       (defun ,name ()
+         ,(format "Embark action to switch windows and then call `%s'." fn)
+         (interactive)
+         (my/ace-window)
+         (call-interactively #',fn))
+       (with-eval-after-load 'embark
+         (bind-key "M-o" #',name ,map))))
 
-  (defun my/ace-embark-file ()
-    "Embark action to switch window and run `file-file'."
-    (interactive)
-    (my/ace-window)
-    (call-interactively #'find-file))
+  ;; Create additional Embark actions that support Ace Window.
+  (my/define-ace-embark-action my/ace-embark-buffer embark-buffer-map switch-to-buffer)
+  (my/define-ace-embark-action my/ace-embark-file embark-file-map find-file)
+  (my/define-ace-embark-action my/ace-embark-bookmark embark-bookmark-map bookmark-jump)
 
-  (defun my/ace-embark-bookmark ()
-    "Embark action to switch window and run `bookmark-jump'."
-    (interactive)
-    (my/ace-window)
-    (call-interactively #'bookmark-jump))
-
-  :hook (elpaca-after-init . ace-window-display-mode)
+  :hook
+  ;; Run `ace-window-display-mode' so that overlays aren't shown. Smol will
+  ;; recognize this mode and display the window ID in the mode line.
+  (elpaca-after-init . ace-window-display-mode)
   :bind
   ("M-o" . my/ace-window)
   :custom
@@ -374,15 +375,7 @@
   ;; See: https://github.com/abo-abo/ace-window/issues/249.
   (advice-add #'aw-window-list :around (lambda (fn &rest args)
                                          (let ((aw-ignore-on t))
-                                           (apply fn args))))
-  ;; Install Embark action keybindings.
-  (with-eval-after-load 'embark
-    (bind-keys :package embark :map embark-buffer-map
-      ("M-o" . my/ace-embark-buffer))
-    (bind-keys :package embark :map embark-file-map
-      ("M-o" . my/ace-embark-file))
-    (bind-keys :package embark :map embark-bookmark-map
-      ("M-o" . my/ace-embark-bookmark))))
+                                           (apply fn args)))))
 
 ;;;;; Window History
 
