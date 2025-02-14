@@ -142,7 +142,8 @@
   :if (file-exists-p "~/dev/home/smol")
   :load-path "~/dev/home/smol"
   :hook
-  (elpaca-after-init . smol-init)
+  ;; Initialize after Ace Window to take over `mode-line-format'.
+  (ace-window-display-mode . smol-init)
   :custom
   (smol-string-truncate-length 80))
 
@@ -263,18 +264,16 @@
   (("M-[" . previous-buffer)
    ("M-]" . next-buffer)
    ("M-q" . bury-buffer)
-   ("M-o =" . balance-windows)
-   ("M-o o" . other-window)
-   ("M-o 0" . delete-window)
-   ("M-o 1" . delete-other-windows)
-   ("M-o 2" . split-window-below)
-   ("M-o 3" . split-window-right)
-   ("M-o M-=" . enlarge-window-horizontally)
-   ("M-o M--" . shrink-window-horizontally)
-   ("M-o M-+" . enlarge-window)
-   ("M-o M-_" . shrink-window)
+   ("M-O =" . balance-windows)
+   ("M-O 0" . delete-window)
+   ("M-O 1" . delete-other-windows)
+   ("M-O 2" . split-window-below)
+   ("M-O 3" . split-window-right)
+   ("M-O M-=" . enlarge-window-horizontally)
+   ("M-O M--" . shrink-window-horizontally)
+   ("M-O M-+" . enlarge-window)
+   ("M-O M-_" . shrink-window)
    :repeat-map my/window-repeat-map
-   ("o" . other-window)
    ("M-=" . enlarge-window-horizontally)
    ("M--" . shrink-window-horizontally)
    ("M-+" . enlarge-window)
@@ -306,81 +305,92 @@
 
 ;;;;; Window Movement
 
-;; TODO: Replace winum with ace-window and use ace actions to perform the
-;; additional functionality created below. Don't use overlays and continue
-;; to show the window ID in the mode line for a simpler experience.
-(use-package winum
+(use-package ace-window
+  :defines (embark-buffer-map embark-file-map embark-bookmark-map)
   :preface
-  (declare-function winum-get-window-by-number "winum")
-  (declare-function winum--switch-to-window "winum")
+  (declare-function aw-delete-window "ace-window")
+  (declare-function aw-switch-to-window "ace-window")
+  (declare-function aw-window-list "ace-window")
 
-  ;; Define an empty keymap as I want to bind my own keys.
-  (defvar winum-keymap (make-sparse-keymap))
+  (defun my/ace-window ()
+    "Custom Ace window selection."
+    (interactive)
+    (blink-cursor-suspend)
+    (let ((orig (face-attribute 'cursor :background)))
+      (set-cursor-color "cyan")
+      (unwind-protect
+          (aw-select nil #'aw-switch-to-window)
+        (set-cursor-color orig)
+        (blink-cursor-check))))
 
-  (defun my/winum-select (num arg)
-    "Select or delete window NUM based on prefix ARG."
-    (if-let ((window (winum-get-window-by-number num)))
-        (cond
-         ;; Select window on no prefix, delete window on single prefix, delete
-         ;; window buffer on double prefix, and delete both on triple prefix.
-         ((= arg 1) (winum--switch-to-window window) (pulsar-pulse-line))
-         ((= arg 4) (delete-window window))
-         ((= arg 16) (kill-buffer (window-buffer window)))
-         (t (with-selected-window window (kill-buffer-and-window))))
-      (error "No window numbered %d" num)))
+  (defun my/ace-delete-window-and-buffer (window)
+    "Ace window action to delete window and buffer."
+    (aw-delete-window window t))
 
-  (defun my/winum-move (num arg)
-    "Move or copy window NUM based on prefix ARG."
-    (if-let ((target-window (winum-get-window-by-number num))
-             (current-window (selected-window))
-             (current-buffer (current-buffer))
-             (current-point (point))
-             (current-start (window-start)))
-        (progn
-          (when (not arg) (switch-to-prev-buffer))
-          (select-window target-window)
-          (switch-to-buffer current-buffer nil t)
-          (set-window-point target-window current-point)
-          (set-window-start target-window current-start t)
-          (when arg (select-window current-window))
-          (pulsar-pulse-line))
-      (error "No window numbered %d" num)))
+  (defun my/ace-embark-buffer ()
+    "Embark action to switch window and run `switch-to-buffer'."
+    (interactive)
+    (my/ace-window)
+    (call-interactively #'switch-to-buffer))
 
+  (defun my/ace-embark-file ()
+    "Embark action to switch window and run `file-file'."
+    (interactive)
+    (my/ace-window)
+    (call-interactively #'find-file))
+
+  (defun my/ace-embark-bookmark ()
+    "Embark action to switch window and run `bookmark-jump'."
+    (interactive)
+    (my/ace-window)
+    (call-interactively #'bookmark-jump))
+
+  :hook (elpaca-after-init . ace-window-display-mode)
   :bind
-  ("M-0" . (lambda () (interactive) (my/winum-select 0 1)))
-  ("M-1" . (lambda (arg) (interactive "p") (my/winum-select 1 arg)))
-  ("M-2" . (lambda (arg) (interactive "p") (my/winum-select 2 arg)))
-  ("M-3" . (lambda (arg) (interactive "p") (my/winum-select 3 arg)))
-  ("M-4" . (lambda (arg) (interactive "p") (my/winum-select 4 arg)))
-  ("M-5" . (lambda (arg) (interactive "p") (my/winum-select 5 arg)))
-  ("M-6" . (lambda (arg) (interactive "p") (my/winum-select 6 arg)))
-  ("M-7" . (lambda (arg) (interactive "p") (my/winum-select 7 arg)))
-  ("M-8" . (lambda (arg) (interactive "p") (my/winum-select 8 arg)))
-  ("M-9" . (lambda (arg) (interactive "p") (my/winum-select 9 arg)))
-  ("C-M-1" . (lambda (arg) (interactive "P") (my/winum-move 1 arg)))
-  ("C-M-2" . (lambda (arg) (interactive "P") (my/winum-move 2 arg)))
-  ("C-M-3" . (lambda (arg) (interactive "P") (my/winum-move 3 arg)))
-  ("C-M-4" . (lambda (arg) (interactive "P") (my/winum-move 4 arg)))
-  ("C-M-5" . (lambda (arg) (interactive "P") (my/winum-move 5 arg)))
-  ("C-M-6" . (lambda (arg) (interactive "P") (my/winum-move 6 arg)))
-  ("C-M-7" . (lambda (arg) (interactive "P") (my/winum-move 7 arg)))
-  ("C-M-8" . (lambda (arg) (interactive "P") (my/winum-move 8 arg)))
-  ("C-M-9" . (lambda (arg) (interactive "P") (my/winum-move 9 arg)))
-
-  :hook (elpaca-after-init . winum-mode)
+  ("M-o" . my/ace-window)
   :custom
-  ;; Winum mode line segment is managed by mode line package.
-  (winum-auto-setup-mode-line nil)
-  ;; Most of the time, this is what I want.
-  (winum-scope 'frame-local))
+  (aw-scope 'frame)
+  (aw-background nil)
+  (aw-display-mode-overlay nil)
+  (aw-minibuffer-flag nil)
+  (aw-dispatch-always t)
+  ;; Ignore the minibuffer and use `switch-to-minibuffer' instead.
+  (aw-ignored-buffers '(minibuffer-mode))
+  :commands aw-select
+  :config
+  ;; Custom dispatch menu.
+  (setq aw-dispatch-alist
+        '((?k aw-delete-window "Kill Window")
+          (?K my/ace-delete-window-and-buffer "Kill Window and Buffer")
+          (?0 delete-other-windows "Kill Other Windows")
+          (?s aw-swap-window "Swap Window")
+          (?m aw-move-window "Move Window")
+          (?c aw-copy-window "Copy Window")
+          (?_ aw-split-window-vert "Split Vertically")
+          (?| aw-split-window-horz "Split Horizontally")
+          (?? aw-show-dispatch-help)))
+
+  ;; Advise the `aw-window-list' function to forcibly enable `aw-ignore-on'.
+  ;; See: https://github.com/abo-abo/ace-window/issues/249.
+  (advice-add #'aw-window-list :around (lambda (fn &rest args)
+                                         (let ((aw-ignore-on t))
+                                           (apply fn args))))
+  ;; Install Embark action keybindings.
+  (with-eval-after-load 'embark
+    (bind-keys :package embark :map embark-buffer-map
+      ("M-o" . my/ace-embark-buffer))
+    (bind-keys :package embark :map embark-file-map
+      ("M-o" . my/ace-embark-file))
+    (bind-keys :package embark :map embark-bookmark-map
+      ("M-o" . my/ace-embark-bookmark))))
 
 ;;;;; Window History
 
 (use-package winner
   :ensure nil
   :bind
-  ("M-o u" . winner-undo)
-  ("M-o r" . winner-redo)
+  ("M-O u" . winner-undo)
+  ("M-O r" . winner-redo)
   :hook (elpaca-after-init . winner-mode)
   :custom
   (winner-dont-bind-my-keys t)
@@ -492,10 +502,10 @@
   ;; Remove silly `suspend-frame' bindings.
   ("C-z" . nil)
   ("C-x C-z" . nil)
-  ("M-o M-o" . other-frame)
-  ("M-o M-n" . make-frame-command)
-  ("M-o M-k" . delete-frame)
-  ("M-o M-u" . undelete-frame)
+  ("M-O M-O" . other-frame)
+  ("M-O M-N" . make-frame-command)
+  ("M-O M-K" . delete-frame)
+  ("M-O M-U" . undelete-frame)
   :hook (elpaca-after-init . undelete-frame-mode))
 
 ;;;;; Transient
@@ -639,6 +649,9 @@
   ("M-S-<right>" . end-of-buffer)
   ("C-M-<left>" . beginning-of-buffer-other-window)
   ("C-M-<right>" . end-of-buffer-other-window)
+  ;; Special keybinding to switch to the minibuffer as I have configured
+  ;; Ace Window to ignore the minibuffer window.
+  ("C-M-O" . switch-to-minibuffer)
   ("C-c x SPC" . delete-trailing-whitespace)
   ("C-c x l" . toggle-truncate-lines)
   :hook
@@ -742,13 +755,13 @@
     (yank))
 
   :bind
-  (("M-j" . avy-goto-word-1)
-   ("M-J" . avy-goto-char-in-line)
-   ("M-g c" . avy-goto-char-timer)
+  (("M-g c" . avy-goto-char-timer)
    ("M-g l" . avy-goto-line)
    ("M-g L" . my/avy-goto-end-of-line)
+   ("M-g w" . avy-goto-word-1)
+   ("M-g W" . avy-goto-char-in-line)
    :map isearch-mode-map
-   ("M-j" . avy-isearch))
+   ("M-g" . avy-isearch))
 
   :custom
   (avy-all-windows t) ;; Alternatively, use 'all-frames.
@@ -795,6 +808,11 @@
   (lin-face 'lin-green))
 
 (use-package pulsar
+  :preface
+  (defun my/pulsar-pulse-line (&optional _)
+    "Line pulsing function intended to be used as after advice."
+    (pulsar-pulse-line))
+
   :hook (elpaca-after-init . pulsar-global-mode)
   ;; Some functionality is better accessed via hooks than by registering
   ;; functions in `pulsar-pulse-functions'.
@@ -832,10 +850,14 @@
   (add-to-list 'pulsar-pulse-functions 'xref-find-definitions)
   (add-to-list 'pulsar-pulse-functions 'xref-go-back)
   (add-to-list 'pulsar-pulse-functions 'xref-go-forward)
-  ;; Some functions (like those called by Embark) need to be advised.
+
+  ;; Functions called by Embark need to be advised.
   (with-eval-after-load 'embark
-    (advice-add 'embark-next-symbol :after 'pulsar-pulse-line)
-    (advice-add 'embark-previous-symbol :after 'pulsar-pulse-line)))
+    (advice-add 'embark-next-symbol :after 'my/pulsar-pulse-line)
+    (advice-add 'embark-previous-symbol :after 'my/pulsar-pulse-line))
+  ;; Pulse line after switching windows with `ace-window'.
+  (with-eval-after-load 'ace-window
+    (advice-add 'aw-switch-to-window :after 'my/pulsar-pulse-line)))
 
 (use-package rainbow-mode)
 
@@ -858,7 +880,6 @@
   (("C-x C-b" . ibuffer)
    :map ibuffer-mode-map
    ("M-o" . nil)
-   ("M-j" . nil)
    ;; Trade /v for grouping by VC root which I use more.
    ("/V" . ibuffer-filter-by-visiting-file)))
 
@@ -2351,11 +2372,7 @@
   (magit-refresh-verbose t)
   (magit-refresh-status-buffer nil)
   (magit-delete-by-moving-to-trash t)
-  (magit-diff-refine-hunk 'all)
-  :config
-  ;; Unbind keys used by winum.
-  (dolist (key '("M-1" "M-2" "M-3" "M-4"))
-    (define-key magit-section-mode-map (kbd key) nil)))
+  (magit-diff-refine-hunk 'all))
 
 (use-package browse-at-remote
   :preface
@@ -2391,11 +2408,10 @@
 
 (use-package diff-mode
   :ensure nil
-  :config
-  ;; Unbind colliding keybindings.
-  (dolist (key '("M-0" "M-1" "M-2" "M-3" "M-4" "M-5" "M-6" "M-7" "M-8" "M-9"
-                 "M-k" "M-o"))
-    (define-key diff-mode-map (kbd key) nil)))
+  :bind
+  (:map diff-mode-map
+   ("M-k" . nil)
+   ("M-o" . nil)))
 
 (use-package difftastic)
 
@@ -2606,8 +2622,7 @@ with a numbered suffix."
                '("find-file-other-window" find-file-other-window))
 
   ;; Unset a bunch of keybindings that I want to keep.
-  (dolist (key '("C-r" "C-s" "C-SPC" "M-g" "M-k" "M-s" "M-:" "M-&" "M-'" "M-]"
-                 "M-0" "M-1" "M-2" "M-3" "M-4" "M-5" "M-6" "M-7" "M-8" "M-9"))
+  (dolist (key '("C-r" "C-s" "C-SPC" "M-g" "M-k" "M-s" "M-:" "M-&" "M-'" "M-]"))
     (define-key vterm-mode-map (kbd key) nil)))
 
 (use-package sh-script
