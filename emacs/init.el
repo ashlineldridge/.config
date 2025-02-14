@@ -363,7 +363,7 @@
   (setq aw-dispatch-alist
         '((?k aw-delete-window "Kill Window")
           (?K my/ace-delete-window-and-buffer "Kill Window and Buffer")
-          (?0 delete-other-windows "Kill Other Windows")
+          (?. delete-other-windows "Kill Other Windows")
           (?s aw-swap-window "Swap Window")
           (?m aw-move-window "Move Window")
           (?c aw-copy-window "Copy Window")
