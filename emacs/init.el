@@ -2684,14 +2684,23 @@ with a numbered suffix."
         (org-capture-goto-last-stored))))
 
   :bind
-  ("C-c C-o" . org-open-at-point-global)
-  ("C-c o s" . org-save-all-org-buffers)
-  ("C-c o l" . my/org-goto-last-dwim)
+  (("C-c C-o" . org-open-at-point-global)
+   ("C-c o s" . org-save-all-org-buffers)
+   ("C-c o l" . my/org-goto-last-dwim)
+   :map org-mode-map
+   ;; Rebind common <return>-based keybindings under C-c to make them available for
+   ;; more general commands. Unbinding M-RET requires RET rather than <return>. For
+   ;; details, see: https://www.fromkk.com/posts/c-m-ret-and-return-key-in-emacs.
+   ("M-RET" . nil)
+   ("C-<return>" . nil)
+   ("C-S-<return>" . nil)
+   ("C-c M-<return>" . org-meta-return)
+   ("C-c C-<return>" . org-insert-heading-respect-content)
+   ("C-c C-S-<return>" . org-insert-todo-heading-respect-content))
 
   :hook (org-mode . my/org-init)
   :custom
-  ;; The `org-agenda-files' variable is actually defined in the org package
-  ;; rather than org-agenda package.
+  ;; The `org-agenda-files' variable is from org.el rather than org-agenda.el.
   (org-agenda-files
    `(,my/org-inbox-file
      ,my/org-personal-file
