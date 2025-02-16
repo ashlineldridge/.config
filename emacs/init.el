@@ -630,6 +630,7 @@
   ("M-u" . upcase-dwim)
   ("M-k" . my/kill-line-backward)
   ("M-w" . my/kill-ring-save)
+  ("M-S-SPC" . cycle-spacing)
   ;; I prefer `zap-up-to-char' when zapping forward and `zap-to-char' when
   ;; zapping backward. This also mimics the zapping behavior of Avy. Some of
   ;; the following commands are from misc.el but bound here for simplicity.
