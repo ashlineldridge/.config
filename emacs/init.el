@@ -2936,26 +2936,28 @@ specified then a task category will be determined by the item's tags."
   :ensure nil
   :preface
   (declare-function org-todo "org")
+  (declare-function org-get-todo-state "org")
+
   ;; By default, Org mode only logs state changes in the LOGBOOK drawer. The
   ;; following function will force a no-op state change to be recorded for
   ;; inbox items to capture the creation time.
-  (defun my/org-capture-maybe-update-inbox ()
+  (defun my/org-capture-update-inbox ()
     "Update the capture inbox item to force creation time to be logged."
     (save-excursion
       (org-capture-goto-last-stored)
-      (when (string= buffer-file-name my/org-inbox-file)
-        (org-todo "TODO"))))
+      (org-todo (org-get-todo-state))))
+
   :bind
   ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
   ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
   ("C-c o c" . (lambda () (interactive) (org-capture nil "c")))
-  :hook
-  (org-capture-before-finalize . my/org-capture-maybe-update-inbox)
+
   :custom
   (org-capture-templates
    `(("i" "Inbox" entry
       (file+headline ,my/org-inbox-file "Inbox")
-      "* TODO %i%?")
+      "* TODO %i%?"
+      :before-finalize my/org-capture-update-inbox)
      ("b" "Bookmark" entry
       (file+olp+datetree ,my/org-bookmarks-file "Bookmarks")
       "* %(org-cliplink-capture)%?\n")
@@ -2972,7 +2974,8 @@ specified then a task category will be determined by the item's tags."
         "  - Breakdown: 50g/70g/60g/60g/60g on 45s with no extra agitation\n"
         "  - Next time: Grind a bit finer\n"
         "- Taste notes:\n"
-        "  - Yum yum\n") :jump-to-captured t))))
+        "  - Yum yum\n")
+      :jump-to-captured t))))
 
 (use-package org-cliplink
   :after org
