@@ -692,7 +692,7 @@
   :ensure nil
   :bind
   ;; Bind some special characters under 'C-x 8'. The [?] character is a zero-
-  ;; width space character that can be used to escape org mode emphasis markers.
+  ;; width space character that can be used to escape Org mode emphasis markers.
   ;; See: https://emacs.stackexchange.com/questions/16688/how-can-i-escape-the-in-org-mode-to-prevent-bold-fontification.
   (:map iso-transl-ctl-x-8-map
    ("0" . [?​])
@@ -2657,7 +2657,7 @@ with a numbered suffix."
   (defvar my/org-bookmarks-file (expand-file-name "bookmarks.org" my/org-other-dir))
   (defvar my/org-coffee-file (expand-file-name "coffee.org" my/org-other-dir))
 
-  ;; Extra electric pairs to use in org mode.
+  ;; Extra electric pairs to use in Org mode.
   (defvar my/org-extra-electric-pairs '((?/ . ?/) (?= . ?=) (?~ . ?~)))
 
   (defun my/org-init ()
@@ -2719,12 +2719,8 @@ with a numbered suffix."
   (org-fontify-quote-and-verse-blocks t)
   (org-hide-emphasis-markers t)
   (org-image-actual-width nil)
-  (org-log-done 'time)
-  ;; Leaving drawer logging disabled for now as I don't like the format of the
-  ;; log items and I want to know when a task was created which doesn't happen
-  ;; without what appears to be quite a bit of custom code.
-  (org-log-into-drawer nil)
-  (org-log-states-order-reversed nil) ;; Make newest last
+  ;; Log state changes into the LOGBOOK drawer.
+  (org-log-into-drawer t)
   (org-outline-path-complete-in-steps nil)
   (org-pretty-entities t)
   (org-priority-default org-priority-lowest)
@@ -2740,7 +2736,7 @@ with a numbered suffix."
   (org-startup-indented t)
   (org-tags-column 0)
   (org-todo-keywords
-   '((sequence "TODO(t)" "NEXT(n)" "PROG(p)" "HOLD(h)" "|" "DONE(d)")))
+   '((sequence "TODO(t!)" "NEXT(n!)" "PROG(p!)" "HOLD(h@)" "|" "DONE(d!)")))
   ;; See colors here: https://alexschroeder.ch/geocities/kensanata/colors.html.
   (org-todo-keyword-faces
    '(("TODO" . (:foreground "DodgerBlue2" :weight bold))
@@ -2938,10 +2934,23 @@ specified then a task category will be determined by the item's tags."
 
 (use-package org-capture
   :ensure nil
+  :preface
+  (declare-function org-todo "org")
+  ;; By default, Org mode only logs state changes in the LOGBOOK drawer. The
+  ;; following function will force a no-op state change to be recorded for
+  ;; inbox items to capture the creation time.
+  (defun my/org-capture-maybe-update-inbox ()
+    "Update the capture inbox item to force creation time to be logged."
+    (save-excursion
+      (org-capture-goto-last-stored)
+      (when (string= buffer-file-name my/org-inbox-file)
+        (org-todo "TODO"))))
   :bind
   ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
   ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
   ("C-c o c" . (lambda () (interactive) (org-capture nil "c")))
+  :hook
+  (org-capture-before-finalize . my/org-capture-maybe-update-inbox)
   :custom
   (org-capture-templates
    `(("i" "Inbox" entry
