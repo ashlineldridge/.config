@@ -2688,13 +2688,9 @@ with a numbered suffix."
    ("C-c o s" . org-save-all-org-buffers)
    ("C-c o l" . my/org-goto-last-dwim)
    :map org-mode-map
-   ;; Rebind common <return>-based keybindings under C-c to make them available for
-   ;; more general commands. Unbinding M-RET requires RET rather than <return>. For
-   ;; details, see: https://www.fromkk.com/posts/c-m-ret-and-return-key-in-emacs.
-   ("M-RET" . nil)
+   ;; Rebind conflicting <return>-based keybindings under C-c.
    ("C-<return>" . nil)
    ("C-S-<return>" . nil)
-   ("C-c M-<return>" . org-meta-return)
    ("C-c C-<return>" . org-insert-heading-respect-content)
    ("C-c C-S-<return>" . org-insert-todo-heading-respect-content))
 
