@@ -2732,7 +2732,7 @@ with a numbered suffix."
   (org-startup-indented t)
   (org-tags-column 0)
   (org-todo-keywords
-   '((sequence "TODO(t!)" "NEXT(n!)" "PROG(p!)" "HOLD(h@)" "|" "DONE(d!)")))
+   '((sequence "TODO(t)" "NEXT(n)" "PROG(p!)" "HOLD(h@)" "|" "DONE(d!)")))
   ;; See colors here: https://alexschroeder.ch/geocities/kensanata/colors.html.
   (org-todo-keyword-faces
    '(("TODO" . (:foreground "DodgerBlue2" :weight bold))
@@ -2930,19 +2930,6 @@ specified then a task category will be determined by the item's tags."
 
 (use-package org-capture
   :ensure nil
-  :preface
-  (declare-function org-todo "org")
-  (declare-function org-get-todo-state "org")
-
-  ;; By default, Org mode only logs state changes in the LOGBOOK drawer. The
-  ;; following function will force a no-op state change to be recorded for
-  ;; inbox items to capture the creation time.
-  (defun my/org-capture-update-inbox ()
-    "Update the capture inbox item to force creation time to be logged."
-    (save-excursion
-      (org-capture-goto-last-stored)
-      (org-todo (org-get-todo-state))))
-
   :bind
   ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
   ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
@@ -2952,8 +2939,7 @@ specified then a task category will be determined by the item's tags."
   (org-capture-templates
    `(("i" "Inbox" entry
       (file+headline ,my/org-inbox-file "Inbox")
-      "* TODO %i%?"
-      :before-finalize my/org-capture-update-inbox)
+      "* TODO %i%?")
      ("b" "Bookmark" entry
       (file+olp+datetree ,my/org-bookmarks-file "Bookmarks")
       "* %(org-cliplink-capture)%?\n")
