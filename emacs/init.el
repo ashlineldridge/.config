@@ -2507,43 +2507,6 @@ with a numbered suffix."
     (interactive)
     (eshell-read-aliases-list))
 
-  (defun my/eshell-mark-previous-output ()
-    "Search upwards for the last interpreter output and mark it."
-    (interactive)
-    (let ((from-line (line-number-at-pos))
-          start end total-lines)
-      (when (eshell-previous-prompt)
-        (setq total-lines (- from-line (line-number-at-pos) 1))
-        (if (> total-lines 0)
-            (progn
-              (forward-line 1)
-              (setq start (point))
-              (eshell-next-prompt)
-              (forward-line -1)
-              (setq end (pos-eol))
-              (goto-char start)
-              (push-mark end)
-              total-lines)
-          (my/eshell-mark-previous-output)))))
-
-  (defun my/eshell-narrow-previous-output (arg)
-    "Narrow to the previous interpreter output (or widen if prefix ARG passed)."
-    (interactive "P")
-    (if arg
-        (progn
-          (widen)
-          (goto-char (point-max)))
-      (when (my/eshell-mark-previous-output)
-        (narrow-to-region (point) (mark)))))
-
-  (defun my/eshell-delete-previous-output ()
-    "Delete the previous interpreter output relative to point."
-    (interactive)
-    (when (my/eshell-mark-previous-output)
-      (delete-region (point) (mark))
-      (delete-indentation)
-      (eshell-previous-prompt)))
-
   :bind
   ;; For convenience, consolidate Eshell keybindings here rather than in
   ;; separate `use-package' forms (requires below are necessary).
@@ -2554,10 +2517,6 @@ with a numbered suffix."
    ;; Defun-style prompt navigation.
    ("C-M-a" . eshell-previous-prompt)
    ("C-M-e" . eshell-next-prompt)
-   ;; Output marking/deletion.
-   ("M-O" . my/eshell-mark-previous-output)
-   ("C-M-O" . my/eshell-narrow-previous-output)
-   ("M-S-<backspace>" . my/eshell-delete-previous-output)
    ;; Jump between Eshell directories using `consult-dir'.
    ("M-s M-d" . my/consult-dir-cd)
    :map eshell-hist-mode-map
