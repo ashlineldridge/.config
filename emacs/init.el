@@ -1408,7 +1408,7 @@
   ;; Tell `consult-ripgrep' to search hidden dirs/files but ignore .git/.
   (consult-ripgrep-args "rg --null --line-buffered --color=never \
     --max-columns=1000 --path-separator=/ --smart-case --no-heading \
-    --with-filename --line-number --search-zip --hidden --glob=!.git/")
+    --with-filename --line-number --hidden --glob=!.git/")
   ;; Configure both `config-find' and `consult-fd' to follow symlinks, include
   ;; hidden files, and ignore the .git directory. The fd command needs to be
   ;; specifically told to allow matching across the full path (e.g. so you
