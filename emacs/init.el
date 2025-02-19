@@ -2676,6 +2676,11 @@ with a numbered suffix."
   (org-image-actual-width nil)
   ;; Log state changes into the LOGBOOK drawer.
   (org-log-into-drawer t)
+  ;; Special properties aren't and shouldn't be put into the LOGBOOK drawer. As
+  ;; SCHEDULED and DEADLINE will be created, I also log CLOSED even though this
+  ;; information can be derived from the state changes in the drawer.
+  ;; See: https://orgmode.org/manual/Special-Properties.html.
+  (org-log-done t)
   (org-outline-path-complete-in-steps nil)
   (org-pretty-entities t)
   (org-priority-default org-priority-lowest)
