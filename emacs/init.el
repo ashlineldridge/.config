@@ -2351,15 +2351,12 @@
                    log-edit-insert-changelog)))
 
 (use-package magit
-  :preface
-  (declare-function magit-auto-revert-mode "magit")
   :bind
   ("C-c g <return>" . magit-status)
-  ("C-c g c" . magit-clone)
-  ("C-c g f" . magit-fetch)
-  ("C-c g r" . magit-rebase)
-  ("C-c g v" . magit-find-file)
   ("C-c g ." . magit-file-dispatch)
+  ("C-c g f" . magit-find-file)
+  ("C-c g g" . magit-dispatch)
+
   :custom
   (magit-auto-revert-mode nil) ;; Use `auto-revert-mode' instead.
   (magit-verbose-messages t)
