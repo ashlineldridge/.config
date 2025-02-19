@@ -1420,6 +1420,8 @@
   (consult-themes '("^modus-" "^ef-"))
   ;; Following will be overridden if/when `global-corfu-mode' is run.
   (completion-in-region-function #'consult-completion-in-region)
+  ;; Hide narrow groupings for bookmarks as unnecessary.
+  (consult-bookmark-narrow nil)
 
   :init
   ;; Configure how registers are previewed and displayed.
