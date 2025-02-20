@@ -2947,6 +2947,28 @@ specified then a task category will be determined by the item's tags."
         "  - Yum yum\n")
       :jump-to-captured t))))
 
+(use-package org-clock
+  :ensure nil
+  :after org
+  :preface
+  (declare-function org-clock-get-clock-string "org-clock")
+  :bind
+  (("C-c o X" . org-clock-cancel)
+   ("C-c o O" . org-clock-out)
+   ("C-c o J" . org-clock-goto)
+   :map org-mode-map
+   ("C-c o I" . org-clock-in))
+  :config
+  ;; I use a custom mode line indicator rather than `mode-line-misc-info'.
+  (fset #'org-clock-get-clock-string (lambda () "")))
+
+(use-package org-timer
+  :ensure nil
+  :bind
+  ("C-c o t" . org-timer-set-timer)
+  ("C-c o T" . org-timer-stop)
+  ("C-c o SPC" . org-timer-pause-or-continue))
+
 (use-package org-cliplink
   :after org
   :bind
