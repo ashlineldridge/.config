@@ -295,10 +295,17 @@
       ;; option to be specified. The downside of this is that it breaks other-
       ;; window commands such as `consult-buffer-other-window'.
       (display-buffer-no-window))
-     ;; Below current window.
+     ;; Below current window in a regular window.
      ("CAPTURE-.*\\.org"
       (display-buffer-below-selected)
       (window-height . 10))
+     ;; Below current window in dedicated side window with no mode line.
+     ("\\*\\(Org \\(Select\\|Note\\)\\|Agenda Commands\\)\\*"
+      (display-buffer-in-side-window)
+      (dedicated . t)
+      (side . bottom)
+      (slot . 0)
+      (window-parameters . ((mode-line-format . none))))
      ;; Same window.
      ("\\(\\*vc-dir\\*\\|magit: \\)"
       (display-buffer-same-window)))))
