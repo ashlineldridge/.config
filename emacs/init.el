@@ -2921,10 +2921,8 @@ specified then a task category will be determined by the item's tags."
 (use-package org-capture
   :ensure nil
   :bind
+  ("C-c o c" . org-capture)
   ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
-  ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
-  ("C-c o c" . (lambda () (interactive) (org-capture nil "c")))
-
   :custom
   (org-capture-templates
    `(("i" "Inbox" entry
