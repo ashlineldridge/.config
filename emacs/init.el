@@ -2657,7 +2657,8 @@ with a numbered suffix."
    ("C-<return>" . nil)
    ("C-S-<return>" . nil)
    ("C-c C-<return>" . org-insert-heading-respect-content)
-   ("C-c C-S-<return>" . org-insert-todo-heading-respect-content))
+   ("C-c C-S-<return>" . org-insert-todo-heading-respect-content)
+   ("C-c o M-l" . org-id-copy))
 
   :hook (org-mode . my/org-init)
   :custom
@@ -2720,12 +2721,18 @@ with a numbered suffix."
   ;; Unset conflicting org keybindings.
   (dolist (key '("C-'" "M-S-<up>" "M-S-<down>" "M-S-<left>" "M-S-<right>"
                  "C-M-S-<left>" "C-M-S-<right>"))
-    (define-key org-mode-map (kbd key) nil)))
+    (define-key org-mode-map (kbd key) nil))
+
+  ;; Bit of feedback.
+  (advice-add #'org-id-copy :after (lambda (&optional _)
+                                     (message "Copied %s" (car kill-ring)))))
 
 (use-package org-agenda
   :ensure nil
   :preface
+  (declare-function org-verify-change-for-undo "org-agenda")
   (defvar my/org-agenda-todo-sort-order '("PROG" "NEXT" "TODO" "HOLD" "DONE"))
+
   (defun my/org-agenda-cmp-todo (a b)
     "Custom compares agenda items A and B based on their todo keywords."
     (when-let ((state-a (get-text-property 14 'todo-state a))
@@ -2795,6 +2802,18 @@ specified then a task category will be determined by the item's tags."
     (interactive)
     (my/org-agenda-refile-personal-or-work my/org-someday-file))
 
+  (defun my/org-agenda-id-copy ()
+    "Copy the ID of the agenda item at point."
+    (interactive)
+    ;; See: https://emacs.stackexchange.com/questions/47605/save-excursion-in-an-org-agenda-buffer.
+    (let* ((marker (org-get-at-bol 'org-marker))
+           (buffer (marker-buffer marker))
+           (pos (marker-position marker)))
+      (org-with-remote-undo buffer
+        (with-current-buffer buffer
+          (goto-char pos)
+          (org-id-copy)))))
+
   :bind
   (("C-c o a" . org-agenda)
    :map org-agenda-mode-map
@@ -2805,6 +2824,7 @@ specified then a task category will be determined by the item's tags."
    ("r a" . my/org-agenda-refile-archive)
    ("r s" . my/org-agenda-refile-someday)
    ("r i" . my/org-agenda-refile-inbox)
+   ("M-l" . my/org-agenda-id-copy)
    ("k" . org-agenda-kill)
    ("?" . which-key-show-major-mode))
 
