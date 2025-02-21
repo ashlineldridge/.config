@@ -1240,11 +1240,7 @@
   :hook (elpaca-after-init . marginalia-mode))
 
 (use-package consult
-  :defines (my/org-someday-file
-            my/org-archive-file
-            org-agenda-files
-            xref-show-xrefs-function
-            xref-show-definitions-function)
+  :defines (xref-show-xrefs-function xref-show-definitions-function)
   :preface
   (declare-function consult-completion-in-region "consult")
   (declare-function consult-org-agenda "consult-org")
@@ -1350,20 +1346,12 @@
     (let ((read-file-name-function #'my/consult-read-file-name))
       (call-interactively #'find-file-other-window)))
 
-  (defun my/consult-org-agenda (arg)
-    "Version of `consult-org-agenda' that includes extra files if ARG is non-nil."
-    (interactive "P")
-    (require 'org)
-    (let* ((extra-files (when arg `(,my/org-someday-file ,my/org-archive-file)))
-           (org-agenda-files (append org-agenda-files extra-files)))
-      (consult-org-agenda)))
-
   :bind
   (("M-i" . consult-imenu)
    ("M-I" . consult-imenu-multi)
    ("M-_" . consult-focus-lines)
    ("C-M-_" . consult-keep-lines)
-   ("M-s a" . my/consult-org-agenda)
+   ("M-s a" . consult-org-agenda)
    ("M-s f" . my/consult-project-file)
    ("M-s F" . consult-fd)
    ("M-s l" . consult-line)
@@ -2667,7 +2655,9 @@ with a numbered suffix."
    `(,my/org-inbox-file
      ,my/org-personal-file
      ,my/org-work-file
-     ,my/org-recurring-file))
+     ,my/org-recurring-file
+     ,my/org-someday-file
+     ,my/org-archive-file))
   (org-auto-align-tags nil)
   (org-blank-before-new-entry
    '((heading . nil)
