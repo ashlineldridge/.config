@@ -2680,6 +2680,8 @@ with a numbered suffix."
   (org-log-done t)
   (org-outline-path-complete-in-steps nil)
   (org-pretty-entities t)
+  (org-priority-lowest 10)
+  (org-priority-highest 1)
   (org-priority-default org-priority-lowest)
   (org-refile-targets
    `((,my/org-archive-file :level . 1)
