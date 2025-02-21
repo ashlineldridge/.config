@@ -2722,6 +2722,7 @@ with a numbered suffix."
 (use-package org-agenda
   :ensure nil
   :preface
+  (declare-function org-agenda-redo-all "org-agenda")
   (declare-function org-verify-change-for-undo "org-agenda")
   (defvar my/org-agenda-todo-sort-order '("PROG" "NEXT" "TODO" "HOLD" "DONE"))
 
@@ -2806,18 +2807,25 @@ specified then a task category will be determined by the item's tags."
           (goto-char pos)
           (org-id-copy)))))
 
+  (defun my/org-agenda-save-redo-all ()
+    "Save and rebuild all agendas."
+    (interactive)
+    (org-save-all-org-buffers)
+    (org-agenda-redo-all t))
+
   :bind
   (("C-c o a" . org-agenda)
    :map org-agenda-mode-map
-   ("r" . nil) ;; Allows 'r' to be bound as a prefix key.
+   ("r" . nil) ;; Rebind 'r' as a prefix key.
    ("r r" . org-agenda-refile)
    ("r p" . my/org-agenda-refile-personal)
    ("r w" . my/org-agenda-refile-work)
    ("r a" . my/org-agenda-refile-archive)
    ("r s" . my/org-agenda-refile-someday)
    ("r i" . my/org-agenda-refile-inbox)
-   ("M-l" . my/org-agenda-id-copy)
+   ("g" . my/org-agenda-save-redo-all)
    ("k" . org-agenda-kill)
+   ("M-l" . my/org-agenda-id-copy)
    ("?" . which-key-show-major-mode))
 
   :hook
