@@ -1701,6 +1701,13 @@
   ;; Add all languages in `treesit-auto-langs' except Rust which uses Rustic.
   (treesit-auto-add-to-auto-mode-alist '(bash dockerfile go gomod proto python)))
 
+(use-package treesit-fold
+  :bind
+  (:map treesit-fold-mode-map
+   ("C-<tab>" . treesit-fold-toggle))
+  :hook
+  ((go-ts-mode rust-ts-mode) . treesit-fold-mode))
+
 ;;;;;; Eglot
 
 (use-package eglot
