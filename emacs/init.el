@@ -594,15 +594,15 @@
   (defun my/open-line-below ()
     "Open line below and indent point without breaking the current line."
     (interactive)
-    (end-of-line)
+    (move-end-of-line 1)
     (newline-and-indent))
 
   (defun my/open-line-above ()
     "Open line below and indent point without breaking the current line."
     (interactive)
-    (beginning-of-line)
+    (move-beginning-of-line 1)
     (newline)
-    (forward-line -1)
+    (move-beginning-of-line 0)
     (indent-according-to-mode))
 
   (defun my/expand-line ()
