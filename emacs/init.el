@@ -2654,14 +2654,13 @@ with a numbered suffix."
    ("C-c C-<return>" . org-insert-heading-respect-content)
    ("C-c C-S-<return>" . org-insert-todo-heading-respect-content)
    ("C-c o M-l" . org-id-copy))
-
   :hook (org-mode . my/org-init)
   :custom
   ;; The `org-agenda-files' variable is from org.el rather than org-agenda.el.
   (org-agenda-files
    `(,my/org-inbox-file
-     ,my/org-personal-file
      ,my/org-work-file
+     ,my/org-personal-file
      ,my/org-recurring-file
      ,my/org-someday-file
      ,my/org-archive-file))
@@ -2671,6 +2670,7 @@ with a numbered suffix."
      (plain-list-item . nil)))
   (org-catch-invisible-edits 'show-and-error)
   (org-confirm-babel-evaluate nil)
+  (org-deadline-warning-days 0)
   (org-default-notes-file my/org-inbox-file)
   (org-directory my/org-tasks-dir)
   (org-ellipsis " 》")
@@ -2913,12 +2913,11 @@ specified then a task category will be determined by the item's tags."
 	 (org-agenda-files '(,my/org-inbox-file)))))
       ((org-agenda-tag-filter-preset '("-@personal"))
        (org-agenda-buffer-name "*Org Agenda (Work)*")))))
-  ;; Following variable allows customization of the agenda columns.
-  (org-agenda-prefix-format
-   '((agenda . " %i %-16:c%?-12t% s")
-     (todo . " %i %-16:c")
-     (tags . " %i %-16:c")
-     (search . " %i %-16:c")))
+  (org-agenda-sorting-strategy
+   '((agenda habit-down time-up category-keep user-defined-up priority-down)
+     (todo category-keep user-defined-up priority-down)
+     (tags category-keep user-defined-up priority-down)
+     (search category-keep)))
   (org-agenda-span 'week)
   (org-agenda-skip-scheduled-if-done t)
   (org-agenda-skip-deadline-if-done t)
