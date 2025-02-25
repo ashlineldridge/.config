@@ -185,8 +185,7 @@
 (use-package display-line-numbers
   :ensure nil
   :bind
-  ("C-c x n" . display-line-numbers-mode)
-  ("C-c x N" . global-display-line-numbers-mode))
+  ("<f9>" . display-line-numbers-mode))
 
 (use-package display-fill-column-indicator
   :ensure nil
