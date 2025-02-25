@@ -885,15 +885,17 @@
   :bind
   (("C-x C-b" . ibuffer)
    :map ibuffer-mode-map
-   ("M-o" . nil)
-   ;; Trade /v for grouping by VC root which I use more.
-   ("/V" . ibuffer-filter-by-visiting-file)))
+   ("M-o" . nil)))
 
 (use-package ibuffer-vc
+  :after ibuffer
   :bind
   (:map ibuffer-mode-map
-   ("/v" . ibuffer-vc-set-filter-groups-by-vc-root))
-  :hook (ibuffer . ibuffer-vc-mode))
+   ;; Take /p for grouping by "project". By default, /p and /P are bound to
+   ;; `ibuffer-pop-filter' and `ibuffer-pop-filter-group' but these commands
+   ;; are also bound to /<up> and /S-<up>.
+   ("/P" . nil)
+   ("/p" . ibuffer-vc-set-filter-groups-by-vc-root)))
 
 ;;;; File System
 
