@@ -522,7 +522,13 @@
 ;;;;; Breadcrumb
 
 (use-package breadcrumb
-  :hook (elpaca-after-init . breadcrumb-mode))
+  :hook (elpaca-after-init . breadcrumb-mode)
+  :custom
+  ;; Imenu integration is slow to update and sometimes incorrect so just show
+  ;; the project breadcrumb and allow it to take up most of the window width.
+  (breadcrumb-project-max-length 0.75)
+  :config
+  (fset 'breadcrumb-imenu-crumbs 'ignore))
 
 ;;;; Help System
 
