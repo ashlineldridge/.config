@@ -2609,18 +2609,17 @@ with a numbered suffix."
   (declare-function org-capture-goto-last-stored "org-capture")
   (declare-function bookmark-get-bookmark-record "bookmark")
 
-  ;; Paths into repository (also named 'org') that contains all of my notes,
-  ;; journal entries, tasks, bookmarks, etc.
+  ;; Org paths.
   (defvar my/org-notes-dir (expand-file-name "~/dev/home/org/notes/"))
-  (defvar my/org-journal-dir (expand-file-name "~/dev/home/org/journal/"))
-  (defvar my/org-tasks-dir (expand-file-name "~/dev/home/org/tasks/"))
+  (defvar my/org-agenda-dir (expand-file-name "~/dev/home/org/agenda/"))
   (defvar my/org-other-dir (expand-file-name "~/dev/home/org/other/"))
-  (defvar my/org-inbox-file (expand-file-name "inbox.org" my/org-tasks-dir))
-  (defvar my/org-personal-file (expand-file-name "personal.org" my/org-tasks-dir))
-  (defvar my/org-work-file (expand-file-name "work.org" my/org-tasks-dir))
-  (defvar my/org-recurring-file (expand-file-name "recurring.org" my/org-tasks-dir))
-  (defvar my/org-someday-file (expand-file-name "someday.org" my/org-tasks-dir))
-  (defvar my/org-archive-file (expand-file-name "archive.org" my/org-tasks-dir))
+  (defvar my/org-inbox-file (expand-file-name "inbox.org" my/org-agenda-dir))
+  (defvar my/org-personal-file (expand-file-name "personal.org" my/org-agenda-dir))
+  (defvar my/org-work-file (expand-file-name "work.org" my/org-agenda-dir))
+  (defvar my/org-recurring-file (expand-file-name "recurring.org" my/org-agenda-dir))
+  (defvar my/org-someday-file (expand-file-name "someday.org" my/org-agenda-dir))
+  (defvar my/org-archive-file (expand-file-name "archive.org" my/org-agenda-dir))
+  (defvar my/org-journal-file (expand-file-name "journal.org" my/org-agenda-dir))
   (defvar my/org-bookmarks-file (expand-file-name "bookmarks.org" my/org-other-dir))
   (defvar my/org-coffee-file (expand-file-name "coffee.org" my/org-other-dir))
 
@@ -2670,7 +2669,8 @@ with a numbered suffix."
      ,my/org-personal-file
      ,my/org-recurring-file
      ,my/org-someday-file
-     ,my/org-archive-file))
+     ,my/org-archive-file
+     ,my/org-journal-file))
   (org-auto-align-tags nil)
   (org-blank-before-new-entry
    '((heading . nil)
@@ -2679,7 +2679,7 @@ with a numbered suffix."
   (org-confirm-babel-evaluate nil)
   (org-deadline-warning-days 0)
   (org-default-notes-file my/org-inbox-file)
-  (org-directory my/org-tasks-dir)
+  (org-directory my/org-agenda-dir)
   (org-ellipsis " 》")
   (org-fontify-done-headline t)
   (org-fontify-quote-and-verse-blocks t)
@@ -2849,9 +2849,8 @@ specified then a task category will be determined by the item's tags."
   :custom
   (org-agenda-cmp-user-defined #'my/org-agenda-cmp-todo)
   (org-agenda-custom-commands
-   `(("d" . "Dashboards")
-     ("da" "All Tasks"
-      ((alltodo
+   `(("A" "All Tasks"
+      ((todo
 	""
 	((org-agenda-overriding-header "Inbox")
 	 (org-agenda-files '(,my/org-inbox-file))))
@@ -2866,7 +2865,7 @@ specified then a task category will be determined by the item's tags."
          (org-agenda-files '(,my/org-personal-file))
          (org-agenda-sorting-strategy '(user-defined-up priority-down)))))
       ((org-agenda-buffer-name "*Org Agenda (All)*")))
-     ("dp" "Personal Tasks"
+     ("P" "Personal Tasks"
       ((todo
 	"PROG"
         ((org-agenda-overriding-header "Progress")
@@ -2893,7 +2892,7 @@ specified then a task category will be determined by the item's tags."
 	 (org-agenda-files '(,my/org-inbox-file)))))
       ((org-agenda-tag-filter-preset '("-@work"))
        (org-agenda-buffer-name "*Org Agenda (Personal)*")))
-     ("dw" "Work Tasks"
+     ("W" "Work Tasks"
       ((todo
 	"PROG"
         ((org-agenda-overriding-header "Progress")
@@ -2932,6 +2931,7 @@ specified then a task category will be determined by the item's tags."
   (org-agenda-sticky t)
   (org-agenda-start-with-log-mode t)
   (org-agenda-tags-column 0)
+  (org-agenda-use-time-grid nil) ;; Toggle with 'G'.
   (org-agenda-window-setup 'current-window))
 
 (use-package org-capture
@@ -2939,6 +2939,7 @@ specified then a task category will be determined by the item's tags."
   :bind
   ("C-c o c" . org-capture)
   ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
+  ("C-c o j" . (lambda () (interactive) (org-capture nil "j")))
   :custom
   (org-capture-templates
    `(("i" "Inbox" entry
@@ -2946,9 +2947,12 @@ specified then a task category will be determined by the item's tags."
       "* TODO %i%?")
      ("b" "Bookmark" entry
       (file+olp+datetree ,my/org-bookmarks-file "Bookmarks")
-      "* %(org-cliplink-capture)%?\n")
-     ("c" "Coffee Journal" entry
-      (file+olp+datetree ,my/org-coffee-file "Coffee Journal" "Log")
+      "* %(org-cliplink-capture)%?")
+     ("j" "Journal" entry
+      (file+headline ,my/org-journal-file "Journal")
+      "* %T %?")
+     ("c" "Coffee Log" entry
+      (file+olp+datetree ,my/org-coffee-file "Coffee Log" "Log")
       ,(concat
 	"* 6%?:00 AM\n"
         "- Beans: Use org-store-link (C-c o l) then org-insert-link (C-c C-l)\n"
@@ -2975,7 +2979,7 @@ specified then a task category will be determined by the item's tags."
    :map org-mode-map
    ("C-c o I" . org-clock-in))
   :config
-  ;; I use a custom mode line indicator rather than `mode-line-misc-info'.
+  ;; Use custom mode line indicator rather than `mode-line-misc-info'.
   (fset #'org-clock-get-clock-string (lambda () "")))
 
 (use-package org-timer
@@ -3035,22 +3039,6 @@ specified then a task category will be determined by the item's tags."
       :target (file "%<%Y%m%d%H%M%S>-${slug}.org")
       :empty-lines-before 1
       :unnarrowed t))))
-
-(use-package org-roam-dailies
-  :ensure nil
-  :bind
-  ("C-c j j" . org-roam-dailies-capture-today)
-  ("C-c j d" . org-roam-dailies-find-directory)
-  ("C-c j g" . org-roam-dailies-goto-date)
-  ("C-c j t" . org-roam-dailies-goto-today)
-  ("C-c j T" . org-roam-dailies-goto-tomorrow)
-  ("C-c j y" . org-roam-dailies-goto-yesterday)
-  :custom
-  (org-roam-dailies-directory my/org-journal-dir)
-  (org-roam-dailies-capture-templates
-   '(("d" "default" entry "* %?"
-      :target (file+head "%<%Y-%m-%d>.org"
-                         "#+title: %<%Y-%m-%d>\n\n")))))
 
 (use-package consult-org-roam
   :bind
