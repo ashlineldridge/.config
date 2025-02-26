@@ -919,7 +919,7 @@
   ;; Disable `auto-save-mode' which saves buffers to separate files in favor of
   ;; `auto-save-visited-mode' which saves file-visiting buffers to their files.
   (auto-save-default nil)
-  (auto-save-visited-interval 10)
+  (auto-save-visited-interval 30)
   (confirm-kill-emacs #'yes-or-no-p)
   (delete-by-moving-to-trash t)
   ;; Use GNU ls (used by dired and supports grouping directories first).
