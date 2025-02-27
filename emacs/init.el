@@ -2740,13 +2740,18 @@ with a numbered suffix."
   (declare-function org-verify-change-for-undo "org-agenda")
   (defvar my/org-agenda-todo-sort-order '("PROG" "NEXT" "TODO" "HOLD" "DONE"))
 
+  (defun my/org-agenda-init ()
+    "Init function for `org-agenda-mode'."
+    (hl-line-mode 1)
+    (setq-local default-directory org-directory))
+
   (defun my/org-agenda-cmp-todo (a b)
     "Custom compares agenda items A and B based on their todo keywords."
     (when-let ((state-a (get-text-property 14 'todo-state a))
                (state-b (get-text-property 14 'todo-state b))
-               (cmp (--map (cl-position-if (lambda (x)
-                                             (equal x it))
-                                           my/org-agenda-todo-sort-order)
+               (cmp (--map (cl-position-if
+                            (lambda (x) (equal x it))
+                            my/org-agenda-todo-sort-order)
                            (list state-a state-b))))
       (cond ((apply '> cmp) 1)
             ((apply '< cmp) -1)
@@ -2759,13 +2764,10 @@ with a numbered suffix."
   ;; https://emacs.stackexchange.com/questions/54580/org-refile-under-a-given-heading.
   (defun my/org-agenda-refile (file heading)
     "Refile the current agenda item to the refile target for FILE and HEADING."
-    (org-agenda-refile nil
-                       (seq-find
-                        (lambda (refloc)
-                          (and
-                           (string= heading (nth 0 refloc))
-                           (string= file (nth 1 refloc))))
-                        (org-refile-get-targets)) t))
+    (org-agenda-refile nil (seq-find(lambda (refloc)
+                                      (and (string= heading (nth 0 refloc))
+                                           (string= file (nth 1 refloc))))
+                                    (org-refile-get-targets)) t))
 
   (defun my/org-agenda-refile-personal-or-work (file &optional category)
     "Refile the current agenda item into FILE under Personal/ or Work/.
@@ -2821,10 +2823,9 @@ specified then a task category will be determined by the item's tags."
           (goto-char pos)
           (org-id-copy)))))
 
-  (defun my/org-agenda-save-redo-all ()
-    "Save and rebuild all agendas."
+  (defun my/org-agenda-redo-all ()
+    "Rebuild all open agenda buffers."
     (interactive)
-    (org-save-all-org-buffers)
     (org-agenda-redo-all t))
 
   :bind
@@ -2837,15 +2838,12 @@ specified then a task category will be determined by the item's tags."
    ("r a" . my/org-agenda-refile-archive)
    ("r s" . my/org-agenda-refile-someday)
    ("r i" . my/org-agenda-refile-inbox)
-   ("g" . my/org-agenda-save-redo-all)
+   ("g" . my/org-agenda-redo-all)
    ("k" . org-agenda-kill)
    ("M-l" . my/org-agenda-id-copy)
    ("?" . which-key-show-major-mode))
-
   :hook
-  (org-agenda-mode . hl-line-mode)
-  (org-agenda-mode . (lambda () (setq-local default-directory org-directory)))
-
+  (org-agenda-mode . my/org-agenda-init)
   :custom
   (org-agenda-cmp-user-defined #'my/org-agenda-cmp-todo)
   (org-agenda-custom-commands
