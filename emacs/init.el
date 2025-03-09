@@ -362,7 +362,9 @@
   (aw-background nil)
   (aw-display-mode-overlay nil)
   (aw-minibuffer-flag nil)
-  (aw-dispatch-always t)
+  ;; Dispatch settings to allow jumping from the minibuffer to a single window.
+  (aw-dispatch-always nil)
+  (aw-dispatch-when-more-than 1)
   ;; Ignore the minibuffer and use `switch-to-minibuffer' instead.
   (aw-ignored-buffers '(minibuffer-mode))
   :commands aw-select
