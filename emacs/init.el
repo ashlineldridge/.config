@@ -3100,6 +3100,53 @@ specified then a task category will be determined by the item's tags."
   :custom
   (proced-enable-color-flag t))
 
+;;;; AI/LLM
+
+(use-package gptel
+  :preface
+  (declare-function gptel-make-anthropic "gptel")
+  (declare-function gptel-make-gemini "gptel")
+  (defalias 'gptel-buffer 'gptel)
+  :custom
+  (gptel-default-mode 'org-mode)
+  (gptel-display-buffer-action '(pop-to-buffer-same-window))
+  (gptel-prompt-prefix-alist
+   '((markdown-mode . "# ")
+     (org-mode . "* ")
+     (text-mode . "# ")))
+  :bind
+  (("C-z RET" . gptel-send)
+   ("C-z C-z" . gptel-menu)
+   ("C-z b" . gptel-buffer)
+   ("C-z a" . gptel-add)
+   ("C-z f" . gptel-add-file)
+   ("C-z k" . gptel-abort)
+   ("C-z m" . gptel-mode)
+   ("C-z r" . gptel-rewrite)
+   :map gptel-mode-map
+   ("C-z o" . gptel-org-set-topic)
+   ("C-z O" . gptel-org-set-properties))
+  :config
+  (gptel-make-anthropic "Claude-Sonnet"
+    :stream t
+    :key gptel-api-key
+    :models '(claude-3-7-sonnet-20250219))
+  (gptel-make-anthropic "Claude-Opus"
+    :stream t
+    :key gptel-api-key
+    :models '(claude-3-opus-20240229))
+  (gptel-make-gemini "Gemini"
+    :key gptel-api-key
+    :stream t))
+
+(use-package gptel-quick
+  :ensure (:host github :repo "karthink/gptel-quick")
+  :bind
+  ("C-z h" . gptel-quick)
+  :init
+  (with-eval-after-load 'embark
+    (bind-key "?" #'gptel-quick 'embark-general-map)))
+
 ;;;; Work Configuration
 
 (use-package chronosphere
