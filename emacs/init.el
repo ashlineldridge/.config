@@ -2708,6 +2708,7 @@ with a numbered suffix."
   ;; information can be derived from the state changes in the drawer.
   ;; See: https://orgmode.org/manual/Special-Properties.html.
   (org-log-done t)
+  (org-M-RET-may-split-line nil)
   (org-outline-path-complete-in-steps nil)
   (org-pretty-entities t)
   (org-priority-lowest 10)
@@ -2863,76 +2864,21 @@ specified then a task category will be determined by the item's tags."
   :custom
   (org-agenda-cmp-user-defined #'my/org-agenda-cmp-todo)
   (org-agenda-custom-commands
-   `(("A" "All Tasks"
+   `(("A" "Agenda for all tasks"
       ((todo
 	""
 	((org-agenda-overriding-header "Inbox")
 	 (org-agenda-files '(,my/org-inbox-file))))
-       (alltodo
+       (todo
         ""
         ((org-agenda-overriding-header "Work")
          (org-agenda-files '(,my/org-work-file))
          (org-agenda-sorting-strategy '(user-defined-up priority-down))))
-       (alltodo
+       (todo
         ""
         ((org-agenda-overriding-header "Personal")
          (org-agenda-files '(,my/org-personal-file))
-         (org-agenda-sorting-strategy '(user-defined-up priority-down)))))
-      ((org-agenda-buffer-name "*Org Agenda (All)*")))
-     ("P" "Personal Tasks"
-      ((todo
-	"PROG"
-        ((org-agenda-overriding-header "Progress")
-	 (org-agenda-files '(,my/org-personal-file))
-	 (org-agenda-sorting-strategy '(priority-down))))
-       (todo
-	"NEXT"
-        ((org-agenda-overriding-header "Next")
-	 (org-agenda-files '(,my/org-personal-file))
-	 (org-agenda-sorting-strategy '(priority-down))))
-       (todo
-        "HOLD"
-        ((org-agenda-overriding-header "Hold")
-	 (org-agenda-files '(,my/org-personal-file))
-	 (org-agenda-sorting-strategy '(priority-down))))
-       (todo
-        "TODO"
-        ((org-agenda-overriding-header "Backlog")
-	 (org-agenda-files '(,my/org-personal-file))
-	 (org-agenda-sorting-strategy '(priority-down))))
-       (alltodo
-	""
-	((org-agenda-overriding-header "Inbox")
-	 (org-agenda-files '(,my/org-inbox-file)))))
-      ((org-agenda-tag-filter-preset '("-@work"))
-       (org-agenda-buffer-name "*Org Agenda (Personal)*")))
-     ("W" "Work Tasks"
-      ((todo
-	"PROG"
-        ((org-agenda-overriding-header "Progress")
-	 (org-agenda-files '(,my/org-work-file))
-	 (org-agenda-sorting-strategy '(priority-down))))
-       (todo
-	"NEXT"
-        ((org-agenda-overriding-header "Next")
-	 (org-agenda-files '(,my/org-work-file))
-	 (org-agenda-sorting-strategy '(priority-down))))
-       (todo
-	"HOLD"
-        ((org-agenda-overriding-header "Hold")
-	 (org-agenda-files '(,my/org-work-file))
-	 (org-agenda-sorting-strategy '(priority-down))))
-       (todo
-	"TODO"
-        ((org-agenda-overriding-header "Backlog")
-	 (org-agenda-files '(,my/org-work-file))
-	 (org-agenda-sorting-strategy '(priority-down))))
-       (alltodo
-	""
-	((org-agenda-overriding-header "Inbox")
-	 (org-agenda-files '(,my/org-inbox-file)))))
-      ((org-agenda-tag-filter-preset '("-@personal"))
-       (org-agenda-buffer-name "*Org Agenda (Work)*")))))
+         (org-agenda-sorting-strategy '(user-defined-up priority-down))))))))
   (org-agenda-sorting-strategy
    '((agenda habit-down time-up category-keep user-defined-up priority-down)
      (todo category-keep user-defined-up priority-down)
