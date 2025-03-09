@@ -202,7 +202,7 @@
   :custom
   (repeat-keep-prefix t)
   (repeat-exit-timeout 5)
-  (repeat-exit-key (kbd "RET")))
+  (repeat-exit-key "RET"))
 
 ;;;; Bookmarks
 
@@ -2336,7 +2336,7 @@
   ;; Consolidate keybindings into a single `use-package' form as VC commands
   ;; are spread over many sub-packages. Requires need to be correct below.
   (:map vc-prefix-map
-   ("<return>" . vc-dir-root)
+   ("RET" . vc-dir-root)
    ("B" . vc-annotate)
    ("e" . vc-ediff)
    ("F" . vc-update)
@@ -2363,7 +2363,7 @@
 
 (use-package magit
   :bind
-  ("C-c g <return>" . magit-status)
+  ("C-c g RET" . magit-status)
   ("C-c g ." . magit-file-dispatch)
   ("C-c g f" . magit-find-file)
   ("C-c g g" . magit-dispatch)
