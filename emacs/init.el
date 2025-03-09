@@ -238,6 +238,8 @@
   :hook (elpaca-after-init . savehist-mode)
   :custom
   (history-length 1000)
+  (history-delete-duplicates t)
+  (savehist-save-minibuffer-history t)
   ;; Variables to persist between sessions.
   (savehist-additional-variables
    '(kill-ring
