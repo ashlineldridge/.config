@@ -573,6 +573,19 @@
   :preface
   (declare-function called-interactively-p "subr")
 
+  (defun my/keyboard-quit-dwim ()
+    "DWIM version of `keyboard-quit'."
+    (interactive)
+    (cond
+     ((region-active-p)
+      (deactivate-mark))
+     ((> (minibuffer-depth) 0)
+      (abort-recursive-edit))
+     ((> (recursion-depth) 0)
+      (exit-recursive-edit))
+     (t
+      (keyboard-quit))))
+
   (defun my/kill-ring-save ()
     "Copy the current region or line."
     (interactive)
@@ -637,13 +650,14 @@
   ;; Don't show M-x commands that don't work in the current mode.
   (read-extended-command-predicate #'command-completion-default-include-p)
   :bind
-  ("<escape>" . keyboard-escape-quit)
+  ([remap kill-ring-save] . my/kill-ring-save)
+  ([remap keyboard-quit] . my/keyboard-quit-dwim)
+  ("ESC ESC" . keyboard-escape-quit) ;; 3rd ESC is unnecessary.
   ("M-*" . my/expand-line)
   ("M-c" . capitalize-dwim)
   ("M-l" . downcase-dwim)
   ("M-u" . upcase-dwim)
   ("M-k" . my/kill-line-backward)
-  ("M-w" . my/kill-ring-save)
   ("M-S-SPC" . cycle-spacing)
   ;; I prefer `zap-up-to-char' when zapping forward and `zap-to-char' when
   ;; zapping backward. This also mimics the zapping behavior of Avy. Some of
