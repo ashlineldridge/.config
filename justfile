@@ -23,7 +23,6 @@ emacs-install: emacs-clean
     @echo ">>> Installing Emacs"
     brew install emacs-plus@{{emacs-version}} \
         --with-imagemagick \
-        --with-native-comp \
         --with-c9rgreen-sonoma-icon
     # The entire application is copied rather than creating an alias as that
     # seems to screw with the icon that gets shown by Raycast/Spotlight.
