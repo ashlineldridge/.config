@@ -3038,13 +3038,14 @@ specified then a task category will be determined by the item's tags."
      ("Australia/Melbourne" "Melbourne")
      ("Australia/Sydney" "Sydney")
      ("Australia/Brisbane" "Brisbane")
-     ("America/Los_Angeles" "LA")
      ("America/New_York" "NY")
+     ("America/Los_Angeles" "LA")
+     ("America/Denver" "Denver")
+     ("Asia/Tokyo" "Tokyo")
+     ("Canada/Eastern" "Toronto")
      ("Europe/London" "London")
      ("Europe/Paris" "Paris")
-     ("Europe/Vilnius" "Lithuania")
-     ("Asia/Tokyo" "Tokyo")
-     ("Canada/Eastern" "Toronto"))))
+     ("Europe/Vilnius" "Vilnius"))))
 
 ;; See `tzc-world-clock' and `tzc-convert-time'.
 (use-package tzc
