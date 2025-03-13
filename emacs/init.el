@@ -291,7 +291,7 @@
   ;; See: https://github.com/protesilaos/dotfiles/blob/d16ad4d8d54e1d06ec1cbe7a62568d408651847e/emacs/.emacs.d/prot-emacs-modules/prot-emacs-window.el#L66
   (display-buffer-alist
    `(;; No window.
-     ("\\*Async Shell Command\\*"
+     ("\\*Placeholder\\*"
       ;; Note that some buffers additionally require the `allow-no-window'
       ;; option to be specified. The downside of this is that it breaks other-
       ;; window commands such as `consult-buffer-other-window'.
