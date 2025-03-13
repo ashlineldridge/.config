@@ -3107,27 +3107,23 @@ specified then a task category will be determined by the item's tags."
   :preface
   (declare-function gptel-make-anthropic "gptel")
   (declare-function gptel-make-gemini "gptel")
-  (defalias 'gptel-buffer 'gptel)
   :custom
   (gptel-default-mode 'org-mode)
+  (gptel-prompt-prefix-alist '((org-mode . "*Prompt ❯❯❯* ")))
+  (gptel-response-prefix-alist '((org-mode . "*Response ❯❯❯* ")))
   (gptel-display-buffer-action '(pop-to-buffer-same-window))
-  (gptel-prompt-prefix-alist
-   '((markdown-mode . "# ")
-     (org-mode . "* ")
-     (text-mode . "# ")))
   :bind
   (("C-z RET" . gptel-send)
-   ("C-z C-z" . gptel-menu)
-   ("C-z b" . gptel-buffer)
+   ("C-z m" . gptel-menu)
    ("C-z a" . gptel-add)
    ("C-z f" . gptel-add-file)
    ("C-z k" . gptel-abort)
-   ("C-z m" . gptel-mode)
    ("C-z r" . gptel-rewrite)
    :map gptel-mode-map
    ("C-z o" . gptel-org-set-topic)
    ("C-z O" . gptel-org-set-properties))
   :config
+  ;; Register additional backends.
   (gptel-make-anthropic "Claude-Sonnet"
     :stream t
     :key gptel-api-key
@@ -3139,6 +3135,13 @@ specified then a task category will be determined by the item's tags."
   (gptel-make-gemini "Gemini"
     :key gptel-api-key
     :stream t))
+
+;; Hide away wrapper cruft in separate package.
+(use-package gptel-extras
+  :ensure (:host github :repo "ashlineldridge/gptel-extras")
+  :bind
+  ("C-z C-z" . gptel-extras-chat)
+  ("C-z SPC" . gptel-extras-select-model))
 
 (use-package gptel-quick
   :ensure (:host github :repo "karthink/gptel-quick")
