@@ -41,8 +41,6 @@ emacs-clean:
     rm -rf emacs/var/eln-cache
     rm -rf emacs/eln-cache
     rm -rf emacs/var/tree-sitter
-    @echo
-    @echo "Open Emacs and then M-x my/treesit-auto-install-all"
 
 brew-dump:
     @echo ">>> Dumping list of Brew packages"
