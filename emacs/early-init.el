@@ -11,16 +11,15 @@
 
 ;;; Code:
 
-;; Defer garbage collection until after init and restore normality below.
-;; See also: https://emacsconf.org/2023/talks/gc.
-(setq gc-cons-threshold most-positive-fixnum)
+(defun my/emacs-restore-gc ()
+  "Restore default GC settings."
+  (setq gc-cons-threshold (* 64 1024 1024)))
 
-;; Keep track of start up time and restore sensible GC settings.
-(add-hook 'emacs-startup-hook
-          (lambda ()
-            (message "Emacs ready in %s seconds with %d garbage collections."
-                     (emacs-init-time "%.2f") gcs-done)
-            (setq gc-cons-threshold (* 16 1024 1024))))
+;; Restore GC settings after init. See:
+;; - https://github.com/jamescherti/minimal-emacs.d
+;; - https://emacsconf.org/2023/talks/gc
+(setq gc-cons-threshold most-positive-fixnum)
+(add-hook 'emacs-startup-hook #'my/emacs-restore-gc 101)
 
 ;; Change the default native compilation cache directory.
 ;; See https://github.com/emacscollective/no-littering#native-compilation-cache.
