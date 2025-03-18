@@ -1699,6 +1699,8 @@
 
 (use-package treesit-auto
   :preface
+  (declare-function treesit-auto-add-to-auto-mode-alist "treesit-auto")
+  (declare-function treesit-auto--build-treesit-source-alist "treesit-auto")
   (defun my/treesit-auto-maybe-install ()
     "Install Tree-sitter grammars if necessary."
     (interactive)
@@ -1707,17 +1709,20 @@
       (when (not (file-directory-p new-dir))
         (delete-directory old-dir t)
         (let ((treesit-language-source-alist (treesit-auto--build-treesit-source-alist)))
-          (mapcar #'treesit-install-language-grammar treesit-auto-langs))
+          (mapc #'treesit-install-language-grammar treesit-auto-langs))
         (rename-file old-dir new-dir)
         (message "Tree-sitter grammars have been installed"))))
   :custom
   (treesit-auto-install 'prompt)
   (treesit-auto-langs '(bash dockerfile go gomod proto python rust))
+  :hook
+  (elpaca-after-init . global-treesit-auto-mode)
+  ;; Perform an idle wait before installing grammars (when necessary) to prevent
+  ;; locking up on a blank screen while waiting for installation.
   :defer 1
   :config
   ;; Add all languages in `treesit-auto-langs' except Rust which uses Rustic.
   (treesit-auto-add-to-auto-mode-alist '(bash dockerfile go gomod proto python))
-  (global-treesit-auto-mode)
   (my/treesit-auto-maybe-install))
 
 (use-package treesit-fold

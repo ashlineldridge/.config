@@ -23,6 +23,17 @@
 (defvar elpaca-use-package-by-default)
 (defvar no-littering)
 
+(defun my/emacs-startup-statistics ()
+  "Print Emacs startup statistics."
+  (message "Emacs startup: boot: %.2fs, init: %.2fs, packages: %d, sweeps: %d"
+           (time-to-seconds (time-since before-init-time))
+           (float-time (time-subtract elpaca-after-init-time before-init-time))
+           (length (elpaca--queued))
+           gcs-done))
+
+;; Print startup statistics.
+(add-hook 'emacs-startup-hook #'my/emacs-startup-statistics 100)
+
 ;; Elpaca loads Magit so this needs to be set here.
 (defvar magit-define-global-key-bindings nil)
 
@@ -86,16 +97,5 @@
 
 ;; Block until current queue is processed.
 (elpaca-wait)
-
-(defun my/emacs-startup-statistics ()
-  "Print Emacs startup statistics."
-  (message "Emacs startup: boot: %.2fs, init: %.2fs, packages: %d, sweeps: %d"
-           (time-to-seconds (time-since before-init-time))
-           (float-time (time-subtract elpaca-after-init-time before-init-time))
-           (length (elpaca--queued))
-           gcs-done))
-
-;; Print startup statistics.
-(add-hook 'emacs-startup-hook #'my/emacs-startup-statistics)
 
 ;;; bootstrap.el ends here
