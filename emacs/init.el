@@ -3122,6 +3122,8 @@ specified then a task category will be determined by the item's tags."
    ("C-z o" . gptel-org-set-topic)
    ("C-z O" . gptel-org-set-properties))
   :config
+  ;; Load extras package to configure directives.
+  (require 'gptel-extras)
   ;; Register additional backends.
   (gptel-make-anthropic "Claude-Sonnet"
     :stream t
@@ -3135,7 +3137,7 @@ specified then a task category will be determined by the item's tags."
     :key gptel-api-key
     :stream t))
 
-;; Hide away wrapper cruft in separate package.
+;; Hide cruft in separate package.
 (use-package gptel-extras
   :ensure (:host github :repo "ashlineldridge/gptel-extras")
   :bind
