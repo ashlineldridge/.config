@@ -988,8 +988,8 @@
 
 ;; Provides the super useful `wdired-change-to-wdired-mode' command.
 (use-package wdired
-  :ensure nil
   :after dired
+  :ensure nil
   :bind
   (:map dired-mode-map
    ;; Use same keybinding as `wgrep-change-to-wgrep-mode'.
@@ -1714,7 +1714,7 @@
         (message "Tree-sitter grammars have been installed"))))
   :custom
   (treesit-auto-install 'prompt)
-  (treesit-auto-langs '(bash dockerfile go gomod proto python rust))
+  (treesit-auto-langs '(bash dockerfile go gomod javascript json proto python rust))
   :hook
   (elpaca-after-init . global-treesit-auto-mode)
   ;; Perform an idle wait before installing grammars (when necessary) to prevent
@@ -1722,7 +1722,7 @@
   :defer 1
   :config
   ;; Add all languages in `treesit-auto-langs' except Rust which uses Rustic.
-  (treesit-auto-add-to-auto-mode-alist '(bash dockerfile go gomod proto python))
+  (treesit-auto-add-to-auto-mode-alist '(bash dockerfile go gomod javascript json proto python))
   (my/treesit-auto-maybe-install))
 
 (use-package treesit-fold
@@ -1730,7 +1730,7 @@
   (:map treesit-fold-mode-map
    ("C-<tab>" . treesit-fold-toggle))
   :hook
-  ((go-ts-mode rust-ts-mode) . treesit-fold-mode))
+  (elpaca-after-init . global-treesit-fold-mode))
 
 ;;;;;; Eglot
 
