@@ -3010,8 +3010,10 @@ specified then a task category will be determined by the item's tags."
 
 (use-package time
   :ensure nil
+  :hook
+  (elpaca-after-init . display-time-mode)
   :custom
-  ;; Run `display-time-mode' to see time in mode line (currently disabled).
+  ;; See time in mode line when `display-time-mode' is enabled.
   (display-time-format "%a %d %b, %H:%M")
   (display-time-default-load-average nil)
   ;; Timezones to be displayed by `world-clock'. Zones names can be found
