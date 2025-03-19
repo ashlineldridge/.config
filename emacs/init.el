@@ -142,8 +142,7 @@
   :if (file-exists-p "~/dev/home/smol")
   :load-path "~/dev/home/smol"
   :hook
-  ;; Initialize after Ace Window to take over `mode-line-format'.
-  (ace-window-display-mode . smol-init)
+  (elpaca-after-init . smol-init)
   :custom
   (smol-string-truncate-length 80))
 
@@ -316,23 +315,17 @@
 (use-package ace-window
   :defines (embark-buffer-map embark-file-map embark-bookmark-map)
   :preface
-  (declare-function aw-delete-window "ace-window")
-  (declare-function aw-switch-to-window "ace-window")
-  (declare-function aw-window-list "ace-window")
+  (defun my/ace-switch-buffer (window)
+    "Ace window action to select buffer in WINDOW."
+    (with-selected-window window
+      (consult-buffer)))
 
-  (defun my/ace-window ()
-    "Custom Ace window command that modifies the cursor during selection."
-    (interactive)
-    (blink-cursor-suspend)
-    (let ((orig (face-attribute 'cursor :background)))
-      (set-cursor-color "cyan")
-      (unwind-protect
-          (aw-select nil #'aw-switch-to-window)
-        (set-cursor-color orig)
-        (blink-cursor-check))))
+  (defun my/ace-kill-buffer (window)
+    "Ace window action to kill buffer in WINDOW."
+    (kill-buffer (window-buffer window)))
 
-  (defun my/ace-delete-window-and-buffer (window)
-    "Ace window action to delete window and buffer."
+  (defun my/ace-kill-buffer-delete-window (window)
+    "Ace window action to delete WINDOW and kill its buffer."
     (aw-delete-window window t))
 
   (defmacro my/define-ace-embark-action (name map fn)
@@ -351,41 +344,30 @@
   (my/define-ace-embark-action my/ace-embark-file embark-file-map find-file)
   (my/define-ace-embark-action my/ace-embark-bookmark embark-bookmark-map bookmark-jump)
 
-  :hook
-  ;; Run `ace-window-display-mode' so that overlays aren't shown. Smol will
-  ;; recognize this mode and display the window ID in the mode line.
-  (elpaca-after-init . ace-window-display-mode)
   :bind
-  ("M-o" . my/ace-window)
+  ("M-o" . ace-window)
   :custom
-  (aw-scope 'frame)
-  (aw-background nil)
-  (aw-display-mode-overlay nil)
-  (aw-minibuffer-flag nil)
-  ;; Dispatch settings to allow jumping from the minibuffer to a single window.
-  (aw-dispatch-always nil)
+  (aw-scope 'global)
+  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (aw-background t)
+  (aw-display-mode-overlay t)
   (aw-dispatch-when-more-than 1)
-  ;; Ignore the minibuffer and use `switch-to-minibuffer' instead.
-  (aw-ignored-buffers '(minibuffer-mode))
-  :commands aw-select
+  :custom-face
+  (aw-leading-char-face ((t (:bold t :height 1.0))))
   :config
   ;; Custom dispatch menu.
   (setq aw-dispatch-alist
-        '((?k aw-delete-window "Kill Window")
-          (?K my/ace-delete-window-and-buffer "Kill Window and Buffer")
-          (?. delete-other-windows "Kill Other Windows")
-          (?s aw-swap-window "Swap Window")
-          (?m aw-move-window "Move Window")
+        '((?0 aw-delete-window "Delete Window")
+          (?1 delete-other-windows "Delete Other Windows")
+          (?2 aw-split-window-vert "Split Vertically")
+          (?3 aw-split-window-horz "Split Horizontally")
+          (?- my/ace-kill-buffer "Kill Buffer")
+          (?_ my/ace-kill-buffer-delete-window "Kill Buffer and Delete Window")
+          (?b my/ace-switch-buffer "Switch Buffer")
           (?c aw-copy-window "Copy Window")
-          (?_ aw-split-window-vert "Split Vertically")
-          (?| aw-split-window-horz "Split Horizontally")
-          (?? aw-show-dispatch-help)))
-
-  ;; Advise the `aw-window-list' function to forcibly enable `aw-ignore-on'.
-  ;; See: https://github.com/abo-abo/ace-window/issues/249.
-  (advice-add #'aw-window-list :around (lambda (fn &rest args)
-                                         (let ((aw-ignore-on t))
-                                           (apply fn args)))))
+          (?w aw-swap-window "Swap Window")
+          (?m aw-move-window "Move Window")
+          (?? aw-show-dispatch-help))))
 
 ;;;;; Window History
 
@@ -510,6 +492,10 @@
   ("M-O M-K" . delete-frame)
   ("M-O M-U" . undelete-frame)
   :hook (elpaca-after-init . undelete-frame-mode))
+
+;; I would like to use the posframe for displaying the Ace Window indicator
+;; with `ace-window-posframe-mode' but it looks wacky with multiple frames.
+(use-package posframe :disabled)
 
 ;;;;; Transient
 
@@ -836,7 +822,6 @@
   (defun my/pulsar-pulse-line (&optional _)
     "Line pulsing function intended to be used as after advice."
     (pulsar-pulse-line))
-
   :hook (elpaca-after-init . pulsar-global-mode)
   ;; Some functionality is better accessed via hooks than by registering
   ;; functions in `pulsar-pulse-functions'.
@@ -851,6 +836,7 @@
   :config
   ;; Add extra functions that should trigger Pulsar. I'm not using
   ;; #'fn syntax here to avoid needing all the forward declarations.
+  (add-to-list 'pulsar-pulse-functions 'ace-window)
   (add-to-list 'pulsar-pulse-functions 'avy-goto-line)
   (add-to-list 'pulsar-pulse-functions 'beginning-of-buffer)
   (add-to-list 'pulsar-pulse-functions 'beginning-of-defun)
@@ -874,14 +860,10 @@
   (add-to-list 'pulsar-pulse-functions 'xref-find-definitions)
   (add-to-list 'pulsar-pulse-functions 'xref-go-back)
   (add-to-list 'pulsar-pulse-functions 'xref-go-forward)
-
   ;; Functions called by Embark need to be advised.
   (with-eval-after-load 'embark
     (advice-add 'embark-next-symbol :after 'my/pulsar-pulse-line)
-    (advice-add 'embark-previous-symbol :after 'my/pulsar-pulse-line))
-  ;; Pulse line after switching windows with `ace-window'.
-  (with-eval-after-load 'ace-window
-    (advice-add 'aw-switch-to-window :after 'my/pulsar-pulse-line)))
+    (advice-add 'embark-previous-symbol :after 'my/pulsar-pulse-line)))
 
 (use-package rainbow-mode)
 
