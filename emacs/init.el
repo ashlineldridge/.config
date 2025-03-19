@@ -619,10 +619,11 @@
     "Show long lines as truncated in the current buffer."
     (setq-local truncate-lines t))
 
-  (defun my/minibuffer-history-eol (_)
-    "Move point to the end of line when called interactively."
-    (when (called-interactively-p)
-      (end-of-line)))
+  ;; TODO: Trialing without this.
+  ;; (defun my/minibuffer-history-eol (_)
+  ;;   "Move point to the end of line when called interactively."
+  ;;   (when (called-interactively-p)
+  ;;     (end-of-line)))
 
   :custom
   (indent-tabs-mode nil)
@@ -671,8 +672,9 @@
   ;; Don't yank face properties (e.g. prevents pasting colors).
   (add-to-list 'yank-excluded-properties 'face)
   ;; Move point to the end of the line when navigating minibuffer history.
-  (advice-add #'next-history-element :after #'my/minibuffer-history-eol)
-  (advice-add #'previous-history-element :after #'my/minibuffer-history-eol))
+  ;; (advice-remove #'next-history-element #'my/minibuffer-history-eol)
+  ;; (advice-remove #'previous-history-element #'my/minibuffer-history-eol)
+  )
 
 ;;;;; Text
 
