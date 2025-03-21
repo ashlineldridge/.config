@@ -11,15 +11,22 @@
 
 ;;; Code:
 
-(defun my/emacs-restore-gc ()
-  "Restore default GC settings."
-  (setq gc-cons-threshold (* 64 1024 1024)))
+;; Init color should be set to the background color of the theme. E.g. for an
+;; an `ef-themes' theme, use the value of 'bg-main from the relevant palette
+;; variable (e.g. `ef-dark-palette').
+(defvar my/init-color "#232025")
 
-;; Restore GC settings after init. See:
+;; Increase GC threshold during init and then drop it after. See:
 ;; - https://github.com/jamescherti/minimal-emacs.d
 ;; - https://emacsconf.org/2023/talks/gc
+(defvar my/gc-cons-threshold (* 64 1024 1024))
 (setq gc-cons-threshold most-positive-fixnum)
-(add-hook 'emacs-startup-hook #'my/emacs-restore-gc 101)
+
+(defun my/emacs-init-gc ()
+  "Init GC settings after startup."
+  (setq gc-cons-threshold my/gc-cons-threshold))
+
+(add-hook 'emacs-startup-hook #'my/emacs-init-gc 101)
 
 ;; Change the default native compilation cache directory.
 ;; See https://github.com/emacscollective/no-littering#native-compilation-cache.
@@ -62,12 +69,11 @@
                 (height . (text-pixels . 600)))
               default-frame-alist))
 
-;; Blank out the screen to prevent the initial flash of white light which
-;; doesn't look so great when using a dark theme (which is most of the time).
+;; Blank out the screen to prevent the initial flash of white light.
 (fringe-mode 0)
 (setq mode-line-format nil)
-(set-face-attribute 'default nil :background "#000000" :foreground "#ffffff")
-(set-face-attribute 'mode-line nil :background "#000000" :foreground "#ffffff" :box 'unspecified)
+(set-face-attribute 'default nil :background my/init-color :foreground "#ffffff")
+(set-face-attribute 'mode-line nil :background my/init-color :foreground "#ffffff" :box 'unspecified)
 ;; Without the following hook, new frames will retain the blanked out features set above.
 (add-hook 'after-make-frame-functions
           (lambda (&rest _)

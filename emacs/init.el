@@ -22,7 +22,7 @@
 (use-package theme
   :ensure nil
   :preface
-  (defvar my/default-theme 'ef-dark)
+  (defvar my/default-theme 'ef-dream)
   (defvar my/variable-pitch-headings
     '((1 . (variable-pitch semibold 1.2))
       (t . (variable-pitch semibold 1.1))))
