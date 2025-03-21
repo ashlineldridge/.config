@@ -768,16 +768,18 @@ When ARG is non-nil, the working directory can be selected."
     (yank))
 
   :bind
-  (("M-g c" . avy-goto-char-timer)
+  (("M-j" . avy-goto-word-1)
+   ("M-J" . avy-goto-char-in-line)
+   ("M-g c" . avy-goto-char-timer)
+   ("M-g C" . avy-goto-char-in-line)
    ("M-g l" . avy-goto-line)
    ("M-g L" . my/avy-goto-end-of-line)
    ("M-g w" . avy-goto-word-1)
-   ("M-g W" . avy-goto-char-in-line)
    :map isearch-mode-map
+   ("M-j" . avy-isearch)
    ("M-g" . avy-isearch))
-
   :custom
-  (avy-all-windows t) ;; Alternatively, use 'all-frames.
+  (avy-all-windows 'all-frames)
   (avy-single-candidate-jump nil)
   (avy-timeout-seconds 0.3)
   (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
@@ -789,7 +791,6 @@ When ARG is non-nil, the working directory can be selected."
      (?y . my/avy-action-yank)
      (?z . avy-action-zap-to-char)
      (?x . avy-action-kill-stay)))
-
   :config
   (eldoc-add-command-completions "avy-goto-"))
 
