@@ -616,6 +616,18 @@
     "Show long lines as truncated in the current buffer."
     (setq-local truncate-lines t))
 
+  (defun my/async-shell-command (arg)
+    "Version of `async-shell-command' that always creates new buffers.
+When ARG is non-nil, the working directory can be selected."
+    (interactive "P")
+    (let ((default-directory (if (or arg (not default-directory))
+                                 (read-directory-name "Working directory: ")
+                               default-directory)))
+      (async-shell-command
+       (read-shell-command
+        (concat (my/abbreviate-file-name
+                 (string-remove-suffix "/" default-directory) 30) " $ "))
+       (generate-new-buffer shell-command-buffer-name-async))))
 
   :custom
   (indent-tabs-mode nil)
@@ -626,14 +638,15 @@
   (mark-ring-max 16)
   (global-mark-ring-max 16)
   (set-mark-command-repeat-pop t)
-  (shell-command-prompt-show-cwd t)
-  (async-shell-command-buffer 'rename-buffer)
+  (shell-command-prompt-show-cwd nil)
+  (async-shell-command-buffer 'confirm-new-buffer)
   ;; Don't show M-x commands that don't work in the current mode.
   (read-extended-command-predicate #'command-completion-default-include-p)
   :bind
   ([remap kill-ring-save] . my/kill-ring-save)
   ([remap keyboard-quit] . my/keyboard-quit-dwim)
   ("ESC ESC" . keyboard-escape-quit) ;; 3rd ESC is unnecessary.
+  ("M-&" . my/async-shell-command)
   ("M-*" . my/expand-line)
   ("M-c" . capitalize-dwim)
   ("M-l" . downcase-dwim)
@@ -899,6 +912,24 @@
       (save-buffer))
     (kill-current-buffer))
 
+  (defun my/abbreviate-file-name (path max-len)
+    "Return an abbreviated version of PATH aiming for <= MAX-LEN characters."
+    (let* ((parts (split-string (abbreviate-file-name path) "/"))
+           (len (+ (1- (length parts)) (cl-reduce '+ parts :key 'length)))
+           (str ""))
+      (while (and (> len max-len)
+                  (cdr parts))
+        (setq len (- len (1- (length (car parts)))))
+        (setq parts (cdr parts))
+        (setq str (concat str (cond ((= 0 (length (car parts))) "/")
+                                    ((= 1 (length (car parts)))
+                                     (concat (car parts) "/"))
+                                    (t
+                                     (if (string= "." (string (elt (car parts) 0)))
+                                         (concat (substring (car parts) 0 2) "/")
+                                       (string (elt (car parts) 0) ?/)))))))
+      (concat str (cl-reduce (lambda (a b) (concat a "/" b)) parts))))
+
   :bind
   ;; Shorter save/quit buffer bindings.
   ("M-'" . save-buffer)
@@ -1008,8 +1039,15 @@
     (project-remember-projects-under "~/dev/home")
     (project-remember-projects-under "~/dev/work"))
 
+  (defun my/project-async-shell-command (arg)
+    "Version of `project-async-shell-command' that always creates new buffers.
+When ARG is non-nil, the working directory can be selected."
+    (interactive "P")
+    (let ((default-directory (my/project-current-root)))
+      (my/async-shell-command arg)))
+
   :bind
-  ("C-M-&" . project-async-shell-command)
+  ("C-M-&" . my/project-async-shell-command)
   ("C-x p j" . project-dired)
   ("C-x p u" . my/project-update-list)
   :custom
@@ -1021,7 +1059,7 @@
      (magit-project-status "Magit" ?g)
      (project-vc-dir "VC" ?v)
      (project-eshell "Eshell" ?e)
-     (project-async-shell-command "Async shell" ?&))))
+     (my/project-async-shell-command "Command" ?&))))
 
 ;;;; Minibuffer
 
@@ -1557,7 +1595,7 @@
    ;; Allow Embark to show keybindings under C-h as configured below.
    ("C-h C-h" . nil)
    :map embark-general-map
-   ("&" . async-shell-command)
+   ("&" . my/async-shell-command)
    :map minibuffer-local-map
    ("M-." . my/embark-force-preview))
 
@@ -1588,9 +1626,9 @@
   (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
   (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
   (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
-  (add-to-list 'embark-target-injection-hooks '(async-shell-command embark--ignore-target))
-  ;; Configure `async-shell-command' to run from directory associated with the candidate.
-  (setf (alist-get #'async-shell-command embark-around-action-hooks) '(embark--cd)))
+  (add-to-list 'embark-target-injection-hooks '(my/async-shell-command embark--ignore-target))
+  ;; Configure `my/async-shell-command' to run from directory associated with the candidate.
+  (setf (alist-get #'my/async-shell-command embark-around-action-hooks) '(embark--cd)))
 
 (use-package embark-consult)
 
@@ -2450,29 +2488,6 @@
     ;; This is compatible with the default `eshell-prompt-regexp'.
     (concat (my/abbreviate-file-name (eshell/pwd) 30)
             (if (= (user-uid) 0) " # " " $ ")))
-
-  ;; Adapted from https://github.com/zwild/eshell-prompt-extras/blob/c2078093323206b91a1b1f5786d79faa00b76be7/eshell-prompt-extras.el#L213.
-  (defun my/abbreviate-file-name (path max-len)
-    "Return an abbreviated version of PATH aiming for <= MAX-LEN characters."
-    (let* ((components (split-string (abbreviate-file-name path) "/"))
-           (len (+ (1- (length components))
-                   (cl-reduce '+ components :key 'length)))
-           (str ""))
-      (while (and (> len max-len)
-                  (cdr components))
-        (setq str (concat str
-                          (cond ((= 0 (length (car components))) "/")
-                                ((= 1 (length (car components)))
-                                 (concat (car components) "/"))
-                                (t
-                                 (if (string= "."
-                                              (string (elt (car components) 0)))
-                                     (concat (substring (car components) 0 2)
-                                             "/")
-                                   (string (elt (car components) 0) ?/)))))
-              len (- len (1- (length (car components))))
-              components (cdr components)))
-      (concat str (cl-reduce (lambda (a b) (concat a "/" b)) components))))
 
   (defun my/eshell-sink (&optional id)
     "Return a reference to a buffer for sinking Eshell command output.
