@@ -3116,7 +3116,8 @@ specified then a task category will be determined by the item's tags."
 
 ;; Hide cruft in separate package.
 (use-package gptel-extras
-  :ensure (:host github :repo "ashlineldridge/gptel-extras")
+  :if (file-exists-p "~/dev/home/gptel-extras")
+  :load-path "~/dev/home/gptel-extras"
   :bind
   ("C-z C-z" . gptel-extras-chat)
   ("C-z SPC" . gptel-extras-select-model))
