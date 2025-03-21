@@ -67,9 +67,9 @@
       :default-weight semibold
       :fixed-pitch-weight semibold
       :variable-pitch-weight semibold
-      :mode-line-active-height 130
-      :mode-line-inactive-height 130
-      :line-number-height 120)
+      :mode-line-active-height 140
+      :mode-line-inactive-height 140
+      :line-number-height 130)
      (t
       :default-family ,my/fixed-family
       :default-height 130
@@ -82,11 +82,11 @@
       :variable-pitch-weight regular
       :mode-line-active-family ,my/fixed-family
       :mode-line-inactive-family ,my/fixed-family
-      :mode-line-active-height 120
-      :mode-line-inactive-height 120
+      :mode-line-active-height 130
+      :mode-line-inactive-height 130
       :line-number-family ,my/fixed-family
       :line-number-slant italic
-      :line-number-height 110
+      :line-number-height 120
       :bold-weight bold
       :italic-slant italic))))
 
@@ -174,10 +174,10 @@
   :custom
   (spacious-padding-subtle-mode-line nil)
   (spacious-padding-widths
-   '(:internal-border-width 20
+   '(:internal-border-width 25
+     :right-divider-width 25
      :fringe-width 8
-     :right-divider-width 20
-     :mode-line-width 2)))
+     :mode-line-width 5)))
 
 ;;;;; Lines and Columns
 
