@@ -1079,9 +1079,14 @@ When ARG is non-nil, the working directory can be selected."
   :ensure (:files (:defaults "extensions/*.el"))
   :bind
   (:map vertico-map
-   ;; Satisfy isearch muscle memory.
-   ("C-s" . vertico-next)
-   ("C-r" . vertico-previous))
+   ;; Support pagination with usual keys.
+   ("M-v" . vertico-scroll-down)
+   ("C-v" . vertico-scroll-up)
+   ("<prior>" . vertico-scroll-down)
+   ("<next>" . vertico-scroll-up)
+   ;; Override pixel scrolling keybindings.
+   ("M-S-<up>" . vertico-next)
+   ("M-S-<down>" . vertico-next))
   :hook (elpaca-after-init . vertico-mode)
   :custom
   (vertico-count 16)
