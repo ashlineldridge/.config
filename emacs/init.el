@@ -2163,6 +2163,9 @@
 
 (use-package python
   :ensure nil
+  :mode
+  ;; Also use Python mode for Bazel and Starlark files.
+  ("\\.\\(bazel\\|star\\)\\'" . python-ts-mode)
   :init
   (setq python-shell-interpreter "python3"))
 
@@ -2196,14 +2199,6 @@
                            (?e "Enum" my/imenu-enum-face)
                            (?m "Message" my/imenu-struct-face)
                            (?s "Service" my/imenu-impl-face))))))
-
-;;;;;; Bazel
-
-(use-package bazel
-  :mode
-  ("\\.BUILD\\'" . bazel-mode)
-  ("\\.bazel\\'" . bazel-mode)
-  ("\\.star\\'" . bazel-starlark-mode))
 
 ;;;;;; Just (Task Runner)
 
