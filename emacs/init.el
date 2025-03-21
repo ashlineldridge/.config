@@ -298,7 +298,7 @@
      ;; Below current window in a regular window.
      ("CAPTURE-.*\\.org"
       (display-buffer-below-selected)
-      (window-height . 10))
+      (window-height . 16))
      ;; Below current window in dedicated side window with no mode line.
      ("\\*\\(Org \\(Select\\|Note\\)\\|Agenda Commands\\)\\*"
       (display-buffer-in-side-window)
@@ -1084,7 +1084,7 @@ When ARG is non-nil, the working directory can be selected."
    ("C-r" . vertico-previous))
   :hook (elpaca-after-init . vertico-mode)
   :custom
-  (vertico-count 10)
+  (vertico-count 16)
   (vertico-count-format '("%-6s " . "%s/%s"))
   (vertico-resize nil))
 
