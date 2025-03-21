@@ -334,7 +334,7 @@
        (defun ,name ()
          ,(format "Embark action to switch windows and then call `%s'." fn)
          (interactive)
-         (my/ace-window)
+         (ace-select-window)
          (call-interactively #',fn))
        (with-eval-after-load 'embark
          (bind-key "M-o" #',name ,map))))
@@ -665,9 +665,6 @@ When ARG is non-nil, the working directory can be selected."
   ("M-S-<right>" . end-of-buffer)
   ("C-M-<left>" . beginning-of-buffer-other-window)
   ("C-M-<right>" . end-of-buffer-other-window)
-  ;; Special keybinding to switch to the minibuffer as I have configured
-  ;; Ace Window to ignore the minibuffer window.
-  ("C-M-O" . switch-to-minibuffer)
   ("C-c x SPC" . delete-trailing-whitespace)
   ("C-c x l" . toggle-truncate-lines)
   :hook
