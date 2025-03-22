@@ -120,7 +120,10 @@
 (use-package nerd-icons)
 
 (use-package nerd-icons-ibuffer
-  :hook (ibuffer-mode . nerd-icons-ibuffer-mode))
+  :after ibuffer
+  :hook (ibuffer-mode . nerd-icons-ibuffer-mode)
+  :custom
+  (nerd-icons-ibuffer-formats ibuffer-formats))
 
 ;; Enables Vertico icons.
 (use-package nerd-icons-completion
@@ -880,13 +883,29 @@ When ARG is non-nil, the working directory can be selected."
 
 ;;;; Buffer Management
 
-;; Use `ibuffer' as a replacement for `list-buffers'.
 (use-package ibuffer
   :ensure nil
   :bind
-  (("C-x C-b" . ibuffer)
-   :map ibuffer-mode-map
-   ("M-o" . nil)))
+  ("C-x C-b" . ibuffer)
+  :custom
+  (ibuffer-show-empty-filter-groups nil)
+  (ibuffer-formats
+   '(;; Default format.
+     (mark vc-status-mini
+           " " (icon 2 2)
+           " " (name 40 40 :left :elide)
+           " " filename-and-process+)
+     ;; Detailed format.
+     (mark modified read-only vc-status-mini
+           " " (icon 2 2)
+           " " (name 20 30 :left :elide)
+           " " (size-h 10 -1 :right)
+           " " (mode+ 16 16 :left :elide)
+           " " filename-and-process+)))
+  :config
+  (setq nerd-icons-ibuffer-formats ibuffer-formats)
+  (dolist (key '("M-g" "M-j" "M-o" "M-s"))
+    (define-key ibuffer-mode-map (kbd key) nil)))
 
 (use-package ibuffer-vc
   :after ibuffer
