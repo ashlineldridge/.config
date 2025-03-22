@@ -318,6 +318,9 @@
 (use-package ace-window
   :defines (embark-buffer-map embark-file-map embark-bookmark-map)
   :preface
+  (declare-function ace-select-window "ace-window")
+  (declare-function aw-delete-window "ace-window")
+
   (defun my/ace-switch-buffer (window)
     "Ace window action to select buffer in WINDOW."
     (with-selected-window window
@@ -888,22 +891,28 @@ When ARG is non-nil, the working directory can be selected."
   :bind
   ("C-x C-b" . ibuffer)
   :custom
-  (ibuffer-show-empty-filter-groups nil)
   (ibuffer-formats
    '(;; Default format.
      (mark vc-status-mini
            " " (icon 2 2)
            " " (name 40 40 :left :elide)
            " " filename-and-process+)
-     ;; Detailed format.
+     ;; More detailed format.
      (mark modified read-only vc-status-mini
            " " (icon 2 2)
-           " " (name 20 30 :left :elide)
-           " " (size-h 10 -1 :right)
+           " " (name 30 30 :left :elide)
+           " " (size-h 10 10 :right)
            " " (mode+ 16 16 :left :elide)
            " " filename-and-process+)))
+  (ibuffer-saved-filter-groups
+   '(("default"
+      ("git" (or (name . "^magit") (name . "^*vc-")))
+      ("shell" (or (mode . eshell-mode) (mode . vterm-mode)))
+      ("command" (mode . shell-command-mode))
+      ("dired" (mode . dired-mode))
+      ("org" (or (mode . org-mode) (mode . org-agenda-mode))))))
+  (ibuffer-show-empty-filter-groups nil)
   :config
-  (setq nerd-icons-ibuffer-formats ibuffer-formats)
   (dolist (key '("M-g" "M-j" "M-o" "M-s"))
     (define-key ibuffer-mode-map (kbd key) nil)))
 
