@@ -2670,7 +2670,7 @@ with a numbered suffix."
   (defvar my/org-recurring-file (expand-file-name "recurring.org" my/org-agenda-dir))
   (defvar my/org-someday-file (expand-file-name "someday.org" my/org-agenda-dir))
   (defvar my/org-archive-file (expand-file-name "archive.org" my/org-agenda-dir))
-  (defvar my/org-journal-file (expand-file-name "journal.org" my/org-agenda-dir))
+  (defvar my/org-journal-file (expand-file-name "journal.org" my/org-other-dir))
   (defvar my/org-bookmarks-file (expand-file-name "bookmarks.org" my/org-other-dir))
   (defvar my/org-coffee-file (expand-file-name "coffee.org" my/org-other-dir))
 
@@ -2720,8 +2720,7 @@ with a numbered suffix."
      ,my/org-personal-file
      ,my/org-recurring-file
      ,my/org-someday-file
-     ,my/org-archive-file
-     ,my/org-journal-file))
+     ,my/org-archive-file))
   (org-auto-align-tags nil)
   (org-blank-before-new-entry
    '((heading . nil)
@@ -2943,14 +2942,13 @@ specified then a task category will be determined by the item's tags."
      ("b" "Bookmark" entry
       (file+olp+datetree ,my/org-bookmarks-file "Bookmarks")
       "* %(org-cliplink-capture)%?")
-     ("j" "Journal" entry
-      (file+headline ,my/org-journal-file "Journal")
-      "* %T %?")
+     ("j" "Journal" item
+      (file+olp+datetree ,my/org-journal-file "Journal"))
      ("c" "Coffee Log" entry
       (file+olp+datetree ,my/org-coffee-file "Coffee Log" "Log")
       ,(concat
 	"* 6%?:00 AM\n"
-        "- Beans: Use org-store-link (C-c o l) then org-insert-link (C-c C-l)\n"
+        "- Beans: Use org-id-copy then org-insert-link\n"
         "- Grind: KM47C+PO @ 3.0.0\n"
         "- Water: Brisbane tap @ 95°C\n"
         "- Brew method: V60 4:6\n"
