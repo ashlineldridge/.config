@@ -520,11 +520,20 @@
 (use-package breadcrumb
   :preface
   (declare-function breadcrumb-local-mode "breadcrumb")
-  (defun my/maybe-show-breadcrumb ()
+  (defun my/breadcrumb-maybe-show ()
     "Enable `breadcrumb-local-mode' for non-minibuffer buffers."
     (when (not (minibufferp))
       (breadcrumb-local-mode 1)))
-  :hook (after-change-major-mode . my/maybe-show-breadcrumb)
+
+  ;; Some package like `ibuffer' insist on modifying the header line.
+  ;; This function provides around advice for restoring it.
+  (defun my/breadcrumb-restore (fn &rest args)
+    "Around advice to restore the breadcrumb header line."
+    (let ((old header-line-format))
+      (apply fn args)
+      (setq header-line-format old)))
+  :hook
+  (after-change-major-mode . my/breadcrumb-maybe-show)
   :custom
   (breadcrumb-project-max-length 0.4)
   (breadcrumb-imenu-max-length 0.4))
@@ -894,6 +903,8 @@ When ARG is non-nil, the working directory can be selected."
 
 (use-package ibuffer
   :ensure nil
+  :preface
+  (declare-function ibuffer-update "ibuffer")
   :bind
   ("C-x C-b" . ibuffer)
   :custom
@@ -912,13 +923,17 @@ When ARG is non-nil, the working directory can be selected."
            " " filename-and-process+)))
   (ibuffer-saved-filter-groups
    '(("default"
-      ("git" (or (name . "^magit") (name . "^*vc-")))
-      ("shell" (or (mode . eshell-mode) (mode . vterm-mode)))
-      ("command" (mode . shell-command-mode))
-      ("dired" (mode . dired-mode))
-      ("org" (or (mode . org-mode) (mode . org-agenda-mode))))))
+      ("Git" (or (name . "^magit") (name . "^*vc-")))
+      ("Shell" (or (mode . eshell-mode) (mode . vterm-mode)))
+      ("Command" (mode . shell-command-mode))
+      ("Dired" (mode . dired-mode))
+      ("Org" (or (mode . org-mode) (mode . org-agenda-mode))))))
   (ibuffer-show-empty-filter-groups nil)
+  (ibuffer-use-header-line nil)
   :config
+  ;; Restore breadcrumb after ibuffer after messes with it.
+  (advice-add #'ibuffer-update :around #'my/breadcrumb-restore)
+  ;; Unbind clashing keybindings.
   (dolist (key '("M-g" "M-j" "M-o" "M-s"))
     (define-key ibuffer-mode-map (kbd key) nil)))
 
