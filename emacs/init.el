@@ -518,7 +518,13 @@
 ;;;;; Breadcrumb
 
 (use-package breadcrumb
-  :hook (after-change-major-mode . breadcrumb-local-mode)
+  :preface
+  (declare-function breadcrumb-local-mode "breadcrumb")
+  (defun my/maybe-show-breadcrumb ()
+    "Enable `breadcrumb-local-mode' for non-minibuffer buffers."
+    (when (not (minibufferp))
+      (breadcrumb-local-mode 1)))
+  :hook (after-change-major-mode . my/maybe-show-breadcrumb)
   :custom
   (breadcrumb-project-max-length 0.4)
   (breadcrumb-imenu-max-length 0.4))
