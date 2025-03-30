@@ -281,7 +281,6 @@
    ("M--" . shrink-window-horizontally)
    ("M-+" . enlarge-window)
    ("M-_" . shrink-window))
-
   :custom
   (even-window-sizes nil)
   ;; Prefer splitting by width and only when the window is quite wide.
@@ -318,27 +317,73 @@
 (use-package ace-window
   :defines (embark-buffer-map embark-file-map embark-bookmark-map)
   :preface
-  (declare-function ace-select-window "ace-window")
-  (declare-function aw-delete-window "ace-window")
-
   (defun my/ace-switch-buffer (window)
     "Ace window action to select buffer in WINDOW."
+    (let ((origin-window (selected-window)))
+      (select-window window)
+      (unwind-protect
+          (consult-buffer)
+        (select-window origin-window))))
+
+  (defun my/ace-bury-buffer (window)
+    "Ace window action to bury buffer in WINDOW."
+    ;; Window needs to be selected to bury its buffer.
     (with-selected-window window
-      (consult-buffer)))
+      (bury-buffer)))
 
   (defun my/ace-kill-buffer (window)
     "Ace window action to kill buffer in WINDOW."
     (kill-buffer (window-buffer window)))
 
+  (defun my/ace-delete-window (window)
+    "Ace window action to delete WINDOW."
+    (delete-window window))
+
   (defun my/ace-kill-buffer-delete-window (window)
     "Ace window action to delete WINDOW and kill its buffer."
-    (aw-delete-window window t))
+    (my/ace-kill-buffer window)
+    (my/ace-delete-window window))
+
+  (defun my/ace-split-window-horz (window)
+    "Ace window action to split WINDOW horizontally."
+    (split-window-horizontally nil window))
+
+  (defun my/ace-split-window-vert (window)
+    "Ace window action to split WINDOW vertically."
+    (split-window-vertically nil window))
+
+  (defun my/ace-copy-window (window)
+    "Ace window action to copy current buffer to WINDOW."
+    (my/ace-update-window (current-buffer) window (point) (window-start)))
+
+  (defun my/ace-move-window (window)
+    "Ace window action to move current buffer to WINDOW."
+    (when (not (equal window (selected-window)))
+      (my/ace-copy-window window)
+      (switch-to-prev-buffer)))
+
+  (defun my/ace-swap-window (window)
+    "Ace window action to swap current buffer with WINDOW."
+    (let ((origin-window (selected-window))
+          (buffer (current-buffer))
+          (point (point))
+          (start (window-start)))
+      (with-selected-window window
+        (my/ace-copy-window origin-window))
+      (my/ace-update-window buffer window point start)))
+
+  (defun my/ace-update-window (buffer window point window-start)
+    "Helper function to set BUFFER in WINDOW with POINT and WINDOW-START."
+    (with-selected-window window
+      (switch-to-buffer buffer nil t)
+      (set-window-point window point)
+      (set-window-start window window-start t)))
 
   (defmacro my/define-ace-embark-action (name map fn)
-    "Macro to define an Embark action that switches windows and then runs FN."
+    "Define an Embark action to use Ace Window to select a window and run FN."
     `(progn
        (defun ,name ()
-         ,(format "Embark action to switch windows and then call `%s'." fn)
+         ,(format "Use Ace Window to select a window and then run `%s'." fn)
          (interactive)
          (ace-select-window)
          (call-interactively #',fn))
@@ -350,28 +395,30 @@
   (my/define-ace-embark-action my/ace-embark-file embark-file-map find-file)
   (my/define-ace-embark-action my/ace-embark-bookmark embark-bookmark-map bookmark-jump)
   :bind
-  ("M-o" . ace-window)
+  ("M-o" . ace-select-window)
   :custom
   (aw-scope 'global)
   (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
   (aw-background t)
   (aw-display-mode-overlay t)
-  (aw-dispatch-when-more-than 1)
+  (aw-dispatch-always t)
   :custom-face
   (aw-leading-char-face ((t (:bold t :height 1.0))))
   :config
-  ;; Custom dispatch menu.
+  ;; Dispatch actions should maintain point in current window (where possible)
+  ;; to provide an alternative to moving to the window and running a command.
   (setq aw-dispatch-alist
-        '((?0 aw-delete-window "Delete Window")
+        '((?0 my/ace-delete-window "Delete Window")
           (?1 delete-other-windows "Delete Other Windows")
-          (?2 aw-split-window-vert "Split Vertically")
-          (?3 aw-split-window-horz "Split Horizontally")
+          (?2 my/ace-split-window-vert "Split Vertically")
+          (?3 my/ace-split-window-horz "Split Horizontally")
           (?- my/ace-kill-buffer "Kill Buffer")
           (?_ my/ace-kill-buffer-delete-window "Kill Buffer and Delete Window")
           (?b my/ace-switch-buffer "Switch Buffer")
-          (?c aw-copy-window "Copy Window")
-          (?w aw-swap-window "Swap Window")
-          (?m aw-move-window "Move Window")
+          (?q my/ace-bury-buffer "Bury Buffer")
+          (?c my/ace-copy-window "Copy Window")
+          (?m my/ace-move-window "Move Window")
+          (?w my/ace-swap-window "Swap Window")
           (?? aw-show-dispatch-help))))
 
 ;;;;; Window History
