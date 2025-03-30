@@ -1999,6 +1999,8 @@ When ARG is non-nil, the working directory can be selected."
   :bind
   ("C-h C-." . eldoc-box-help-at-point)
   :hook
+  ;; Just use for Eglot-managed languages for now.
+  (eglot-managed-mode . eldoc-box-hover-mode)
   ;; Reset the eldoc-box frame so that its padding isn't affected.
   (spacious-padding-mode . eldoc-box-reset-frame)
   :custom
