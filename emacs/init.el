@@ -142,7 +142,7 @@
 ;;;;; Mode Line
 
 (use-package smol
-  :if (file-exists-p "~/dev/home/smol")
+  :if (file-directory-p "~/dev/home/smol")
   :load-path "~/dev/home/smol"
   :hook
   (elpaca-after-init . smol-init)
@@ -349,7 +349,6 @@
   (my/define-ace-embark-action my/ace-embark-buffer embark-buffer-map switch-to-buffer)
   (my/define-ace-embark-action my/ace-embark-file embark-file-map find-file)
   (my/define-ace-embark-action my/ace-embark-bookmark embark-bookmark-map bookmark-jump)
-
   :bind
   ("M-o" . ace-window)
   :custom
@@ -1638,7 +1637,6 @@ When ARG is non-nil, the working directory can be selected."
       (save-selected-window
         (let ((embark-quit-after-action nil))
           (embark-dwim)))))
-
   :commands embark-prefix-help-command
   :bind
   (("C-." . embark-act)
@@ -1659,14 +1657,12 @@ When ARG is non-nil, the working directory can be selected."
   (embark-indicators (list #'embark-minimal-indicator))
   ;; Use this key to switch Embark to the keymap prompter.
   (embark-keymap-prompter-key ",")
-
   :init
   ;; Use Embark to show keybindings under a prefix rather than the default
   ;; `describe-prefix-bindings'. It should be possible to just use set
   ;; `prefix-help-command' but it keeps getting reverted so doing it this way.
   (with-eval-after-load 'help
     (fset #'describe-prefix-bindings #'embark-prefix-help-command))
-
   :config
   (eldoc-add-command "embark-dwim")
   ;; Adapt the associated commands so that they are usable as Embark actions.
@@ -2786,7 +2782,7 @@ with a numbered suffix."
 
   ;; Bit of feedback.
   (advice-add #'org-id-copy :after (lambda (&optional _)
-                                     (message "Copied %s" (car kill-ring)))))
+                                     (message "Copied: %s" (car kill-ring)))))
 
 (use-package org-agenda
   :ensure nil
@@ -3177,7 +3173,7 @@ specified then a task category will be determined by the item's tags."
 
 ;; Hide cruft in separate package.
 (use-package gptel-extras
-  :if (file-exists-p "~/dev/home/gptel-extras")
+  :if (file-directory-p "~/dev/home/gptel-extras")
   :load-path "~/dev/home/gptel-extras"
   :bind
   ("C-z C-z" . gptel-extras-chat)
@@ -3194,7 +3190,7 @@ specified then a task category will be determined by the item's tags."
 ;;;; Work Configuration
 
 (use-package chronosphere
-  :if (file-exists-p "~/dev/home/chronosphere")
+  :if (file-directory-p "~/dev/home/chronosphere")
   :load-path "~/dev/home/chronosphere"
   :hook (elpaca-after-init . chronosphere-init))
 
