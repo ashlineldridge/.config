@@ -1167,6 +1167,12 @@ When ARG is non-nil, the working directory can be selected."
 (use-package vertico-multiform
   :ensure nil
   :hook (elpaca-after-init . vertico-multiform-mode)
+  :bind
+  (:map vertico-multiform-map
+   ;; Free up M-B for `embark-become'.
+   ("M-B" . nil)
+   ;; Toggle between vertical buffer and horizontal minibuffer.
+   ("M-T" . vertico-multiform-buffer))
   :custom
   (vertico-multiform-categories
    '((file (vertico-sort-function . my/vertico-sort-dirs-first))
@@ -1653,8 +1659,8 @@ When ARG is non-nil, the working directory can be selected."
    :map embark-general-map
    ("&" . my/async-shell-command)
    :map minibuffer-local-map
-   ("M-." . my/embark-force-preview))
-
+   ("M-." . my/embark-force-preview)
+   ("M-B" . embark-become))
   :custom
   ;; Just show the minimal "Act" prompt (the default starts with minimal
   ;; and then `embark-mixed-indicator-delay' kicks in and the verbose screen
