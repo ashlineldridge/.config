@@ -2323,15 +2323,20 @@ When ARG is non-nil, the working directory can be selected."
                   elisp-eldoc-var-docstring-with-value
                   elisp-eldoc-funcall)))
 
-  (defun my/elisp-flymake-load-path (fn &rest args)
-    "Advises `elisp-flymake-byte-compile' so that Flymake uses `load-path'."
-    (let* ((elisp-flymake-byte-compile-load-path
+  (defun my/elisp-flymake-setup-load-path (fn &rest args)
+    "Advises `elisp-flymake-byte-compile' to setup the correct load path."
+    ;; Exclude Vterm from the load path as it causes Flymake to hang.
+    (let* ((load-path (seq-remove (lambda (d)
+                                    (string-match-p "elpaca/builds/vterm" d))
+                                  load-path))
+           (elisp-flymake-byte-compile-load-path
             (append elisp-flymake-byte-compile-load-path load-path)))
       (apply fn args)))
+
   :hook
   (emacs-lisp-mode . my/elisp-init)
   :config
-  (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-load-path)
+  (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-setup-load-path)
   ;; This configuration is from consult-imenu.el with the fonts changed.
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
@@ -2600,7 +2605,6 @@ with a numbered suffix."
 ;; I much prefer Eshell but have Vterm as an escape hatch when I need a proper
 ;; terminal emulator. Just call 'M-x vterm' rather than wasting a keybinding.
 (use-package vterm
-  :commands vterm
   :defines (vterm-mode-map vterm-eval-cmds)
   :preface
   (declare-function vterm-send-key "vterm")
@@ -2634,7 +2638,7 @@ with a numbered suffix."
                '("find-file-other-window" find-file-other-window))
 
   ;; Unset a bunch of keybindings that I want to keep.
-  (dolist (key '("C-r" "C-s" "C-SPC" "M-g" "M-k" "M-s" "M-:" "M-&" "M-'" "M-]"))
+  (dolist (key '("C-r" "C-s" "C-SPC" "M-g" "M-k" "M-s" "M-:" "M-&" "M-'" "M-\"" "M-]"))
     (define-key vterm-mode-map (kbd key) nil)))
 
 (use-package sh-script
