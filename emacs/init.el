@@ -983,6 +983,12 @@ When ARG is non-nil, the working directory can be selected."
   ("C-x C-r" . restart-emacs)
   :hook (elpaca-after-init . auto-save-visited-mode)
   :custom
+  (trusted-content
+   (list (expand-file-name "early-init.el" user-emacs-directory)
+         (expand-file-name "bootstrap.el" user-emacs-directory)
+         "~/dev/home/smol/"
+         "~/dev/home/gptel-extras/"
+         "~/dev/home/chronosphere/"))
   ;; Disable `auto-save-mode' which saves buffers to separate files in favor of
   ;; `auto-save-visited-mode' which saves file-visiting buffers to their files.
   (auto-save-default nil)
