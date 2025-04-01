@@ -565,10 +565,20 @@
 ;;;;; Breadcrumb
 
 (use-package breadcrumb
+  :demand
   :preface
   (declare-function breadcrumb-local-mode "breadcrumb")
-  (defun my/breadcrumb-maybe-show ()
-    "Enable `breadcrumb-local-mode' for non-minibuffer buffers."
+  (defun my/breadcrumb-show-all ()
+    "Enable `breadcrumb-local-mode' for all current and future buffers."
+    ;; Some buffers like *Messages* will pre-exist hook installation. To handle
+    ;; this, evaluate all existing buffers and install the hook for new ones.
+    (dolist (buffer (buffer-list))
+      (with-current-buffer buffer
+        (my/breadcrumb-show)))
+    (add-hook 'after-change-major-mode-hook #'my/breadcrumb-show))
+
+  (defun my/breadcrumb-show ()
+    "Enable `breadcrumb-local-mode' for this buffer if it is not a minibuffer."
     (when (not (minibufferp))
       (breadcrumb-local-mode 1)))
 
@@ -579,8 +589,7 @@
     (let ((old header-line-format))
       (apply fn args)
       (setq header-line-format old)))
-  :hook
-  (after-change-major-mode . my/breadcrumb-maybe-show)
+  :hook (elpaca-after-init . my/breadcrumb-show-all)
   :custom
   (breadcrumb-project-max-length 0.4)
   (breadcrumb-imenu-max-length 0.4))
@@ -2574,7 +2583,7 @@ When ARG is non-nil, the working directory can be selected."
   (declare-function eshell-save-some-history "em-hist")
 
   (defun my/eshell-init ()
-    "Hook function executed when `eshell-mode' is run."
+    "Init function for `eshell-mode'."
     ;; Don't scroll the buffer around after it has been recentered (using C-l).
     ;; This seems to need to be done as a mode hook rather than in `:config' as
     ;; the latter results in `eshell-output-filter-functions' being set to nil.
@@ -2673,7 +2682,7 @@ with a numbered suffix."
   (declare-function project-prefixed-buffer-name "project")
 
   (defun my/vterm-init ()
-    "Hook function executed when `vterm-mode' is run."
+    "Init function for `vterm-mode'."
     ;; Make outline work with vterm prompts.
     (setq-local outline-regexp "^[^#$\n]* ❯ "))
 
