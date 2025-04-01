@@ -268,19 +268,15 @@
    ("M-]" . next-buffer)
    ("M-q" . bury-buffer)
    ("M-O =" . balance-windows)
-   ("M-O 0" . delete-window)
-   ("M-O 1" . delete-other-windows)
-   ("M-O 2" . split-window-below)
-   ("M-O 3" . split-window-right)
-   ("M-O M-=" . enlarge-window-horizontally)
-   ("M-O M--" . shrink-window-horizontally)
-   ("M-O M-+" . enlarge-window)
-   ("M-O M-_" . shrink-window)
+   ("M-O }" . enlarge-window-horizontally)
+   ("M-O {" . shrink-window-horizontally)
+   ("M-O ]" . enlarge-window)
+   ("M-O [" . shrink-window)
    :repeat-map my/window-repeat-map
-   ("M-=" . enlarge-window-horizontally)
-   ("M--" . shrink-window-horizontally)
-   ("M-+" . enlarge-window)
-   ("M-_" . shrink-window))
+   ("}" . enlarge-window-horizontally)
+   ("{" . shrink-window-horizontally)
+   ("]" . enlarge-window)
+   ("[" . shrink-window))
   :custom
   (even-window-sizes nil)
   ;; Prefer splitting by width and only when the window is quite wide.
@@ -317,13 +313,18 @@
 (use-package ace-window
   :defines (embark-buffer-map embark-file-map embark-bookmark-map)
   :preface
+  (declare-function aw-switch-to-window "ace-window")
+  (declare-function aw-flip-window "ace-window")
+
   (defun my/ace-switch-buffer (window)
     "Ace window action to select buffer in WINDOW."
     (let ((origin-window (selected-window)))
-      (select-window window)
+      ;; This approach also works across frames.
+      (aw-switch-to-window window)
       (unwind-protect
           (consult-buffer)
-        (select-window origin-window))))
+        (when (not (equal origin-window window))
+          (aw-flip-window)))))
 
   (defun my/ace-bury-buffer (window)
     "Ace window action to bury buffer in WINDOW."
@@ -385,7 +386,7 @@
        (defun ,name ()
          ,(format "Use Ace Window to select a window and then run `%s'." fn)
          (interactive)
-         (ace-select-window)
+         (ace-window t)
          (call-interactively #',fn))
        (with-eval-after-load 'embark
          (bind-key "M-o" #',name ,map))))
@@ -395,7 +396,7 @@
   (my/define-ace-embark-action my/ace-embark-file embark-file-map find-file)
   (my/define-ace-embark-action my/ace-embark-bookmark embark-bookmark-map bookmark-jump)
   :bind
-  ("M-o" . ace-select-window)
+  ("M-o" . ace-window)
   :custom
   (aw-scope 'global)
   (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
