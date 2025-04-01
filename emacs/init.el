@@ -754,6 +754,10 @@ When ARG is non-nil, the working directory can be selected."
 (use-package paragraphs
   :ensure nil
   :no-require
+  :bind
+  ;; Steal M-h for `eldoc-box'.
+  ("M-h" . nil)
+  ("M-H" . mark-paragraph)
   :custom
   (sentence-end-double-space nil))
 
@@ -1998,10 +2002,8 @@ When ARG is non-nil, the working directory can be selected."
 
 (use-package eldoc-box
   :bind
-  ("C-h C-." . eldoc-box-help-at-point)
+  ("M-h" . eldoc-box-help-at-point)
   :hook
-  ;; Just use for Eglot-managed languages for now.
-  (eglot-managed-mode . eldoc-box-hover-mode)
   ;; Reset the eldoc-box frame so that its padding isn't affected.
   (spacious-padding-mode . eldoc-box-reset-frame)
   :custom
