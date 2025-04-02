@@ -562,15 +562,6 @@
   :demand
   :preface
   (declare-function breadcrumb-local-mode "breadcrumb")
-  (defun my/breadcrumb-show-all ()
-    "Enable `breadcrumb-local-mode' for all current and future buffers."
-    ;; Some buffers like *Messages* will pre-exist hook installation. To handle
-    ;; this, evaluate all existing buffers and install the hook for new ones.
-    (dolist (buffer (buffer-list))
-      (with-current-buffer buffer
-        (my/breadcrumb-show)))
-    (add-hook 'after-change-major-mode-hook #'my/breadcrumb-show))
-
   (defun my/breadcrumb-show ()
     "Enable `breadcrumb-local-mode' for this buffer if it is not a minibuffer."
     (when (not (minibufferp))
@@ -583,10 +574,17 @@
     (let ((old header-line-format))
       (apply fn args)
       (setq header-line-format old)))
-  :hook (elpaca-after-init . my/breadcrumb-show-all)
   :custom
   (breadcrumb-project-max-length 0.4)
-  (breadcrumb-imenu-max-length 0.4))
+  (breadcrumb-imenu-max-length 0.4)
+  :defer 0.25
+  :config
+  ;; Add the breadcrumb to all existing buffers (e.g. *Messages*) and install
+  ;; a hook for new ones. This could be done as a global minor mode.
+  (dolist (buffer (buffer-list))
+    (with-current-buffer buffer
+      (my/breadcrumb-show)))
+  (add-hook 'after-change-major-mode-hook #'my/breadcrumb-show))
 
 ;;;; Help System
 
