@@ -563,8 +563,8 @@
   :preface
   (declare-function breadcrumb-local-mode "breadcrumb")
   (defun my/breadcrumb-show ()
-    "Enable `breadcrumb-local-mode' for this buffer if it is not a minibuffer."
-    (when (not (minibufferp))
+    "Show breadcrumb if not a minibuffer and there is no special header line."
+    (when (and (not (minibufferp)) (listp header-line-format))
       (breadcrumb-local-mode 1)))
 
   ;; Some package like `ibuffer' insist on modifying the header line.
