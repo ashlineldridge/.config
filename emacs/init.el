@@ -427,18 +427,12 @@
 (use-package winner
   :ensure nil
   :bind
-  ("M-O u" . winner-undo)
-  ("M-O r" . winner-redo)
+  ;; Short keybindings to manage window/buffer chaos.
+  ("M-U" . winner-undo)
+  ("M-R" . winner-redo)
   :hook (elpaca-after-init . winner-mode)
   :custom
-  (winner-dont-bind-my-keys t)
-  :config
-  ;; Need to bind the repeat map after the package is loaded as Winner defines
-  ;; its own repeat map that we need to override.
-  (bind-keys :package winner
-             :repeat-map my/window-repeat-map
-             ("u" . winner-undo)
-             ("r" . winner-redo)))
+  (winner-dont-bind-my-keys t))
 
 ;;;;; Window Scrolling
 
