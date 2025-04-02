@@ -1990,11 +1990,7 @@ When ARG is non-nil, the working directory can be selected."
 
 (use-package eldoc
   :ensure nil
-  :bind
-  ("C-h ." . eldoc-doc-buffer)
-  ("C-h t" . eldoc-mode)
-  ("C-h T" . global-eldoc-mode)
-  :hook (elpaca-after-init . global-eldoc-mode)
+  :bind  ("C-h ." . eldoc-print-current-symbol-info)
   :custom
   (eldoc-idle-delay 0.1)
   (eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
@@ -2003,13 +1999,44 @@ When ARG is non-nil, the working directory can be selected."
   (eldoc-echo-area-display-truncation-message nil))
 
 (use-package eldoc-box
+  :preface
+  (declare-function eldoc-box-quit-frame "eldoc-box")
+
+  (defun my/eldoc-box-visible-p ()
+    "Return whether the `eldoc-box' popup is visible."
+    (and eldoc-box--frame (frame-visible-p eldoc-box--frame)))
+
+  (defun my/eldoc-box-unpin ()
+    "Unpin the `eldoc-box' popup if it is visible."
+    (interactive)
+    (when (my/eldoc-box-visible-p)
+      (make-frame-invisible eldoc-box--frame t)
+      (eldoc-mode 1)))
+
+  (defun my/eldoc-box-pin (arg)
+    "Pin the `eldoc-box' popup with documentation for the symbol under point."
+    (interactive "P")
+    (if arg
+        (my/eldoc-box-unpin)
+      ;; Toggle off `eldoc-mode' so that documentation is only displayed in
+      ;; the `eldoc-box' popup while it is open. `eldoc-display-functions'
+      ;; needs to be set directly since `eldoc-box-hover-mode' isn't enabled.
+      (eldoc-mode -1)
+      (let ((eldoc-display-functions '(eldoc-box--eldoc-display-function)))
+        (eldoc-print-current-symbol-info t))
+      (make-frame-visible eldoc-box--frame)))
+
   :bind
-  ("M-h" . eldoc-box-help-at-point)
+  ;; Bind into the global map so that I can unpin from any mode.
+  ("M-h" . my/eldoc-box-pin)
   :hook
   ;; Reset the eldoc-box frame so that its padding isn't affected.
   (spacious-padding-mode . eldoc-box-reset-frame)
   :custom
-  (eldoc-box-clear-with-C-g t))
+  (eldoc-box-offset '(20 26 20))
+  :config
+  ;; Ignore calls to quit the popup frame so that it stays pinned.
+  (fset #'eldoc-box-quit-frame #'ignore))
 
 ;;;;;; Flymake
 
@@ -2381,9 +2408,10 @@ When ARG is non-nil, the working directory can be selected."
     (setq-local completion-at-point-functions
                 '(elisp-completion-at-point cape-file))
     (setq-local eldoc-documentation-functions
-                '(flymake-eldoc-function
-                  elisp-eldoc-var-docstring-with-value
-                  elisp-eldoc-funcall)))
+                ;; Put at the top so I can see values in single line echo area.
+                '(elisp-eldoc-var-docstring-with-value
+                  elisp-eldoc-funcall
+                  flymake-eldoc-function)))
 
   (defun my/elisp-flymake-setup-load-path (fn &rest args)
     "Advises `elisp-flymake-byte-compile' to setup the correct load path."
@@ -2771,6 +2799,9 @@ with a numbered suffix."
    ("C-c o s" . org-save-all-org-buffers)
    ("C-c o l" . my/org-goto-last-dwim)
    :map org-mode-map
+   ;; Rebind org replacement for `mark-paragraph' so it doesn't clash.
+   ("M-h" . nil)
+   ("M-H" . org-mark-element)
    ;; Rebind conflicting <return>-based keybindings under C-c.
    ("C-<return>" . nil)
    ("C-S-<return>" . nil)
