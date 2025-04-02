@@ -1990,53 +1990,38 @@ When ARG is non-nil, the working directory can be selected."
 
 (use-package eldoc
   :ensure nil
-  :bind  ("C-h ." . eldoc-print-current-symbol-info)
-  :custom
-  (eldoc-idle-delay 0.1)
-  (eldoc-documentation-strategy #'eldoc-documentation-compose-eagerly)
-  (eldoc-echo-area-prefer-doc-buffer t)
-  (eldoc-echo-area-use-multiline-p nil)
-  (eldoc-echo-area-display-truncation-message nil))
-
-(use-package eldoc-box
   :preface
-  (declare-function eldoc-box-quit-frame "eldoc-box")
+  (defvar my/eldoc-pin-enabled nil)
+  (defvar my/eldoc-pin-displayed nil)
 
-  (defun my/eldoc-box-visible-p ()
-    "Return whether the `eldoc-box' popup is visible."
-    (and eldoc-box--frame (frame-visible-p eldoc-box--frame)))
-
-  (defun my/eldoc-box-unpin ()
-    "Unpin the `eldoc-box' popup if it is visible."
-    (interactive)
-    (when (my/eldoc-box-visible-p)
-      (make-frame-invisible eldoc-box--frame t)
-      (eldoc-mode 1)))
-
-  (defun my/eldoc-box-pin (arg)
-    "Pin the `eldoc-box' popup with documentation for the symbol under point."
+  (defun my/eldoc-pin-buffer (arg)
+    "Pin the Eldoc buffer with documentation for the symbol under point.
+When ARG is non-nil, unpin the currently pinned Eldoc buffer."
     (interactive "P")
-    (if arg
-        (my/eldoc-box-unpin)
-      ;; Toggle off `eldoc-mode' so that documentation is only displayed in
-      ;; the `eldoc-box' popup while it is open. `eldoc-display-functions'
-      ;; needs to be set directly since `eldoc-box-hover-mode' isn't enabled.
-      (eldoc-mode -1)
-      (let ((eldoc-display-functions '(eldoc-box--eldoc-display-function)))
-        (eldoc-print-current-symbol-info t))
-      (make-frame-visible eldoc-box--frame)))
+    (setq my/eldoc-pin-enabled (not arg))
+    (setq my/eldoc-pin-displayed nil)
+    (if my/eldoc-pin-enabled
+        (eldoc-print-current-symbol-info t)
+      (when-let (buffer (eldoc-doc-buffer))
+        (kill-buffer buffer))))
+
+  (defun my/eldoc-display-in-buffer (docs interactive)
+    "Custom function for `eldoc-display-functions' to support pinning."
+    (unless (and my/eldoc-pin-enabled my/eldoc-pin-displayed)
+      (eldoc-display-in-buffer docs interactive)
+      (setq my/eldoc-pin-displayed t)))
 
   :bind
   ;; Bind into the global map so that I can unpin from any mode.
-  ("M-h" . my/eldoc-box-pin)
-  :hook
-  ;; Reset the eldoc-box frame so that its padding isn't affected.
-  (spacious-padding-mode . eldoc-box-reset-frame)
+  ("M-h" . my/eldoc-pin-buffer)
   :custom
-  (eldoc-box-offset '(20 26 20))
+  (eldoc-idle-delay 0.1)
+  (eldoc-documentation-strategy #'eldoc-documentation-compose)
+  (eldoc-echo-area-prefer-doc-buffer t)
+  (eldoc-echo-area-use-multiline-p nil)
+  (eldoc-echo-area-display-truncation-message nil)
   :config
-  ;; Ignore calls to quit the popup frame so that it stays pinned.
-  (fset #'eldoc-box-quit-frame #'ignore))
+  (setq eldoc-display-functions '(eldoc-display-in-echo-area my/eldoc-display-in-buffer)))
 
 ;;;;;; Flymake
 
