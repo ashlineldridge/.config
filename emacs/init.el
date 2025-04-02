@@ -1991,25 +1991,23 @@ When ARG is non-nil, the working directory can be selected."
 (use-package eldoc
   :ensure nil
   :preface
-  (defvar my/eldoc-pin-enabled nil)
-  (defvar my/eldoc-pin-displayed nil)
+  (defvar my/eldoc-pinned nil)
 
   (defun my/eldoc-pin-buffer (arg)
     "Pin the Eldoc buffer with documentation for the symbol under point.
-When ARG is non-nil, unpin the currently pinned Eldoc buffer."
+When ARG is non-nil, unpin and kill the Eldoc buffer."
     (interactive "P")
-    (setq my/eldoc-pin-enabled (not arg))
-    (setq my/eldoc-pin-displayed nil)
-    (if my/eldoc-pin-enabled
-        (eldoc-print-current-symbol-info t)
-      (when-let (buffer (eldoc-doc-buffer))
-        (kill-buffer buffer))))
+    (setq my/eldoc-pinned nil)
+    (if arg
+        (when-let (buffer (eldoc-doc-buffer))
+          (kill-buffer buffer))
+      (eldoc-print-current-symbol-info t)))
 
   (defun my/eldoc-display-in-buffer (docs interactive)
     "Custom function for `eldoc-display-functions' to support pinning."
-    (unless (and my/eldoc-pin-enabled my/eldoc-pin-displayed)
+    (unless my/eldoc-pinned
       (eldoc-display-in-buffer docs interactive)
-      (setq my/eldoc-pin-displayed t)))
+      (setq my/eldoc-pinned t)))
 
   :bind
   ;; Bind into the global map so that I can unpin from any mode.
