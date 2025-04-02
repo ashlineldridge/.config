@@ -979,6 +979,7 @@ When ARG is non-nil, the working directory can be selected."
       ("Shell" (or (mode . eshell-mode) (mode . vterm-mode)))
       ("Command" (mode . shell-command-mode))
       ("Dired" (mode . dired-mode))
+      ("Gptel" (name . "^*gptel-chat"))
       ("Org" (or (mode . org-mode) (mode . org-agenda-mode))))))
   (ibuffer-show-empty-filter-groups nil)
   (ibuffer-use-header-line nil)
