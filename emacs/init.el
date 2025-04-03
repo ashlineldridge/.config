@@ -304,8 +304,12 @@
       (side . bottom)
       (slot . 0)
       (window-parameters . ((mode-line-format . none))))
+     ;; Other window.
+     ("\\(\\*eldoc\\|\\*helpful\\)"
+      (display-buffer-reuse-window)
+      (inhibit-same-window . t))
      ;; Same window.
-     ("\\(\\*vc-dir\\*\\|magit: \\)"
+     ("\\(\\*vc-dir\\*\\|magit:\\)"
       (display-buffer-same-window)))))
 
 ;;;;; Window Movement
@@ -588,15 +592,61 @@
 
 ;;;; Help System
 
-(use-package help-fns
+(use-package help-buffer
   :ensure nil
+  :no-require
+  :preface
+  (defvar my/help-buffer-kill-to-close nil)
+
+  (defun my/help-buffer (arg)
+    "Show an appropriate help buffer for the current symbol at point.
+When ARG is non-nil all help buffers will be killed or buried depending on
+the value of `my/help-buffer-kill-to-close'."
+    (interactive "P")
+    (if arg
+        (dolist (buffer (buffer-list))
+          (when (string-match-p "\\(\\*helpful\\|\\*eldoc\\)" (buffer-name buffer))
+            (if my/help-buffer-kill-to-close
+                (kill-buffer buffer)
+              (dolist (window (get-buffer-window-list buffer nil t))
+                (with-selected-window window
+                  (bury-buffer))))))
+      (if (bound-and-true-p eglot--managed-mode)
+          (my/eldoc-buffer)
+        (helpful-at-point))))
   :bind
-  ("C-h F" . describe-face))
+  ("M-h" . my/help-buffer))
+
+(use-package eldoc
+  :ensure nil
+  :preface
+  (defvar my/eldoc-buffer-frozen nil)
+
+  (defun my/eldoc-buffer ()
+    "Show Eldoc buffer for the symbol at point and freeze it."
+    (setq my/eldoc-buffer-frozen nil)
+    (eldoc-print-current-symbol-info t))
+
+  (defun my/eldoc-display-in-buffer (docs interactive)
+    "Custom function for `eldoc-display-functions' to freeze the Eldoc buffer."
+    (unless my/eldoc-buffer-frozen
+      (eldoc-display-in-buffer docs interactive)
+      (setq my/eldoc-buffer-frozen t)))
+  :custom
+  (eldoc-idle-delay 0.1)
+  (eldoc-documentation-strategy #'eldoc-documentation-compose)
+  (eldoc-echo-area-prefer-doc-buffer nil)
+  (eldoc-echo-area-use-multiline-p nil)
+  (eldoc-echo-area-display-truncation-message nil)
+  :commands my/eldoc-doc-buffer
+  :config
+  (setq eldoc-display-functions '(eldoc-display-in-echo-area
+                                  my/eldoc-display-in-buffer)))
 
 (use-package helpful
+  :preface
   :bind
   ("C-h c" . helpful-callable)
-  ("C-h ," . helpful-at-point)
   ;; Replace `describe-*' bindings with Helpful where possible.
   ([remap describe-function] . helpful-function)
   ([remap describe-symbol] . helpful-symbol)
@@ -605,7 +655,14 @@
   ([remap describe-key] . helpful-key)
   :custom
   ;; Don't select the helpful buffer.
-  (helpful-switch-buffer-function #'display-buffer))
+  (helpful-switch-buffer-function #'display-buffer)
+  (helpful-max-buffers 1)
+  :commands helpful-at-point)
+
+(use-package help-fns
+  :ensure nil
+  :bind
+  ("C-h F" . describe-face))
 
 (use-package which-key
   :ensure nil
@@ -756,8 +813,7 @@ When ARG is non-nil, the working directory can be selected."
   :ensure nil
   :no-require
   :bind
-  ;; Steal M-h for `eldoc-box'.
-  ("M-h" . nil)
+  ;; Reserve M-h for showing help buffer.
   ("M-H" . mark-paragraph)
   :custom
   (sentence-end-double-space nil))
@@ -1985,41 +2041,6 @@ When ARG is non-nil, the working directory can be selected."
                                    (test-regexp (concat "^" test-name "$")))
                              `["-test.run" ,test-regexp]
                            (error "No test selected"))))))
-
-;;;;;; Eldoc
-
-(use-package eldoc
-  :ensure nil
-  :preface
-  (defvar my/eldoc-pinned nil)
-
-  (defun my/eldoc-pin-buffer (arg)
-    "Pin the Eldoc buffer with documentation for the symbol under point.
-When ARG is non-nil, unpin and kill the Eldoc buffer."
-    (interactive "P")
-    (setq my/eldoc-pinned nil)
-    (if arg
-        (when-let (buffer (eldoc-doc-buffer))
-          (kill-buffer buffer))
-      (eldoc-print-current-symbol-info t)))
-
-  (defun my/eldoc-display-in-buffer (docs interactive)
-    "Custom function for `eldoc-display-functions' to support pinning."
-    (unless my/eldoc-pinned
-      (eldoc-display-in-buffer docs interactive)
-      (setq my/eldoc-pinned t)))
-
-  :bind
-  ;; Bind into the global map so that I can unpin from any mode.
-  ("M-h" . my/eldoc-pin-buffer)
-  :custom
-  (eldoc-idle-delay 0.1)
-  (eldoc-documentation-strategy #'eldoc-documentation-compose)
-  (eldoc-echo-area-prefer-doc-buffer t)
-  (eldoc-echo-area-use-multiline-p nil)
-  (eldoc-echo-area-display-truncation-message nil)
-  :config
-  (setq eldoc-display-functions '(eldoc-display-in-echo-area my/eldoc-display-in-buffer)))
 
 ;;;;;; Flymake
 
