@@ -534,6 +534,15 @@
 
 (use-package frame
   :ensure nil
+  :preface
+  (defun my/toggle-frame-jump-scope ()
+    "Toggle the scope of Ace and Avy between frame local and global."
+    (interactive)
+    (let ((scope aw-scope))
+      (setq aw-scope (if (eq scope 'global) 'frame 'global))
+      (setq avy-all-windows (if (eq scope 'global) t 'all-frames))
+      (message "Set frame jump scope: %s" (symbol-name aw-scope))))
+
   :bind
   ;; Remove silly `suspend-frame' bindings.
   ("C-z" . nil)
@@ -542,6 +551,7 @@
   ("M-O M-N" . make-frame-command)
   ("M-O M-K" . delete-frame)
   ("M-O M-U" . undelete-frame)
+  ("M-O M-T" . my/toggle-frame-jump-scope)
   :hook (elpaca-after-init . undelete-frame-mode))
 
 ;; I would like to use the posframe for displaying the Ace Window indicator
