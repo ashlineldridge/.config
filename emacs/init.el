@@ -21,14 +21,14 @@
 
 (use-package theme
   :ensure nil
+  :no-require
   :preface
-  (defvar my/default-theme 'ef-dream)
-  (defvar my/variable-pitch-headings
+  (defvar my/theme 'ef-dream)
+  (defvar my/theme-headings
     '((1 . (variable-pitch semibold 1.2))
       (t . (variable-pitch semibold 1.1))))
-  :no-require
   :hook
-  (elpaca-after-init . (lambda () (load-theme my/default-theme :no-confirm))))
+  (elpaca-after-init . (lambda () (load-theme my/theme :no-confirm))))
 
 (use-package modus-themes
   :custom
@@ -37,13 +37,13 @@
   (modus-themes-mixed-fonts t)
   (modus-themes-prompts '(bold))
   (modus-themes-org-blocks 'gray-background)
-  (modus-themes-headings my/variable-pitch-headings))
+  (modus-themes-headings my/theme-headings))
 
 (use-package ef-themes
   :custom
   (ef-themes-mixed-fonts t)
   (ef-themes-variable-pitch-ui t)
-  (ef-themes-headings my/variable-pitch-headings))
+  (ef-themes-headings my/theme-headings))
 
 ;;;;; Fonts
 
