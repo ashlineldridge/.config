@@ -1585,6 +1585,7 @@ When ARG is non-nil, the working directory can be selected."
   :bind
   (("M-i" . consult-imenu)
    ("M-I" . consult-imenu-multi)
+   ("M-y" . consult-yank-pop)
    ("M-_" . consult-focus-lines)
    ("C-M-_" . consult-keep-lines)
    ("M-s a" . consult-org-agenda)
