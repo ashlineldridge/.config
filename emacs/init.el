@@ -2013,9 +2013,6 @@ When ARG is non-nil, the working directory can be selected."
   :ensure (:host github :repo "jdtsmith/eglot-booster")
   :hook (eglot-managed-mode . eglot-booster-mode))
 
-(use-package eglot-tempel
-  :hook (elpaca-after-init . eglot-tempel-mode))
-
 (use-package consult-eglot
   :after eglot
   :bind
