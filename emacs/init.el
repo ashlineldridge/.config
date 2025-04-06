@@ -3143,10 +3143,10 @@ specified then a task category will be determined by the item's tags."
         "#+created: %<%Y-%m-%d>\n"
         "#+filetags: :tag1:tag2:\n\n"
         "* Note\n"
-        "Replace or delete this section\n\n"
+        "Replace or delete this section\n"
         "* Links\n"
         "** Roam Links\n"
-        "- Use org-roam-node-insert (C-c n i) here\n\n"
+        "- Use org-roam-node-insert (C-c n i) here\n"
         "** Web Links\n"
         "- Use org-insert-link (C-c C-l), org-cliplink (C-c C-S-l), or paste URL here\n")
       :target (file "%<%Y%m%d%H%M%S>-${slug}.org")
