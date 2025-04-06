@@ -1780,42 +1780,25 @@ When ARG is non-nil, the working directory can be selected."
 
 (use-package embark
   :preface
-  ;; This command has the downside that leaves all previewed files open.
-  (defun my/embark-force-preview ()
-    "Force a preview of the current candidate for non-Consult commands."
-    (interactive)
-    (unless (bound-and-true-p consult--preview-function)
-      (save-selected-window
-        (let ((embark-quit-after-action nil))
-          (embark-dwim)))))
-  :commands embark-prefix-help-command
+  (declare-function embark-prefix-help-command "embark")
   :bind
   (("C-." . embark-act)
-   ("C-M-." . embark-dwim)
    ("C-h b" . embark-bindings)
    ;; Allow Embark to show keybindings under C-h as configured below.
    ("C-h C-h" . nil)
    :map embark-general-map
    ("&" . my/async-shell-command)
    :map minibuffer-local-map
-   ("M-." . my/embark-force-preview)
    ("M-B" . embark-become))
   :custom
-  ;; Just show the minimal "Act" prompt (the default starts with minimal
-  ;; and then `embark-mixed-indicator-delay' kicks in and the verbose screen
-  ;; is shown). Shortcut keys can immediately be used. C-h can be pressed to
-  ;; bring up the completing read prompter.
-  (embark-indicators (list #'embark-minimal-indicator))
+  ;; Show minimal "Act" prompt and highlight the target under point.
+  (embark-indicators '(embark-minimal-indicator embark-highlight-indicator))
   ;; Use this key to switch Embark to the keymap prompter.
   (embark-keymap-prompter-key ",")
   :init
-  ;; Use Embark to show keybindings under a prefix rather than the default
-  ;; `describe-prefix-bindings'. It should be possible to just use set
-  ;; `prefix-help-command' but it keeps getting reverted so doing it this way.
-  (with-eval-after-load 'help
-    (fset #'describe-prefix-bindings #'embark-prefix-help-command))
+  ;; Use Embark to show prefix keybindings with C-h.
+  (setq prefix-help-command #'embark-prefix-help-command)
   :config
-  (eldoc-add-command "embark-dwim")
   ;; Adapt the associated commands so that they are usable as Embark actions.
   ;; If commands don't behave properly with Embark, play with this. Look at
   ;; similar commands already in `embark-target-injection-hooks' and mimic.
