@@ -1080,12 +1080,20 @@ When ARG is non-nil, the working directory can be selected."
 (use-package files
   :ensure nil
   :preface
-  (defun my/kill-buffer-maybe-save ()
-    "Kill the current buffer after saving if required."
+  (defun my/save-kill-buffer ()
+    "Save the current buffer (if applicable) and then kill it."
     (interactive)
     (when (and buffer-file-name (buffer-modified-p))
       (save-buffer))
     (kill-current-buffer))
+
+  (defun my/save-kill-other-buffer ()
+    "Save the other window's buffer (if applicable) and then kill it."
+    (interactive)
+    (if (= (length (window-list)) 2)
+        (with-selected-window (next-window (selected-window))
+          (my/save-kill-buffer))
+      (message "Command requires two windows")))
 
   (defun my/abbreviate-file-name (path max-len)
     "Return an abbreviated version of PATH aiming for <= MAX-LEN characters."
@@ -1108,7 +1116,8 @@ When ARG is non-nil, the working directory can be selected."
   :bind
   ;; Shorter save/quit buffer bindings.
   ("M-'" . save-buffer)
-  ("M-\"" . my/kill-buffer-maybe-save)
+  ("M-\"" . my/save-kill-buffer)
+  ("C-M-\"" . my/save-kill-other-buffer)
   ("C-x C-r" . restart-emacs)
   :hook (elpaca-after-init . auto-save-visited-mode)
   :custom
