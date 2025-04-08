@@ -53,15 +53,15 @@
   (defconst my/variable-family "Iosevka Comfy Motion Duo")
   (defun my/fontaine-apply-preset ()
     "Apply the current (or default) Fontaine preset."
-    (fontaine-set-preset (or fontaine-current-preset 'small)))
+    (fontaine-set-preset (or fontaine-current-preset 'laptop1)))
   :bind
   ("C-c x f" . fontaine-set-preset)
   :hook
   (elpaca-after-init . my/fontaine-apply-preset)
   :custom
   (fontaine-presets
-   `((small)
-     (medium
+   `((laptop1)
+     (laptop2
       :default-family ,my/fixed-family
       :default-height 140
       :default-weight regular
@@ -70,15 +70,15 @@
       :mode-line-active-height 140
       :mode-line-inactive-height 140
       :line-number-height 130)
-     (large
+     (desktop
       :default-family ,my/fixed-family
-      :default-height 150
-      :default-weight regular
-      :fixed-pitch-weight regular
-      :variable-pitch-weight regular
-      :mode-line-active-height 150
-      :mode-line-inactive-height 150
-      :line-number-height 140)
+      :default-height 140
+      :default-weight semibold
+      :fixed-pitch-weight semibold
+      :variable-pitch-weight semibold
+      :mode-line-active-height 140
+      :mode-line-inactive-height 140
+      :line-number-height 130)
      (t
       :default-family ,my/fixed-family
       :default-height 130
