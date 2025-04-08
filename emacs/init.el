@@ -617,7 +617,7 @@
   :preface
   (defvar my/help-buffer-kill-to-close nil)
 
-  (defun my/help-buffer (arg)
+  (defun my/help-buffer (&optional arg)
     "Show an appropriate help buffer for the current symbol at point.
 When ARG is non-nil all help buffers will be killed or buried depending on
 the value of `my/help-buffer-kill-to-close'."
@@ -912,6 +912,12 @@ When ARG is non-nil, the working directory can be selected."
     (my/maybe-delete-selection)
     (yank))
 
+  (defun my/avy-action-help-buffer (pt)
+    "Show a help buffer for the symbol at PT without moving point."
+    (save-excursion
+      (goto-char pt)
+      (my/help-buffer)))
+
   :bind
   (("M-j" . avy-goto-word-1)
    ("M-J" . avy-goto-char-in-line)
@@ -927,7 +933,7 @@ When ARG is non-nil, the working directory can be selected."
   (avy-all-windows 'all-frames)
   (avy-single-candidate-jump nil)
   (avy-timeout-seconds 0.3)
-  (avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (avy-keys '(?a ?s ?d ?f ?g ?j ?k ?l))
   (avy-styles-alist '((avy-isearch . post)))
   (avy-dispatch-alist
    '((?m . avy-action-mark)
@@ -935,7 +941,8 @@ When ARG is non-nil, the working directory can be selected."
      (?w . avy-action-copy)
      (?y . my/avy-action-yank)
      (?z . avy-action-zap-to-char)
-     (?x . avy-action-kill-stay)))
+     (?x . avy-action-kill-stay)
+     (?h . my/avy-action-help-buffer)))
   :config
   (eldoc-add-command-completions "avy-goto-"))
 
