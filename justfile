@@ -29,6 +29,9 @@ emacs-install: emacs-clean
     sudo rm -rf /Applications/Emacs.app
     sudo cp -r /opt/homebrew/opt/emacs-plus@{{emacs-version}}/Emacs.app /Applications/
     sudo chown -R {{mac-user}}:{{mac-group}} /Applications/Emacs.app
+    @echo "-----"
+    @echo "Emacs has been installed."
+    @echo "Remember to enable Emacs notifications and update Raycast hotkey."
 
 emacs-uninstall:
     @echo ">>> Uninstalling Emacs"
