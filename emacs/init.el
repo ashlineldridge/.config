@@ -2289,7 +2289,6 @@ When ARG is non-nil, the working directory can be selected."
                  :functionTypeParameters t
                  :assignVariableTypes t
                  :compositeLiteralFields t
-                 :compositeLiteralTypes t
                  :constantValues t)))))))
 
 (use-package gotest
