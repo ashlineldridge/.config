@@ -2525,18 +2525,14 @@ When ARG is non-nil, the working directory can be selected."
   ;; are spread over many sub-packages. Requires need to be correct below.
   (:map vc-prefix-map
    ("RET" . vc-dir-root)
-   ("B" . vc-annotate)
    ("e" . vc-ediff)
    ("F" . vc-update)
    ("k" . vc-revert)
-   ("K" . vc-delete-file)
    :map vc-dir-mode-map
-   ("M-s a" . nil)
-   ("B" . vc-annotate)
+   ("M-s" . nil)
    ("e" . vc-ediff)
    ("F" . vc-update)
-   ("k" . vc-revert)
-   ("K" . vc-dir-delete-file))
+   ("k" . vc-revert))
   :config
   (require 'vc-dir))
 
