@@ -437,7 +437,6 @@
 (use-package winner
   :ensure nil
   :bind
-  ;; Short keybindings to manage window/buffer chaos.
   ("M-U" . winner-undo)
   ("M-R" . winner-redo)
   :hook (elpaca-after-init . winner-mode)
@@ -790,6 +789,7 @@ When ARG is non-nil, the working directory can be selected."
   ("ESC ESC" . keyboard-escape-quit) ;; 3rd ESC is unnecessary.
   ("M-&" . my/async-shell-command)
   ("M-*" . my/expand-line)
+  ("M-=" . count-words)
   ("M-c" . capitalize-dwim)
   ("M-l" . downcase-dwim)
   ("M-u" . upcase-dwim)
@@ -839,6 +839,11 @@ When ARG is non-nil, the working directory can be selected."
   :no-require
   :custom
   (tab-always-indent 'complete))
+
+(use-package subword
+  :ensure nil
+  :hook
+  (elpaca-after-init . global-subword-mode))
 
 (use-package delsel
   :ensure nil
@@ -916,13 +921,13 @@ When ARG is non-nil, the working directory can be selected."
       (my/help-buffer)))
 
   :bind
-  (("M-j" . avy-goto-word-1)
+  (("M-j" . avy-goto-subword-1)
    ("M-J" . avy-goto-char-in-line)
    ("M-g c" . avy-goto-char-timer)
    ("M-g C" . avy-goto-char-in-line)
    ("M-g l" . avy-goto-line)
    ("M-g L" . my/avy-goto-end-of-line)
-   ("M-g w" . avy-goto-word-1)
+   ("M-g w" . avy-goto-subword-1)
    :map isearch-mode-map
    ("M-j" . avy-isearch)
    ("M-g" . avy-isearch))
@@ -993,6 +998,8 @@ When ARG is non-nil, the working directory can be selected."
   (add-to-list 'pulsar-pulse-functions 'avy-goto-line)
   (add-to-list 'pulsar-pulse-functions 'beginning-of-buffer)
   (add-to-list 'pulsar-pulse-functions 'beginning-of-defun)
+  (add-to-list 'pulsar-pulse-functions 'diff-hunk-next)
+  (add-to-list 'pulsar-pulse-functions 'diff-hunk-prev)
   (add-to-list 'pulsar-pulse-functions 'end-of-buffer)
   (add-to-list 'pulsar-pulse-functions 'end-of-defun)
   (add-to-list 'pulsar-pulse-functions 'eshell-next-prompt)
@@ -2770,7 +2777,6 @@ with a numbered suffix."
   (declare-function org-refile-goto-last-stored "org-refile")
   (declare-function org-capture-goto-last-stored "org-capture")
   (declare-function bookmark-get-bookmark-record "bookmark")
-
   ;; Org paths.
   (defvar my/org-notes-dir (expand-file-name "~/dev/home/org/notes/"))
   (defvar my/org-agenda-dir (expand-file-name "~/dev/home/org/agenda/"))
@@ -2784,7 +2790,6 @@ with a numbered suffix."
   (defvar my/org-journal-file (expand-file-name "journal.org" my/org-other-dir))
   (defvar my/org-bookmarks-file (expand-file-name "bookmarks.org" my/org-other-dir))
   (defvar my/org-coffee-file (expand-file-name "coffee.org" my/org-other-dir))
-
   ;; Extra electric pairs to use in Org mode.
   (defvar my/org-extra-electric-pairs '((?/ . ?/) (?= . ?=) (?~ . ?~)))
 
@@ -2886,17 +2891,15 @@ with a numbered suffix."
   (org-use-sub-superscripts nil)
 
   :config
-  ;; Make it easier to create `org-babel' code blocks.
-  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-
   ;; Unset conflicting org keybindings.
   (dolist (key '("C-'" "M-S-<up>" "M-S-<down>" "M-S-<left>" "M-S-<right>"
                  "C-M-S-<left>" "C-M-S-<right>"))
     (define-key org-mode-map (kbd key) nil))
-
-  ;; Bit of feedback.
-  (advice-add #'org-id-copy :after (lambda (&optional _)
-                                     (message "Copied: %s" (car kill-ring)))))
+  ;; Make it easier to create `org-babel' code blocks.
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  ;; Add some user feedback.
+  (advice-add #'org-id-copy
+              :after (lambda (&optional _) (message "Copied: %s" (car kill-ring)))))
 
 (use-package org-agenda
   :ensure nil
@@ -2939,7 +2942,7 @@ with a numbered suffix."
 If CATEGORY is specified it must equal \\='personal or \\='work; if it is not
 specified then a task category will be determined by the item's tags."
     (let* ((hdm (org-get-at-bol 'org-hd-marker))
-	   (tags (with-current-buffer (marker-buffer hdm) (org-get-tags hdm))))
+           (tags (with-current-buffer (marker-buffer hdm) (org-get-tags hdm))))
       (cond ((or (eq 'personal category) (member "@personal" tags))
              (my/org-agenda-refile file "Personal"))
             ((or (eq 'work category) (member "@work" tags))
@@ -3014,9 +3017,9 @@ specified then a task category will be determined by the item's tags."
   (org-agenda-custom-commands
    `(("A" "Agenda for all tasks"
       ((todo
-	""
-	((org-agenda-overriding-header "Inbox")
-	 (org-agenda-files '(,my/org-inbox-file))))
+        ""
+        ((org-agenda-overriding-header "Inbox")
+         (org-agenda-files '(,my/org-inbox-file))))
        (todo
         ""
         ((org-agenda-overriding-header "Work")
@@ -3061,7 +3064,7 @@ specified then a task category will be determined by the item's tags."
      ("c" "Coffee Log" entry
       (file+olp+datetree ,my/org-coffee-file "Coffee Log" "Log")
       ,(concat
-	"* 6%?:00 AM\n"
+        "* 6%?:00 AM\n"
         "- Beans: Use org-id-copy then org-insert-link\n"
         "- Grind: KM47C+PO @ 3.0.0\n"
         "- Water: Brisbane tap @ 95°C\n"
