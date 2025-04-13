@@ -287,36 +287,38 @@
    ("]" . enlarge-window)
    ("[" . shrink-window))
   :custom
-  (even-window-sizes nil)
-  ;; Prefer splitting by width and only when the window is quite wide.
-  (split-height-threshold nil)
-  (split-width-threshold 200)
+  ;; WORK-IN-PROGRESS: Experimenting with all window display settings.
+  ;; See: https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Zen-of-Buffer-Display.html.
+  (even-window-sizes 'height-only)
+  (split-height-threshold 80)
+  (split-width-threshold 120)
+  (window-min-height 6)
+  (window-min-width 30)
+  (window-combination-resize t)
   ;; Display buffer configuration.
   (display-buffer-alist
-   `(;; No window.
-     ("\\*Placeholder\\*"
-      ;; Some buffers additionally require `allow-no-window' to be specified,
-      ;; however this can prevent other-window commands from opening them.
+   `(;; Hide by default. The `allow-no-window' setting isn't always required
+     ;; and it does break other-window style commands.
+     ("\\*Async Shell Command\\*"
       (display-buffer-no-window))
-     ;; Below current window in a regular window.
-     ("\\(\\*vc-log\\*\\|\\*vc-git\\|CAPTURE-.*\\.org\\)"
+     ("\\*Warnings\\*"
+      (display-buffer-no-window)
+      (allow-no-window . t))
+     ;; Display below current window in a regular window.
+     ("\\(CAPTURE-.*\\.org\\|\\*vc-log\\*\\)"
       (display-buffer-below-selected)
       (window-height . 16))
-     ;; Below current window in dedicated side window with no mode line.
+     ;; Display below current window in a side window with no mode line.
      ("\\*\\(Org \\(Select\\|Note\\)\\|Agenda Commands\\)\\*"
       (display-buffer-in-side-window)
       (dedicated . t)
       (side . bottom)
       (slot . 0)
       (window-parameters . ((mode-line-format . none))))
-     ;; Other window and don't select it.
+     ;; Display in other window.
      ("\\(\\*eldoc\\|\\*helpful\\)"
-      (display-buffer-reuse-mode-window display-buffer-pop-up-window)
-      (inhibit-same-window . t)
-      (post-command-select-window . nil))
-     ;; Same window.
-     ("\\(\\*vc-dir\\*\\|magit:\\)"
-      (display-buffer-same-window)))))
+      (display-buffer-reuse-window)
+      (inhibit-same-window . t)))))
 
 ;;;;; Window Movement
 
