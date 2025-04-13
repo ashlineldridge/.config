@@ -299,7 +299,7 @@
       ;; however this can prevent other-window commands from opening them.
       (display-buffer-no-window))
      ;; Below current window in a regular window.
-     ("\\(\\*vc-log\\*\\|CAPTURE-.*\\.org\\)"
+     ("\\(\\*vc-log\\*\\|\\*vc-git\\|CAPTURE-.*\\.org\\)"
       (display-buffer-below-selected)
       (window-height . 16))
      ;; Below current window in dedicated side window with no mode line.
