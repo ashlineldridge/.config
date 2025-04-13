@@ -25,6 +25,9 @@
 (defvar elpaca-use-package-by-default)
 (defvar no-littering)
 
+;; No global keybindings when Elpaca loads Magit.
+(defvar magit-define-global-key-bindings nil)
+
 (defun my/emacs-startup-statistics ()
   "Print Emacs startup statistics."
   (message "Emacs startup: boot: %.2fs, init: %.2fs, packages: %d, sweeps: %d"
@@ -35,9 +38,6 @@
 
 ;; Print startup statistics.
 (add-hook 'emacs-startup-hook #'my/emacs-startup-statistics 100)
-
-;; Elpaca loads Magit so this needs to be set here.
-(defvar magit-define-global-key-bindings nil)
 
 ;; With the exception of including var/ in `elpaca-directory', the block below
 ;; has been copied verbatim from https://github.com/progfolio/elpaca#installer.

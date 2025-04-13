@@ -1254,12 +1254,10 @@ When ARG is non-nil, the working directory can be selected."
   :custom
   (project-prompt-project-dir)
   (project-switch-commands
-   '((my/consult-project-file "File" ?f)
+   '((project-vc-dir "VC"  ?\r)
      (project-dired "Dired" ?j)
+     (my/consult-project-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
-     (magit-project-status "Magit" ?g)
-     (project-vc-dir "VC" ?v)
-     (project-eshell "Eshell" ?e)
      (my/project-async-shell-command "Command" ?&))))
 
 ;;;; Minibuffer
@@ -1525,8 +1523,6 @@ When ARG is non-nil, the working directory can be selected."
     (my/consult-source-buffer "Dired Buffer" ?d 'dired-mode))
   (defvar my/consult-source-eshell-buffer
     (my/consult-source-buffer "Eshell Buffer" ?e 'eshell-mode))
-  (defvar my/consult-source-magit-buffer
-    (my/consult-source-buffer "Magit Buffer" ?g 'magit-status-mode))
   (defvar my/consult-source-vc-buffer
     (my/consult-source-buffer "VC Buffer" ?v 'vc-dir-mode))
 
@@ -1684,7 +1680,6 @@ When ARG is non-nil, the working directory can be selected."
           my/consult-source-agenda-buffer       ;; Narrow: ?a (hidden)
           my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
           my/consult-source-eshell-buffer       ;; Narrow: ?e (hidden)
-          my/consult-source-magit-buffer        ;; Narrow: ?g (hidden)
           my/consult-source-vc-buffer           ;; Narrow: ?v (hidden)
           consult--source-bookmark              ;; Narrow: ?m (shown)
           consult--source-recent-file))         ;; Narrow: ?r (hidden)
@@ -2525,6 +2520,7 @@ When ARG is non-nil, the working directory can be selected."
   :defines vc-dir-mode-map
   :custom
   (vc-follow-symlinks t)
+  (vc-git-show-stash 10)
   :bind
   ;; Consolidate keybindings into a single `use-package' form as VC commands
   ;; are spread over many sub-packages. Requires need to be correct below.
@@ -2550,54 +2546,67 @@ When ARG is non-nil, the working directory can be selected."
 (use-package log-edit
   :ensure nil
   :custom
-  ;; Remove unnecessary/unwanted hook functions like `log-edit-show-files'.
+  ;; Remove unnecessary/unwanted hook functions. Use C-c C-d from the log
+  ;; buffer to run `log-edit-show-diff' and C-c C-f for `log-edit-show-files'.
   (log-edit-hook '(log-edit-insert-message-template
                    log-edit-insert-changelog)))
 
 (use-package magit
-  :bind
-  ("C-c g RET" . magit-status)
-  ("C-c g ." . magit-file-dispatch)
-  ("C-c g f" . magit-find-file)
-  ("C-c g g" . magit-dispatch)
+  :preface
+  (declare-function magit-git-string "magit-git")
+  (defun my/magit-copy-hash (arg)
+    "Copy the short 12 character Git commit hash to the kill ring.
+If ARG is non-nil, the full 40 character commit hash will be copied."
+    (interactive "P")
+    (require 'magit-git)
+    (let ((sha (magit-git-string "rev-parse" "HEAD")))
+      (kill-new (if arg sha (substring sha 0 12)))
+      (message "Copied: %s" (car kill-ring))))
 
+  (defun my/magit-copy-hash-full ()
+    "Copy the full 40 character Git commit hash to the kill ring."
+    (interactive)
+    (my/magit-copy-hash t))
+
+  :bind
+  ("C-c g" . magit-dispatch)
   :custom
-  (magit-auto-revert-mode nil) ;; Use `auto-revert-mode' instead.
-  (magit-verbose-messages t)
-  (magit-refresh-verbose t)
-  (magit-refresh-status-buffer nil)
-  (magit-delete-by-moving-to-trash t)
-  (magit-diff-refine-hunk 'all))
+  ;; Use `auto-revert-mode' instead.
+  (magit-auto-revert-mode nil)
+  (magit-diff-refine-hunk t)
+  :config
+  ;; Add custom commands to the `magit-dispatch' transient menu as a new
+  ;; subgroup. Existing suffixes that already use these bindings are removed
+  ;; first. Suffix removal shifts subsequent suffixes in the subgroup up.
+  ;; See: https://magit.vc/manual/transient/Modifying-Existing-Transients.html.
+  (dolist (loc '((0 1 9) (0 1 9) (0 2 4) (0 2 4)))
+    (transient-remove-suffix 'magit-dispatch loc))
+  (transient-append-suffix 'magit-dispatch '(0 -1)
+    [("w" "Copy short hash" my/magit-copy-hash)
+     ("W" "Copy long hash" my/magit-copy-hash-full)
+     ("o" "Browse remote branch" my/browse-at-remote)
+     ("O" "Browse remote trunk" my/browse-at-remote-trunk)]))
 
 (use-package browse-at-remote
   :preface
   (declare-function browse-at-remote "browse-at-remote")
-  (declare-function browse-at-remote-kill "browse-at-remote")
-  (declare-function browse-at-remote--get-local-branch "browse-at-remote")
   (declare-function vc-git-branches "vc-git")
 
-  (defvar my/browse-at-remote-branch nil)
-  (defun my/browse-at-remote-local-branch (fn &rest args)
-    "Advises `browse-at-remote--get-local-branch' to override the branch name."
-    (or my/browse-at-remote-branch (apply fn args)))
-
-  (defun my/browse-at-remote (use-trunk &optional kill-only)
-    "Browse to the remote file (or KILL-ONLY) honoring USE-TRUNK."
+  (defun my/browse-at-remote (arg)
+    "Browse to the remote file, using the trunk branch if ARG is non-nil."
     (interactive "P")
     (require 'vc-git)
-    (let ((my/browse-at-remote-branch
-           (when use-trunk (if (member "main" (vc-git-branches)) "main" "master"))))
-      (if kill-only (browse-at-remote-kill) (browse-at-remote))))
+    (if arg
+        (cl-letf (((symbol-function 'browse-at-remote--get-local-branch)
+                   (lambda ()
+                     (if (member "main" (vc-git-branches)) "main" "master"))))
+          (browse-at-remote))
+      (browse-at-remote)))
 
-  (defun my/browse-at-remote-kill (use-trunk)
-    "Add the remote file to the kill-ring honoring USE-TRUNK."
-    (interactive "P")
-    (my/browse-at-remote use-trunk t))
-  :bind
-  (("C-c g o" . my/browse-at-remote)
-   ("C-c g l" . my/browse-at-remote-kill))
-  :config
-  (advice-add #'browse-at-remote--get-local-branch :around #'my/browse-at-remote-local-branch))
+  (defun my/browse-at-remote-trunk ()
+    "Browse to the remote file using the trunk branch."
+    (interactive)
+    (my/browse-at-remote t)))
 
 ;;;; Diff
 
@@ -2606,7 +2615,13 @@ When ARG is non-nil, the working directory can be selected."
   :bind
   (:map diff-mode-map
    ("M-k" . nil)
-   ("M-o" . nil)))
+   ("M-o" . nil)
+   ("u" . diff-undo)
+   ("v" . vc-next-action)
+   ("l" . vc-print-log)
+   ("L" . vc-print-root-log))
+  :custom
+  (diff-default-read-only t))
 
 (use-package difftastic)
 
