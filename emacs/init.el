@@ -3273,20 +3273,12 @@ specified then a task category will be determined by the item's tags."
    ("C-z o" . gptel-org-set-topic)
    ("C-z O" . gptel-org-set-properties))
   :config
-  ;; Load extras package to configure directives.
   (require 'gptel-extras)
-  ;; Register additional backends.
-  (gptel-make-anthropic "Claude-Sonnet"
-    :stream t
-    :key gptel-api-key
-    :models '(claude-3-7-sonnet-20250219))
-  (gptel-make-anthropic "Claude-Opus"
-    :stream t
-    :key gptel-api-key
-    :models '(claude-3-opus-20240229))
-  (gptel-make-gemini "Gemini"
-    :key gptel-api-key
-    :stream t))
+  ;; Register additional backends and select default backend and model.
+  (let ((_ (gptel-make-anthropic "Claude" :stream t :key gptel-api-key))
+        (b (gptel-make-gemini "Gemini" :stream t :key gptel-api-key)))
+    (setq gptel-backend b
+          gptel-model 'gemini-2.5-pro-exp-03-25)))
 
 ;; Hide cruft in separate package.
 (use-package gptel-extras
@@ -3298,8 +3290,6 @@ specified then a task category will be determined by the item's tags."
 
 (use-package gptel-quick
   :ensure (:host github :repo "karthink/gptel-quick")
-  :bind
-  ("C-z h" . gptel-quick)
   :init
   (with-eval-after-load 'embark
     (bind-key "?" #'gptel-quick 'embark-general-map)))
