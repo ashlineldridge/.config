@@ -917,6 +917,12 @@ When ARG is non-nil, the working directory can be selected."
     (my/maybe-delete-selection)
     (yank))
 
+  (defun my/avy-action-xref (pt)
+    "Goto the Xref definition of the symbol at PT."
+    (save-excursion
+      (goto-char pt)
+      (call-interactively #'xref-find-definitions)))
+
   (defun my/avy-action-help-buffer (pt)
     "Show a help buffer for the symbol at PT without moving point."
     (save-excursion
@@ -947,6 +953,7 @@ When ARG is non-nil, the working directory can be selected."
      (?y . my/avy-action-yank)
      (?z . avy-action-zap-to-char)
      (?x . avy-action-kill-stay)
+     (?. . my/avy-action-xref)
      (?h . my/avy-action-help-buffer)))
   :config
   (eldoc-add-command-completions "avy-goto-"))
