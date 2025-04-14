@@ -290,7 +290,7 @@
   ;; WORK-IN-PROGRESS: Experimenting with all window display settings.
   ;; See: https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Zen-of-Buffer-Display.html.
   (even-window-sizes 'height-only)
-  (split-height-threshold 80)
+  (split-height-threshold 100)
   (split-width-threshold 120)
   (window-min-height 6)
   (window-min-width 30)
@@ -298,9 +298,7 @@
   ;; Display buffer configuration.
   (display-buffer-alist
    `(;; Hide by default. The `allow-no-window' setting isn't always required
-     ;; and it does break other-window style commands.
-     ("\\*Async Shell Command\\*"
-      (display-buffer-no-window))
+     ;; and it the has side effect of breaking other-window style commands.
      ("\\*Warnings\\*"
       (display-buffer-no-window)
       (allow-no-window . t))
@@ -318,7 +316,10 @@
      ;; Display in other window.
      ("\\(\\*eldoc\\|\\*helpful\\)"
       (display-buffer-reuse-window)
-      (inhibit-same-window . t)))))
+      (inhibit-same-window . t))
+     ;; Display in same window.
+     ("\\(\\*Async Shell Command\\*\\|\\*vc-dir\\*\\|magit:\\)"
+      (display-buffer-same-window)))))
 
 ;;;;; Window Movement
 
