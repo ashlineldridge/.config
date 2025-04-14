@@ -2526,7 +2526,9 @@ When ARG is non-nil, the working directory can be selected."
 
 (use-package vc
   :ensure nil
-  :defines vc-dir-mode-map
+  :defines
+  (vc-dir-mode-map
+   vc-dir-git-mode-map)
   :custom
   (vc-follow-symlinks t)
   (vc-git-show-stash 10)
@@ -2542,7 +2544,10 @@ When ARG is non-nil, the working directory can be selected."
    ("M-s" . nil)
    ("e" . vc-ediff)
    ("F" . vc-update)
-   ("k" . vc-revert))
+   ("k" . vc-revert)
+   :map vc-dir-git-mode-map
+   ("z a" . vc-git-stash-apply)
+   ("z k" . vc-git-stash-delete))
   :config
   (require 'vc-dir))
 
