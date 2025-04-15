@@ -918,10 +918,11 @@ When ARG is non-nil, the working directory can be selected."
     (yank))
 
   (defun my/avy-action-xref (pt)
-    "Goto the Xref definition of the symbol at PT."
+    "Show the Xref definition of the symbol at PT without moving point."
     (save-excursion
       (goto-char pt)
-      (call-interactively #'xref-find-definitions)))
+      (with-selected-window (selected-window)
+        (call-interactively #'xref-find-definitions-other-window))))
 
   (defun my/avy-action-help-buffer (pt)
     "Show a help buffer for the symbol at PT without moving point."
