@@ -782,6 +782,7 @@ When ARG is non-nil, the working directory can be selected."
   (mark-ring-max 16)
   (global-mark-ring-max 16)
   (set-mark-command-repeat-pop t)
+  (cycle-spacing-actions '((just-one-space -1) (delete-all-space -1) restore))
   (shell-command-prompt-show-cwd nil)
   (async-shell-command-buffer 'confirm-new-buffer)
   ;; Don't show M-x commands that don't work in the current mode.
