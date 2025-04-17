@@ -318,7 +318,7 @@
       (display-buffer-reuse-window)
       (inhibit-same-window . t))
      ;; Display in same window.
-     ("\\(\\*Async Shell Command\\*\\|\\*vc-dir\\*\\|magit:\\)"
+     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
       (display-buffer-same-window)))))
 
 ;;;;; Window Movement
@@ -586,7 +586,10 @@
   (declare-function breadcrumb-local-mode "breadcrumb")
   (defun my/breadcrumb-show ()
     "Show breadcrumb if not a minibuffer and there is no special header line."
-    (when (and (not (minibufferp)) (listp header-line-format))
+    (when (and
+           (not (minibufferp))
+           (not (derived-mode-p 'proced-mode))
+           (listp header-line-format))
       (breadcrumb-local-mode 1)))
 
   ;; Some package like `ibuffer' insist on modifying the header line.
