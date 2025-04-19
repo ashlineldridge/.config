@@ -272,6 +272,26 @@
 
 (use-package window
   :ensure nil
+  :preface
+  (defun my/scroll-up-line-other-window (&optional arg)
+    "Scroll up by ARG (or one) lines in the other window."
+    (interactive)
+    (with-selected-window (other-window-for-scrolling)
+      (scroll-up-line arg)))
+
+  (defun my/scroll-down-line-other-window (&optional arg)
+    "Scroll down by ARG (or one) lines in the other window."
+    (interactive)
+    (with-selected-window (other-window-for-scrolling)
+      (scroll-down-line arg)))
+
+  (defun my/other-window-for-scrolling ()
+    "Custom window selection for scrolling other window."
+    ;; Prioritize right, then left, then next.
+    (or (window-in-direction 'right)
+        (window-in-direction 'left)
+        (next-window)))
+
   :bind
   (("M-[" . previous-buffer)
    ("M-]" . next-buffer)
@@ -281,6 +301,12 @@
    ("M-O {" . shrink-window-horizontally)
    ("M-O ]" . enlarge-window)
    ("M-O [" . shrink-window)
+   ("M-S-<down>" . scroll-up-line)
+   ("M-S-<up>" . scroll-down-line)
+   ("C-M-<next>" . scroll-other-window)
+   ("C-M-<prior>" . scroll-other-window-down)
+   ("C-M-<down>" . my/scroll-up-line-other-window)
+   ("C-M-<up>" . my/scroll-down-line-other-window)
    :repeat-map my/window-repeat-map
    ("}" . enlarge-window-horizontally)
    ("{" . shrink-window-horizontally)
@@ -319,7 +345,18 @@
       (inhibit-same-window . t))
      ;; Display in same window.
      ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
-      (display-buffer-same-window)))))
+      (display-buffer-same-window))))
+
+  :config
+  ;; The default value of 0 causes point to be recentered when it scrolls off
+  ;; screen. A value of 101 (or above) will mean that point is never recentered,
+  ;; though for some commands (e.g. xref navigation) it can cause point to be
+  ;; shown in an awkward position when you want recentering to occur. A value of
+  ;; 1 provides a good balance such that point is prevented from scrolling off
+  ;; screen but it is recentered when moving by one line doesn't bring point on
+  ;; screen again (e.g. during xref navigation).
+  (setq scroll-conservatively 1)
+  (setq other-window-scroll-default #'my/other-window-for-scrolling))
 
 ;;;;; Window Movement
 
@@ -445,98 +482,6 @@
   :hook (elpaca-after-init . winner-mode)
   :custom
   (winner-dont-bind-my-keys t))
-
-;;;;; Window Scrolling
-
-(use-package pixel-scroll
-  :ensure nil
-  :preface
-  (declare-function pixel-line-height "pixel-scroll")
-  (declare-function pixel-scroll-precision-interpolate "pixel-scroll")
-
-  (defun my/scroll-delta (delta &optional factor)
-    "Scroll up by DELTA pixels with scale FACTOR (defaults to 1.0)."
-    (pixel-scroll-precision-interpolate delta nil (or factor 1.0)))
-
-  (defun my/scroll-up-page ()
-    "Scroll up by the page height."
-    (interactive)
-    (my/scroll-delta (window-text-height nil t)))
-
-  (defun my/scroll-down-page ()
-    "Scroll down by the page height."
-    (interactive)
-    (my/scroll-delta (- (window-text-height nil t))))
-
-  (defun my/scroll-up-lines ()
-    "Scroll up by a line factor."
-    (interactive)
-    (my/scroll-delta (pixel-line-height) 2.0))
-
-  (defun my/scroll-down-lines ()
-    "Scroll down by a line factor."
-    (interactive)
-    (my/scroll-delta (- (pixel-line-height)) 2.0))
-
-  (defun my/scroll-up-page-other-window ()
-    "Scroll the other window up by the page height."
-    (interactive)
-    (with-selected-window (other-window-for-scrolling)
-      (my/scroll-up-page)))
-
-  (defun my/scroll-down-page-other-window ()
-    "Scroll down by the page height."
-    (interactive)
-    (with-selected-window (other-window-for-scrolling)
-      (my/scroll-down-page)))
-
-  (defun my/scroll-up-lines-other-window ()
-    "Scroll the other window up by a line factor."
-    (interactive)
-    (with-selected-window (other-window-for-scrolling)
-      (my/scroll-up-lines)))
-
-  (defun my/scroll-down-lines-other-window ()
-    "Scroll the other window down by a line factor."
-    (interactive)
-    (with-selected-window (other-window-for-scrolling)
-      (my/scroll-down-lines)))
-
-  (defun my/other-window-for-scrolling ()
-    "Custom window selection for scrolling other window."
-    ;; Prioritize right, then left, then next.
-    (or (window-in-direction 'right)
-        (window-in-direction 'left)
-        (next-window)))
-
-  :bind
-  ("M-v" . my/scroll-up-page)
-  ("C-v" . my/scroll-down-page)
-  ("<prior>" . my/scroll-up-page)
-  ("<next>" . my/scroll-down-page)
-  ("M-S-<up>" . my/scroll-up-lines)
-  ("M-S-<down>" . my/scroll-down-lines)
-  ;; Use the `C-M' chorded keybinds for scrolling the other window. This
-  ;; chord is also used for other window keybindings in other packages.
-  ("C-M-<prior>" . my/scroll-up-page-other-window)
-  ("C-M-<next>" . my/scroll-down-page-other-window)
-  ("C-M-<up>" . my/scroll-up-lines-other-window)
-  ("C-M-<down>" . my/scroll-down-lines-other-window)
-  ;; Also replace existing keybinds for scrolling the other window.
-  ("M-<prior>" . my/scroll-up-page-other-window)
-  ("M-<next>" . my/scroll-down-page-other-window)
-  ("C-M-S-v" . my/scroll-up-page-other-window)
-  ("C-M-v" . my/scroll-down-page-other-window)
-  :hook (elpaca-after-init . pixel-scroll-precision-mode)
-  :init
-  ;; The default value of 0 causes point to be recentered when it scrolls off
-  ;; screen. A value of 101 (or above) will mean that point is never recentered,
-  ;; though for some commands (e.g. xref navigation) it can cause point to be
-  ;; shown in an awkward position when you want recentering to occur. A value of
-  ;; 1 provides a good balance such that point is prevented from scrolling off
-  ;; screen but it is recentered when moving by one line doesn't bring point on
-  ;; screen again (e.g. during xref navigation).
-  (setq scroll-conservatively 1))
 
 ;;;;; Frame Management
 
