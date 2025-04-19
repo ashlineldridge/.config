@@ -943,8 +943,7 @@ When ARG is non-nil, the working directory can be selected."
    ("M-g L" . my/avy-goto-end-of-line)
    ("M-g w" . avy-goto-subword-1)
    :map isearch-mode-map
-   ("M-j" . avy-isearch)
-   ("M-g" . avy-isearch))
+   ("M-j" . avy-isearch))
   :custom
   (avy-all-windows 'all-frames)
   (avy-single-candidate-jump nil)
@@ -1845,7 +1844,12 @@ When ARG is non-nil, the working directory can be selected."
    ;; The default `isearch-abort' requires multiple C-g if search not found.
    ("C-g" . isearch-cancel)
    ("C-n" . isearch-repeat-forward)
-   ("C-p" . isearch-repeat-backward)))
+   ("C-p" . isearch-repeat-backward))
+  :custom
+  (isearch-allow-scroll t)
+  (isearch-allow-motion t)
+  (isearch-lazy-count t)
+  (isearch-repeat-on-direction-change t))
 
 (use-package occur
   :ensure nil
