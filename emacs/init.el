@@ -620,9 +620,9 @@ the value of `my/help-buffer-kill-to-close'."
   ([remap describe-command] . helpful-command)
   ([remap describe-key] . helpful-key)
   :custom
-  ;; Don't select the helpful buffer.
+  ;; Don't select the Helpful buffer.
   (helpful-switch-buffer-function #'display-buffer)
-  (helpful-max-buffers 1)
+  (helpful-max-buffers 5)
   :commands helpful-at-point)
 
 (use-package help-fns
