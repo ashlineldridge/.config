@@ -1057,7 +1057,7 @@ When ARG is non-nil, the working directory can be selected."
       (save-buffer))
     (kill-current-buffer))
 
-  (defun my/save-kill-other-buffer ()
+  (defun my/save-kill-buffer-other-window ()
     "Save the other window's buffer (if applicable) and then kill it."
     (interactive)
     (if (= (length (window-list)) 2)
@@ -1087,7 +1087,7 @@ When ARG is non-nil, the working directory can be selected."
   ;; Shorter save/quit buffer bindings.
   ("M-'" . save-buffer)
   ("M-\"" . my/save-kill-buffer)
-  ("C-M-\"" . my/save-kill-other-buffer)
+  ("C-M-'" . my/save-kill-buffer-other-window)
   ("C-x C-r" . restart-emacs)
   :hook (elpaca-after-init . auto-save-visited-mode)
   :custom
