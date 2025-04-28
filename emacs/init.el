@@ -873,6 +873,12 @@ When ARG is non-nil, the working directory can be selected."
       (with-selected-window (selected-window)
         (call-interactively #'xref-find-definitions-other-window))))
 
+  (defun my/avy-action-open-link (pt)
+    "Open the link at PT."
+    (save-excursion
+      (goto-char pt)
+      (org-open-at-point-global)))
+
   (defun my/avy-action-help-buffer (pt)
     "Show a help buffer for the symbol at PT without moving point."
     (save-excursion
@@ -897,6 +903,7 @@ When ARG is non-nil, the working directory can be selected."
   (avy-styles-alist '((avy-isearch . post)))
   (avy-dispatch-alist
    '((?m . avy-action-mark)
+     (?o . my/avy-action-open-link)
      (?t . avy-action-teleport)
      (?w . avy-action-copy)
      (?y . my/avy-action-yank)
@@ -906,11 +913,6 @@ When ARG is non-nil, the working directory can be selected."
      (?h . my/avy-action-help-buffer)))
   :config
   (eldoc-add-command-completions "avy-goto-"))
-
-(use-package link-hint
-  :bind
-  ("M-g ." . link-hint-open-link)
-  ("M-g M-." . link-hint-copy-link))
 
 ;;;;; Highlighting
 
