@@ -2538,6 +2538,7 @@ If ARG is non-nil, the full 40 character commit hash will be copied."
   ;; Use `auto-revert-mode' instead.
   (magit-auto-revert-mode nil)
   (magit-diff-refine-hunk t)
+  (magit-refresh-status-buffer nil)
   :config
   ;; Add custom commands to the `magit-dispatch' transient menu as a new
   ;; subgroup. Existing suffixes that already use these bindings are removed
