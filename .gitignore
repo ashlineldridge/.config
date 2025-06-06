@@ -41,6 +41,7 @@ git/hooks/
 gnupg/*.kbx
 iterm2/AppSupport
 k9s/config.yml
+ldcli/
 ngrok/
 nvim/bundle/*/doc/tags
 raycast/extensions/
