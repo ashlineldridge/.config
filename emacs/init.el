@@ -1215,7 +1215,7 @@ When ARG is non-nil, the working directory can be selected."
   :custom
   (project-prompt-project-dir)
   (project-switch-commands
-   '((project-vc-dir "VC"  ?\r)
+   '((magit-project-status "Magit" ?g)
      (project-dired "Dired" ?j)
      (my/consult-project-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
@@ -1484,8 +1484,8 @@ When ARG is non-nil, the working directory can be selected."
     (my/consult-source-buffer "Dired Buffer" ?d 'dired-mode))
   (defvar my/consult-source-eshell-buffer
     (my/consult-source-buffer "Eshell Buffer" ?e 'eshell-mode))
-  (defvar my/consult-source-vc-buffer
-    (my/consult-source-buffer "VC Buffer" ?v 'vc-dir-mode))
+  (defvar my/consult-source-magit-buffer
+    (my/consult-source-buffer "Magit Buffer" ?g 'magit-status-mode))
 
   ;; Consult source for all project files. This has largely been adapted from
   ;; the implementation of `consult--source-project-recent-file'.
@@ -1641,7 +1641,7 @@ When ARG is non-nil, the working directory can be selected."
           my/consult-source-agenda-buffer       ;; Narrow: ?a (hidden)
           my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
           my/consult-source-eshell-buffer       ;; Narrow: ?e (hidden)
-          my/consult-source-vc-buffer           ;; Narrow: ?v (hidden)
+          my/consult-source-magit-buffer        ;; Narrow: ?g (hidden)
           consult--source-bookmark              ;; Narrow: ?m (shown)
           consult--source-recent-file))         ;; Narrow: ?r (hidden)
 
@@ -2540,7 +2540,9 @@ If ARG is non-nil, the full 40 character commit hash will be copied."
   ;; Use `auto-revert-mode' instead.
   (magit-auto-revert-mode nil)
   (magit-diff-refine-hunk t)
-  (magit-refresh-status-buffer nil)
+  (magit-refresh-status-buffer t)
+  (magit-refresh-verbose t)
+  (magit-verbose-messages t)
   :config
   ;; Add custom commands to the `magit-dispatch' transient menu as a new
   ;; subgroup. Existing suffixes that already use these bindings are removed
@@ -2549,7 +2551,8 @@ If ARG is non-nil, the full 40 character commit hash will be copied."
   (dolist (loc '((0 1 9) (0 1 9) (0 2 4) (0 2 4)))
     (transient-remove-suffix 'magit-dispatch loc))
   (transient-append-suffix 'magit-dispatch '(0 -1)
-    [("w" "Copy short hash" my/magit-copy-hash)
+    [("s" "Status" magit-status)
+     ("w" "Copy short hash" my/magit-copy-hash)
      ("W" "Copy long hash" my/magit-copy-hash-full)
      ("o" "Browse remote branch" my/browse-at-remote)
      ("O" "Browse remote trunk" my/browse-at-remote-trunk)]))
