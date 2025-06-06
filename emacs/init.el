@@ -1878,7 +1878,7 @@ When ARG is non-nil, the working directory can be selected."
         (message "Tree-sitter grammars have been installed"))))
   :custom
   (treesit-auto-install 'prompt)
-  (treesit-auto-langs '(bash dockerfile go gomod javascript json proto python rust))
+  (treesit-auto-langs '(bash dockerfile go gomod javascript json proto python rust yaml))
   :hook
   (elpaca-after-init . global-treesit-auto-mode)
   ;; Perform an idle wait before installing grammars (when necessary) to prevent
@@ -1886,7 +1886,7 @@ When ARG is non-nil, the working directory can be selected."
   :defer 1
   :config
   ;; Add all languages in `treesit-auto-langs' except Rust which uses Rustic.
-  (treesit-auto-add-to-auto-mode-alist '(bash dockerfile go gomod javascript json proto python))
+  (treesit-auto-add-to-auto-mode-alist (remove 'rust treesit-auto-langs))
   (my/treesit-auto-maybe-install))
 
 (use-package treesit-fold
