@@ -841,10 +841,9 @@ When ARG is non-nil, the working directory can be selected."
 
 ;;;;; Whitespace
 
-(use-package ws-butler
-  :hook ((text-mode prog-mode) . ws-butler-mode)
-  :custom
-  (ws-butler-keep-whitespace-before-point nil))
+(use-package stripspace
+  :hook
+  ((prog-mode text-mode conf-mode) . stripspace-local-mode))
 
 ;;;;; Jumping Around
 
