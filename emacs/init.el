@@ -2737,7 +2737,8 @@ with a numbered suffix."
                '("find-file-other-window" find-file-other-window))
 
   ;; Unset a bunch of keybindings that I want to keep.
-  (dolist (key '("C-r" "C-s" "C-SPC" "M-g" "M-k" "M-s" "M-:" "M-&" "M-'" "M-\"" "M-]"))
+  (dolist (key '("C-r" "C-s" "C-z" "C-SPC"
+                 "M-g" "M-k" "M-s" "M-:" "M-&" "M-'" "M-\"" "M-]"))
     (define-key vterm-mode-map (kbd key) nil)))
 
 (use-package sh-script
