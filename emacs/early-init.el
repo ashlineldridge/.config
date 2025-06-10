@@ -14,7 +14,7 @@
 ;; Init color should be set to the background color of the theme. E.g. for an
 ;; an `ef-themes' theme, use the value of 'bg-main from the relevant palette
 ;; variable (e.g. `ef-dark-palette').
-(defvar my/init-color "#232025")
+(defvar my/init-color "#000000")
 
 ;; Increase GC threshold during init and then drop it after. See:
 ;; - https://github.com/jamescherti/minimal-emacs.d

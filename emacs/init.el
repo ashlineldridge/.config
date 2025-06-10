@@ -23,7 +23,7 @@
   :ensure nil
   :no-require
   :preface
-  (defvar my/theme 'ef-dream)
+  (defvar my/theme 'ef-dark)
   (defvar my/theme-headings
     '((1 . (variable-pitch semibold 1.2))
       (t . (variable-pitch semibold 1.1))))
