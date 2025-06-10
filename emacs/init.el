@@ -2277,21 +2277,6 @@ When ARG is non-nil, the working directory can be selected."
    ("C-c t F" . (lambda () (interactive) (my/go-test-verbose #'go-test-current-file)))
    ("C-c t P" . (lambda () (interactive) (my/go-test-verbose #'go-test-current-project)))))
 
-(use-package go-gen-test
-  :after go-ts-mode
-  :bind
-  (:map go-ts-mode-map
-   ("C-c t g" . go-gen-test-dwim)))
-
-(use-package go-add-tags
-  :after go-ts-mode
-  :bind
-  (:map go-ts-mode-map
-   ("C-c r t" . go-add-tags))
-  :custom
-  (go-add-tags-style 'camel-case)
-  (go-add-tags-fields-tags '("json" "yaml" "validate")))
-
 (use-package go-playground
   :preface
   (declare-function go-playground "go-playground")
