@@ -171,18 +171,19 @@
 
 (use-package spacious-padding
   :preface
-  (defun my/spacious-padding-toggle-subtle-mode-line ()
-    "Toggle whether the mode line is displayed in the subtle style."
+  (defun my/spacious-padding-toggle-subtle ()
+    "Toggle whether the mode and header line are displayed in the subtle style."
     (interactive)
-    (setq spacious-padding-subtle-mode-line
-          (not spacious-padding-subtle-mode-line))
+    (let ((show-subtle (not spacious-padding-subtle-frame-lines)))
+      (setq spacious-padding-subtle-frame-lines show-subtle)
+      (setq spacious-padding-subtle-header-line show-subtle))
     (when spacious-padding-mode
       (spacious-padding-mode -1)
       (spacious-padding-mode 1)))
   :hook
   (elpaca-after-init . spacious-padding-mode)
   :bind
-  ("C-c x _" . my/spacious-padding-toggle-subtle-mode-line)
+  ("C-c x _" . my/spacious-padding-toggle-subtle)
   :custom
   (spacious-padding-subtle-mode-line nil)
   (spacious-padding-widths
