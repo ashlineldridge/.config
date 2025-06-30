@@ -1993,7 +1993,7 @@ When ARG is non-nil, the working directory can be selected."
 
 (use-package dape
   :bind-keymap
-  ("C-c C-d" . dape-global-map)
+  ("C-c d" . dape-global-map)
   :custom
   (dape-key-prefix nil)
   (dape-repl-use-shorthand t)
