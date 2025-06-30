@@ -120,13 +120,4 @@
                 ,exec-directory)))
 (setenv "PATH" (mapconcat #'identity exec-path ":"))
 
-;; This is a workaround for a bunch of warnings that get displayed by the
-;; d12frosted/homebrew-emacs-plus distribution of Emacs on MacOS.
-;; See https://github.com/d12frosted/homebrew-emacs-plus/issues/323 for details.
-(setenv "LIBRARY_PATH"
-	(mapconcat #'identity
-                   '("/opt/homebrew/opt/gcc/lib/gcc/14"
-                     "/opt/homebrew/opt/libgccjit/lib/gcc/14"
-                     "/opt/homebrew/opt/gcc/lib/gcc/14/gcc/aarch64-apple-darwin23/14") ":"))
-
 ;;; early-init.el ends here
