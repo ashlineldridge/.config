@@ -1026,8 +1026,8 @@ When ARG is non-nil, the working directory can be selected."
       ("Shell" (or (mode . eshell-mode) (mode . vterm-mode)))
       ("Command" (mode . shell-command-mode))
       ("Dired" (mode . dired-mode))
-      ("Gptel" (name . "^*gptel-chat"))
-      ("Org" (or (mode . org-mode) (mode . org-agenda-mode))))))
+      ("Org" (or (mode . org-mode) (mode . org-agenda-mode)))
+      ("AI" (name . "^*claudemacs:")))))
   (ibuffer-show-empty-filter-groups nil)
   (ibuffer-use-header-line nil)
   :config
@@ -2726,6 +2726,14 @@ with a numbered suffix."
                  "M-g" "M-k" "M-s" "M-:" "M-&" "M-'" "M-\"" "M-]"))
     (define-key vterm-mode-map (kbd key) nil)))
 
+(use-package eat
+  :config
+  (dolist (key '("M-\"" "M-j" "M-o" "M-q"))
+    (dolist (map (list eat-char-mode-map
+                       eat-semi-char-mode-map
+                       eat-eshell-char-mode-map))
+      (define-key map (kbd key) nil))))
+
 (use-package sh-script
   :ensure nil
   :bind
@@ -3224,46 +3232,10 @@ specified then a task category will be determined by the item's tags."
 
 ;;;; AI/LLM
 
-(use-package gptel
-  :preface
-  (declare-function gptel-make-anthropic "gptel")
-  (declare-function gptel-make-gemini "gptel")
-  :custom
-  (gptel-default-mode 'org-mode)
-  (gptel-prompt-prefix-alist '((org-mode . "*Prompt ❯❯❯* ")))
-  (gptel-response-prefix-alist '((org-mode . "*Response ❯❯❯* ")))
-  (gptel-display-buffer-action '(pop-to-buffer-same-window))
+(use-package claudemacs
+  :ensure (:host github :repo "cpoile/claudemacs")
   :bind
-  (("C-z RET" . gptel-send)
-   ("C-z m" . gptel-menu)
-   ("C-z a" . gptel-add)
-   ("C-z f" . gptel-add-file)
-   ("C-z k" . gptel-abort)
-   ("C-z r" . gptel-rewrite)
-   :map gptel-mode-map
-   ("C-z o" . gptel-org-set-topic)
-   ("C-z O" . gptel-org-set-properties))
-  :config
-  (require 'gptel-extras)
-  ;; Register additional backends and select default backend and model.
-  (let ((_ (gptel-make-anthropic "Claude" :stream t :key gptel-api-key))
-        (b (gptel-make-gemini "Gemini" :stream t :key gptel-api-key)))
-    (setq gptel-backend b
-          gptel-model 'gemini-2.5-pro-exp-03-25)))
-
-;; Hide cruft in separate package.
-(use-package gptel-extras
-  :if (file-directory-p "~/dev/home/gptel-extras")
-  :load-path "~/dev/home/gptel-extras"
-  :bind
-  ("C-z C-z" . gptel-extras-chat)
-  ("C-z SPC" . gptel-extras-select-model))
-
-(use-package gptel-quick
-  :ensure (:host github :repo "karthink/gptel-quick")
-  :init
-  (with-eval-after-load 'embark
-    (bind-key "?" #'gptel-quick 'embark-general-map)))
+  ("C-z C-z" . claudemacs-run))
 
 ;;;; Work Configuration
 

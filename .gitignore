@@ -27,6 +27,7 @@ emacs/eln-cache/
 AWSVPNClient/
 argocd/
 auto-save-list
+claude/
 configstore/
 dlv/.dbg_history
 droidcli/
