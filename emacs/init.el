@@ -53,7 +53,7 @@
   (defconst my/variable-family "Iosevka Comfy Motion Duo")
   (defun my/fontaine-apply-preset ()
     "Apply the current (or default) Fontaine preset."
-    (fontaine-set-preset (or fontaine-current-preset 'laptop1)))
+    (fontaine-set-preset (or fontaine-current-preset 'desktop)))
   :bind
   ("C-c x f" . fontaine-set-preset)
   :hook
