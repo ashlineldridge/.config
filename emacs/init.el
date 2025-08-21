@@ -336,7 +336,7 @@
       (display-buffer-reuse-window)
       (inhibit-same-window . t))
      ;; Display in same window.
-     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
+     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\|\\*goose:\\)"
       (display-buffer-same-window))))
 
   :config
@@ -431,7 +431,7 @@
          (ace-window t)
          (call-interactively #',fn))
        (with-eval-after-load 'embark
-         (bind-key "M-o" #',name ,map))))
+         (define-key ,map (kbd "M-o") #',name))))
 
   ;; Create additional Embark actions that support Ace Window.
   (my/define-ace-embark-action my/ace-embark-buffer embark-buffer-map switch-to-buffer)
@@ -712,6 +712,13 @@ When ARG is non-nil, the working directory can be selected."
         (concat (my/abbreviate-file-name
                  (string-remove-suffix "/" default-directory) 30) " $ "))
        (generate-new-buffer shell-command-buffer-name-async))))
+
+  (defun my/unbind-common-keys (map)
+    "Unbind (often stolen) common keybindings from MAP."
+    (dolist (key '("C-z" "C-SPC" "C-M-<left>" "C-M-<right>" "C-M-a" "C-M-e"
+                   "M-g" "M-j" "M-J" "M-k" "M-o" "M-s" "M-q" "M-r" "M-R" "M-U"
+                   "M-:" "M-&" "M-'" "M-\"" "M-]" "M->" "M-<"))
+      (define-key map (kbd key) nil t)))
 
   :custom
   (indent-tabs-mode nil)
@@ -1014,19 +1021,17 @@ When ARG is non-nil, the working directory can be selected."
   (ibuffer-saved-filter-groups
    '(("default"
       ("Git" (or (name . "^magit") (name . "^*vc-")))
-      ("Shell" (or (mode . eshell-mode) (mode . vterm-mode)))
+      ("Goose" (predicate my/goose-buffer-p (current-buffer)))
+      ("Shell" (predicate my/shell-buffer-p (current-buffer)))
       ("Command" (mode . shell-command-mode))
       ("Dired" (mode . dired-mode))
-      ("Org" (or (mode . org-mode) (mode . org-agenda-mode)))
-      ("AI" (name . "^*claudemacs:")))))
+      ("Org" (or (mode . org-mode) (mode . org-agenda-mode))))))
   (ibuffer-show-empty-filter-groups nil)
   (ibuffer-use-header-line nil)
   :config
+  (my/unbind-common-keys ibuffer-mode-map)
   ;; Restore breadcrumb after ibuffer after messes with it.
-  (advice-add #'ibuffer-update :around #'my/breadcrumb-restore)
-  ;; Unbind clashing keybindings.
-  (dolist (key '("M-g" "M-j" "M-o" "M-s"))
-    (define-key ibuffer-mode-map (kbd key) nil)))
+  (advice-add #'ibuffer-update :around #'my/breadcrumb-restore))
 
 (use-package ibuffer-vc
   :after ibuffer
@@ -1204,13 +1209,13 @@ When ARG is non-nil, the working directory can be selected."
   ("C-x p j" . project-dired)
   ("C-x p u" . my/project-update-list)
   :custom
-  (project-prompt-project-dir)
   (project-switch-commands
    '((magit-project-status "Magit" ?g)
      (project-dired "Dired" ?j)
      (my/consult-project-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
-     (my/project-async-shell-command "Command" ?&))))
+     (my/project-async-shell-command "Command" ?&)
+     (my/goose-project "Goose" ?z))))
 
 ;;;; Minibuffer
 
@@ -1453,8 +1458,10 @@ When ARG is non-nil, the working directory can be selected."
   (declare-function consult--read "consult")
   (declare-function project--find-in-directory "project")
 
-  (defun my/consult-source-buffer (name narrow mode)
-    "Return a Consult buffer source with NAME, NARROW key and MODE target."
+  (defun my/consult-source-buffer (name narrow filter-type filter-value)
+    "Return a Consult buffer source with NAME, NARROW key and filter.
+The filter is defined by FILTER-TYPE which must be :mode or :predicate and
+FILTER-VALUE which should be a mode symbol or predicate function, respectively."
     `(:name ,name
       :narrow ,narrow
       :hidden t
@@ -1467,16 +1474,23 @@ When ARG is non-nil, the working directory can be selected."
          (consult--buffer-query
           :sort 'visibility
           :as #'buffer-name
-          :mode mode))))
+          :predicate
+          (lambda (buf)
+            (pcase filter-type
+              (:predicate (funcall filter-value buf))
+              (:mode (provided-mode-derived-p
+                      (buffer-local-value 'major-mode buf) filter-value))))))))
 
-  (defvar my/consult-source-agenda-buffer
-    (my/consult-source-buffer "Agenda Buffer" ?a 'org-agenda-mode))
-  (defvar my/consult-source-dired-buffer
-    (my/consult-source-buffer "Dired Buffer" ?d 'dired-mode))
-  (defvar my/consult-source-eshell-buffer
-    (my/consult-source-buffer "Eshell Buffer" ?e 'eshell-mode))
   (defvar my/consult-source-magit-buffer
-    (my/consult-source-buffer "Magit Buffer" ?g 'magit-status-mode))
+    (my/consult-source-buffer "Magit Buffer" ?g :mode 'magit-status-mode))
+  (defvar my/consult-source-goose-buffer
+    (my/consult-source-buffer "Goose Buffer" ?z :predicate #'my/goose-buffer-p))
+  (defvar my/consult-source-shell-buffer
+    (my/consult-source-buffer "Shell Buffer" ?s :predicate #'my/shell-buffer-p))
+  (defvar my/consult-source-dired-buffer
+    (my/consult-source-buffer "Dired Buffer" ?d :mode 'dired-mode))
+  (defvar my/consult-source-agenda-buffer
+    (my/consult-source-buffer "Agenda Buffer" ?a :mode 'org-agenda-mode))
 
   ;; Consult source for all project files. This has largely been adapted from
   ;; the implementation of `consult--source-project-recent-file'.
@@ -1631,8 +1645,9 @@ When ARG is non-nil, the working directory can be selected."
           consult--source-project-buffer-hidden ;; Narrow: ?p (hidden)
           my/consult-source-agenda-buffer       ;; Narrow: ?a (hidden)
           my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
-          my/consult-source-eshell-buffer       ;; Narrow: ?e (hidden)
+          my/consult-source-shell-buffer        ;; Narrow: ?s (hidden)
           my/consult-source-magit-buffer        ;; Narrow: ?g (hidden)
+          my/consult-source-goose-buffer        ;; Narrow: ?z (hidden)
           consult--source-bookmark              ;; Narrow: ?m (shown)
           consult--source-recent-file))         ;; Narrow: ?r (hidden)
 
@@ -2406,12 +2421,9 @@ When ARG is non-nil, the working directory can be selected."
     emacs-lisp-mode
     inferior-emacs-lisp-mode) . paredit-mode)
   :config
+  (my/unbind-common-keys paredit-mode-map)
   (eldoc-add-command "paredit-backward" "paredit-forward"
-                     "paredit-backward-delete" "paredit-close-round")
-  ;; Unbind keybindings that collide with things I find more useful.
-  (dolist (key '("M-?" "M-\"" "M-q" "M-r" "M-s" "M-J"
-                 "C-c C-M-l" "C-M-<left>" "C-M-<right>"))
-    (define-key paredit-mode-map (kbd key) nil)))
+                     "paredit-backward-delete" "paredit-close-round"))
 
 (use-package elec-pair
   :ensure nil
@@ -2646,6 +2658,11 @@ with a numbered suffix."
     (interactive)
     (eshell-read-aliases-list))
 
+  (defun my/shell-buffer-p (buf)
+    "Return whether BUF is considered a generalized shell buffer."
+    (let ((mm (buffer-local-value 'major-mode buf)))
+      (and (provided-mode-derived-p mm '(eshell-mode eat-mode vterm-mode))
+           (not (my/goose-buffer-p buf)))))
   :bind
   ;; For convenience, consolidate Eshell keybindings here rather than in
   ;; separate `use-package' forms (requires below are necessary).
@@ -2677,8 +2694,6 @@ with a numbered suffix."
   (require 'esh-mode)
   (require 'em-hist))
 
-;; I much prefer Eshell but have Vterm as an escape hatch when I need a proper
-;; terminal emulator. Just call 'M-x vterm' rather than wasting a keybinding.
 (use-package vterm
   :defines (vterm-mode-map vterm-eval-cmds)
   :preface
@@ -2694,8 +2709,11 @@ with a numbered suffix."
 
   :bind
   (:map vterm-mode-map
-   ;; Use same keybinding for shell history as `consult-history'.
-   ("C-c h" . (lambda () (interactive) (vterm-send-key (kbd "C-r"))))
+   ;; These only work reliably when copy mode is disabled.
+   ("C-M-a" . vterm-previous-prompt)
+   ("C-M-e" . vterm-next-prompt)
+   ;; Because I always press C-g to cancel things.
+   ("C-g" . (lambda () (interactive) (vterm-send-key (kbd "C-c"))))
    :repeat-map my/vterm-repeat-map
    ("C-n" . vterm-next-prompt)
    ("C-p" . vterm-previous-prompt))
@@ -2706,24 +2724,30 @@ with a numbered suffix."
   ;; https://github.com/akermu/emacs-libvterm/issues/546.
   (vterm-clear-scrollback-when-clearing t)
   (vterm-max-scrollback 10000)
-
   :config
-  ;; Allow find-file-other-window to be called from Vterm.
+  (my/unbind-common-keys vterm-mode-map)
   (add-to-list 'vterm-eval-cmds
-               '("find-file-other-window" find-file-other-window))
-
-  ;; Unset a bunch of keybindings that I want to keep.
-  (dolist (key '("C-r" "C-s" "C-z" "C-SPC"
-                 "M-g" "M-k" "M-s" "M-:" "M-&" "M-'" "M-\"" "M-]"))
-    (define-key vterm-mode-map (kbd key) nil)))
+               '("find-file-other-window" find-file-other-window)))
 
 (use-package eat
+  :ensure
+  ;; Include file list recommended in docs.
+  (:files ("*.el" "*.texi" "*.ti"
+           ("term" "term/*.el")
+           ("terminfo/e" "terminfo/e/*")
+           ("terminfo/65" "terminfo/65/*")
+           ("integration" "integration/*")
+           (:exclude ".dir-locals.el" "*-tests.el")))
+  :bind
+  (:map eat-mode-map
+   ("C-M-a" . eat-previous-shell-prompt)
+   ("C-M-e" . eat-next-shell-prompt))
+  :custom
+  (eat-term-scrollback-size 500000)
   :config
-  (dolist (key '("M-\"" "M-j" "M-o" "M-q"))
-    (dolist (map (list eat-char-mode-map
-                       eat-semi-char-mode-map
-                       eat-eshell-char-mode-map))
-      (define-key map (kbd key) nil))))
+  (my/unbind-common-keys eat-char-mode-map)
+  (my/unbind-common-keys eat-semi-char-mode-map)
+  (my/unbind-common-keys eat-eshell-char-mode-map))
 
 (use-package sh-script
   :ensure nil
@@ -2861,10 +2885,7 @@ with a numbered suffix."
   (org-use-sub-superscripts nil)
 
   :config
-  ;; Unset conflicting org keybindings.
-  (dolist (key '("C-'" "M-S-<up>" "M-S-<down>" "M-S-<left>" "M-S-<right>"
-                 "C-M-S-<left>" "C-M-S-<right>"))
-    (define-key org-mode-map (kbd key) nil))
+  (my/unbind-common-keys org-mode-map)
   ;; Make it easier to create `org-babel' code blocks.
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   ;; Add some user feedback.
@@ -3019,6 +3040,7 @@ specified then a task category will be determined by the item's tags."
   :ensure nil
   :bind
   ("C-c o c" . org-capture)
+  ("C-c o b" . (lambda () (interactive) (org-capture nil "b")))
   ("C-c o i" . (lambda () (interactive) (org-capture nil "i")))
   ("C-c o j" . (lambda () (interactive) (org-capture nil "j")))
   :custom
@@ -3223,10 +3245,125 @@ specified then a task category will be determined by the item's tags."
 
 ;;;; AI/LLM
 
-(use-package claudemacs
-  :ensure (:host github :repo "cpoile/claudemacs")
+(use-package goose
+  :ensure nil
+  :no-require t
+  :preface
+  (declare-function eat "eat")
+  (declare-function eat-term-send-string "eat")
+  (declare-function json-read-file "json")
+  (defvar eat-buffer-name)
+  (defvar eat-terminal)
+  (defvar eat-char-mode-map)
+  (defvar eat-semi-char-mode-map)
+  (defvar my/goose-command "goose")
+  (defvar my/goose-session-dir (expand-file-name "~/.local/share/goose/sessions/"))
+  (defvar my/goose-footer-regexp "^Context:.*([0-9]+/[0-9]+ tokens)")
+
+  (defun my/goose-project ()
+    "Create or switch to the Goose buffer for the current project."
+    (interactive)
+    (let ((project-root (my/project-current-root)))
+      (if-let ((goose-buffer
+                (seq-find
+                 (lambda (buf)
+                   (and (string-match-p "\\*goose:" (buffer-name buf))
+                        (with-current-buffer buf
+                          (and default-directory
+                               (equal (expand-file-name default-directory)
+                                      (expand-file-name project-root))))))
+                 (buffer-list))))
+          (switch-to-buffer goose-buffer)
+        (my/goose-new project-root))))
+
+  (defun my/goose-new (dir &optional suffix)
+    "Start a new Goose session in DIR with optional buffer name SUFFIX."
+    (interactive (list default-directory))
+    (require 'eat)
+    (let* ((default-directory dir)
+           (file-name (my/abbreviate-file-name (directory-file-name dir) 30))
+           (suffix (if suffix (format "%s:%s" file-name suffix) file-name))
+           (eat-buffer-name (format "*goose:%s*" suffix)))
+      (eat my/goose-command t)))
+
+  (defun my/goose-resume ()
+    "Resume a Goose session by selecting from available session files."
+    (interactive)
+    (when-let* ((session-file
+                 (my/consult-read-file-name
+                  "Goose session: " my/goose-session-dir nil nil nil
+                  (lambda (f)
+                    (let ((path (expand-file-name f my/goose-session-dir)))
+                      (and (file-regular-p path)
+                           (string-match-p "\\.jsonl\\'" path)
+                           (my/goose-session-working-dir path))))))
+                (session-name (file-name-base session-file))
+                (working-dir (my/goose-session-working-dir session-file))
+                (my/goose-command (format "goose session -r --name %s"
+                                          (shell-quote-argument session-name))))
+      (my/goose-new working-dir session-name)))
+
+  (defun my/goose-clean ()
+    "Remove zero-length Goose session files which can accumulate."
+    (interactive)
+    (let ((removed-count 0)
+          (session-files (directory-files my/goose-session-dir t "\\.jsonl\\'")))
+      (dolist (file session-files)
+        (when (not (my/goose-session-file-valid-p file))
+          (delete-file file)
+          (setq removed-count (1+ removed-count))))
+      (message "Cleaned %d session files" removed-count)))
+
+  (defun my/goose-session-working-dir (session-file)
+    "Return the Goose working directory for SESSION-FILE or nil."
+    (when (my/goose-session-file-valid-p session-file)
+      (when-let ((header (json-read-file session-file)))
+        (alist-get 'working_dir header))))
+
+  (defun my/goose-session-file-valid-p (session-file)
+    "Return whether SESSION-FILE is valid (i.e. non-zero length)."
+    (when-let ((attrs (file-attributes session-file)))
+      (> (file-attribute-size attrs) 0)))
+
+  (defun my/goose-buffer-p (buf)
+    "Return whether BUF is a Goose buffer."
+    (let ((mm (buffer-local-value 'major-mode buf)))
+      (and (provided-mode-derived-p mm 'eat-mode)
+           (string-match-p "\\*goose:" (buffer-name buf)))))
+
+  (defun my/goose-new-line ()
+    "Send a C-j key to the current `eat' terminal if one exists."
+    (interactive)
+    (require 'eat)
+    (eat-term-send-string eat-terminal "\C-j"))
+
+  (defun my/goose-previous-prompt-around (orig-fun &rest args)
+    "Advises `eat-previous-shell-prompt' to handle Goose buffers."
+    (if (not (my/goose-buffer-p (current-buffer)))
+        (apply orig-fun args)
+      (when (re-search-backward my/goose-footer-regexp nil t 2)
+        (forward-line 1))))
+
+  (defun my/goose-next-prompt-around (orig-fun &rest args)
+    "Advises `eat-next-shell-prompt' to handle Goose buffers."
+    (if (not (my/goose-buffer-p (current-buffer)))
+        (apply orig-fun args)
+      (when (re-search-forward my/goose-footer-regexp nil t)
+        (forward-line 1))))
+
   :bind
-  ("C-z C-z" . claudemacs-run))
+  ("C-z C-z" . my/goose-project)
+  ("C-z n" . my/goose-new)
+  ("C-z r" . my/goose-resume)
+  ("C-z x" . my/goose-clean)
+  :init
+  ;; Make S-<return> send C-j for simpler newlines in Goose.
+  ;; Add :around advice to eat navigation functions for Goose-aware prompt navigation.
+  (with-eval-after-load 'eat
+    (define-key eat-char-mode-map (kbd "S-<return>") #'my/goose-new-line)
+    (define-key eat-semi-char-mode-map (kbd "S-<return>") #'my/goose-new-line)
+    (advice-add 'eat-previous-shell-prompt :around #'my/goose-previous-prompt-around)
+    (advice-add 'eat-next-shell-prompt :around #'my/goose-next-prompt-around)))
 
 ;;;; Work Configuration
 
