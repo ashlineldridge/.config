@@ -40,6 +40,7 @@ ghc/
 git/gpg.inc
 git/hooks/
 gnupg/*.kbx
+goose/history.txt
 iterm2/AppSupport
 k9s/config.yml
 ldcli/

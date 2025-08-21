@@ -1,0 +1,11 @@
+GOOSE_CLI_THEME: ansi
+extensions:
+  developer:
+    available_tools: []
+    bundled: true
+    description: null
+    display_name: Developer
+    enabled: true
+    name: developer
+    timeout: 300
+    type: builtin
