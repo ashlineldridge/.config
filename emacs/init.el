@@ -158,15 +158,6 @@
   :custom
   (smol-string-truncate-length 80))
 
-;;;;; Point/Cursor
-
-(use-package cursory
-  :commands cursory-set-preset
-  :hook
-  (org-mode . (lambda () (cursory-set-preset 'bar :local)))
-  :init
-  (cursory-set-preset 'box))
-
 ;;;;; Margins/Padding
 
 (use-package spacious-padding
