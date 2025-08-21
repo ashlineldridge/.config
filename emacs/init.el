@@ -166,8 +166,7 @@
     "Toggle whether the mode and header line are displayed in the subtle style."
     (interactive)
     (let ((show-subtle (not spacious-padding-subtle-frame-lines)))
-      (setq spacious-padding-subtle-frame-lines show-subtle)
-      (setq spacious-padding-subtle-header-line show-subtle))
+      (setq spacious-padding-subtle-frame-lines show-subtle))
     (when spacious-padding-mode
       (spacious-padding-mode -1)
       (spacious-padding-mode 1)))
