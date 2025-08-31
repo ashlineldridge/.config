@@ -336,7 +336,7 @@
       (display-buffer-reuse-window)
       (inhibit-same-window . t))
      ;; Display in same window.
-     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\|\\*goose:\\)"
+     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
       (display-buffer-same-window))))
 
   :config
@@ -1021,7 +1021,6 @@ When ARG is non-nil, the working directory can be selected."
   (ibuffer-saved-filter-groups
    '(("default"
       ("Git" (or (name . "^magit") (name . "^*vc-")))
-      ("Goose" (predicate my/goose-buffer-p (current-buffer)))
       ("Shell" (predicate my/shell-buffer-p (current-buffer)))
       ("Command" (mode . shell-command-mode))
       ("Dired" (mode . dired-mode))
@@ -1214,8 +1213,7 @@ When ARG is non-nil, the working directory can be selected."
      (project-dired "Dired" ?j)
      (my/consult-project-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
-     (my/project-async-shell-command "Command" ?&)
-     (my/goose-project "Goose" ?z))))
+     (my/project-async-shell-command "Command" ?&))))
 
 ;;;; Minibuffer
 
@@ -1483,8 +1481,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
   (defvar my/consult-source-magit-buffer
     (my/consult-source-buffer "Magit Buffer" ?g :mode 'magit-status-mode))
-  (defvar my/consult-source-goose-buffer
-    (my/consult-source-buffer "Goose Buffer" ?z :predicate #'my/goose-buffer-p))
   (defvar my/consult-source-shell-buffer
     (my/consult-source-buffer "Shell Buffer" ?s :predicate #'my/shell-buffer-p))
   (defvar my/consult-source-dired-buffer
@@ -1647,7 +1643,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
           my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
           my/consult-source-shell-buffer        ;; Narrow: ?s (hidden)
           my/consult-source-magit-buffer        ;; Narrow: ?g (hidden)
-          my/consult-source-goose-buffer        ;; Narrow: ?z (hidden)
           consult--source-bookmark              ;; Narrow: ?m (shown)
           consult--source-recent-file))         ;; Narrow: ?r (hidden)
 
@@ -2661,8 +2656,7 @@ with a numbered suffix."
   (defun my/shell-buffer-p (buf)
     "Return whether BUF is considered a generalized shell buffer."
     (let ((mm (buffer-local-value 'major-mode buf)))
-      (and (provided-mode-derived-p mm '(eshell-mode eat-mode vterm-mode))
-           (not (my/goose-buffer-p buf)))))
+      (provided-mode-derived-p mm '(eshell-mode eat-mode vterm-mode))))
   :bind
   ;; For convenience, consolidate Eshell keybindings here rather than in
   ;; separate `use-package' forms (requires below are necessary).
@@ -2689,10 +2683,43 @@ with a numbered suffix."
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "")
-  (eshell-visual-commands '("top" "vi" "vim" "htop" "watch"))
+  (eshell-visual-commands
+   '("claude" "cursor-agent" "gemini" "goose" "vim"))
   :config
   (require 'esh-mode)
   (require 'em-hist))
+
+(use-package eat
+  :ensure
+  ;; Include file list recommended in docs.
+  (:files ("*.el" "*.texi" "*.ti"
+           ("term" "term/*.el")
+           ("terminfo/e" "terminfo/e/*")
+           ("terminfo/65" "terminfo/65/*")
+           ("integration" "integration/*")
+           (:exclude ".dir-locals.el" "*-tests.el")))
+  :preface
+  (defun my/eat-new-line ()
+    "Send a new line to the current `eat' terminal."
+    (interactive)
+    (eat-term-send-string eat-terminal "\C-j"))
+  :bind
+  (:map eat-mode-map
+   ("C-M-a" . eat-previous-shell-prompt)
+   ("C-M-e" . eat-next-shell-prompt)
+   ("S-<return>" . my/eat-new-line))
+  :hook
+  ;; I prefer the experience of opening terminal apps in a dedicated Eat buffer
+  ;; rather than enabling `eat-eshell-mode' and running them directly within
+  ;; Eshell. Terminal commands are registered in `eshell-visual-commands'.
+  (eshell-load . eat-eshell-visual-command-mode)
+  :custom
+  (eat-term-name "xterm-256color")
+  (eat-term-scrollback-size 500000)
+  :config
+  (my/unbind-common-keys eat-char-mode-map)
+  (my/unbind-common-keys eat-semi-char-mode-map)
+  (my/unbind-common-keys eat-eshell-char-mode-map))
 
 (use-package vterm
   :defines (vterm-mode-map vterm-eval-cmds)
@@ -2728,26 +2755,6 @@ with a numbered suffix."
   (my/unbind-common-keys vterm-mode-map)
   (add-to-list 'vterm-eval-cmds
                '("find-file-other-window" find-file-other-window)))
-
-(use-package eat
-  :ensure
-  ;; Include file list recommended in docs.
-  (:files ("*.el" "*.texi" "*.ti"
-           ("term" "term/*.el")
-           ("terminfo/e" "terminfo/e/*")
-           ("terminfo/65" "terminfo/65/*")
-           ("integration" "integration/*")
-           (:exclude ".dir-locals.el" "*-tests.el")))
-  :bind
-  (:map eat-mode-map
-   ("C-M-a" . eat-previous-shell-prompt)
-   ("C-M-e" . eat-next-shell-prompt))
-  :custom
-  (eat-term-scrollback-size 500000)
-  :config
-  (my/unbind-common-keys eat-char-mode-map)
-  (my/unbind-common-keys eat-semi-char-mode-map)
-  (my/unbind-common-keys eat-eshell-char-mode-map))
 
 (use-package sh-script
   :ensure nil
@@ -3242,128 +3249,6 @@ specified then a task category will be determined by the item's tags."
   ("C-x C-p" . proced)
   :custom
   (proced-enable-color-flag t))
-
-;;;; AI/LLM
-
-(use-package goose
-  :ensure nil
-  :no-require t
-  :preface
-  (declare-function eat "eat")
-  (declare-function eat-term-send-string "eat")
-  (declare-function json-read-file "json")
-  (defvar eat-buffer-name)
-  (defvar eat-terminal)
-  (defvar eat-char-mode-map)
-  (defvar eat-semi-char-mode-map)
-  (defvar my/goose-command "goose")
-  (defvar my/goose-session-dir (expand-file-name "~/.local/share/goose/sessions/"))
-  (defvar my/goose-footer-regexp "^Context:.*([0-9]+/[0-9]+ tokens)")
-
-  (defun my/goose-project ()
-    "Create or switch to the Goose buffer for the current project."
-    (interactive)
-    (let ((project-root (my/project-current-root)))
-      (if-let ((goose-buffer
-                (seq-find
-                 (lambda (buf)
-                   (and (string-match-p "\\*goose:" (buffer-name buf))
-                        (with-current-buffer buf
-                          (and default-directory
-                               (equal (expand-file-name default-directory)
-                                      (expand-file-name project-root))))))
-                 (buffer-list))))
-          (switch-to-buffer goose-buffer)
-        (my/goose-new project-root))))
-
-  (defun my/goose-new (dir &optional suffix)
-    "Start a new Goose session in DIR with optional buffer name SUFFIX."
-    (interactive (list default-directory))
-    (require 'eat)
-    (let* ((default-directory dir)
-           (file-name (my/abbreviate-file-name (directory-file-name dir) 30))
-           (suffix (if suffix (format "%s:%s" file-name suffix) file-name))
-           (eat-buffer-name (format "*goose:%s*" suffix)))
-      (eat my/goose-command t)))
-
-  (defun my/goose-resume ()
-    "Resume a Goose session by selecting from available session files."
-    (interactive)
-    (when-let* ((session-file
-                 (my/consult-read-file-name
-                  "Goose session: " my/goose-session-dir nil nil nil
-                  (lambda (f)
-                    (let ((path (expand-file-name f my/goose-session-dir)))
-                      (and (file-regular-p path)
-                           (string-match-p "\\.jsonl\\'" path)
-                           (my/goose-session-working-dir path))))))
-                (session-name (file-name-base session-file))
-                (working-dir (my/goose-session-working-dir session-file))
-                (my/goose-command (format "goose session -r --name %s"
-                                          (shell-quote-argument session-name))))
-      (my/goose-new working-dir session-name)))
-
-  (defun my/goose-clean ()
-    "Remove zero-length Goose session files which can accumulate."
-    (interactive)
-    (let ((removed-count 0)
-          (session-files (directory-files my/goose-session-dir t "\\.jsonl\\'")))
-      (dolist (file session-files)
-        (when (not (my/goose-session-file-valid-p file))
-          (delete-file file)
-          (setq removed-count (1+ removed-count))))
-      (message "Cleaned %d session files" removed-count)))
-
-  (defun my/goose-session-working-dir (session-file)
-    "Return the Goose working directory for SESSION-FILE or nil."
-    (when (my/goose-session-file-valid-p session-file)
-      (when-let ((header (json-read-file session-file)))
-        (alist-get 'working_dir header))))
-
-  (defun my/goose-session-file-valid-p (session-file)
-    "Return whether SESSION-FILE is valid (i.e. non-zero length)."
-    (when-let ((attrs (file-attributes session-file)))
-      (> (file-attribute-size attrs) 0)))
-
-  (defun my/goose-buffer-p (buf)
-    "Return whether BUF is a Goose buffer."
-    (let ((mm (buffer-local-value 'major-mode buf)))
-      (and (provided-mode-derived-p mm 'eat-mode)
-           (string-match-p "\\*goose:" (buffer-name buf)))))
-
-  (defun my/goose-new-line ()
-    "Send a C-j key to the current `eat' terminal if one exists."
-    (interactive)
-    (require 'eat)
-    (eat-term-send-string eat-terminal "\C-j"))
-
-  (defun my/goose-previous-prompt-around (orig-fun &rest args)
-    "Advises `eat-previous-shell-prompt' to handle Goose buffers."
-    (if (not (my/goose-buffer-p (current-buffer)))
-        (apply orig-fun args)
-      (when (re-search-backward my/goose-footer-regexp nil t 2)
-        (forward-line 1))))
-
-  (defun my/goose-next-prompt-around (orig-fun &rest args)
-    "Advises `eat-next-shell-prompt' to handle Goose buffers."
-    (if (not (my/goose-buffer-p (current-buffer)))
-        (apply orig-fun args)
-      (when (re-search-forward my/goose-footer-regexp nil t)
-        (forward-line 1))))
-
-  :bind
-  ("C-z C-z" . my/goose-project)
-  ("C-z n" . my/goose-new)
-  ("C-z r" . my/goose-resume)
-  ("C-z x" . my/goose-clean)
-  :init
-  ;; Make S-<return> send C-j for simpler newlines in Goose.
-  ;; Add :around advice to eat navigation functions for Goose-aware prompt navigation.
-  (with-eval-after-load 'eat
-    (define-key eat-char-mode-map (kbd "S-<return>") #'my/goose-new-line)
-    (define-key eat-semi-char-mode-map (kbd "S-<return>") #'my/goose-new-line)
-    (advice-add 'eat-previous-shell-prompt :around #'my/goose-previous-prompt-around)
-    (advice-add 'eat-next-shell-prompt :around #'my/goose-next-prompt-around)))
 
 ;;;; Work Configuration
 
