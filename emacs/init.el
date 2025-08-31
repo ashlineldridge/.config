@@ -3081,7 +3081,7 @@ specified then a task category will be determined by the item's tags."
    :map org-mode-map
    ("C-c o I" . org-clock-in))
   :config
-  ;; Use custom mode line indicator rather than `mode-line-misc-info'.
+  ;; Prefer custom mode line indicator rather than `mode-line-misc-info'.
   (fset #'org-clock-get-clock-string (lambda () "")))
 
 (use-package org-timer
