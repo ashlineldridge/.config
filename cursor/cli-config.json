@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Shell(ls)"
+    ],
+    "deny": []
+  },
+  "version": 1,
+  "editor": {
+    "vimMode": false
+  },
+  "model": {
+    "modelId": "claude-4-opus",
+    "displayModelId": "opus-4.1",
+    "displayName": "Claude 4.1 Opus",
+    "displayNameShort": "Opus 4.1",
+    "aliases": [
+      "opus",
+      "opus-4.1"
+    ]
+  },
+  "hasChangedDefaultModel": true,
+  "privacyCache": {
+    "ghostMode": true,
+    "privacyMode": 1,
+    "updatedAt": 1756341628751
+  }
+}
