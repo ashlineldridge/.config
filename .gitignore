@@ -50,6 +50,8 @@ nvim/bundle/*/doc/tags
 raycast/extensions/
 target/
 tramp
+zed/conversations/
+zed/prompts/
 zsh/.zcompcache
 zsh/.zcompdump
 zsh/.zsh_history
