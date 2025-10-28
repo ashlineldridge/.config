@@ -1,0 +1,3 @@
+* Goose Recipes
+
+Only public recipes should be stored here.
