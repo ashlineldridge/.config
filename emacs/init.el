@@ -3257,6 +3257,29 @@ specified then a task category will be determined by the item's tags."
   :custom
   (proced-enable-color-flag t))
 
+;;;; AI
+
+(use-package agent-shell
+  :ensure (:host github :repo "xenodium/agent-shell")
+  :bind
+  ("C-z C-z" . agent-shell)
+  :custom
+  (agent-shell-file-completion-enabled t)
+  :config
+  ;; Use GCP authentication.
+  (setq agent-shell-goose-authentication
+        (agent-shell-make-goose-authentication :none t)))
+
+(use-package acp
+  :ensure (:host github :repo "xenodium/acp.el"))
+
+(use-package shell-maker
+  :custom
+  (shell-maker-transcript-default-path
+   (expand-file-name "~/.local/share/agent-shell/transcripts/"))
+  (shell-maker-transcript-default-filename
+   (lambda () (format-time-string "%F-%T-transcript.txt"))))
+
 ;;;; Work Configuration
 
 (use-package chronosphere
