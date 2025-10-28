@@ -1,5 +1,5 @@
 mac-user      := "ae"
-mac-group     := "staff"
+mac-group     := "admin"
 emacs-version := "30"
 cargo-bin-dir := "~/.cargo/bin"
 go-bin-dir    := "~/dev/go/bin"
@@ -56,6 +56,20 @@ cargo-dump:
 go-dump:
     @echo ">>> Dumping list of Go binaries"
     ls -1 {{go-bin-dir}} > go-bins.txt
+
+agents-upgrade:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo ">>> Upgrading AI agents"
+    # Upgrade agent binaries.
+    goose update
+    claude update
+    brew upgrade gemini-cli
+    # Upgrade ACP adapters.
+    npm install -g @zed-industries/claude-code-acp
+    codex_acp_url="$(curl -s https://api.github.com/repos/zed-industries/codex-acp/releases/latest |
+        jq -r '.assets[] | select(.name | contains("aarch64-apple-darwin")) | .browser_download_url')"
+    curl -sL "${codex_acp_url}" | tar -xz -C ~/bin/
 
 symlink-install:
     # As not all programs respect XDG conventions, this recipe creates symlinks
