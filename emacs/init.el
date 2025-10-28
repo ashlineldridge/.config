@@ -525,7 +525,7 @@
     "Show breadcrumb if not a minibuffer and there is no special header line."
     (when (and
            (not (minibufferp))
-           (not (derived-mode-p 'proced-mode))
+           (not (derived-mode-p 'proced-mode 'time-zones-mode))
            (listp header-line-format))
       (breadcrumb-local-mode 1)))
 
@@ -3196,10 +3196,17 @@ specified then a task category will be determined by the item's tags."
      ("Europe/Paris" "Paris")
      ("Europe/Vilnius" "Vilnius"))))
 
-;; See `tzc-world-clock' and `tzc-convert-time'.
-(use-package tzc
+;; TODO: Raise issues to allow cities file to be customized and remove
+;; unnecessary header/footer whitespace.
+(use-package time-zones
+  :preface
+  (declare-function no-littering-expand-var-file-name "no-littering")
   :custom
-  (tzc-favourite-time-zones-alist world-clock-list))
+  (time-zones-show-details nil)
+  (time-zones-show-help nil)
+  :config
+  (setq time-zones--city-list-file
+        (no-littering-expand-var-file-name "time-zones.el")))
 
 ;;;; Calculator
 
