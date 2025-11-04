@@ -1,6 +1,7 @@
 GOOSE_CLI_THEME: ansi
 GOOSE_PROVIDER: gcp_vertex_ai
 GOOSE_MODEL: claude-opus-4-1
+GOOSE_MODE: auto
 extensions:
   computercontroller:
     available_tools: []
