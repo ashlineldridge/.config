@@ -525,7 +525,7 @@
     "Show breadcrumb if not a minibuffer and there is no special header line."
     (when (and
            (not (minibufferp))
-           (not (derived-mode-p 'proced-mode 'time-zones-mode))
+           (not (derived-mode-p 'proced-mode))
            (listp header-line-format))
       (breadcrumb-local-mode 1)))
 
@@ -1021,6 +1021,7 @@ When ARG is non-nil, the working directory can be selected."
   (ibuffer-saved-filter-groups
    '(("default"
       ("Git" (or (name . "^magit") (name . "^*vc-")))
+      ("AI" (predicate my/ai-buffer-p (current-buffer)))
       ("Shell" (predicate my/shell-buffer-p (current-buffer)))
       ("Command" (mode . shell-command-mode))
       ("Dired" (mode . dired-mode))
@@ -1213,7 +1214,8 @@ When ARG is non-nil, the working directory can be selected."
      (project-dired "Dired" ?j)
      (my/consult-project-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
-     (my/project-async-shell-command "Command" ?&))))
+     (my/project-async-shell-command "Command" ?&)
+     (agent-shell "Agent Shell" ?z))))
 
 ;;;; Minibuffer
 
@@ -1482,14 +1484,16 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (defvar my/consult-source-magit-buffer
     (my/consult-source-buffer "Magit Buffer" ?g :mode 'magit-status-mode))
   (defvar my/consult-source-shell-buffer
-    (my/consult-source-buffer "Shell Buffer" ?s :predicate #'my/shell-buffer-p))
+    (my/consult-source-buffer "Shell Buffer" ?s :predicate 'my/shell-buffer-p))
   (defvar my/consult-source-dired-buffer
     (my/consult-source-buffer "Dired Buffer" ?d :mode 'dired-mode))
   (defvar my/consult-source-agenda-buffer
     (my/consult-source-buffer "Agenda Buffer" ?a :mode 'org-agenda-mode))
+  (defvar my/consult-source-ai-buffer
+    (my/consult-source-buffer "AI Buffer" ?z :predicate 'my/ai-buffer-p))
 
   ;; Consult source for all project files. This has largely been adapted from
-  ;; the implementation of `consult--source-project-recent-file'.
+  ;; the implementation of `consult-source-project-recent-file'.
   (defvar my/consult-source-project-file
     `(:name "Project File"
       :narrow ?f
@@ -1522,9 +1526,9 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
     (interactive)
     (require 'consult)
     (let* ((consult-project-buffer-sources
-            `((:narrow ?b ,@consult--source-project-buffer) ;; Narrow: ?b (shown)
-              my/consult-source-project-file                ;; Narrow: ?f (shown)
-              consult--source-project-recent-file-hidden))) ;; Narrow: ?r (hidden)
+            `((:narrow ?b ,@consult-source-project-buffer) ;; Narrow: ?b (shown)
+              my/consult-source-project-file               ;; Narrow: ?f (shown)
+              consult-source-project-recent-file-hidden))) ;; Narrow: ?r (hidden)
       (consult-project-buffer)))
 
   (defun my/consult-read-file-name (prompt &optional dir _default mustmatch _initial pred)
@@ -1637,28 +1641,29 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   :config
   ;; Customize the list of sources shown by `consult-buffer'.
   (setq consult-buffer-sources
-        '(consult--source-buffer                ;; Narrow: ?b (shown)
-          consult--source-project-buffer-hidden ;; Narrow: ?p (hidden)
-          my/consult-source-agenda-buffer       ;; Narrow: ?a (hidden)
-          my/consult-source-dired-buffer        ;; Narrow: ?d (hidden)
-          my/consult-source-shell-buffer        ;; Narrow: ?s (hidden)
-          my/consult-source-magit-buffer        ;; Narrow: ?g (hidden)
-          consult--source-bookmark              ;; Narrow: ?m (shown)
-          consult--source-recent-file))         ;; Narrow: ?r (hidden)
+        '(consult-source-buffer                ;; Narrow: ?b (shown)
+          consult-source-project-buffer-hidden ;; Narrow: ?p (hidden)
+          my/consult-source-agenda-buffer      ;; Narrow: ?a (hidden)
+          my/consult-source-dired-buffer       ;; Narrow: ?d (hidden)
+          my/consult-source-shell-buffer       ;; Narrow: ?s (hidden)
+          my/consult-source-magit-buffer       ;; Narrow: ?g (hidden)
+          my/consult-source-ai-buffer          ;; Narrow: ?z (hidden)
+          consult-source-bookmark              ;; Narrow: ?m (shown)
+          consult-source-recent-file))         ;; Narrow: ?r (hidden)
 
   ;; Customize individual Consult sources.
   (consult-customize
-   consult--source-buffer
+   consult-source-buffer
    :name "Open Buffer" :narrow ?b
-   consult--source-project-buffer
-   consult--source-project-buffer-hidden
+   consult-source-project-buffer
+   consult-source-project-buffer-hidden
    :name "Project Buffer" :narrow ?p
-   consult--source-bookmark
+   consult-source-bookmark
    :name "Bookmark" :narrow ?m
-   consult--source-recent-file
+   consult-source-recent-file
    :name "Recent File" :narrow ?r :hidden t
-   consult--source-project-recent-file
-   consult--source-project-recent-file-hidden
+   consult-source-project-recent-file
+   consult-source-project-recent-file-hidden
    :name "Recent Project File" :narrow ?r
    ;; Allow preview for commands that don't support it by default.
    consult-find consult-fd
@@ -2822,10 +2827,10 @@ with a numbered suffix."
    ("C-c o s" . org-save-all-org-buffers)
    ("C-c o l" . my/org-goto-last-dwim)
    :map org-mode-map
-   ;; Rebind org replacement for `mark-paragraph' so it doesn't clash.
+   ;; Rebind conflicting keybindings.
    ("M-h" . nil)
    ("M-H" . org-mark-element)
-   ;; Rebind conflicting <return>-based keybindings under C-c.
+   ("C-'" . nil)
    ("C-<return>" . nil)
    ("C-S-<return>" . nil)
    ("C-c C-<return>" . org-insert-heading-respect-content)
@@ -3259,11 +3264,62 @@ specified then a task category will be determined by the item's tags."
 
 ;;;; AI
 
+(use-package gptel
+  :preface
+  (defvar my/ai-modes '(gptel-mode agent-shell-mode))
+  (defun my/ai-buffer-p (buf)
+    "Return whether BUF is considered to be an AI/LLM/agent buffer."
+    (with-current-buffer buf
+      (cl-some (lambda (m)
+                 (or (derived-mode-p m) (and (boundp m) (symbol-value m))))
+               my/ai-modes)))
+  :custom
+  (gptel-default-mode 'org-mode)
+  (gptel-track-media t)
+  (gptel-include-reasoning t)
+  (gptel-org-branching-context t)
+  (gptel-curl-file-size-threshold 200000)
+  :bind
+  (("C-z RET" . gptel-send)
+   ("C-z b" . gptel)
+   ("C-z m" . gptel-mode)
+   ("C-z h" . gptel-highlight-mode)
+   ("C-z k" . gptel-abort)
+   ("C-z m" . gptel-menu)
+   ("C-z r" . gptel-rewrite)
+   :map gptel-mode-map
+   ("C-z o" . gptel-org-set-topic)
+   ("C-z O" . gptel-org-set-properties))
+  :config
+  (setq gptel-expert-commands t)
+  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "=@ash=\n")
+  (setf (alist-get 'org-mode gptel-response-prefix-alist) "~@bot~\n"))
+
+(use-package gptel-vertex
+  :if (file-directory-p "~/dev/home/gptel-vertex")
+  :load-path "~/dev/home/gptel-vertex")
+
+(use-package gptel-quick
+  :ensure (:host github :repo "karthink/gptel-quick")
+  :bind
+  ("C-z ?" . gptel-quick)
+  :init
+  (with-eval-after-load 'embark
+    (bind-key "?" #'gptel-quick 'embark-general-map)))
+
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :bind
-  ("C-z C-z" . agent-shell)
+  (("C-z C-z" . agent-shell)
+   :map agent-shell-mode-map
+   ;; Mirror gptel newline behavior.
+   ("RET" . newline)
+   ("C-c RET" . agent-shell-submit)
+   ;; Defun-style prompt navigation.
+   ("C-M-a" . comint-previous-prompt)
+   ("C-M-e" . comint-next-prompt))
   :custom
+  (agent-shell-header-style 'text)
   (agent-shell-file-completion-enabled t)
   :config
   ;; Use GCP authentication.
