@@ -3293,7 +3293,8 @@ specified then a task category will be determined by the item's tags."
   :config
   (setq gptel-expert-commands t)
   (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "=@ash=\n")
-  (setf (alist-get 'org-mode gptel-response-prefix-alist) "~@bot~\n"))
+  (setf (alist-get 'org-mode gptel-response-prefix-alist) "~@bot~\n")
+  (load (expand-file-name "gptel-extras.el" user-emacs-directory)))
 
 (use-package gptel-vertex
   :if (file-directory-p "~/dev/home/gptel-vertex")
@@ -3311,6 +3312,7 @@ specified then a task category will be determined by the item's tags."
   :ensure (:host github :repo "xenodium/agent-shell")
   :bind
   (("C-z C-z" . agent-shell)
+   ("C-z M" . agent-shell-set-session-mode)
    :map agent-shell-mode-map
    ;; Mirror gptel newline behavior.
    ("RET" . newline)
