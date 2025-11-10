@@ -3,15 +3,6 @@ GOOSE_PROVIDER: gcp_vertex_ai
 GOOSE_MODEL: claude-opus-4-1
 GOOSE_MODE: auto
 extensions:
-  computercontroller:
-    available_tools: []
-    bundled: true
-    description: null
-    display_name: Computer Controller
-    enabled: true
-    name: computercontroller
-    timeout: 300
-    type: builtin
   developer:
     available_tools: []
     bundled: true
@@ -19,15 +10,6 @@ extensions:
     display_name: Developer Tools
     enabled: true
     name: developer
-    timeout: 300
-    type: builtin
-  googledrive:
-    available_tools: []
-    bundled: true
-    description: null
-    display_name: Google Drive
-    enabled: false
-    name: googledrive
     timeout: 300
     type: builtin
   goosedocs:
@@ -44,21 +26,3 @@ extensions:
     name: Goose Docs
     timeout: 300
     type: stdio
-  memory:
-    available_tools: []
-    bundled: true
-    description: null
-    display_name: Memory
-    enabled: true
-    name: memory
-    timeout: 300
-    type: builtin
-  tutorial:
-    available_tools: []
-    bundled: true
-    description: null
-    display_name: Tutorial
-    enabled: true
-    name: tutorial
-    timeout: 300
-    type: builtin
