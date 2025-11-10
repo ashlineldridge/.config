@@ -65,8 +65,11 @@ agents-upgrade:
     goose update
     claude update
     brew upgrade gemini-cli
+    brew upgrade opencode
     # Upgrade ACP adapters.
-    npm install -g @zed-industries/claude-code-acp
+    # Upgrade your own fork of claude-code-acp manually for now.
+    # npm install -g @zed-industries/claude-code-acp
+    echo "Don't forget to manually upgrade claude-code-acp"
     codex_acp_url="$(curl -s https://api.github.com/repos/zed-industries/codex-acp/releases/latest |
         jq -r '.assets[] | select(.name | contains("aarch64-apple-darwin")) | .browser_download_url')"
     curl -sL "${codex_acp_url}" | tar -xz -C ~/bin/
