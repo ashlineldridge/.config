@@ -1338,13 +1338,6 @@ When ARG is non-nil, the working directory can be selected."
 (use-package corfu
   :ensure (:files (:defaults "extensions/*.el"))
   :preface
-  ;; From: https://github.com/minad/corfu#completing-in-the-minibuffer.
-  (defun my/corfu-enable-in-minibuffer ()
-    "Enable Corfu in the minibuffer if appropriate."
-    (when (local-variable-p 'completion-at-point-functions)
-      (setq-local corfu-auto nil)
-      (corfu-mode 1)))
-
   ;; From: https://github.com/minad/corfu#transfer-completion-to-the-minibuffer.
   (defun my/corfu-move-to-minibuffer ()
     (interactive)
@@ -1360,10 +1353,13 @@ When ARG is non-nil, the working directory can be selected."
    ("M-m" . my/corfu-move-to-minibuffer))
   :hook
   (elpaca-after-init . global-corfu-mode)
-  (minibuffer-setup . my/corfu-enable-in-minibuffer)
+  ;; Enable auto-completion selectively.
+  (prog-mode . (lambda () (setq-local corfu-auto t) (corfu-mode)))
   :custom
-  (corfu-auto t)
+  (corfu-auto nil)
   (corfu-auto-delay 0.3)
+  (corfu-auto-prefix 5)
+  (corfu-auto-trigger ".")
   (corfu-preselect 'directory)
   (corfu-quit-at-boundary 'separator)
   (corfu-on-exact-match nil)
@@ -1372,6 +1368,7 @@ When ARG is non-nil, the working directory can be selected."
   (corfu-min-width 80)
   (corfu-max-width 120)
   (corfu-scroll-margin 4)
+  (global-corfu-minibuffer t)
   :config
   (add-to-list 'corfu-continue-commands #'my/corfu-move-to-minibuffer))
 
@@ -2386,8 +2383,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
     "Init function for `emacs-lisp-mode'."
     (setq-local outline-regexp ";;;+ [^\n]")
     (outline-minor-mode 1)
-    (setq-local completion-at-point-functions
-                '(elisp-completion-at-point cape-file))
     (setq-local eldoc-documentation-functions
                 ;; Put at the top so I can see values in single line echo area.
                 '(elisp-eldoc-var-docstring-with-value
@@ -2614,9 +2609,6 @@ If ARG is non-nil, the full 40 character commit hash will be copied."
     ;; See: https://emacs.stackexchange.com/a/45281
     (remove-hook 'eshell-output-filter-functions
                  'eshell-postoutput-scroll-to-bottom)
-    ;; Preferred eshell completion settings.
-    (setq-local corfu-auto nil)
-    (setq-local corfu-popupinfo-mode nil)
     ;; Make outline work with eshell prompts.
     (setq-local outline-regexp (concat eshell-prompt-regexp ".+")))
 
