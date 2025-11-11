@@ -518,7 +518,7 @@
 ;;;;; Breadcrumb
 
 (use-package breadcrumb
-  :demand
+  :demand t
   :preface
   (declare-function breadcrumb-local-mode "breadcrumb")
   (defun my/breadcrumb-show ()
@@ -939,9 +939,8 @@ When ARG is non-nil, the working directory can be selected."
   (defun my/pulsar-pulse-line (&optional _)
     "Line pulsing function intended to be used as after advice."
     (pulsar-pulse-line))
-  :hook (elpaca-after-init . pulsar-global-mode)
-  ;; Some functionality is better accessed via hooks than by registering
-  ;; functions in `pulsar-pulse-functions'.
+  :hook
+  (elpaca-after-init . pulsar-global-mode)
   (minibuffer-setup . pulsar-pulse-line)
   (next-error . pulsar-pulse-line-red)
   (next-error . pulsar-reveal-entry)
@@ -949,36 +948,43 @@ When ARG is non-nil, the working directory can be selected."
   :custom
   (pulsar-delay 0.05)
   (pulsar-iterations 13)
-  (pulsar-face 'pulsar-cyan)
+  (pulsar-face 'pulsar-green)
   :config
-  ;; Add extra functions that should trigger Pulsar. I'm not using
-  ;; #'fn syntax here to avoid needing all the forward declarations.
-  (add-to-list 'pulsar-pulse-functions 'ace-window)
-  (add-to-list 'pulsar-pulse-functions 'avy-goto-line)
-  (add-to-list 'pulsar-pulse-functions 'beginning-of-buffer)
-  (add-to-list 'pulsar-pulse-functions 'beginning-of-defun)
-  (add-to-list 'pulsar-pulse-functions 'diff-hunk-next)
-  (add-to-list 'pulsar-pulse-functions 'diff-hunk-prev)
-  (add-to-list 'pulsar-pulse-functions 'end-of-buffer)
-  (add-to-list 'pulsar-pulse-functions 'end-of-defun)
-  (add-to-list 'pulsar-pulse-functions 'eshell-next-prompt)
-  (add-to-list 'pulsar-pulse-functions 'eshell-previous-prompt)
-  (add-to-list 'pulsar-pulse-functions 'flymake-goto-next-error)
-  (add-to-list 'pulsar-pulse-functions 'flymake-goto-prev-error)
-  (add-to-list 'pulsar-pulse-functions 'isearch-repeat-backward)
-  (add-to-list 'pulsar-pulse-functions 'isearch-repeat-forward)
-  (add-to-list 'pulsar-pulse-functions 'magit-section-backward)
-  (add-to-list 'pulsar-pulse-functions 'magit-section-forward)
-  (add-to-list 'pulsar-pulse-functions 'my/avy-goto-end-of-line)
-  (add-to-list 'pulsar-pulse-functions 'other-frame)
-  (add-to-list 'pulsar-pulse-functions 'pop-global-mark)
-  (add-to-list 'pulsar-pulse-functions 'treesit-beginning-of-defun)
-  (add-to-list 'pulsar-pulse-functions 'treesit-end-of-defun)
-  (add-to-list 'pulsar-pulse-functions 'vterm-next-prompt)
-  (add-to-list 'pulsar-pulse-functions 'vterm-previous-prompt)
-  (add-to-list 'pulsar-pulse-functions 'xref-find-definitions)
-  (add-to-list 'pulsar-pulse-functions 'xref-go-back)
-  (add-to-list 'pulsar-pulse-functions 'xref-go-forward)
+  ;; Add extra functions that should trigger Pulsar.
+  (setq pulsar-pulse-functions
+        (append pulsar-pulse-functions
+                '(ace-window
+                  avy-goto-line
+                  avy-goto-subword-1
+                  avy-goto-char-timer
+                  avy-isearch
+                  beginning-of-buffer
+                  beginning-of-defun
+                  ;; TODO: Reveals/centers but doesn't pulse?
+                  consult-preview-at-point
+                  diff-hunk-next
+                  diff-hunk-prev
+                  end-of-buffer
+                  end-of-defun
+                  eshell-next-prompt
+                  eshell-previous-prompt
+                  flymake-goto-next-error
+                  flymake-goto-prev-error
+                  isearch-repeat-backward
+                  isearch-repeat-forward
+                  magit-section-backward
+                  magit-section-forward
+                  my/avy-goto-end-of-line
+                  other-frame
+                  pop-global-mark
+                  treesit-beginning-of-defun
+                  treesit-end-of-defun
+                  vterm-next-prompt
+                  vterm-previous-prompt
+                  xref-find-definitions
+                  xref-go-back
+                  xref-go-forward)))
+
   ;; Functions called by Embark need to be advised.
   (with-eval-after-load 'embark
     (advice-add 'embark-next-symbol :after 'my/pulsar-pulse-line)
