@@ -1,28 +1,51 @@
 GOOSE_CLI_THEME: ansi
-GOOSE_PROVIDER: gcp_vertex_ai
-GOOSE_MODEL: claude-opus-4-1
 GOOSE_MODE: auto
 extensions:
   developer:
-    available_tools: []
-    bundled: true
-    description: null
-    display_name: Developer Tools
     enabled: true
-    name: developer
-    timeout: 300
     type: builtin
-  goosedocs:
-    args:
-    - mcp-remote
-    - https://block.gitmcp.io/goose/
-    available_tools: []
-    bundled: null
-    cmd: npx
-    description: null
-    enabled: true
-    env_keys: []
-    envs: {}
-    name: Goose Docs
+    name: developer
+    description: Code editing and shell access
+    display_name: Developer Tools
     timeout: 300
-    type: stdio
+    bundled: true
+    available_tools: []
+  chatrecall:
+    enabled: true
+    type: platform
+    name: chatrecall
+    description: Search past conversations and load session summaries for contextual memory
+    bundled: true
+    available_tools: []
+  todo:
+    enabled: true
+    type: platform
+    name: todo
+    description: Enable a todo list for Goose so it can keep track of what it is doing
+    bundled: true
+    available_tools: []
+  extensionmanager:
+    enabled: true
+    type: platform
+    name: Extension Manager
+    description: Enable extension management tools for discovering, enabling, and disabling extensions
+    bundled: true
+    available_tools: []
+  computercontroller:
+    enabled: true
+    type: builtin
+    name: computercontroller
+    description: controls for webscraping, file caching, and automations
+    display_name: Computer Controller
+    timeout: 300
+    bundled: true
+    available_tools: []
+  memory:
+    enabled: true
+    type: builtin
+    name: memory
+    description: Tools to save and retrieve durable memories
+    display_name: Memory
+    timeout: 300
+    bundled: true
+    available_tools: []
