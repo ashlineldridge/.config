@@ -2801,9 +2801,8 @@ with a numbered suffix."
     "Init function for `org-mode'."
     (visual-line-mode 1)
     (variable-pitch-mode 1)
-    (display-line-numbers-mode 0)
+    (display-line-numbers-mode -1)
     (setq-local line-spacing 2)
-    (setq-local completion-at-point-functions (list #'cape-file))
     (setq-local electric-pair-pairs
                 (append electric-pair-pairs my/org-extra-electric-pairs))
     (setq-local electric-pair-text-pairs
@@ -2834,7 +2833,9 @@ with a numbered suffix."
    ("C-c C-<return>" . org-insert-heading-respect-content)
    ("C-c C-S-<return>" . org-insert-todo-heading-respect-content)
    ("C-c o M-l" . org-id-copy))
-  :hook (org-mode . my/org-init)
+  :hook
+  (org-mode . my/org-init)
+  (org-mode . org-indent-mode)
   :custom
   ;; The `org-agenda-files' variable is from org.el rather than org-agenda.el.
   (org-agenda-files
@@ -2856,7 +2857,8 @@ with a numbered suffix."
   (org-ellipsis " 》")
   (org-fontify-done-headline t)
   (org-fontify-quote-and-verse-blocks t)
-  (org-hide-emphasis-markers t)
+  (org-fontify-emphasized-text t)
+  (org-hide-emphasis-markers nil)
   (org-image-actual-width nil)
   ;; Log state changes into the LOGBOOK drawer.
   (org-log-into-drawer t)
@@ -2880,7 +2882,6 @@ with a numbered suffix."
   ;; Show refile headlines as nested paths.
   (org-refile-use-outline-path t)
   (org-special-ctrl-a/e t)
-  (org-startup-indented t)
   (org-tags-column 0)
   (org-todo-keywords
    '((sequence "TODO(t)" "NEXT(n)" "PROG(p!)" "HOLD(h@)" "|" "DONE(d!)")))
@@ -3111,11 +3112,15 @@ specified then a task category will be determined by the item's tags."
    ("C-c C-S-l" . org-cliplink)))
 
 (use-package org-bullets
+  ;; Disabled as currently enjoying a simpler look.
+  :disabled
   :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (use-package org-appear
+  ;; Disabled as I'm currently preferring to show emphasis markers.
+  :disabled
   :hook (org-mode . org-appear-mode)
   :custom
   ;; Don't auto-show links as it's too distracting.
@@ -3260,43 +3265,87 @@ specified then a task category will be determined by the item's tags."
   :custom
   (proced-enable-color-flag t))
 
+;;;; Work Configuration
+
+(use-package chronosphere
+  :if (file-directory-p "~/dev/home/chronosphere")
+  :load-path "~/dev/home/chronosphere"
+  :hook (elpaca-after-init . chronosphere-init))
+
 ;;;; AI
 
-(use-package gptel
+(use-package ai
+  :ensure nil
+  :no-require
   :preface
-  (defvar my/ai-modes '(gptel-mode agent-shell-mode))
   (defun my/ai-buffer-p (buf)
     "Return whether BUF is considered to be an AI/LLM/agent buffer."
     (with-current-buffer buf
       (cl-some (lambda (m)
                  (or (derived-mode-p m) (and (boundp m) (symbol-value m))))
-               my/ai-modes)))
+               '(gptel-mode agent-shell-mode)))))
+
+(use-package gptel
+  :preface
+  (defvar my/gptel-prompt-prefix "=@ash=")
+  (defvar my/gptel-response-prefix "=@bot=")
+  (declare-function gptel "gptel")
+
+  (defun my/gptel ()
+    "Custom `gptel' command wrapper."
+    (interactive)
+    (gptel "*gptel*" nil (format "* Chat\n%s\n" my/gptel-prompt-prefix) t))
+
+  (defun my/gptel-init ()
+    "Init function for `gptel-mode'."
+    (org-indent-mode -1)
+    (electric-pair-local-mode -1)
+    (add-hook 'completion-at-point-functions #'cape-file nil t))
+
   :custom
   (gptel-default-mode 'org-mode)
   (gptel-track-media t)
   (gptel-include-reasoning t)
   (gptel-org-branching-context t)
   (gptel-curl-file-size-threshold 200000)
+  (gptel-display-buffer-action '(pop-to-buffer-same-window))
+  (gptel-prompt-prefix-alist
+   `((org-mode . ,(format "%s\n" my/gptel-prompt-prefix))))
+  (gptel-response-prefix-alist
+   `((org-mode . ,(format "%s\n" my/gptel-response-prefix))))
   :bind
-  (("C-z RET" . gptel-send)
-   ("C-z b" . gptel)
+  (("C-z b" . my/gptel)
    ("C-z m" . gptel-mode)
    ("C-z h" . gptel-highlight-mode)
    ("C-z k" . gptel-abort)
-   ("C-z m" . gptel-menu)
    ("C-z r" . gptel-rewrite)
+   ("C-z RET" . gptel-send)
    :map gptel-mode-map
    ("C-z o" . gptel-org-set-topic)
    ("C-z O" . gptel-org-set-properties))
+  :hook
+  (gptel-mode . my/gptel-init)
   :config
-  (setq gptel-expert-commands t)
-  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "=@ash=\n")
-  (setf (alist-get 'org-mode gptel-response-prefix-alist) "~@bot~\n")
-  (load (expand-file-name "gptel-extras.el" user-emacs-directory)))
+  (setq gptel-expert-commands t))
 
 (use-package gptel-vertex
   :if (file-directory-p "~/dev/home/gptel-vertex")
-  :load-path "~/dev/home/gptel-vertex")
+  :load-path "~/dev/home/gptel-vertex"
+  :after (gptel chronosphere)
+  :demand t
+  :commands gptel-make-vertex
+  :config
+  (setq gptel-model chronosphere-default-anthropic-model
+        gptel-backend (gptel-make-vertex
+                       "VertexAI"
+                       :project-id chronosphere-vertex-project
+                       :location chronosphere-vertex-location)))
+
+(use-package gptel-toolbox
+  :if (file-directory-p "~/dev/home/gptel-toolbox")
+  :load-path "~/dev/home/gptel-toolbox"
+  :after gptel
+  :demand t)
 
 (use-package gptel-quick
   :ensure (:host github :repo "karthink/gptel-quick")
@@ -3306,13 +3355,26 @@ specified then a task category will be determined by the item's tags."
   (with-eval-after-load 'embark
     (bind-key "?" #'gptel-quick 'embark-general-map)))
 
+(use-package ragmacs
+  :if (file-directory-p "~/dev/home/ragmacs")
+  :load-path "~/dev/home/ragmacs"
+  :after gptel
+  :demand t)
+
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
+  :preface
+  (defun my/agent-shell-init ()
+    "Init function for `agent-shell-mode'."
+    (add-hook 'completion-at-point-functions #'cape-file nil t))
+
+  :hook
+  (agent-shell-mode . my/agent-shell-init)
   :bind
-  (("C-z C-z" . agent-shell)
-   ("C-z M" . agent-shell-set-session-mode)
+  (("C-z s" . agent-shell)
+   ("C-z S" . agent-shell-set-session-mode)
    :map agent-shell-mode-map
-   ;; Mirror gptel newline behavior.
+   ;; Mirror `gptel' newline behavior.
    ("RET" . newline)
    ("C-c RET" . agent-shell-submit)
    ;; Defun-style prompt navigation.
@@ -3320,7 +3382,8 @@ specified then a task category will be determined by the item's tags."
    ("C-M-e" . comint-next-prompt))
   :custom
   (agent-shell-header-style 'text)
-  (agent-shell-file-completion-enabled t)
+  ;; We'll use `cape-file' for consistency with `gptel'.
+  (agent-shell-file-completion-enabled nil)
   :config
   ;; Use GCP authentication.
   (setq agent-shell-goose-authentication
@@ -3335,13 +3398,6 @@ specified then a task category will be determined by the item's tags."
    (expand-file-name "~/.local/share/agent-shell/transcripts/"))
   (shell-maker-transcript-default-filename
    (lambda () (format-time-string "%F-%T-transcript.txt"))))
-
-;;;; Work Configuration
-
-(use-package chronosphere
-  :if (file-directory-p "~/dev/home/chronosphere")
-  :load-path "~/dev/home/chronosphere"
-  :hook (elpaca-after-init . chronosphere-init))
 
 ;;; End:
 (provide 'init)
