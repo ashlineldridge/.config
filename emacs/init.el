@@ -3111,22 +3111,6 @@ specified then a task category will be determined by the item's tags."
    ;; below to insert a link with the page title as the description.
    ("C-c C-S-l" . org-cliplink)))
 
-(use-package org-bullets
-  ;; Disabled as currently enjoying a simpler look.
-  :disabled
-  :hook (org-mode . org-bullets-mode)
-  :custom
-  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
-
-(use-package org-appear
-  ;; Disabled as I'm currently preferring to show emphasis markers.
-  :disabled
-  :hook (org-mode . org-appear-mode)
-  :custom
-  ;; Don't auto-show links as it's too distracting.
-  (org-appear-autolinks nil)
-  (org-appear-delay 0.5))
-
 (use-package org-roam
   :bind
   ("C-c n n" . org-roam-node-find)
