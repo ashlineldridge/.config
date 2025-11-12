@@ -139,14 +139,8 @@
   :hook (vertico-mode . nerd-icons-completion-mode))
 
 (use-package nerd-icons-corfu
-  :after corfu
-  :defines corfu-margin-formatters
-  :init
-  (add-to-list 'corfu-margin-formatters 'nerd-icons-corfu-formatter)
-  :config
-  ;; Make `tempel-complete' look nice (use `nerd-icons-insert' to see icons).
-  (add-to-list 'nerd-icons-corfu-mapping
-               '(snippet :style "oct" :icon "heart" :face font-lock-string-face)))
+  ;; TODO: Either make this look good or get rid of it.
+  :disabled)
 
 ;;;;; Mode Line
 
