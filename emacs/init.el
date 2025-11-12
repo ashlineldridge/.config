@@ -552,7 +552,7 @@
 
   (defun my/help-buffer (&optional arg)
     "Show an appropriate help buffer for the current symbol at point.
-When ARG is non-nil all help buffers will be killed or buried depending on
+With prefix ARG, all help buffers will be killed or buried depending on
 the value of `my/help-buffer-kill-to-close'."
     (interactive "P")
     (if arg
@@ -696,7 +696,7 @@ the value of `my/help-buffer-kill-to-close'."
 
   (defun my/async-shell-command (arg)
     "Version of `async-shell-command' that always creates new buffers.
-When ARG is non-nil, the working directory can be selected."
+With prefix ARG, the working directory can be selected."
     (interactive "P")
     (let ((default-directory (if (or arg (not default-directory))
                                  (read-directory-name "Working directory: ")
@@ -1199,7 +1199,7 @@ When ARG is non-nil, the working directory can be selected."
 
   (defun my/project-async-shell-command (arg)
     "Version of `project-async-shell-command' that always creates new buffers.
-When ARG is non-nil, the working directory can be selected."
+With prefix ARG, the working directory can be selected."
     (interactive "P")
     (let ((default-directory (my/project-current-root)))
       (my/async-shell-command arg)))
@@ -1215,7 +1215,8 @@ When ARG is non-nil, the working directory can be selected."
      (my/consult-project-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
      (my/project-async-shell-command "Command" ?&)
-     (agent-shell "Agent Shell" ?z))))
+     (my/gptel "GPTel" ?z)
+     (agent-shell "Agent Shell" ?Z))))
 
 ;;;; Minibuffer
 
@@ -1347,13 +1348,11 @@ When ARG is non-nil, the working directory can be selected."
    ("M-m" . my/corfu-move-to-minibuffer))
   :hook
   (elpaca-after-init . global-corfu-mode)
-  ;; Enable auto-completion selectively.
-  (prog-mode . (lambda () (setq-local corfu-auto t) (corfu-mode)))
   :custom
+  ;; Serenity trial in progress...
   (corfu-auto nil)
   (corfu-auto-delay 0.3)
   (corfu-auto-prefix 5)
-  (corfu-auto-trigger ".")
   (corfu-preselect 'directory)
   (corfu-quit-at-boundary 'separator)
   (corfu-on-exact-match nil)
@@ -1406,6 +1405,7 @@ When ARG is non-nil, the working directory can be selected."
 (use-package cape
   :bind
   ("C-' a" . cape-abbrev)
+  ("C-' b" . cape-elisp-block)
   ("C-' d" . cape-dabbrev)
   ("C-' f" . cape-file)
   ("C-' h" . cape-history)
@@ -1418,7 +1418,11 @@ When ARG is non-nil, the working directory can be selected."
   :custom
   (cape-dabbrev-min-length 1)
   (cape-dabbrev-check-other-buffers t)
-  (cape-line-buffer-function #'buffer-list))
+  (cape-line-buffer-function #'buffer-list)
+  :init
+  ;; EXPERIMENTAL: Can also play with hook depth.
+  (add-hook 'completion-at-point-functions #'cape-dabbrev)
+  (add-hook 'completion-at-point-functions #'cape-file))
 
 ;; Orderless configuration mostly taken from:
 ;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
