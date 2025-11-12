@@ -3273,11 +3273,28 @@ specified then a task category will be determined by the item's tags."
   (defvar my/gptel-response-prefix "=@bot=")
   (declare-function gptel "gptel")
 
-  (defun my/gptel ()
-    "Custom `gptel' command wrapper."
-    (interactive)
-    (gptel "*gptel*" nil (format "* Chat\n%s\n" my/gptel-prompt-prefix) t))
-
+  (defun my/gptel (arg)
+    "Visit or create a `gptel' buffer for the current project or directory.
+With prefix ARG, always create a new buffer."
+    (interactive "P")
+    (let* ((project (project-current))
+           (project-root (when project (project-root project)))
+           (project-name (if project
+                             (file-name-nondirectory
+                              (directory-file-name project-root))
+                           (file-name-nondirectory
+                            (directory-file-name default-directory))))
+           (base-buffer-name (format "*gptel [%s]*" project-name))
+           (buffer-name (if arg
+                            (generate-new-buffer-name base-buffer-name)
+                          base-buffer-name))
+           (existing-buffer (and (not arg) (get-buffer buffer-name))))
+      (if existing-buffer
+          (switch-to-buffer existing-buffer)
+        (let ((default-directory (or project-root default-directory)))
+          (gptel buffer-name nil
+                 (format "* Chat\n%s\n" my/gptel-prompt-prefix) t)))))
+  ;; ls ~/
   (defun my/gptel-init ()
     "Init function for `gptel-mode'."
     (org-indent-mode -1)
@@ -3296,7 +3313,7 @@ specified then a task category will be determined by the item's tags."
   (gptel-response-prefix-alist
    `((org-mode . ,(format "%s\n" my/gptel-response-prefix))))
   :bind
-  (("C-z b" . my/gptel)
+  (("C-z C-z" . my/gptel)
    ("C-z m" . gptel-mode)
    ("C-z h" . gptel-highlight-mode)
    ("C-z k" . gptel-abort)
