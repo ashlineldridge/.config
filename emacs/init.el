@@ -3306,14 +3306,13 @@ With prefix ARG, always create a new buffer."
   (gptel-track-media t)
   (gptel-include-reasoning t)
   (gptel-org-branching-context t)
-  (gptel-curl-file-size-threshold 200000)
   (gptel-display-buffer-action '(pop-to-buffer-same-window))
   (gptel-prompt-prefix-alist
    `((org-mode . ,(format "%s\n" my/gptel-prompt-prefix))))
   (gptel-response-prefix-alist
    `((org-mode . ,(format "%s\n" my/gptel-response-prefix))))
   :bind
-  (("C-z C-z" . my/gptel)
+  (("C-z b" . my/gptel)
    ("C-z m" . gptel-mode)
    ("C-z h" . gptel-highlight-mode)
    ("C-z k" . gptel-abort)
