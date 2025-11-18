@@ -1,6 +1,6 @@
 mac-user      := "ae"
 mac-group     := "admin"
-emacs-version := "30"
+emacs-version := "31"
 cargo-bin-dir := "~/.cargo/bin"
 go-bin-dir    := "~/dev/go/bin"
 
@@ -21,9 +21,7 @@ go-install:
 
 emacs-install: emacs-clean
     @echo ">>> Installing Emacs"
-    brew install emacs-plus@{{emacs-version}} \
-        --with-imagemagick \
-        --with-c9rgreen-sonoma-icon
+    brew install emacs-plus@{{emacs-version}} --with-savchenkovaleriy-big-sur-icon
     # The entire application is copied rather than creating an alias as that
     # seems to screw with the icon that gets shown by Raycast/Spotlight.
     sudo rm -rf /Applications/Emacs.app
@@ -69,7 +67,7 @@ agents-upgrade:
     # Upgrade ACP adapters.
     # Upgrade your own fork of claude-code-acp manually for now.
     # npm install -g @zed-industries/claude-code-acp
-    echo "Don't forget to manually upgrade claude-code-acp"
+    (cd ~/dev/home/claude-code-acp && git fetch origin main && git rebase origin/main && git push origin -f)
     codex_acp_url="$(curl -s https://api.github.com/repos/zed-industries/codex-acp/releases/latest |
         jq -r '.assets[] | select(.name | contains("aarch64-apple-darwin")) | .browser_download_url')"
     curl -sL "${codex_acp_url}" | tar -xz -C ~/bin/
