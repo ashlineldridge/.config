@@ -1508,7 +1508,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
       ,(lambda () consult-project-function)
       :items
       ,(lambda ()
-         (when-let (project-dir (my/project-current-root))
+         (when-let* ((project-dir (my/project-current-root)))
            (let* ((project (project--find-in-directory project-dir))
                   (project-files (seq-filter #'file-exists-p (project-files project)))
                   (len (length project-dir))
@@ -1704,7 +1704,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
   (defun my/find-subdirs (&optional dir)
     "Return a list of all subdirectories of DIR (else `default-directory')."
-    (when-let ((default-directory (or dir default-directory)))
+    (when-let* ((default-directory (or dir default-directory)))
       (let ((command "fd -L -H -E .git/ -t=d -a -0 -c=never")
             res)
         (with-temp-buffer
@@ -2913,12 +2913,12 @@ with a numbered suffix."
 
   (defun my/org-agenda-cmp-todo (a b)
     "Custom compares agenda items A and B based on their todo keywords."
-    (when-let ((state-a (get-text-property 14 'todo-state a))
-               (state-b (get-text-property 14 'todo-state b))
-               (cmp (--map (cl-position-if
-                            (lambda (x) (equal x it))
-                            my/org-agenda-todo-sort-order)
-                           (list state-a state-b))))
+    (when-let* ((state-a (get-text-property 14 'todo-state a))
+                (state-b (get-text-property 14 'todo-state b))
+                (cmp (--map (cl-position-if
+                             (lambda (x) (equal x it))
+                             my/org-agenda-todo-sort-order)
+                            (list state-a state-b))))
       (cond ((apply '> cmp) 1)
             ((apply '< cmp) -1)
             (t nil))))
