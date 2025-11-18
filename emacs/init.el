@@ -3,7 +3,7 @@
 ;; Author: Ashlin Eldridge <ashlin.eldridge@gmail.com>
 ;; URL: https://github.com/ashlineldridge/.config
 ;; Version: 1.0.0
-;; Package-Requires: ((emacs "30.0"))
+;; Package-Requires: ((emacs "31.0"))
 
 ;;; Commentary:
 ;;
@@ -711,7 +711,7 @@ With prefix ARG, the working directory can be selected."
     "Unbind (often stolen) common keybindings from MAP."
     (dolist (key '("C-z" "C-SPC" "C-M-<left>" "C-M-<right>" "C-M-a" "C-M-e"
                    "M-g" "M-j" "M-J" "M-k" "M-o" "M-s" "M-q" "M-r" "M-R" "M-U"
-                   "M-:" "M-&" "M-'" "M-\"" "M-]" "M->" "M-<"))
+                   "M-." "M-?" "M-:" "M-&" "M-'" "M-\"" "M-]" "M->" "M-<"))
       (define-key map (kbd key) nil t)))
 
   :custom
@@ -865,12 +865,6 @@ With prefix ARG, the working directory can be selected."
       (with-selected-window (selected-window)
         (call-interactively #'xref-find-definitions-other-window))))
 
-  (defun my/avy-action-open-link (pt)
-    "Open the link at PT."
-    (save-excursion
-      (goto-char pt)
-      (org-open-at-point-global)))
-
   (defun my/avy-action-help-buffer (pt)
     "Show a help buffer for the symbol at PT without moving point."
     (save-excursion
@@ -895,7 +889,6 @@ With prefix ARG, the working directory can be selected."
   (avy-styles-alist '((avy-isearch . post)))
   (avy-dispatch-alist
    '((?m . avy-action-mark)
-     (?o . my/avy-action-open-link)
      (?t . avy-action-teleport)
      (?w . avy-action-copy)
      (?y . my/avy-action-yank)
@@ -905,6 +898,11 @@ With prefix ARG, the working directory can be selected."
      (?h . my/avy-action-help-buffer)))
   :config
   (eldoc-add-command-completions "avy-goto-"))
+
+(use-package link-hint
+  :bind
+  ("M-g ." . link-hint-open-link)
+  ("M-g M-." . link-hint-copy-link))
 
 ;;;;; Highlighting
 
