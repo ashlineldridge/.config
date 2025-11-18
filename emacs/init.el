@@ -1213,7 +1213,7 @@ With prefix ARG, the working directory can be selected."
      (my/consult-project-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
      (my/project-async-shell-command "Command" ?&)
-     (my/gptel "GPTel" ?z)
+     (gptel-agent "GPTel" ?z)
      (agent-shell "Agent Shell" ?Z))))
 
 ;;;; Minibuffer
@@ -3267,51 +3267,23 @@ specified then a task category will be determined by the item's tags."
 
 (use-package gptel
   :preface
-  (defvar my/gptel-prompt-prefix "=@ash=")
-  (defvar my/gptel-response-prefix "=@bot=")
-  (declare-function gptel "gptel")
-
-  (defun my/gptel (arg)
-    "Visit or create a `gptel' buffer for the current project or directory.
-With prefix ARG, always create a new buffer."
-    (interactive "P")
-    (let* ((project (project-current))
-           (project-root (when project (project-root project)))
-           (project-name (if project
-                             (file-name-nondirectory
-                              (directory-file-name project-root))
-                           (file-name-nondirectory
-                            (directory-file-name default-directory))))
-           (base-buffer-name (format "*gptel [%s]*" project-name))
-           (buffer-name (if arg
-                            (generate-new-buffer-name base-buffer-name)
-                          base-buffer-name))
-           (existing-buffer (and (not arg) (get-buffer buffer-name))))
-      (if existing-buffer
-          (switch-to-buffer existing-buffer)
-        (let ((default-directory (or project-root default-directory)))
-          (gptel buffer-name nil
-                 (format "* Chat\n%s\n" my/gptel-prompt-prefix) t)))))
-  ;; ls ~/
+  (defvar my/gptel-prompt-prefix "=@ash=\n")
+  (defvar my/gptel-response-prefix "=@bot=\n")
   (defun my/gptel-init ()
     "Init function for `gptel-mode'."
     (org-indent-mode -1)
-    (electric-pair-local-mode -1)
-    (add-hook 'completion-at-point-functions #'cape-file nil t))
-
+    (electric-pair-local-mode -1))
   :custom
   (gptel-default-mode 'org-mode)
   (gptel-track-media t)
   (gptel-include-reasoning t)
   (gptel-org-branching-context t)
   (gptel-display-buffer-action '(pop-to-buffer-same-window))
-  (gptel-prompt-prefix-alist
-   `((org-mode . ,(format "%s\n" my/gptel-prompt-prefix))))
-  (gptel-response-prefix-alist
-   `((org-mode . ,(format "%s\n" my/gptel-response-prefix))))
+  (gptel-prompt-prefix-alist `((org-mode . ,my/gptel-prompt-prefix)))
+  (gptel-response-prefix-alist `((org-mode . ,my/gptel-response-prefix)))
   :bind
-  (("C-z b" . my/gptel)
-   ("C-z m" . gptel-mode)
+  (("C-z m" . gptel-menu)
+   ("C-z M" . gptel-mode)
    ("C-z h" . gptel-highlight-mode)
    ("C-z k" . gptel-abort)
    ("C-z r" . gptel-rewrite)
@@ -3337,11 +3309,15 @@ With prefix ARG, always create a new buffer."
                        :project-id chronosphere-vertex-project
                        :location chronosphere-vertex-location)))
 
-(use-package gptel-toolbox
-  :if (file-directory-p "~/dev/home/gptel-toolbox")
-  :load-path "~/dev/home/gptel-toolbox"
-  :after gptel
-  :demand t)
+(use-package gptel-agent
+  ;; TODO: Using my own fork for now so that I can make tweaks and also
+  ;; using the default set of agents that come with the package. Eventually,
+  ;; I think I'd prefer to define my own agents/presets in a custom directory.
+  :ensure (:host github :repo "ashlineldridge/gptel-agent" :files (:defaults "agents"))
+  :bind
+  ("C-z C-z" . gptel-agent)
+  :config
+  (gptel-agent-update))
 
 (use-package gptel-quick
   :ensure (:host github :repo "karthink/gptel-quick")
@@ -3351,31 +3327,27 @@ With prefix ARG, always create a new buffer."
   (with-eval-after-load 'embark
     (bind-key "?" #'gptel-quick 'embark-general-map)))
 
-(use-package ragmacs
-  :if (file-directory-p "~/dev/home/ragmacs")
-  :load-path "~/dev/home/ragmacs"
-  :after gptel
-  :demand t)
-
 (use-package agent-shell
   :ensure (:host github :repo "xenodium/agent-shell")
   :preface
   (defun my/agent-shell-init ()
     "Init function for `agent-shell-mode'."
-    (add-hook 'completion-at-point-functions #'cape-file nil t))
-
+    (setq-local indent-line-function (lambda () 'noindent)))
   :hook
   (agent-shell-mode . my/agent-shell-init)
   :bind
-  (("C-z s" . agent-shell)
-   ("C-z S" . agent-shell-set-session-mode)
+  (("C-z > >" . agent-shell)
+   ("C-z > s" . agent-shell-set-session-mode)
    :map agent-shell-mode-map
-   ;; Mirror `gptel' newline behavior.
+   ;; Mirror `gptel' newline and abort behavior.
    ("RET" . newline)
    ("C-c RET" . agent-shell-submit)
+   ("C-z k" . agent-shell-interrupt)
    ;; Defun-style prompt navigation.
    ("C-M-a" . comint-previous-prompt)
-   ("C-M-e" . comint-next-prompt))
+   ("C-M-e" . comint-next-prompt)
+   ("C-M-f" . agent-shell-next-item)
+   ("C-M-b" . agent-shell-previous-item))
   :custom
   (agent-shell-header-style 'text)
   ;; We'll use `cape-file' for consistency with `gptel'.
@@ -3383,7 +3355,9 @@ With prefix ARG, always create a new buffer."
   :config
   ;; Use GCP authentication.
   (setq agent-shell-goose-authentication
-        (agent-shell-make-goose-authentication :none t)))
+        (agent-shell-make-goose-authentication :none t))
+  ;; Clear existing bindings as contains tabs, etc.
+  (setq agent-shell-mode-map (make-sparse-keymap)))
 
 (use-package acp
   :ensure (:host github :repo "xenodium/acp.el"))
