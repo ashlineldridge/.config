@@ -844,12 +844,17 @@ With prefix ARG, the working directory can be selected."
                   magit-section-backward
                   magit-section-forward
                   my/avy-goto-end-of-line
+                  next-window-any-frame
                   other-frame
                   pop-global-mark
+                  split-window-bel
+                  split-window-right
                   treesit-beginning-of-defun
                   treesit-end-of-defun
                   vterm-next-prompt
                   vterm-previous-prompt
+                  winner-redo
+                  winner-undo
                   xref-find-definitions
                   xref-go-back
                   xref-go-forward)))
