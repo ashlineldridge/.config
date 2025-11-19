@@ -344,120 +344,6 @@
   (setq scroll-conservatively 1)
   (setq other-window-scroll-default #'my/other-window-for-scrolling))
 
-;;;;; Window Movement
-
-(use-package ace-window
-  :defines (embark-buffer-map embark-file-map embark-bookmark-map)
-  :preface
-  (declare-function aw-switch-to-window "ace-window")
-  (declare-function aw-flip-window "ace-window")
-
-  (defun my/ace-switch-buffer (window)
-    "Ace window action to select buffer in WINDOW."
-    (let ((origin-window (selected-window)))
-      ;; This approach also works across frames.
-      (aw-switch-to-window window)
-      (unwind-protect
-          (consult-buffer)
-        (when (not (equal origin-window window))
-          (aw-flip-window)))))
-
-  (defun my/ace-bury-buffer (window)
-    "Ace window action to bury buffer in WINDOW."
-    ;; Window needs to be selected to bury its buffer.
-    (with-selected-window window
-      (bury-buffer)))
-
-  (defun my/ace-kill-buffer (window)
-    "Ace window action to kill buffer in WINDOW."
-    (kill-buffer (window-buffer window)))
-
-  (defun my/ace-delete-window (window)
-    "Ace window action to delete WINDOW."
-    (delete-window window))
-
-  (defun my/ace-kill-buffer-delete-window (window)
-    "Ace window action to delete WINDOW and kill its buffer."
-    (my/ace-kill-buffer window)
-    (my/ace-delete-window window))
-
-  (defun my/ace-split-window-horz (window)
-    "Ace window action to split WINDOW horizontally."
-    (split-window-horizontally nil window))
-
-  (defun my/ace-split-window-vert (window)
-    "Ace window action to split WINDOW vertically."
-    (split-window-vertically nil window))
-
-  (defun my/ace-copy-window (window)
-    "Ace window action to copy current buffer to WINDOW."
-    (my/ace-update-window (current-buffer) window (point) (window-start)))
-
-  (defun my/ace-move-window (window)
-    "Ace window action to move current buffer to WINDOW."
-    (when (not (equal window (selected-window)))
-      (my/ace-copy-window window)
-      (switch-to-prev-buffer)))
-
-  (defun my/ace-swap-window (window)
-    "Ace window action to swap current buffer with WINDOW."
-    (let ((origin-window (selected-window))
-          (buffer (current-buffer))
-          (point (point))
-          (start (window-start)))
-      (with-selected-window window
-        (my/ace-copy-window origin-window))
-      (my/ace-update-window buffer window point start)))
-
-  (defun my/ace-update-window (buffer window point window-start)
-    "Helper function to set BUFFER in WINDOW with POINT and WINDOW-START."
-    (with-selected-window window
-      (switch-to-buffer buffer nil t)
-      (set-window-point window point)
-      (set-window-start window window-start t)))
-
-  (defmacro my/define-ace-embark-action (name map fn)
-    "Define an Embark action to use Ace Window to select a window and run FN."
-    `(progn
-       (defun ,name ()
-         ,(format "Use Ace Window to select a window and then run `%s'." fn)
-         (interactive)
-         (ace-window t)
-         (call-interactively #',fn))
-       (with-eval-after-load 'embark
-         (define-key ,map (kbd "M-o") #',name))))
-
-  ;; Create additional Embark actions that support Ace Window.
-  (my/define-ace-embark-action my/ace-embark-buffer embark-buffer-map switch-to-buffer)
-  (my/define-ace-embark-action my/ace-embark-file embark-file-map find-file)
-  (my/define-ace-embark-action my/ace-embark-bookmark embark-bookmark-map bookmark-jump)
-  :bind
-  ("M-o" . ace-window)
-  :custom
-  (aw-scope 'global)
-  (aw-keys '(?a ?s ?d ?f ?g ?h ?j))
-  (aw-background t)
-  (aw-display-mode-overlay t)
-  (aw-dispatch-always t)
-  :custom-face
-  (aw-leading-char-face ((t (:bold t :height 1.0))))
-  :config
-  ;; Dispatch actions should maintain point in current window (where possible)
-  ;; to provide an alternative to moving to the window and running a command.
-  (setq aw-dispatch-alist
-        '((?0 my/ace-delete-window "Delete Window")
-          (?1 delete-other-windows "Delete Other Windows")
-          (?2 my/ace-split-window-vert "Split Vertically")
-          (?3 my/ace-split-window-horz "Split Horizontally")
-          (?b my/ace-switch-buffer "Switch Buffer")
-          (?k my/ace-kill-buffer "Kill Buffer")
-          (?K my/ace-kill-buffer-delete-window "Kill Buffer and Window")
-          (?q my/ace-bury-buffer "Bury Buffer")
-          (?c my/ace-copy-window "Copy Window")
-          (?m my/ace-move-window "Move Window")
-          (?w my/ace-swap-window "Swap Window")
-          (?? aw-show-dispatch-help))))
-
 ;;;;; Window History
 
 (use-package winner
@@ -473,24 +359,15 @@
 
 (use-package frame
   :ensure nil
-  :preface
-  (defun my/toggle-frame-jump-scope ()
-    "Toggle the scope of Ace and Avy between frame local and global."
-    (interactive)
-    (let ((scope aw-scope))
-      (setq aw-scope (if (eq scope 'global) 'frame 'global))
-      (setq avy-all-windows (if (eq scope 'global) t 'all-frames))
-      (message "Set frame jump scope: %s" (symbol-name aw-scope))))
-
   :bind
   ;; Remove silly `suspend-frame' bindings.
   ("C-z" . nil)
   ("C-x C-z" . nil)
+  ("M-o" . next-window-any-frame)
   ("M-O M-O" . other-frame)
   ("M-O M-N" . make-frame-command)
   ("M-O M-K" . delete-frame)
   ("M-O M-U" . undelete-frame)
-  ("M-O M-T" . my/toggle-frame-jump-scope)
   :hook (elpaca-after-init . undelete-frame-mode))
 
 ;; I would like to use the posframe for displaying the Ace Window indicator
