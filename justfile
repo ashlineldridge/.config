@@ -55,7 +55,7 @@ go-dump:
     @echo ">>> Dumping list of Go binaries"
     ls -1 {{go-bin-dir}} > go-bins.txt
 
-agents-upgrade:
+ai-upgrade:
     #!/usr/bin/env bash
     set -euo pipefail
     echo ">>> Upgrading AI agents"
@@ -65,9 +65,7 @@ agents-upgrade:
     brew upgrade gemini-cli
     brew upgrade opencode
     # Upgrade ACP adapters.
-    # Upgrade your own fork of claude-code-acp manually for now.
-    # npm install -g @zed-industries/claude-code-acp
-    (cd ~/dev/home/claude-code-acp && git fetch origin main && git rebase origin/main && git push origin -f)
+    npm install -g @zed-industries/claude-code-acp
     codex_acp_url="$(curl -s https://api.github.com/repos/zed-industries/codex-acp/releases/latest |
         jq -r '.assets[] | select(.name | contains("aarch64-apple-darwin")) | .browser_download_url')"
     curl -sL "${codex_acp_url}" | tar -xz -C ~/bin/
