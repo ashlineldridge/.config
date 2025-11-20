@@ -511,7 +511,7 @@ the value of `my/help-buffer-kill-to-close'."
 (use-package simple
   :ensure nil
   :preface
-  (declare-function called-interactively-p "subr")
+  (declare-function string-remove-suffix "subr-x")
 
   (defun my/keyboard-quit-dwim ()
     "DWIM version of `keyboard-quit'."
@@ -539,7 +539,7 @@ the value of `my/help-buffer-kill-to-close'."
     (kill-line 0))
 
   (defun my/zap-to-char-backward (arg char)
-    "Backward `zap-to-char' for the ARGth occurrance of CHAR."
+    "Backward `zap-to-char' for the ARG occurrence of CHAR."
     (interactive
      (list
       (prefix-numeric-value current-prefix-arg)
@@ -583,6 +583,20 @@ With prefix ARG, the working directory can be selected."
         (concat (my/abbreviate-file-name
                  (string-remove-suffix "/" default-directory) 30) " $ "))
        (generate-new-buffer shell-command-buffer-name-async))))
+
+  (defun my/shell-command-buffer-p (buf)
+    "Return whether BUF is a shell-command buffer."
+    (with-current-buffer buf
+      (derived-mode-p 'shell-command-mode)))
+
+  (defun my/shell-command-buffer-state (buf)
+    "Return the state of shell-command buffer BUF.
+State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
+    (when (my/shell-command-buffer-p buf)
+      (let ((proc (get-buffer-process buf)))
+        (if (and proc (eq (process-status proc) 'run))
+            'running
+          'done))))
 
   (defun my/unbind-common-keys (map)
     "Unbind (often stolen) common keybindings from MAP."
@@ -901,10 +915,28 @@ With prefix ARG, the working directory can be selected."
   (ibuffer-saved-filter-groups
    '(("default"
       ("Git" (or (name . "^magit") (name . "^*vc-")))
-      ("AI" (predicate my/ai-buffer-p (current-buffer)))
-      ("Shell" (predicate my/shell-buffer-p (current-buffer)))
-      ("Command" (mode . shell-command-mode))
       ("Dired" (mode . dired-mode))
+      ("Shell" (predicate my/shell-buffer-p (current-buffer)))
+      ("Agentic (running)" (predicate
+                            (lambda (buf)
+                              (eq (my/agentic-buffer-state buf) 'running))
+                            (current-buffer)))
+      ("Agentic (waiting)" (predicate
+                            (lambda (buf)
+                              (eq (my/agentic-buffer-state buf) 'waiting))
+                            (current-buffer)))
+      ("Agentic (ready)" (predicate
+                          (lambda (buf)
+                            (eq (my/agentic-buffer-state buf) 'ready))
+                          (current-buffer)))
+      ("Command (running)" (predicate
+                            (lambda (buf)
+                              (eq (my/shell-command-buffer-state buf) 'running))
+                            (current-buffer)))
+      ("Command (done)" (predicate
+                         (lambda (buf)
+                           (eq (my/shell-command-buffer-state buf) 'done))
+                         (current-buffer)))
       ("Org" (or (mode . org-mode) (mode . org-agenda-mode))))))
   (ibuffer-show-empty-filter-groups nil)
   (ibuffer-use-header-line nil)
@@ -1094,7 +1126,7 @@ With prefix ARG, the working directory can be selected."
      (project-dired "Dired" ?j)
      (my/consult-project-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
-     (my/project-async-shell-command "Command" ?&)
+     (my/project-async-shell-command "Command" ?c)
      (gptel-agent "GPTel" ?z)
      (agent-shell "Agent Shell" ?Z))))
 
@@ -1366,12 +1398,14 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
     (my/consult-source-buffer "Magit Buffer" ?g :mode 'magit-status-mode))
   (defvar my/consult-source-shell-buffer
     (my/consult-source-buffer "Shell Buffer" ?s :predicate 'my/shell-buffer-p))
+  (defvar my/consult-source-command-buffer
+    (my/consult-source-buffer "Command Buffer" ?c :predicate 'my/shell-command-buffer-p))
   (defvar my/consult-source-dired-buffer
     (my/consult-source-buffer "Dired Buffer" ?d :mode 'dired-mode))
   (defvar my/consult-source-agenda-buffer
     (my/consult-source-buffer "Agenda Buffer" ?a :mode 'org-agenda-mode))
-  (defvar my/consult-source-ai-buffer
-    (my/consult-source-buffer "AI Buffer" ?z :predicate 'my/ai-buffer-p))
+  (defvar my/consult-source-agentic-buffer
+    (my/consult-source-buffer "Agentic Buffer" ?z :predicate 'my/agentic-buffer-p))
 
   ;; Consult source for all project files. This has largely been adapted from
   ;; the implementation of `consult-source-project-recent-file'.
@@ -1527,8 +1561,9 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
           my/consult-source-agenda-buffer      ;; Narrow: ?a (hidden)
           my/consult-source-dired-buffer       ;; Narrow: ?d (hidden)
           my/consult-source-shell-buffer       ;; Narrow: ?s (hidden)
+          my/consult-source-command-buffer     ;; Narrow: ?c (hidden)
           my/consult-source-magit-buffer       ;; Narrow: ?g (hidden)
-          my/consult-source-ai-buffer          ;; Narrow: ?z (hidden)
+          my/consult-source-agentic-buffer     ;; Narrow: ?z (hidden)
           consult-source-bookmark              ;; Narrow: ?m (shown)
           consult-source-recent-file))         ;; Narrow: ?r (hidden)
 
@@ -2538,6 +2573,7 @@ with a numbered suffix."
     "Return whether BUF is considered a generalized shell buffer."
     (let ((mm (buffer-local-value 'major-mode buf)))
       (provided-mode-derived-p mm '(eshell-mode eat-mode vterm-mode))))
+
   :bind
   ;; For convenience, consolidate Eshell keybindings here rather than in
   ;; separate `use-package' forms (requires below are necessary).
@@ -3136,16 +3172,36 @@ specified then a task category will be determined by the item's tags."
 
 ;;;; AI
 
-(use-package ai
+(use-package agentic
   :ensure nil
   :no-require
   :preface
-  (defun my/ai-buffer-p (buf)
-    "Return whether BUF is considered to be an AI/LLM/agent buffer."
+  (declare-function shell-maker-busy "shell-maker")
+  (defun my/agentic-buffer-state (buf)
+    "Return the state of the agentic buffer BUF or nil."
     (with-current-buffer buf
-      (cl-some (lambda (m)
-                 (or (derived-mode-p m) (and (boundp m) (symbol-value m))))
-               '(gptel-mode agent-shell-mode)))))
+      (cond
+       ;; Check for state of `gptel-mode' buffer.
+       ((bound-and-true-p gptel-mode)
+        (cond
+         ((cl-some (lambda (ov) (overlay-get ov 'gptel-tool))
+                   (overlays-in (point-min) (point-max)))
+          'waiting)
+         ((bound-and-true-p gptel--request-alist) 'running)
+         (t 'ready)))
+       ;; Check for state of `agent-shell-mode' buffer.
+       ((derived-mode-p 'agent-shell-mode)
+        (cond
+         ((text-property-any (point-min) (point-max) 'agent-shell-permission-button t)
+          'waiting)
+         ((shell-maker-busy) 'running)
+         (t 'ready)))
+       ;; Not an agentic buffer.
+       (t nil))))
+
+  (defun my/agentic-buffer-p (buf)
+    "Return whether BUF is considered to be an agentic buffer."
+    (not (null (my/agentic-buffer-state buf)))))
 
 (use-package gptel
   :preface
@@ -3155,6 +3211,7 @@ specified then a task category will be determined by the item's tags."
     "Init function for `gptel-mode'."
     (org-indent-mode -1)
     (electric-pair-local-mode -1))
+
   :custom
   (gptel-default-mode 'org-mode)
   (gptel-track-media t)
