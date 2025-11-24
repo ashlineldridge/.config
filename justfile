@@ -41,7 +41,7 @@ emacs-clean:
     rm -rf emacs/var/elpaca
     rm -rf emacs/var/eln-cache
     rm -rf emacs/eln-cache
-    rm -rf emacs/var/tree-sitter
+    rm -rf emacs/var/treesit
 
 brew-dump:
     @echo ">>> Dumping list of Brew packages"

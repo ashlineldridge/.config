@@ -1782,9 +1782,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 (use-package treesit
   :ensure nil
   :custom
-  (treesit-font-lock-level 4)
-  (treesit-extra-load-path
-   (list (no-littering-expand-var-file-name "tree-sitter"))))
+  (treesit-font-lock-level 4))
 
 (use-package treesit-auto
   :preface
@@ -1793,13 +1791,11 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (defun my/treesit-auto-maybe-install ()
     "Install Tree-sitter grammars if necessary."
     (interactive)
-    (let ((old-dir (locate-user-emacs-file "tree-sitter"))
-          (new-dir (car treesit-extra-load-path)))
-      (when (not (file-directory-p new-dir))
-        (delete-directory old-dir t)
+    (let ((grammar-dir (car treesit-extra-load-path)))
+      (when (not (file-directory-p grammar-dir))
         (let ((treesit-language-source-alist (treesit-auto--build-treesit-source-alist)))
-          (mapc #'treesit-install-language-grammar treesit-auto-langs))
-        (rename-file old-dir new-dir)
+          (mapc (lambda (lang) (treesit-install-language-grammar lang grammar-dir))
+                treesit-auto-langs))
         (message "Tree-sitter grammars have been installed"))))
   :custom
   (treesit-auto-install 'prompt)
@@ -2466,7 +2462,6 @@ If ARG is non-nil, the full 40 character commit hash will be copied."
   :preface
   (declare-function browse-at-remote "browse-at-remote")
   (declare-function vc-git-branches "vc-git")
-
   (defun my/browse-at-remote (arg)
     "Browse to the remote file, using the trunk branch if ARG is non-nil."
     (interactive "P")
