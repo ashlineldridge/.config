@@ -49,8 +49,8 @@
 
 (use-package fontaine
   :preface
-  (defconst my/fixed-family "Iosevka Comfy")
-  (defconst my/variable-family "Iosevka Comfy Motion Duo")
+  (defconst my/fixed-family "Aporetic Sans Mono")
+  (defconst my/variable-family "Aporetic Sans")
   (defun my/fontaine-apply-preset ()
     "Apply the current (or default) Fontaine preset."
     (fontaine-set-preset (or fontaine-current-preset 'desktop)))
@@ -126,7 +126,10 @@
 ;;;;; Icons
 
 ;; Run `nerd-icons-install-fonts' manually to install fonts for the first time.
-(use-package nerd-icons)
+(use-package nerd-icons
+  :custom
+  ;; See: https://github.com/Echinoidea/Aporetic-Nerd-Font.
+  (nerd-icons-font-family "AporeticSansMonoNerdFont"))
 
 (use-package nerd-icons-ibuffer
   :after ibuffer
