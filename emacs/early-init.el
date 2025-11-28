@@ -106,6 +106,7 @@
                 "~/.cargo/bin"
                 "~/.ghcup/bin"
                 "/opt/homebrew/bin"
+                "/opt/homebrew/opt/curl/bin"
                 "/opt/homebrew/opt/llvm/bin"
                 ,(expand-file-name "bin" (getenv "GOROOT"))
                 ,(expand-file-name "bin" (getenv "GOPATH"))
