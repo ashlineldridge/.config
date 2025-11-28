@@ -889,10 +889,8 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
 
 (use-package tempel
   :bind
-  (("M-/" . tempel-complete)
+  (("M-+" . tempel-complete)
    (:map tempel-map
-    ("M-/" . tempel-next)
-    ("M-?" . tempel-previous)
     ([remap keyboard-quit] . tempel-done))))
 
 ;;;; Buffer Management
