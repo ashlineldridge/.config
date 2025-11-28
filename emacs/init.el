@@ -1247,18 +1247,11 @@ With prefix ARG, the working directory can be selected."
 
 (use-package dabbrev
   :ensure nil
-  :preface
-  (defun my/dabbrev-completion ()
-    "Like `dabbrev-completion' but always searches all buffers."
-    (interactive)
-    (dabbrev-completion 16))
   :custom
   (dabbrev-case-fold-search nil)
   (dabbrev-check-other-buffers t)
   (dabbrev-check-all-buffers t)
-  (dabbrev-abbrev-skip-leading-regexp "[$*/=~'&]")
-  :bind
-  ("C-M-/" . my/dabbrev-completion))
+  (dabbrev-abbrev-skip-leading-regexp "[$*/=~'&]"))
 
 (use-package corfu
   :ensure (:files (:defaults "extensions/*.el"))
@@ -1335,9 +1328,13 @@ With prefix ARG, the working directory can be selected."
 (use-package cape
   :bind-keymap
   ("C-c c" . cape-prefix-map)
+  :bind
+  ("C-M-/" . cape-dabbrev)
+  ("C-M-?" . cape-line)
   :custom
   (cape-dabbrev-min-length 1)
   (cape-dabbrev-check-other-buffers t)
+  (cape-dabbrev-buffer-function #'buffer-list)
   (cape-line-buffer-function #'buffer-list)
   :init
   (add-hook 'completion-at-point-functions 'cape-file))
