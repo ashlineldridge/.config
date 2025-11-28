@@ -83,8 +83,9 @@ emacs-lisp-mode inferior-emacs-lisp-mode
 
 eshell-mode
 
-(sink "> (my/eshell-sink)")
-(sinkid "> (my/eshell-sink \"" q "\")")
+(sink "> (sink \"" (p "*eshell-output*") "\"" q ")")
+(sinkyaml "> (sink-yaml \"" (p "*eshell-output.yaml*") "\"" q ")")
+(sinkjson "> (sink-json \"" (p "*eshell-output.json*") "\"" q ")")
 
 org-mode
 

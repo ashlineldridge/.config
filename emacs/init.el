@@ -329,11 +329,11 @@
       (slot . 0)
       (window-parameters . ((mode-line-format . none))))
      ;; Display in other window.
-     ("\\(\\*eldoc\\|\\*helpful\\)"
+     ("\\(\\*Async Shell Command\\*\\|\\*eldoc\\|\\*helpful\\)"
       (display-buffer-reuse-window)
       (inhibit-same-window . t))
      ;; Display in same window.
-     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
+     ("\\(\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
       (display-buffer-same-window))))
 
   :config
@@ -574,18 +574,20 @@ the value of `my/help-buffer-kill-to-close'."
     "Show long lines as truncated in the current buffer."
     (setq-local truncate-lines t))
 
-  (defun my/async-shell-command (arg)
+  (defun my/async-shell-command (arg &optional cmd)
     "Version of `async-shell-command' that always creates new buffers.
-With prefix ARG, the working directory can be selected."
+With prefix ARG, the working directory can be selected. An optional CMD
+can be specified when calling this function non-interactively."
     (interactive "P")
-    (let ((default-directory (if (or arg (not default-directory))
+    (let ((cmd (or cmd
+                   (read-shell-command
+                    (concat (my/abbreviate-file-name
+                             (string-remove-suffix "/" default-directory) 30) " $ "))))
+          (default-directory (if (or arg (not default-directory))
                                  (read-directory-name "Working directory: ")
                                default-directory)))
       (async-shell-command
-       (read-shell-command
-        (concat (my/abbreviate-file-name
-                 (string-remove-suffix "/" default-directory) 30) " $ "))
-       (generate-new-buffer shell-command-buffer-name-async))))
+       cmd (generate-new-buffer shell-command-buffer-name-async))))
 
   (defun my/shell-command-buffer-p (buf)
     "Return whether BUF is a shell-command buffer."
@@ -2502,7 +2504,14 @@ If ARG is non-nil, the full 40 character commit hash will be copied."
   :defines
   (eshell-mode-map eshell-hist-mode-map eshell-prompt-regexp)
   :preface
+  ;; Eshell command aliases.
   (defalias 'eshell/v 'eshell-exec-visual)
+  (defalias 'eshell/@ 'my/eshell-async)
+  ;; Eshell input redirection aliases.
+  (defalias 'sink 'my/eshell-sink)
+  (defalias 'sink-yaml 'my/eshell-sink-yaml)
+  (defalias 'sink-json 'my/eshell-sink-json)
+
   ;; Don't want the prompt repeat keys as I use defun-style navigation.
   (defvar eshell-prompt-repeat-map (make-sparse-keymap))
   (declare-function eshell-bol "esh-mode")
@@ -2542,17 +2551,45 @@ If ARG is non-nil, the full 40 character commit hash will be copied."
     (concat (my/abbreviate-file-name (eshell/pwd) 30)
             (if (= (user-uid) 0) " # " " $ ")))
 
-  (defun my/eshell-sink (&optional id)
-    "Return a reference to a buffer for sinking Eshell command output.
-The name of the returned buffer will have the name *eshell-output* if ID is
-nil, otherwise it will have the name *eshell-output-<ID>*. In either case,
-if a buffer with that name already exists, then a new buffer will be created
-with a numbered suffix."
-    (let* ((name (if id (format "*eshell-output-%s" id) "*eshell-output*"))
+  (defun my/eshell-async (&rest args)
+    "Run ARGS using `async-shell-command`."
+    (let ((cmd (mapconcat #'shell-quote-argument args " ")))
+      (my/async-shell-command nil cmd)
+      nil))
+
+  (defun my/eshell-async-send ()
+    "Run the current Eshell command line using `async-shell-command'."
+    (interactive)
+    (save-excursion
+      (beginning-of-line)
+      (unless (looking-at-p "@ ")
+        (insert "@ ")))
+    (eshell-send-input))
+
+  (defun my/eshell-sink (&optional name &rest modes)
+    "Return an Eshell output buffer named NAMED with MODES enabled."
+    (let* ((name (or name "*eshell-output*"))
            (name (generate-new-buffer-name name))
            (buf (get-buffer-create name)))
-      (display-buffer buf)
+      (with-current-buffer buf
+        (dolist (m modes)
+          (if (fboundp m)
+              (funcall m)
+            (message "Ignoring non-function sink arg: %s" m))))
+      (pop-to-buffer buf)
       buf))
+
+  (defun my/eshell-sink-yaml (&optional name &rest modes)
+    "Return an Eshell YAML output buffer named NAMED with MODES enabled."
+    (apply #'my/eshell-sink
+           (or name "*eshell-output.yaml*")
+           (append modes '(yaml-ts-mode))))
+
+  (defun my/eshell-sink-json (&optional name &rest modes)
+    "Return an Eshell JSON output buffer named NAMED with MODES enabled."
+    (apply #'my/eshell-sink
+           (or name "*eshell-output.json*")
+           (append modes '(json-ts-mode))))
 
   (defun my/eshell-insert-arg (&optional n)
     "Insert the Nth argument (from the end) of the previous command."
@@ -2562,8 +2599,8 @@ with a numbered suffix."
                 (arg (nth (max 0 (- num-args n 1)) args)))
       (insert (substring-no-properties (format "%s" arg)))))
 
-  (defun my/eshell-refresh-aliases ()
-    "Refresh Eshell aliases."
+  (defun my/eshell-update-aliases ()
+    "Update Eshell aliases from disk."
     (interactive)
     (eshell-read-aliases-list))
 
@@ -2579,6 +2616,7 @@ with a numbered suffix."
    :map eshell-mode-map
    ("C-c C-o" . nil)
    ("C-c i" . my/eshell-insert-arg)
+   ("C-c RET" . my/eshell-async-send)
    ;; Defun-style prompt navigation.
    ("C-M-a" . eshell-previous-prompt)
    ("C-M-e" . eshell-next-prompt)
