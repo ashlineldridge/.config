@@ -1247,6 +1247,21 @@ With prefix ARG, the working directory can be selected."
 
 ;;;; Completion System
 
+(use-package dabbrev
+  :ensure nil
+  :preface
+  (defun my/dabbrev-completion ()
+    "Like `dabbrev-completion' but always searches all buffers."
+    (interactive)
+    (dabbrev-completion 16))
+  :custom
+  (dabbrev-case-fold-search nil)
+  (dabbrev-check-other-buffers t)
+  (dabbrev-check-all-buffers t)
+  (dabbrev-abbrev-skip-leading-regexp "[$*/=~'&]")
+  :bind
+  ("C-M-/" . my/dabbrev-completion))
+
 (use-package corfu
   :ensure (:files (:defaults "extensions/*.el"))
   :preface
@@ -1320,26 +1335,14 @@ With prefix ARG, the working directory can be selected."
 
 ;; Dedicated completion commands.
 (use-package cape
-  :bind
-  ("C-' a" . cape-abbrev)
-  ("C-' b" . cape-elisp-block)
-  ("C-' d" . cape-dabbrev)
-  ("C-' f" . cape-file)
-  ("C-' h" . cape-history)
-  ("C-' k" . cape-keyword)
-  ("C-' l" . cape-line)
-  ("C-' o" . cape-elisp-symbol)
-  ("C-' r" . cape-rfc1345)
-  ("C-' w" . cape-dict)
-  ("C-' :" . cape-emoji)
+  :bind-keymap
+  ("C-c c" . cape-prefix-map)
   :custom
   (cape-dabbrev-min-length 1)
   (cape-dabbrev-check-other-buffers t)
   (cape-line-buffer-function #'buffer-list)
   :init
-  ;; EXPERIMENTAL: Can also play with hook depth.
-  (add-hook 'completion-at-point-functions #'cape-dabbrev)
-  (add-hook 'completion-at-point-functions #'cape-file))
+  (add-hook 'completion-at-point-functions 'cape-file))
 
 ;; Orderless configuration mostly taken from:
 ;; https://github.com/minad/corfu/wiki#basic-example-configuration-with-orderless.
