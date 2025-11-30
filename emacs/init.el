@@ -1396,45 +1396,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (defvar my/consult-source-agentic-buffer
     (my/consult-source-buffer "Agentic Buffer" ?z :predicate 'my/agentic-buffer-p))
 
-  ;; Consult source for all project files. This has largely been adapted from
-  ;; the implementation of `consult-source-project-recent-file'.
-  (defvar my/consult-source-project-file
-    `(:name "Project File"
-      :narrow ?f
-      :category file
-      :face consult-file
-      :history file-name-history
-      :state ,#'consult--file-state
-      :new
-      ,(lambda (file)
-         (consult--file-action
-          (expand-file-name file (my/project-current-root))))
-      :enabled
-      ,(lambda () consult-project-function)
-      :items
-      ,(lambda ()
-         (when-let* ((project-dir (my/project-current-root)))
-           (let* ((project (project--find-in-directory project-dir))
-                  (project-files (seq-filter #'file-exists-p (project-files project)))
-                  (len (length project-dir))
-                  items)
-             (dolist (file project-files (nreverse items))
-               (setq file (expand-file-name file))
-               (let ((part (substring file len)))
-                 (when (equal part "") (setq part "./"))
-                 (put-text-property 0 1 'multi-category `(file . ,file) part)
-                 (push part items))))))))
-
-  (defun my/consult-project-file ()
-    "Replacement for `project-find-file' that uses Consult sources."
-    (interactive)
-    (require 'consult)
-    (let* ((consult-project-buffer-sources
-            `((:narrow ?b ,@consult-source-project-buffer) ;; Narrow: ?b (shown)
-              my/consult-source-project-file               ;; Narrow: ?f (shown)
-              consult-source-project-recent-file-hidden))) ;; Narrow: ?r (hidden)
-      (consult-project-buffer)))
-
   (defun my/consult-read-file-name (prompt &optional dir _default mustmatch _initial pred)
     "Function to assign to `read-file-name-function' to enable previewing."
     (interactive)
@@ -1466,8 +1427,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
    ("M-_" . consult-focus-lines)
    ("C-M-_" . consult-keep-lines)
    ("M-s a" . consult-org-agenda)
-   ("M-s f" . my/consult-project-file)
-   ("M-s F" . consult-fd)
+   ("M-s f" . consult-fd)
    ("M-s l" . consult-line)
    ("M-s L" . consult-line-multi)
    ("M-s s" . consult-ripgrep)
@@ -1489,7 +1449,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
    ("C-x 5 b" . consult-buffer-other-frame)
    ("C-x t b" . consult-buffer-other-tab)
    ("C-x p b" . consult-project-buffer)
-   ("C-x p f" . my/consult-project-file)
    ("C-x r b" . consult-bookmark)
    ("C-x r i" . consult-register-load)
    ("C-x r r" . consult-register)
@@ -1524,7 +1483,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   ;; can search for "src/foo"). In general, I prefer `consult-fd' as it obeys
   ;; the .gitignore file if present.
   (consult-find-args "find -L . -not ( -name .git -type d -prune )")
-  (consult-fd-args "fd -p -L -H -E .git/*")
+  (consult-fd-args "fd -p -L -H -E .git/* -c never")
   ;; Only show Modus and Ef themes.
   (consult-themes '("^modus-" "^ef-"))
   ;; Following will be overridden if/when `global-corfu-mode' is run.
@@ -1548,30 +1507,29 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   ;; Customize the list of sources shown by `consult-buffer'.
   (setq consult-buffer-sources
         '(consult-source-buffer                ;; Narrow: ?b (shown)
-          consult-source-project-buffer-hidden ;; Narrow: ?p (hidden)
+          consult-source-project-buffer-hidden ;; Narrow: ?B (hidden)
+          consult-source-project-root-hidden   ;; Narrow: ?p (hidden)
+          consult-source-bookmark              ;; Narrow: ?m (hidden)
+          consult-source-recent-file           ;; Narrow: ?r (hidden)
           my/consult-source-agenda-buffer      ;; Narrow: ?a (hidden)
           my/consult-source-dired-buffer       ;; Narrow: ?d (hidden)
           my/consult-source-shell-buffer       ;; Narrow: ?s (hidden)
-          my/consult-source-command-buffer     ;; Narrow: ?c (hidden)
+          my/consult-source-command-buffer     ;; Narrow: ?& (hidden)
           my/consult-source-magit-buffer       ;; Narrow: ?g (hidden)
-          my/consult-source-agentic-buffer     ;; Narrow: ?z (hidden)
-          consult-source-bookmark              ;; Narrow: ?m (shown)
-          consult-source-recent-file))         ;; Narrow: ?r (hidden)
+          my/consult-source-agentic-buffer))   ;; Narrow: ?z (hidden)
 
   ;; Customize individual Consult sources.
   (consult-customize
    consult-source-buffer
    :name "Open Buffer" :narrow ?b
-   consult-source-project-buffer
    consult-source-project-buffer-hidden
-   :name "Project Buffer" :narrow ?p
+   :name "Project Buffer" :narrow ?B
+   consult-source-project-root-hidden
+   :name "Project Root" :narrow ?p
    consult-source-bookmark
-   :name "Bookmark" :narrow ?m
+   :name "Bookmark" :narrow ?m :hidden t
    consult-source-recent-file
    :name "Recent File" :narrow ?r :hidden t
-   consult-source-project-recent-file
-   consult-source-project-recent-file-hidden
-   :name "Recent Project File" :narrow ?r
    ;; Allow preview for commands that don't support it by default.
    consult-find consult-fd
    :state (consult--file-preview)
@@ -1602,7 +1560,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
   (defvar my/consult-dir-source-project-subdir
     `(:name "Project Subdir"
-      :narrow ?p
+      :narrow ?P
       :hidden t
       :category file
       :face consult-file
@@ -1641,15 +1599,15 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (consult-dir-default-command #'consult-dir-dired)
   :config
   (consult-customize
-   consult-dir--source-bookmark :name "Bookmark" :narrow ?k
+   consult-dir--source-bookmark :name "Bookmark" :narrow ?m
    consult-dir--source-recentf :name "Recent" :narrow ?r
    ;; Override `:items' to show all projects including the current one.
-   consult-dir--source-project :name "Project" :narrow ?P :items #'consult-dir--project-dirs)
+   consult-dir--source-project :name "Project" :narrow ?p :items #'consult-dir--project-dirs)
 
   ;; Customize the set of sources used by `consult-dir'.
   (setq consult-dir-sources
-        '(consult-dir--source-bookmark
-          consult-dir--source-project
+        '(consult-dir--source-project
+          consult-dir--source-bookmark
           my/consult-dir-source-project-subdir
           consult-dir--source-recentf
           my/consult-dir-source-local-subdir))
@@ -1684,11 +1642,13 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (add-to-list 'embark-target-injection-hooks '(eglot-rename embark--ignore-target))
   (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
   (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
+  (add-to-list 'embark-target-injection-hooks '(consult-fd embark--ignore-target))
   (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
   (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
   (add-to-list 'embark-target-injection-hooks '(my/async-shell-command embark--ignore-target))
-  ;; Configure `my/async-shell-command' to run from directory associated with the candidate.
-  (setf (alist-get #'my/async-shell-command embark-around-action-hooks) '(embark--cd)))
+  ;; Configure some commands to run from directory associated with the candidate.
+  (setf (alist-get #'my/async-shell-command embark-around-action-hooks) '(embark--cd))
+  (setf (alist-get #'consult-fd embark-around-action-hooks) '(embark--cd)))
 
 (use-package embark-consult)
 
