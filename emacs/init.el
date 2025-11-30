@@ -738,7 +738,6 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
 (use-package avy
   :preface
   (declare-function avy-action-copy "avy")
-  (declare-function avy-goto-end-of-line "avy")
 
   (defun my/avy-goto-end-of-line ()
     "Same as `avy-goto-end-of-line' but show the overlay as a postfix."
@@ -746,7 +745,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
     (interactive)
     (require 'avy)
     (let ((avy-style 'post))
-      (call-interactively #'avy-goto-end-of-line)))
+      (call-interactively 'avy-goto-end-of-line)))
 
   (defun my/avy-action-yank (pt)
     "Same as `avy-action-yank' but respects `delete-selection-mode'."
@@ -897,8 +896,6 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
 
 (use-package ibuffer
   :ensure nil
-  :preface
-  (declare-function ibuffer-update "ibuffer")
   :bind
   ("C-x C-b" . ibuffer)
   :custom
@@ -946,7 +943,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   :config
   (my/unbind-common-keys ibuffer-mode-map)
   ;; Restore breadcrumb after ibuffer after messes with it.
-  (advice-add #'ibuffer-update :around #'my/breadcrumb-restore))
+  (advice-add 'ibuffer-update :around #'my/breadcrumb-restore))
 
 (use-package ibuffer-vc
   :after ibuffer
@@ -1324,7 +1321,6 @@ With prefix ARG, the working directory can be selected."
   (with-eval-after-load 'savehist
     (add-to-list 'savehist-additional-variables 'corfu-history)))
 
-;; Dedicated completion commands.
 (use-package cape
   :bind-keymap
   ("C-c c" . cape-prefix-map)
@@ -1332,8 +1328,6 @@ With prefix ARG, the working directory can be selected."
   ("C-M-/" . cape-dabbrev)
   ("C-M-?" . cape-line)
   :custom
-  (cape-dabbrev-min-length 1)
-  (cape-dabbrev-check-other-buffers t)
   (cape-dabbrev-buffer-function #'buffer-list)
   (cape-line-buffer-function #'buffer-list)
   :init
@@ -1358,21 +1352,11 @@ With prefix ARG, the working directory can be selected."
   :hook (elpaca-after-init . marginalia-mode))
 
 (use-package consult
-  :defines (xref-show-xrefs-function xref-show-definitions-function)
   :preface
-  (declare-function consult-completion-in-region "consult")
-  (declare-function consult-org-agenda "consult-org")
-  (declare-function consult-register-format "consult-register")
-  (declare-function consult-register-window "consult-register")
-  (declare-function consult-xref "consult-xref")
   (declare-function consult--buffer-query "consult")
-  (declare-function consult--buffer-state "consult")
   (declare-function consult--customize-put "consult")
-  (declare-function consult--file-action "consult")
   (declare-function consult--file-preview "consult")
-  (declare-function consult--file-state "consult")
   (declare-function consult--read "consult")
-  (declare-function project--find-in-directory "project")
 
   (defun my/consult-source-buffer (name narrow filter-type filter-value)
     "Return a Consult buffer source with NAME, NARROW key and filter.
@@ -1384,7 +1368,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
       :category buffer
       :face consult-buffer
       :history buffer-name-history
-      :state ,#'consult--buffer-state
+      :state consult--buffer-state
       :items
       ,(lambda ()
          (consult--buffer-query
@@ -1549,12 +1533,14 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   :init
   ;; Configure how registers are previewed and displayed.
   ;; See: https://github.com/minad/consult#use-package-example.
-  (setq register-preview-function #'consult-register-format)
-  (advice-add #'register-preview :override #'consult-register-window)
+  (setq register-preview-function 'consult-register-format)
+  (advice-add #'register-preview :override 'consult-register-window)
   ;; Use Consult to select xref locations with preview.
   (with-eval-after-load 'xref
-    (setq xref-show-xrefs-function #'consult-xref)
-    (setq xref-show-definitions-function #'consult-xref))
+    (defvar xref-show-xrefs-function)
+    (defvar xref-show-definitions-function)
+    (setq xref-show-xrefs-function 'consult-xref)
+    (setq xref-show-definitions-function 'consult-xref))
 
   :config
   ;; Customize the list of sources shown by `consult-buffer'.
@@ -1671,8 +1657,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
               :after (lambda () (consult-dir--project-list-make t))))
 
 (use-package embark
-  :preface
-  (declare-function embark-prefix-help-command "embark")
   :bind
   (("C-." . embark-act)
    ("C-h b" . embark-bindings)
@@ -1689,7 +1673,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (embark-keymap-prompter-key ",")
   :init
   ;; Use Embark to show prefix keybindings with C-h.
-  (setq prefix-help-command #'embark-prefix-help-command)
+  (setq prefix-help-command 'embark-prefix-help-command)
   :config
   ;; Adapt the associated commands so that they are usable as Embark actions.
   ;; If commands don't behave properly with Embark, play with this. Look at
@@ -1823,7 +1807,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   :ensure nil
   :preface
   (declare-function eglot-inlay-hints-mode "eglot")
-  (declare-function jsonrpc--log-event "subr")
 
   (defun my/eglot-init ()
     "Init function for `eglot--managed-mode'."
@@ -1869,7 +1852,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
   ;; Potential performance improving settings.
   ;; See: https://www.reddit.com/r/emacs/comments/1b25904/is_there_anything_i_can_do_to_make_eglots.
-  (fset #'jsonrpc--log-event #'ignore)
+  (fset 'jsonrpc--log-event #'ignore)
   (setf (plist-get eglot-events-buffer-config :size) 0)
 
   ;; Remove completion styles installed by Eglot and to fall back to Orderless.
@@ -2199,19 +2182,16 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
    ("C-c t P" . (lambda () (interactive) (my/go-test-verbose #'go-test-current-project)))))
 
 (use-package go-playground
-  :preface
-  (declare-function go-playground "go-playground")
-  (declare-function go-playground-insert-template-head "go-playground")
   :custom
   (go-playground-init-command "go mod init playground")
   :config
   ;; Don't insert all the preamble which contains special comments to set the
   ;; mode to `go-mode' rather than `go-ts-mode'.
-  (fset #'go-playground-insert-template-head #'ignore)
+  (fset 'go-playground-insert-template-head #'ignore)
   ;; Switch `go-mode' for `go-ts-mode'. I'd prefer using `major-mode-remap-alist'
   ;; to perform this mapping but it doesn't seem to work when the major mode
   ;; is called directly like it is by `go-playground'.
-  (advice-add #'go-playground :after #'go-ts-mode))
+  (advice-add 'go-playground :after #'go-ts-mode))
 
 ;;;;;; Zig
 
@@ -2423,7 +2403,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (declare-function magit-git-string "magit-git")
   (defun my/magit-copy-hash (arg)
     "Copy the short 12 character Git commit hash to the kill ring.
-If ARG is non-nil, the full 40 character commit hash will be copied."
+With prefix ARG, the full 40 character commit hash will be copied."
     (interactive "P")
     (require 'magit-git)
     (let ((sha (magit-git-string "rev-parse" "HEAD")))
@@ -2676,15 +2656,10 @@ If ARG is non-nil, the full 40 character commit hash will be copied."
   :defines (vterm-mode-map vterm-eval-cmds)
   :preface
   (declare-function vterm-send-key "vterm")
-  (declare-function vterm-previous-prompt "vterm")
-  (declare-function vterm-next-prompt "vterm")
-  (declare-function project-prefixed-buffer-name "project")
-
   (defun my/vterm-init ()
     "Init function for `vterm-mode'."
     ;; Make outline work with vterm prompts.
     (setq-local outline-regexp "^[^#$\n]* ❯ "))
-
   :bind
   (:map vterm-mode-map
    ;; These only work reliably when copy mode is disabled.
