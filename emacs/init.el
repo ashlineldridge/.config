@@ -579,15 +579,15 @@ the value of `my/help-buffer-kill-to-close'."
 With prefix ARG, the working directory can be selected. An optional CMD
 can be specified when calling this function non-interactively."
     (interactive "P")
-    (let ((cmd (or cmd
-                   (read-shell-command
-                    (concat (my/abbreviate-file-name
-                             (string-remove-suffix "/" default-directory) 30) " $ "))))
-          (default-directory (if (or arg (not default-directory))
-                                 (read-directory-name "Working directory: ")
-                               default-directory)))
-      (async-shell-command
-       cmd (generate-new-buffer shell-command-buffer-name-async))))
+    (let* ((default-directory (if (or arg (not default-directory))
+                                  (read-directory-name "Working directory: ")
+                                default-directory))
+           (cmd (or cmd
+                    (read-shell-command
+                     (concat (my/abbreviate-file-name
+                              (string-remove-suffix "/" default-directory) 30) " $ "))))
+           (buf (generate-new-buffer shell-command-buffer-name-async)))
+      (async-shell-command cmd buf)))
 
   (defun my/shell-command-buffer-p (buf)
     "Return whether BUF is a shell-command buffer."
