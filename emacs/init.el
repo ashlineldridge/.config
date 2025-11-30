@@ -1103,19 +1103,19 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
     (if-let* ((proj (project-current)))
         (expand-file-name (project-root proj))))
 
-  (defun my/project-update-list ()
-    "Update list of known projects."
-    (interactive)
-    (project-forget-zombie-projects)
-    (project-remember-projects-under "~/dev/home")
-    (project-remember-projects-under "~/dev/work"))
-
   (defun my/project-async-shell-command (arg)
     "Version of `project-async-shell-command' that always creates new buffers.
 With prefix ARG, the working directory can be selected."
     (interactive "P")
     (let ((default-directory (my/project-current-root)))
       (my/async-shell-command arg)))
+
+  (defun my/project-update-list ()
+    "Update list of known projects."
+    (interactive)
+    (project-forget-zombie-projects)
+    (project-remember-projects-under "~/dev/home")
+    (project-remember-projects-under "~/dev/work"))
 
   :bind
   ("C-M-&" . my/project-async-shell-command)
@@ -1125,9 +1125,10 @@ With prefix ARG, the working directory can be selected."
   (project-switch-commands
    '((magit-project-status "Magit" ?g)
      (project-dired "Dired" ?j)
-     (my/consult-project-file "File" ?f)
+     (project-find-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
-     (my/project-async-shell-command "Command" ?c)
+     (my/project-async-shell-command "Command" ?&)
+     (project-query-replace-regexp "Replace" ?x)
      (gptel-agent "GPTel" ?z)
      (agent-shell "Agent Shell" ?Z))))
 
