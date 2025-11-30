@@ -890,6 +890,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   :bind
   (("M-+" . tempel-complete)
    (:map tempel-map
+    ("M-+" . tempel-next)
     ([remap keyboard-quit] . tempel-done))))
 
 ;;;; Buffer Management
