@@ -1388,7 +1388,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (defvar my/consult-source-shell-buffer
     (my/consult-source-buffer "Shell Buffer" ?s :predicate 'my/shell-buffer-p))
   (defvar my/consult-source-command-buffer
-    (my/consult-source-buffer "Command Buffer" ?c :predicate 'my/shell-command-buffer-p))
+    (my/consult-source-buffer "Command Buffer" ?& :predicate 'my/shell-command-buffer-p))
   (defvar my/consult-source-dired-buffer
     (my/consult-source-buffer "Dired Buffer" ?d :mode 'dired-mode))
   (defvar my/consult-source-agenda-buffer
@@ -1622,7 +1622,9 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
    ("C-h b" . embark-bindings)
    ;; Allow Embark to show keybindings under C-h as configured below.
    ("C-h C-h" . nil)
-   :map embark-general-map
+   :map embark-file-map
+   ("&" . my/async-shell-command)
+   :map embark-become-shell-command-map
    ("&" . my/async-shell-command)
    :map minibuffer-local-map
    ("M-B" . embark-become))
