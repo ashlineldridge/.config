@@ -366,16 +366,15 @@
   ;; Remove silly `suspend-frame' bindings.
   ("C-z" . nil)
   ("C-x C-z" . nil)
-  ("M-o" . next-window-any-frame)
   ("M-O M-O" . other-frame)
   ("M-O M-N" . make-frame-command)
   ("M-O M-K" . delete-frame)
   ("M-O M-U" . undelete-frame)
   :hook (elpaca-after-init . undelete-frame-mode))
 
-;; I would like to use the posframe for displaying the Ace Window indicator
-;; with `ace-window-posframe-mode' but it looks wacky with multiple frames.
-(use-package posframe :disabled)
+(use-package posframe
+  ;; Currently unneeded.
+  :disabled)
 
 ;;;;; Transient
 
@@ -840,8 +839,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   ;; Add extra functions that should trigger Pulsar.
   (setq pulsar-pulse-functions
         (append pulsar-pulse-functions
-                '(ace-window
-                  avy-goto-line
+                '(avy-goto-line
                   avy-goto-subword-1
                   avy-goto-char-timer
                   avy-isearch
