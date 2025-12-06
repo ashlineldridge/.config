@@ -328,12 +328,11 @@
       (side . bottom)
       (slot . 0)
       (window-parameters . ((mode-line-format . none))))
-     ;; Display in other window.
-     ("\\(\\*Async Shell Command\\*\\|\\*eldoc\\|\\*helpful\\)"
-      (display-buffer-reuse-window)
-      (inhibit-same-window . t))
+     ;; Display in same mode window.
+     ("\\(\\*eldoc\\|\\*helpful\\)"
+      (display-buffer-reuse-mode-window))
      ;; Display in same window.
-     ("\\(\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
+     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
       (display-buffer-same-window))))
 
   :config
