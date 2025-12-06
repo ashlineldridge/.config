@@ -1822,39 +1822,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   ;; Style the inlay type hinting face.
   (set-face-attribute 'eglot-inlay-hint-face nil :height 0.9 :slant 'italic))
 
-(use-package eglot-x
-  :after eglot
-  :ensure (:host github :repo "nemethf/eglot-x")
-  :bind
-  ;; Most of the LSP extension commands below only apply to rust-analyzer.
-  (:map eglot-mode-map
-   ("C-c / c" . eglot-x-find-crate)
-   ("C-c / m" . eglot-x-view-recursive-memory-layout)
-   ("C-c / o" . eglot-x-open-external-documentation)
-   ("C-c / r" . eglot-x-ask-runnables)
-   ("C-c / s" . eglot-x-structural-search-replace)
-   ("C-c / t" . eglot-x-ask-related-tests)
-   ("C-c / w" . eglot-x-reload-workspace)
-   ("C-c / x" . eglot-x-expand-macro))
-  :hook (eglot-managed-mode . eglot-x-setup))
-
-;; Speed up Eglot.
-(use-package eglot-booster
-  :ensure (:host github :repo "jdtsmith/eglot-booster")
-  :hook (eglot-managed-mode . eglot-booster-mode))
-
-(use-package consult-eglot
-  :after eglot
-  :bind
-  (:map eglot-mode-map
-   ("M-g o" . consult-eglot-symbols)))
-
-(use-package consult-eglot-embark
-  :commands consult-eglot-embark-mode
-  :init
-  (with-eval-after-load 'consult-eglot
-    (consult-eglot-embark-mode)))
-
 (use-package dape
   :bind-keymap
   ("C-c d" . dape-global-map)
