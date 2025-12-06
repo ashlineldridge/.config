@@ -1751,8 +1751,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   ;; locking up on a blank screen while waiting for installation.
   :defer 1
   :config
-  ;; Add all languages in `treesit-auto-langs' except Rust which uses Rustic.
-  (treesit-auto-add-to-auto-mode-alist (remove 'rust treesit-auto-langs))
+  (treesit-auto-add-to-auto-mode-alist treesit-auto-langs)
   (my/treesit-auto-maybe-install))
 
 (use-package treesit-fold
@@ -1915,14 +1914,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
 ;;;;;; Rust
 
-(use-package rust-mode
-  :ensure nil
-  :bind
-  (:map rust-mode-map
-   ("C-c C-d" . nil))
-  :custom
-  (rust-mode-treesitter-derive t))
-
 (use-package rust-ts-mode
   :ensure nil
   :defines consult-imenu-config
@@ -1970,43 +1961,14 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
                            (?m "Module" my/imenu-module-face)
                            (?S "Static" my/imenu-static-face)
                            (?s "Struct" my/imenu-struct-face)
-                           (?t "Trait" my/imenu-trait-face))))))
+                           (?t "Trait" my/imenu-trait-face)))))
 
-(use-package rustic
-  ;; TODO: Loading rustic after rust-mode is meant to ensure that the entry
-  ;; that rustic adds to `auto-mode-alist' takes precedence over rust-mode and
-  ;; rust-ts-mode but this doesn't always work. Further investigation needed.
-  :after rust-mode
-  :ensure (:host github :repo "emacs-rustic/rustic")
-  :bind
-  (:map rustic-mode-map
-   ("C-c" . nil)
-   ("C-c b a" . rustic-cargo-add)
-   ("C-c b b" . rustic-cargo-build)
-   ("C-c b B" . rustic-cargo-bench)
-   ("C-c b c" . rustic-cargo-clean)
-   ("C-c b d" . rustic-cargo-doc)
-   ("C-c b f" . rustic-cargo-fmt)
-   ("C-c b h" . rustic-cargo-check)
-   ("C-c b l" . rustic-cargo-clippy)
-   ("C-c b L" . rustic-cargo-clippy-fix)
-   ("C-c b o" . rustic-cargo-outdated)
-   ("C-c b r" . rustic-cargo-run)
-   ("C-c b R" . rustic-cargo-rm)
-   ("C-c b u" . rustic-cargo-update)
-   ("C-c b U" . rustic-cargo-upgrade)
-   ("C-c t ." . rustic-cargo-test-dwim)
-   ("C-c t p" . rustic-cargo-test)
-   ("C-c t t" . rustic-cargo-current-test))
-  :custom
-  (rustic-lsp-client 'eglot)
-  :config
   ;; See: https://rust-analyzer.github.io/manual.html#configuration.
   ;; Note that `eglot-stderr-buffer' can be used to debug LSP server errors.
   (with-eval-after-load 'eglot
     (add-to-list
      'eglot-server-programs
-     '((rustic-mode :language-id "rust") .
+     '((rust-ts-mode :language-id "rust") .
        ("rust-analyzer" :initializationOptions
         (:procMacro (:enable t)
          :cargo (:buildScripts (:enable t) :features "all")
