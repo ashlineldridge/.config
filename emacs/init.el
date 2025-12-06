@@ -1800,9 +1800,12 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
   :custom
   (eglot-autoshutdown t)
-  (eglot-connect-timeout 60)
-  (eglot-confirm-server-edits nil)
+  (eglot-autoshutdown t)
   (eglot-extend-to-xref t)
+  (eglot-sync-connect 0)
+  (eglot-connect-timeout 60)
+  (eglot-events-buffer-config '(:size 0 :format short))
+  (eglot-confirm-server-edits nil)
   (eglot-ignored-server-capabilities
    '(:documentFormattingProvider :documentRangeFormattingProvider
      :documentOnTypeFormattingProvider :documentHighlightProvider))
@@ -1810,15 +1813,10 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   :config
   ;; Tree-sitter produces a better imenu.
   (setq eglot-stay-out-of '(imenu))
-
-  ;; Potential performance improving settings.
-  ;; See: https://www.reddit.com/r/emacs/comments/1b25904/is_there_anything_i_can_do_to_make_eglots.
-  (fset 'jsonrpc--log-event #'ignore)
-  (setf (plist-get eglot-events-buffer-config :size) 0)
-
+  ;; Improve performance. See: https://github.com/jamescherti/minimal-emacs.d.
+  (setq jsonrpc-event-hook nil)
   ;; Remove completion styles installed by Eglot and to fall back to Orderless.
   (setq completion-category-defaults nil)
-
   ;; Style the inlay type hinting face.
   (set-face-attribute 'eglot-inlay-hint-face nil :height 0.9 :slant 'italic))
 
