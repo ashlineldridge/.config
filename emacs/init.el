@@ -2322,6 +2322,11 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
 ;;;; Version Control
 
+(use-package git-commit
+  :ensure nil
+  :custom
+  (git-commit-summary-max-length 60))
+
 (use-package vc
   :ensure nil
   :defines
@@ -2371,53 +2376,28 @@ With prefix ARG, the full 40 character commit hash will be copied."
       (kill-new (if arg sha (substring sha 0 12)))
       (message "Copied: %s" (car kill-ring))))
 
-  (defun my/magit-copy-hash-full ()
-    "Copy the full 40 character Git commit hash to the kill ring."
-    (interactive)
-    (my/magit-copy-hash t))
-
   :bind
-  ("C-c g" . magit-dispatch)
+  (("C-c g s" . magit-status)
+   ("C-c g w" . my/magit-copy-hash)
+   :map magit-mode-map
+   ;; Remove `magit-show-refs' binding as it hangs on large repos.
+   ("y" . nil))
   :custom
-  ;; Use `auto-revert-mode' instead.
-  (magit-auto-revert-mode nil)
-  (magit-diff-refine-hunk t)
-  (magit-refresh-status-buffer t)
   (magit-refresh-verbose t)
   (magit-verbose-messages t)
-  :config
-  ;; Add custom commands to the `magit-dispatch' transient menu as a new
-  ;; subgroup. Existing suffixes that already use these bindings are removed
-  ;; first. Suffix removal shifts subsequent suffixes in the subgroup up.
-  ;; See: https://magit.vc/manual/transient/Modifying-Existing-Transients.html.
-  (dolist (loc '((0 1 9) (0 1 9) (0 2 4) (0 2 4)))
-    (transient-remove-suffix 'magit-dispatch loc))
-  (transient-append-suffix 'magit-dispatch '(0 -1)
-    [("s" "Status" magit-status)
-     ("w" "Copy short hash" my/magit-copy-hash)
-     ("W" "Copy long hash" my/magit-copy-hash-full)
-     ("o" "Browse remote branch" my/browse-at-remote)
-     ("O" "Browse remote trunk" my/browse-at-remote-trunk)]))
+  ;; Use `auto-revert-mode'.
+  (magit-auto-revert-mode nil)
+  (magit-diff-refine-hunk nil)
+  ;; IN-PROGRESS: Trying to improve performance.
+  (magit-diff-highlight-hunk-body nil)
+  (magit-diff-paint-whitespace nil)
+  (magit-diff-highlight-indentation nil)
+  (magit-diff-highlight-trailing nil)
+  (magit-refresh-status-buffer nil))
 
-(use-package browse-at-remote
-  :preface
-  (declare-function browse-at-remote "browse-at-remote")
-  (declare-function vc-git-branches "vc-git")
-  (defun my/browse-at-remote (arg)
-    "Browse to the remote file, using the trunk branch if ARG is non-nil."
-    (interactive "P")
-    (require 'vc-git)
-    (if arg
-        (cl-letf (((symbol-function 'browse-at-remote--get-local-branch)
-                   (lambda ()
-                     (if (member "main" (vc-git-branches)) "main" "master"))))
-          (browse-at-remote))
-      (browse-at-remote)))
-
-  (defun my/browse-at-remote-trunk ()
-    "Browse to the remote file using the trunk branch."
-    (interactive)
-    (my/browse-at-remote t)))
+(use-package git-link
+  :bind
+  ("C-c g l" . git-link))
 
 ;;;; Diff
 
