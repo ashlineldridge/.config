@@ -9,6 +9,7 @@ alias devg='cd ${GOPATH}'
 
 # Emacs aliases.
 alias ec=emacsclient
+alias ff='emacsclient -n'
 alias ecsudo='SUDO_EDITOR=emacsclient sudo -e'
 
 # Reload the shell.
