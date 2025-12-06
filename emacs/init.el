@@ -2458,7 +2458,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (declare-function eshell-read-aliases-list "esh-alias")
   (declare-function eshell/cd "em-dirs")
   (declare-function eshell/pwd "em-dirs")
-  (declare-function eshell-save-some-history "em-hist")
+  (declare-function eshell--save-history "em-hist")
 
   (defun my/eshell-init ()
     "Init function for `eshell-mode'."
@@ -2469,20 +2469,13 @@ With prefix ARG, the full 40 character commit hash will be copied."
     (remove-hook 'eshell-output-filter-functions
                  'eshell-postoutput-scroll-to-bottom)
     ;; Make outline work with eshell prompts.
-    (setq-local outline-regexp (concat eshell-prompt-regexp ".+")))
-
-  (defun my/eshell-pre-command ()
-    "Eshell pre-command hook function."
-    ;; Temporarily set TERM as certain shell commands use this to decide whether
-    ;; to output in color. This setting is reverted in `my/eshell-post-command'.
-    (setenv "TERM" "xterm-256color")
-    ;; Save history after command is entered but before it is invoked.
-    ;; Otherwise, history is not saved until the eshell buffer is quit.
-    (eshell-save-some-history))
+    (setq-local outline-regexp (concat eshell-prompt-regexp ".+"))
+    ;; Quieten completion things.
+    (corfu-popupinfo-mode -1))
 
   (defun my/eshell-post-command ()
     "Eshell post-command hook function."
-    (setenv "TERM" "dumb"))
+    (eshell--save-history))
 
   (defun my/eshell-prompt ()
     "Custom Eshell prompt function."
@@ -2567,11 +2560,12 @@ With prefix ARG, the full 40 character commit hash will be copied."
 
   :hook
   (eshell-mode . my/eshell-init)
-  (eshell-pre-command . my/eshell-pre-command)
   (eshell-post-command . my/eshell-post-command)
   :custom
-  (eshell-history-size 10000)
   (eshell-buffer-maximum-lines 10000)
+  (eshell-history-size 10000)
+  (eshell-history-append t)
+  (eshell-history-isearch t)
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "")
