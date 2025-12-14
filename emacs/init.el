@@ -1544,6 +1544,14 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   :preface
   (declare-function consult-dir--pick "consult-dir")
   (declare-function consult-dir--project-list-make "consult-dir")
+  ;; Easy jumping between Eshell directories.
+  (defalias 'eshell/d 'my/consult-dir-cd)
+
+  (defun my/consult-dir-cd ()
+    "Use `consult-dir' to change directory in Eshell."
+    (interactive)
+    (require 'consult-dir)
+    (eshell/cd (consult-dir--pick)))
 
   (defvar my/consult-dir-source-local-subdir
     `(:name "Local Subdir"
@@ -1557,7 +1565,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
   (defvar my/consult-dir-source-project-subdir
     `(:name "Project Subdir"
-      :narrow ?P
+      :narrow ?/
       :hidden t
       :category file
       :face consult-file
@@ -1582,13 +1590,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
               (setq pt (point)))))
         (mapcar #'abbreviate-file-name (nreverse res)))))
 
-  (defun my/consult-dir-cd ()
-    "Use `consult-dir' to change directory in Eshell."
-    (interactive)
-    (require 'consult-dir)
-    (eshell/cd (consult-dir--pick))
-    (eshell-send-input))
-
   :bind
   ("M-s d" . consult-dir)
   :custom
@@ -1605,8 +1606,8 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (setq consult-dir-sources
         '(consult-dir--source-project
           consult-dir--source-bookmark
-          my/consult-dir-source-project-subdir
           consult-dir--source-recentf
+          my/consult-dir-source-project-subdir
           my/consult-dir-source-local-subdir))
 
   ;; Refresh projects maintained by `consult-dir' when the main list is updated.
@@ -2459,8 +2460,6 @@ With prefix ARG, the full 40 character commit hash will be copied."
    ;; Defun-style prompt navigation.
    ("C-M-a" . eshell-previous-prompt)
    ("C-M-e" . eshell-next-prompt)
-   ;; Jump between Eshell directories using `consult-dir'.
-   ("M-s M-d" . my/consult-dir-cd)
    :map eshell-hist-mode-map
    ("M-s" . nil)
    ("M-r" . nil))
