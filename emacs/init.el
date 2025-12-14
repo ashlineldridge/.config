@@ -1800,10 +1800,10 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
   :custom
   (eglot-autoshutdown t)
-  (eglot-autoshutdown t)
   (eglot-extend-to-xref t)
   (eglot-sync-connect 0)
   (eglot-connect-timeout 60)
+  (eglot-report-progress nil)
   (eglot-events-buffer-config '(:size 0 :format short))
   (eglot-confirm-server-edits nil)
   (eglot-ignored-server-capabilities
@@ -1819,6 +1819,12 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (setq completion-category-defaults nil)
   ;; Style the inlay type hinting face.
   (set-face-attribute 'eglot-inlay-hint-face nil :height 0.9 :slant 'italic))
+
+(use-package eglot-booster
+  :ensure (:host github :repo "jdtsmith/eglot-booster")
+  :after eglot
+  :init
+  (eglot-booster-mode))
 
 (use-package dape
   :bind-keymap
@@ -2471,7 +2477,6 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (eshell-buffer-maximum-lines 10000)
   (eshell-history-size 10000)
   (eshell-history-append t)
-  (eshell-history-isearch t)
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "")
