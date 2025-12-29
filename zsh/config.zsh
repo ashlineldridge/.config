@@ -12,6 +12,8 @@ libs=(
   aliases.zsh
   functions.zsh
   completion.zsh
+  zinit.zsh
+  atuin.zsh
 )
 
 # Configure eat if we're running it.
