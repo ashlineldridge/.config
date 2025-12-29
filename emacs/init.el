@@ -2451,6 +2451,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
    :map eshell-mode-map
    ("C-c C-o" . nil)
    ("C-c i" . my/eshell-insert-arg)
+   ("C-c h" . eshell-atuin-history)
    ("C-c RET" . my/eshell-async-send)
    ;; Defun-style prompt navigation.
    ("C-M-a" . eshell-previous-prompt)
@@ -2473,7 +2474,14 @@ With prefix ARG, the full 40 character commit hash will be copied."
    '("claude" "cursor-agent" "gemini" "goose" "vim"))
   :config
   (require 'esh-mode)
-  (require 'em-hist))
+  (require 'em-hist)
+  (eshell-atuin-mode))
+
+(use-package eshell-atuin
+  :custom
+  (eshell-atuin-search-fields '(time duration command directory))
+  (eshell-atuin-history-format "%-160c %t + %d")
+  :commands eshell-atuin-mode)
 
 (use-package eat
   :ensure
