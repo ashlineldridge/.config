@@ -222,3 +222,4 @@ replayable
 middleware
 unmarshal
 lifecycle
+workspaces
