@@ -1,15 +1,29 @@
 // Docs: https://zed.dev/docs/configuring-zed
 {
+  "project_panel": {
+    "dock": "left"
+  },
+  "colorize_brackets": true,
+  "remove_trailing_whitespace_on_save": true,
+  "format_on_save": "off",
+  "autosave": {
+    "after_delay": {
+      "milliseconds": 1000
+    }
+  },
+  "current_line_highlight": "all",
+  "rounded_selection": false,
+  "hide_mouse": "never",
+  "cursor_shape": "block",
+  "vim_mode": false,
+  "ui_font_family": "Aporetic Sans",
+  "buffer_font_family": "Aporetic Sans Mono",
   "telemetry": {
     "diagnostics": false,
     "metrics": false
   },
   "base_keymap": "Emacs",
   "ui_font_size": 16,
-  "buffer_font_size": 15,
-  "theme": {
-    "mode": "system",
-    "light": "Ayu Light",
-    "dark": "Ayu Dark"
-  }
+  "buffer_font_size": 14.0,
+  "theme": "Ayu Dark"
 }
