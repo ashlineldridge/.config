@@ -53,35 +53,25 @@
   (defconst my/variable-family "Aporetic Sans")
   (defun my/fontaine-apply-preset ()
     "Apply the current (or default) Fontaine preset."
-    (fontaine-set-preset (or fontaine-current-preset 'desktop)))
+    (fontaine-set-preset (or fontaine-current-preset 'laptop)))
   :bind
   ("C-c x f" . fontaine-set-preset)
   :hook
   (elpaca-after-init . my/fontaine-apply-preset)
   :custom
   (fontaine-presets
-   `((laptop1)
-     (laptop2
-      :default-family ,my/fixed-family
-      :default-height 140
-      :default-weight regular
-      :fixed-pitch-weight regular
-      :variable-pitch-weight regular
-      :mode-line-active-height 140
-      :mode-line-inactive-height 140
-      :line-number-height 130)
+   `((laptop)
      (desktop
-      :default-family ,my/fixed-family
-      :default-height 140
+      :default-height 150
       :default-weight semibold
       :fixed-pitch-weight semibold
       :variable-pitch-weight semibold
-      :mode-line-active-height 140
-      :mode-line-inactive-height 140
-      :line-number-height 130)
+      :mode-line-active-height 150
+      :mode-line-inactive-height 150
+      :line-number-height 140)
      (t
       :default-family ,my/fixed-family
-      :default-height 130
+      :default-height 150
       :default-weight regular
       :fixed-pitch-family ,my/fixed-family
       :fixed-pitch-height 1.0
@@ -91,11 +81,11 @@
       :variable-pitch-weight regular
       :mode-line-active-family ,my/fixed-family
       :mode-line-inactive-family ,my/fixed-family
-      :mode-line-active-height 130
-      :mode-line-inactive-height 130
+      :mode-line-active-height 150
+      :mode-line-inactive-height 150
       :line-number-family ,my/fixed-family
       :line-number-slant italic
-      :line-number-height 120
+      :line-number-height 140
       :bold-weight bold
       :italic-slant italic))))
 
@@ -2249,7 +2239,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 ;;;;;; Markdown
 
 (use-package markdown-mode
-  :commands gfm-mode
   :mode ("\\.md\\'" . gfm-mode)
   :custom
   (markdown-command "multimarkdown"))
