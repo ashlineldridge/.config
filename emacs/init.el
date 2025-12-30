@@ -2478,8 +2478,10 @@ With prefix ARG, the full 40 character commit hash will be copied."
 
 (use-package eshell-atuin
   :custom
-  (eshell-atuin-search-fields '(time duration command directory))
-  (eshell-atuin-history-format "%-160c %t + %d")
+  (eshell-atuin-search-fields '(command time))
+  (eshell-atuin-history-format "%-80c %t")
+  ;; Duration is misleading for async commands anyway.
+  (eshell-atuin-save-duration nil)
   :commands eshell-atuin-mode)
 
 (use-package eat
