@@ -2348,7 +2348,6 @@ With prefix ARG, the full 40 character commit hash will be copied."
   :preface
   ;; Eshell command aliases.
   (defalias 'eshell/v 'eshell-exec-visual)
-  (defalias 'eshell/@ 'my/eshell-async)
   ;; Eshell input redirection aliases.
   (defalias 'sink 'my/eshell-sink)
   (defalias 'sink-yaml 'my/eshell-sink-yaml)
@@ -2356,12 +2355,15 @@ With prefix ARG, the full 40 character commit hash will be copied."
 
   ;; Don't want the prompt repeat keys as I use defun-style navigation.
   (defvar eshell-prompt-repeat-map (make-sparse-keymap))
-  (declare-function eshell-bol "esh-mode")
-  (declare-function eshell-send-input "esh-mode")
   (declare-function eshell-read-aliases-list "esh-alias")
   (declare-function eshell/cd "em-dirs")
   (declare-function eshell/pwd "em-dirs")
+  (declare-function eshell-get-old-input "esh-mode")
+  (declare-function eshell-interrupt-process "esh-proc")
+  (declare-function eshell-add-input-to-history "em-hist")
   (declare-function eshell--save-history "em-hist")
+  (declare-function eshell-atuin--pre-exec "eshell-atuin")
+  (declare-function eshell-atuin--post-exec "eshell-atuin")
 
   (defun my/eshell-init ()
     "Init function for `eshell-mode'."
@@ -2386,20 +2388,16 @@ With prefix ARG, the full 40 character commit hash will be copied."
     (concat (my/abbreviate-file-name (eshell/pwd) 30)
             (if (= (user-uid) 0) " # " " $ ")))
 
-  (defun my/eshell-async (&rest args)
-    "Run ARGS using `async-shell-command`."
-    (let ((cmd (mapconcat #'shell-quote-argument args " ")))
-      (my/async-shell-command nil cmd)
-      nil))
-
   (defun my/eshell-async-send ()
-    "Run the current Eshell command line using `async-shell-command'."
+    "Run the current Eshell command line asynchronously."
     (interactive)
-    (save-excursion
-      (beginning-of-line)
-      (unless (looking-at-p "@ ")
-        (insert "@ ")))
-    (eshell-send-input))
+    (let ((cmd (string-trim (eshell-get-old-input))))
+      (eshell-atuin--pre-exec)
+      (my/async-shell-command nil cmd)
+      (let ((eshell-last-command-status 0))
+        (eshell-atuin--post-exec))
+      (eshell-add-input-to-history cmd)
+      (eshell-interrupt-process)))
 
   (defun my/eshell-sink (&optional name &rest modes)
     "Return an Eshell output buffer named NAMED with MODES enabled."
