@@ -1,8 +1,6 @@
 mac-user      := "ae"
 mac-group     := "admin"
 emacs-version := "31"
-cargo-bin-dir := "~/.cargo/bin"
-go-bin-dir    := "~/dev/go/bin"
 
 default:
     @just --list
@@ -11,13 +9,9 @@ brew-install:
     @echo ">>> Installing Brew packages"
     brew bundle
 
-cargo-install:
-    @echo ">>> Installing Cargo binaries"
-    # TODO
-
-go-install:
-    @echo ">>> Installing Go binaries"
-    # TODO
+brew-dump:
+    @echo ">>> Dumping list of Brew packages"
+    brew bundle dump -f
 
 emacs-install: emacs-clean
     @echo ">>> Installing Emacs"
@@ -43,18 +37,6 @@ emacs-clean:
     rm -rf emacs/eln-cache
     rm -rf emacs/var/treesit
 
-brew-dump:
-    @echo ">>> Dumping list of Brew packages"
-    brew bundle dump -f
-
-cargo-dump:
-    @echo ">>> Dumping list of Cargo binaries"
-    ls -1 {{cargo-bin-dir}} > cargo-bins.txt
-
-go-dump:
-    @echo ">>> Dumping list of Go binaries"
-    ls -1 {{go-bin-dir}} > go-bins.txt
-
 ai-upgrade:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -78,5 +60,4 @@ symlink-install:
     mkdir -p ~/.local/share/gnupg
     ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
 
-dump: cargo-dump go-dump brew-dump
-install: symlink-install brew-install cargo-install go-install emacs-install
+install: symlink-install brew-install emacs-install
