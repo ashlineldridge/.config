@@ -275,6 +275,7 @@
   (("M-[" . previous-buffer)
    ("M-]" . next-buffer)
    ("M-q" . bury-buffer)
+   ("M-o" . other-window)
    ("M-O =" . balance-windows)
    ("M-O }" . enlarge-window-horizontally)
    ("M-O {" . shrink-window-horizontally)
