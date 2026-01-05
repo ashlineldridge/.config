@@ -912,18 +912,6 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
       ("Git" (or (name . "^magit") (name . "^*vc-")))
       ("Dired" (mode . dired-mode))
       ("Shell" (predicate my/shell-buffer-p (current-buffer)))
-      ("Agentic (running)" (predicate
-                            (lambda (buf)
-                              (eq (my/agentic-buffer-state buf) 'running))
-                            (current-buffer)))
-      ("Agentic (waiting)" (predicate
-                            (lambda (buf)
-                              (eq (my/agentic-buffer-state buf) 'waiting))
-                            (current-buffer)))
-      ("Agentic (ready)" (predicate
-                          (lambda (buf)
-                            (eq (my/agentic-buffer-state buf) 'ready))
-                          (current-buffer)))
       ("Command (running)" (predicate
                             (lambda (buf)
                               (eq (my/shell-command-buffer-state buf) 'running))
@@ -1000,7 +988,6 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
    (list (expand-file-name "early-init.el" user-emacs-directory)
          (expand-file-name "bootstrap.el" user-emacs-directory)
          "~/dev/home/smol/"
-         "~/dev/home/gptel-extras/"
          "~/dev/home/chronosphere/"))
   ;; Disable `auto-save-mode' which saves buffers to separate files in favor of
   ;; `auto-save-visited-mode' which saves file-visiting buffers to their files.
@@ -1122,9 +1109,7 @@ With prefix ARG, the working directory can be selected."
      (project-find-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
      (my/project-async-shell-command "Command" ?&)
-     (project-query-replace-regexp "Replace" ?x)
-     (gptel-agent "GPTel" ?z)
-     (agent-shell "Agent Shell" ?Z))))
+     (project-query-replace-regexp "Replace" ?x))))
 
 ;;;; Minibuffer
 
@@ -1384,8 +1369,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
     (my/consult-source-buffer "Dired Buffer" ?d :mode 'dired-mode))
   (defvar my/consult-source-agenda-buffer
     (my/consult-source-buffer "Agenda Buffer" ?a :mode 'org-agenda-mode))
-  (defvar my/consult-source-agentic-buffer
-    (my/consult-source-buffer "Agentic Buffer" ?z :predicate 'my/agentic-buffer-p))
 
   (defun my/consult-read-file-name (prompt &optional dir _default mustmatch _initial pred)
     "Function to assign to `read-file-name-function' to enable previewing."
@@ -1506,8 +1489,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
           my/consult-source-dired-buffer       ;; Narrow: ?d (hidden)
           my/consult-source-shell-buffer       ;; Narrow: ?s (hidden)
           my/consult-source-command-buffer     ;; Narrow: ?& (hidden)
-          my/consult-source-magit-buffer       ;; Narrow: ?g (hidden)
-          my/consult-source-agentic-buffer))   ;; Narrow: ?z (hidden)
+          my/consult-source-magit-buffer))     ;; Narrow: ?g (hidden)
 
   ;; Customize individual Consult sources.
   (consult-customize
@@ -2340,7 +2322,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "")
   (eshell-visual-commands
-   '("claude" "cursor-agent" "gemini" "goose" "vim"))
+   '("claude" "goose" "vim"))
   :config
   (require 'esh-mode)
   (require 'em-hist)
@@ -2912,144 +2894,6 @@ specified then a task category will be determined by the item's tags."
   :if (file-directory-p "~/dev/home/chronosphere")
   :load-path "~/dev/home/chronosphere"
   :hook (elpaca-after-init . chronosphere-init))
-
-;;;; AI
-
-(use-package agentic
-  :ensure nil
-  :no-require
-  :preface
-  (declare-function shell-maker-busy "shell-maker")
-  (defun my/agentic-buffer-state (buf)
-    "Return the state of the agentic buffer BUF or nil."
-    (with-current-buffer buf
-      (cond
-       ;; Check for state of `gptel-mode' buffer.
-       ((bound-and-true-p gptel-mode)
-        (cond
-         ((cl-some (lambda (ov) (overlay-get ov 'gptel-tool))
-                   (overlays-in (point-min) (point-max)))
-          'waiting)
-         ((bound-and-true-p gptel--request-alist) 'running)
-         (t 'ready)))
-       ;; Check for state of `agent-shell-mode' buffer.
-       ((derived-mode-p 'agent-shell-mode)
-        (cond
-         ((text-property-any (point-min) (point-max) 'agent-shell-permission-button t)
-          'waiting)
-         ((shell-maker-busy) 'running)
-         (t 'ready)))
-       ;; Not an agentic buffer.
-       (t nil))))
-
-  (defun my/agentic-buffer-p (buf)
-    "Return whether BUF is considered to be an agentic buffer."
-    (not (null (my/agentic-buffer-state buf)))))
-
-(use-package gptel
-  :preface
-  (defvar my/gptel-prompt-prefix "=@ash=\n")
-  (defvar my/gptel-response-prefix "=@bot=\n")
-  (defun my/gptel-init ()
-    "Init function for `gptel-mode'."
-    (org-indent-mode -1)
-    (electric-pair-local-mode -1))
-
-  :custom
-  (gptel-default-mode 'org-mode)
-  (gptel-track-media t)
-  (gptel-include-reasoning t)
-  (gptel-org-branching-context t)
-  (gptel-display-buffer-action '(pop-to-buffer-same-window))
-  (gptel-prompt-prefix-alist `((org-mode . ,my/gptel-prompt-prefix)))
-  (gptel-response-prefix-alist `((org-mode . ,my/gptel-response-prefix)))
-  :bind
-  (("C-z m" . gptel-menu)
-   ("C-z M" . gptel-mode)
-   ("C-z h" . gptel-highlight-mode)
-   ("C-z k" . gptel-abort)
-   ("C-z r" . gptel-rewrite)
-   ("C-z RET" . gptel-send)
-   :map gptel-mode-map
-   ("C-z o" . gptel-org-set-topic)
-   ("C-z O" . gptel-org-set-properties))
-  :hook
-  (gptel-mode . my/gptel-init)
-  :config
-  (setq gptel-expert-commands t))
-
-(use-package gptel-vertex
-  :if (file-directory-p "~/dev/home/gptel-vertex")
-  :load-path "~/dev/home/gptel-vertex"
-  :after (gptel chronosphere)
-  :demand t
-  :commands gptel-make-vertex
-  :config
-  (setq gptel-model chronosphere-default-anthropic-model
-        gptel-backend (gptel-make-vertex
-                       "VertexAI"
-                       :project-id chronosphere-vertex-project
-                       :location chronosphere-vertex-location)))
-
-(use-package gptel-agent
-  ;; TODO: Using my own fork for now so that I can make tweaks and also
-  ;; using the default set of agents that come with the package. Eventually,
-  ;; I think I'd prefer to define my own agents/presets in a custom directory.
-  :ensure (:host github :repo "ashlineldridge/gptel-agent" :files (:defaults "agents"))
-  :bind
-  ("C-z C-z" . gptel-agent)
-  :config
-  (gptel-agent-update))
-
-(use-package gptel-quick
-  :ensure (:host github :repo "karthink/gptel-quick")
-  :bind
-  ("C-z ?" . gptel-quick)
-  :init
-  (with-eval-after-load 'embark
-    (bind-key "?" #'gptel-quick 'embark-general-map)))
-
-(use-package agent-shell
-  :ensure (:host github :repo "xenodium/agent-shell")
-  :preface
-  (defun my/agent-shell-init ()
-    "Init function for `agent-shell-mode'."
-    (setq-local indent-line-function (lambda () 'noindent)))
-  :hook
-  (agent-shell-mode . my/agent-shell-init)
-  :bind
-  (("C-z > >" . agent-shell)
-   ("C-z > s" . agent-shell-set-session-mode)
-   :map agent-shell-mode-map
-   ;; Mirror `gptel' newline and abort behavior.
-   ("RET" . newline)
-   ("C-c RET" . agent-shell-submit)
-   ("C-z k" . agent-shell-interrupt)
-   ;; Defun-style prompt navigation.
-   ("C-M-a" . comint-previous-prompt)
-   ("C-M-e" . comint-next-prompt)
-   ("C-M-f" . agent-shell-next-item)
-   ("C-M-b" . agent-shell-previous-item))
-  :custom
-  (agent-shell-header-style 'text)
-  ;; We'll use `cape-file' for consistency with `gptel'.
-  (agent-shell-file-completion-enabled nil)
-  :config
-  ;; Use GCP authentication.
-  (setq agent-shell-goose-authentication
-        (agent-shell-make-goose-authentication :none t))
-  ;; Clear existing bindings as contains tabs, etc.
-  (setq agent-shell-mode-map (make-sparse-keymap)))
-
-(use-package acp
-  :ensure (:host github :repo "xenodium/acp.el"))
-
-(use-package shell-maker
-  :custom
-  (shell-maker-transcript-default-path
-   (expand-file-name "~/.local/share/agent-shell/transcripts/"))
-  (shell-maker-transcript-default-filename
-   (lambda () (format-time-string "%F-%T-transcript.txt"))))
 
 ;;; End:
 (provide 'init)
