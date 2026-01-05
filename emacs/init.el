@@ -432,9 +432,9 @@ the value of `my/help-buffer-kill-to-close'."
               (dolist (window (get-buffer-window-list buffer nil t))
                 (with-selected-window window
                   (bury-buffer))))))
-      (if (bound-and-true-p eglot--managed-mode)
-          (my/eldoc-buffer)
-        (helpful-at-point))))
+      (if (derived-mode-p 'emacs-lisp-mode)
+          (helpful-at-point)
+        (my/eldoc-buffer))))
   :bind
   ("M-h" . my/help-buffer))
 
@@ -787,6 +787,12 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   :bind
   ("M-g ." . link-hint-open-link)
   ("M-g M-." . link-hint-copy-link))
+
+(use-package dumb-jump
+  :custom
+  (dumb-jump-force-searcher 'rg)
+  :init
+  (add-hook 'xref-backend-functions 'dumb-jump-xref-activate))
 
 ;;;;; Highlighting
 
@@ -1281,9 +1287,6 @@ With prefix ARG, the working directory can be selected."
   :bind
   (:map corfu-popupinfo-map
    ("M-d" . corfu-popupinfo-documentation)
-   ;; Unfortunately, Eglot doesn't seem to support :company-location which
-   ;; is what `corfu-popupinfo' uses to determine the code location for the
-   ;; candidate. It does work for Elisp, however.
    ("M-l" . corfu-popupinfo-location)
    ("M-p" . corfu-popupinfo-scroll-down)
    ("M-n" . corfu-popupinfo-scroll-up))
@@ -1629,10 +1632,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   ;; Adapt the associated commands so that they are usable as Embark actions.
   ;; If commands don't behave properly with Embark, play with this. Look at
   ;; similar commands already in `embark-target-injection-hooks' and mimic.
-  (add-to-list 'embark-target-injection-hooks '(eglot-code-actions embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(eglot-rename embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(eglot-find-implementation embark--ignore-target))
-  (add-to-list 'embark-target-injection-hooks '(consult-eglot-symbols embark--allow-edit))
   (add-to-list 'embark-target-injection-hooks '(consult-fd embark--ignore-target))
   (add-to-list 'embark-target-injection-hooks '(query-replace embark--allow-edit))
   (add-to-list 'embark-target-injection-hooks '(query-replace-regexp embark--allow-edit))
@@ -1753,103 +1752,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   :hook
   (elpaca-after-init . global-treesit-fold-mode))
 
-;;;;;; Eglot
-
-(use-package eglot
-  :ensure nil
-  :preface
-  (declare-function eglot-inlay-hints-mode "eglot")
-
-  (defun my/eglot-init ()
-    "Init function for `eglot--managed-mode'."
-    (eglot-inlay-hints-mode 1)
-    (setq-local eglot-cache-session-completions nil)
-    (setq-local completion-at-point-functions
-                '(eglot-completion-at-point
-                  cape-file))
-    (setq-local eldoc-documentation-functions
-                '(flymake-eldoc-function
-                  eglot-signature-eldoc-function
-                  eglot-hover-eldoc-function)))
-  :bind
-  (:map eglot-mode-map
-   ("M-g ^" . eglot-find-implementation)
-   ("C-c r a" . eglot-code-actions)
-   ("C-c r o" . eglot-code-action-organize-imports)
-   ("C-c r r" . eglot-rename))
-
-  :hook
-  ((go-mode
-    go-ts-mode
-    rust-mode
-    rust-ts-mode
-    sh-mode
-    bash-ts-mode
-    haskell-mode
-    zig-mode) . eglot-ensure)
-  (eglot-managed-mode . my/eglot-init)
-
-  :custom
-  (eglot-autoshutdown t)
-  (eglot-extend-to-xref t)
-  (eglot-sync-connect 0)
-  (eglot-connect-timeout 60)
-  (eglot-report-progress nil)
-  (eglot-events-buffer-config '(:size 0 :format short))
-  (eglot-confirm-server-edits nil)
-  (eglot-ignored-server-capabilities
-   '(:documentFormattingProvider :documentRangeFormattingProvider
-     :documentOnTypeFormattingProvider :documentHighlightProvider))
-
-  :config
-  ;; Tree-sitter produces a better imenu.
-  (setq eglot-stay-out-of '(imenu))
-  ;; Improve performance. See: https://github.com/jamescherti/minimal-emacs.d.
-  (setq jsonrpc-event-hook nil)
-  ;; Remove completion styles installed by Eglot and to fall back to Orderless.
-  (setq completion-category-defaults nil)
-  ;; Style the inlay type hinting face.
-  (set-face-attribute 'eglot-inlay-hint-face nil :height 0.9 :slant 'italic))
-
-(use-package eglot-booster
-  :ensure (:host github :repo "jdtsmith/eglot-booster")
-  :after eglot
-  :init
-  (eglot-booster-mode))
-
-(use-package dape
-  :bind-keymap
-  ("C-c d" . dape-global-map)
-  :custom
-  (dape-key-prefix nil)
-  (dape-repl-use-shorthand t)
-  (dape-buffer-window-arrangement 'right)
-  (dape-info-hide-mode-line t)
-  :config
-  ;; Don't display REPL initially and create on demand with `dape-repl'.
-  (remove-hook 'dape-start-hook 'dape-repl)
-  ;; Dape config for debugging the Go test under point. Adapted from example
-  ;; at https://github.com/svaante/dape/wiki.
-  (add-to-list 'dape-configs
-               `(dlv-test
-                 modes (go-mode go-ts-mode)
-                 ensure dape-ensure-command
-                 command "dlv"
-                 command-args ("dap" "--listen" "127.0.0.1::autoport")
-                 command-cwd dape-command-cwd
-                 port :autoport
-                 :request "launch"
-                 :type "debug"
-                 :mode "test"
-                 :cwd "."
-                 :program "."
-                 :args (lambda ()
-                         (require 'which-func)
-                         (if-let* ((test-name (which-function))
-                                   (test-regexp (concat "^" test-name "$")))
-                             `["-test.run" ,test-regexp]
-                           (error "No test selected"))))))
-
 ;;;;;; Flymake
 
 (use-package flymake
@@ -1959,25 +1861,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
                            (?m "Module" my/imenu-module-face)
                            (?S "Static" my/imenu-static-face)
                            (?s "Struct" my/imenu-struct-face)
-                           (?t "Trait" my/imenu-trait-face)))))
-
-  ;; See: https://rust-analyzer.github.io/manual.html#configuration.
-  ;; Note that `eglot-stderr-buffer' can be used to debug LSP server errors.
-  (with-eval-after-load 'eglot
-    (add-to-list
-     'eglot-server-programs
-     '((rust-ts-mode :language-id "rust") .
-       ("rust-analyzer" :initializationOptions
-        (:procMacro (:enable t)
-         :cargo (:buildScripts (:enable t) :features "all")
-         ;; Use Clippy for extra lints.
-         :check (:command "clippy")
-         ;; WIP: Trying out this setting.
-         :diagnostics (:experimental (:enable t))
-         ;; Configure Rust inlay hints.
-         :inlayHints (:parameterHints (:enable :json-false)
-                      :closingBraceHints (:enable t
-                                          :minLines 20))))))))
+                           (?t "Trait" my/imenu-trait-face))))))
 
 ;;;;;; Go
 
@@ -2031,21 +1915,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
                            (?t "New Type" my/imenu-type-face)
                            (?s "Struct" my/imenu-struct-face)
                            (?a "Type Alias" my/imenu-type-face)
-                           (?v "Variable" my/imenu-variable-face)))))
-
-  ;; See: https://github.com/golang/tools/blob/master/gopls/doc/inlayHints.md.
-  ;; Note that `eglot-stderr-buffer' can be used to debug LSP server errors.
-  (with-eval-after-load 'eglot
-    (add-to-list
-     'eglot-server-programs
-     '((go-ts-mode :language-id "go") .
-       ("gopls" :initializationOptions
-        (:hints (:parameterNames :json-false
-                 :rangeVariableTypes t
-                 :functionTypeParameters t
-                 :assignVariableTypes t
-                 :compositeLiteralFields t
-                 :constantValues t)))))))
+                           (?v "Variable" my/imenu-variable-face))))))
 
 (use-package gotest
   :after go-ts-mode
