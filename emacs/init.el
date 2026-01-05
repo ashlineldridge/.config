@@ -116,10 +116,7 @@
 ;;;;; Icons
 
 ;; Run `nerd-icons-install-fonts' manually to install fonts for the first time.
-(use-package nerd-icons
-  :custom
-  ;; See: https://github.com/Echinoidea/Aporetic-Nerd-Font.
-  (nerd-icons-font-family "AporeticSansMonoNerdFont"))
+(use-package nerd-icons)
 
 (use-package nerd-icons-ibuffer
   :after ibuffer
@@ -127,13 +124,20 @@
   :custom
   (nerd-icons-ibuffer-formats ibuffer-formats))
 
-;; Enables Vertico icons.
+;; Enable Vertico icons.
 (use-package nerd-icons-completion
   :hook (vertico-mode . nerd-icons-completion-mode))
 
+;; Enable Corfu icons.
 (use-package nerd-icons-corfu
-  ;; TODO: Either make this look good or get rid of it.
-  :disabled)
+  :after corfu
+  :init
+  (defvar corfu-margin-formatters)
+  (add-to-list 'corfu-margin-formatters 'nerd-icons-corfu-formatter)
+  :config
+  ;; Improve snippet icon used by `tempel'. Use `nerd-icons-insert' to see icons.
+  (add-to-list 'nerd-icons-corfu-mapping
+               '(snippet :style "oct" :icon "heart" :face font-lock-string-face)))
 
 ;;;;; Mode Line
 
