@@ -35,10 +35,10 @@ persistent-workspaces = ["1", "2", "3", "X", "Y", "Z"]
 [gaps]
     inner.horizontal = 12
     inner.vertical   = 12
-    outer.left       = 8
-    outer.bottom     = 8
-    outer.top        = 8
-    outer.right      = 8
+    outer.left       = 6
+    outer.right      = 6
+    outer.bottom     = 6
+    outer.top        = 6
 
 # Main binding mode.
 [mode.main.binding]
