@@ -93,3 +93,28 @@ persistent-workspaces = ["1", "2", "3", "X", "Y", "Z"]
 
     # Reset layout.
     alt-cmd-ctrl-esc = 'flatten-workspace-tree'
+
+# Float 1Password.
+[[on-window-detected]]
+if.app-id = 'com.1password.1password'
+run = ['layout floating']
+
+# Float Finder.
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+run = ['layout floating']
+
+# Float Reminders.
+[[on-window-detected]]
+if.app-id = 'com.apple.reminders'
+run = ['layout floating']
+
+# Float Karabiner-Elements.
+[[on-window-detected]]
+if.app-id = 'org.pqrs.Karabiner-Elements.Settings'
+run = ['layout floating']
+
+# Float Karabiner-EventViewer.
+[[on-window-detected]]
+if.app-id = 'org.pqrs.Karabiner-EventViewer'
+run = ['layout floating']
