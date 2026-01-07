@@ -818,7 +818,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   :bind
   ("C-c x h" . lin-mode)
   :custom
-  (lin-face 'lin-green))
+  (lin-face 'lin-cyan))
 
 (use-package pulsar
   :preface
