@@ -73,9 +73,14 @@ persistent-workspaces = ["1", "2", "3", "X", "Y", "Z"]
     alt-cmd-ctrl-shift-up    = 'join-with up'
     alt-cmd-ctrl-shift-right = 'join-with right'
 
-    # Toggle horizontal/vertical orientation in tile and accordion layouts.
-    alt-cmd-ctrl-t = 'layout tiles horizontal vertical'
-    alt-cmd-ctrl-a = 'layout accordion horizontal vertical'
+    # Toggle between tiles and accordion layout.
+    alt-cmd-ctrl-l = 'layout tiles accordion'
+
+    # Toggle current window between floating and tiling.
+    alt-cmd-ctrl-shift-l = 'layout floating tiling'
+
+    # Reset layout.
+    alt-cmd-ctrl-esc = 'flatten-workspace-tree'
 
     # Window fillscreen/fullscreen.
     alt-cmd-ctrl-f       = 'fullscreen'
@@ -91,9 +96,6 @@ persistent-workspaces = ["1", "2", "3", "X", "Y", "Z"]
     # Reload configuration.
     alt-cmd-ctrl-r = 'reload-config'
 
-    # Reset layout.
-    alt-cmd-ctrl-esc = 'flatten-workspace-tree'
-
 # Float 1Password.
 [[on-window-detected]]
 if.app-id = 'com.1password.1password'
@@ -102,6 +104,16 @@ run = ['layout floating']
 # Float Finder.
 [[on-window-detected]]
 if.app-id = 'com.apple.finder'
+run = ['layout floating']
+
+# Float Messages.
+[[on-window-detected]]
+if.app-id = 'com.apple.MobileSMS'
+run = ['layout floating']
+
+# Float WhatsAPp.
+[[on-window-detected]]
+if.app-id = 'net.whatsapp.WhatsApp'
 run = ['layout floating']
 
 # Float Reminders.
