@@ -1,6 +1,10 @@
 config-version = 2
 start-at-login = true
 
+# Key prefixes:
+# - MEH key   = alt-ctrl-shift
+# - HYPER key = alt-ctrl-shift-cmd
+
 # Run JankyBorders after startup.
 after-startup-command = [
     'exec-and-forget borders active_color=0xffff76ff inactive_color=0xff414550 width=8.0'
@@ -20,12 +24,8 @@ default-root-container-orientation = 'horizontal'
 # Pseudo-disable macOS "Hide application" (CMD-h) feature.
 automatically-unhide-macos-hidden-apps = true
 
-# Persistent workspaces:
-# 1: Primary workspace for IDE and main browser window.
-# 2: Secondary workspace for Emacs and other utility apps.
-# 3: Social workspace for Slack, Email, Calendar, etc.
-# X-Z: Personal workspaces for music, browsers, etc.
-persistent-workspaces = ["1", "2", "3", "X", "Y", "Z"]
+# Persistent workspaces.
+persistent-workspaces = ["1", "2", "3", "4"]
 
 # Qwerty keyboard layout.
 [key-mapping]
@@ -43,58 +43,89 @@ persistent-workspaces = ["1", "2", "3", "X", "Y", "Z"]
 # Main binding mode.
 [mode.main.binding]
     # Switch workspace.
-    alt-cmd-ctrl-1 = 'workspace 1'
-    alt-cmd-ctrl-2 = 'workspace 2'
-    alt-cmd-ctrl-3 = 'workspace 3'
-    alt-cmd-ctrl-x = 'workspace X'
-    alt-cmd-ctrl-y = 'workspace Y'
-    alt-cmd-ctrl-z = 'workspace Z'
+    alt-ctrl-shift-1 = 'workspace 1'
+    alt-ctrl-shift-2 = 'workspace 2'
+    alt-ctrl-shift-3 = 'workspace 3'
+    alt-ctrl-shift-4 = 'workspace 4'
 
     # Move window to workspace.
-    alt-cmd-ctrl-shift-1 = 'move-node-to-workspace 1'
-    alt-cmd-ctrl-shift-2 = 'move-node-to-workspace 2'
-    alt-cmd-ctrl-shift-3 = 'move-node-to-workspace 3'
-    alt-cmd-ctrl-shift-x = 'move-node-to-workspace X'
-    alt-cmd-ctrl-shift-y = 'move-node-to-workspace Y'
-    alt-cmd-ctrl-shift-z = 'move-node-to-workspace Z'
+    alt-ctrl-shift-cmd-1 = ['move-node-to-workspace 1', 'workspace 1']
+    alt-ctrl-shift-cmd-2 = ['move-node-to-workspace 2', 'workspace 2']
+    alt-ctrl-shift-cmd-3 = ['move-node-to-workspace 3', 'workspace 3']
+    alt-ctrl-shift-cmd-4 = ['move-node-to-workspace 4', 'workspace 4']
+
+    # Focus on window in direction.
+    alt-ctrl-shift-left  = 'focus left'
+    alt-ctrl-shift-down  = 'focus down'
+    alt-ctrl-shift-up    = 'focus up'
+    alt-ctrl-shift-right = 'focus right'
+
+    # Move window in direction.
+    alt-ctrl-shift-cmd-left  = 'move left'
+    alt-ctrl-shift-cmd-down  = 'move down'
+    alt-ctrl-shift-cmd-up    = 'move up'
+    alt-ctrl-shift-cmd-right = 'move right'
+
+    # Flip between this and last workspace.
+    alt-ctrl-shift-tab = 'workspace-back-and-forth'
 
     # Focus on other/next window.
-    alt-cmd-ctrl-o = 'focus dfs-next --boundaries-action wrap-around-the-workspace'
-
-    # Move window in given direction.
-    alt-cmd-ctrl-left  = 'move left'
-    alt-cmd-ctrl-down  = 'move down'
-    alt-cmd-ctrl-up    = 'move up'
-    alt-cmd-ctrl-right = 'move right'
-
-    # Join window with container in given direction.
-    alt-cmd-ctrl-shift-left  = 'join-with left'
-    alt-cmd-ctrl-shift-down  = 'join-with down'
-    alt-cmd-ctrl-shift-up    = 'join-with up'
-    alt-cmd-ctrl-shift-right = 'join-with right'
-
-    # Toggle between tiles and accordion layout.
-    alt-cmd-ctrl-l = 'layout tiles accordion'
-
-    # Toggle current window between floating and tiling.
-    alt-cmd-ctrl-shift-l = 'layout floating tiling'
-
-    # Reset layout.
-    alt-cmd-ctrl-esc = 'flatten-workspace-tree'
-
-    # Window fillscreen/fullscreen.
-    alt-cmd-ctrl-f       = 'fullscreen'
-    alt-cmd-ctrl-shift-f = 'macos-native-fullscreen'
+    alt-ctrl-shift-o = 'focus dfs-next --boundaries-action wrap-around-the-workspace'
 
     # Window resizing.
-    alt-cmd-ctrl-minus = 'resize smart -50'
-    alt-cmd-ctrl-equal = 'resize smart +50'
+    alt-ctrl-shift-minus = 'resize smart -50'
+    alt-ctrl-shift-equal = 'resize smart +50'
 
-    # Tab between workspaces.
-    alt-cmd-ctrl-tab = 'workspace-back-and-forth'
+    # Toggle between accordion/tiles layout.
+    alt-ctrl-shift-a = 'layout accordion tiles'
 
-    # Reload configuration.
-    alt-cmd-ctrl-r = 'reload-config'
+    # Toggle current window between floating and tiling.
+    alt-ctrl-shift-f = 'layout floating tiling'
+
+    # Window fillscreen/fullscreen.
+    alt-ctrl-shift-space = 'fullscreen'
+
+    # Switch to other modes.
+    alt-ctrl-shift-j = 'mode jump'
+    alt-ctrl-shift-l = 'mode layout'
+    alt-ctrl-shift-x = 'mode x'
+
+# Layout binding mode.
+[mode.layout.binding]
+    # Focus on window in direction.
+    left  = 'focus left'
+    down  = 'focus down'
+    up    = 'focus up'
+    right = 'focus right'
+
+    # Join window with container in given direction.
+    cmd-left  = 'join-with left'
+    cmd-down  = 'join-with down'
+    cmd-up    = 'join-with up'
+    cmd-right = 'join-with right'
+
+    # Focus on other/next window.
+    o = 'focus dfs-next --boundaries-action wrap-around-the-workspace'
+
+    # Reset layout.
+    x = 'flatten-workspace-tree'
+
+    # Switch to main mode.
+    esc = 'mode main'
+
+# Jump binding mode.
+[mode.jump.binding]
+    b = ['exec-and-forget open -a "Microsoft Edge"', 'mode main']
+    c = ['exec-and-forget open -a Cursor', 'mode main']
+    e = ['exec-and-forget open -a Emacs', 'mode main']
+    s = ['exec-and-forget open -a Slack', 'mode main']
+    esc = 'mode main'
+
+# Extended binding mode.
+[mode.x.binding]
+    r = ['reload-config', 'mode main']
+    x = ['flatten-workspace-tree', 'mode main']
+    esc = 'mode main'
 
 # Float 1Password.
 [[on-window-detected]]
