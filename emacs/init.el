@@ -2321,7 +2321,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "")
   (eshell-visual-commands
-   '("claude" "goose" "vim"))
+   '("claude" "goose" "opencode" "vi" "vim"))
   :config
   (require 'esh-mode)
   (require 'em-hist)
