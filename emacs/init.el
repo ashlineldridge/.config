@@ -2333,12 +2333,27 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (eshell-atuin-mode))
 
 (use-package eshell-atuin
+  :preface
+  (declare-function eshell-atuin--get-input "eshell-atuin")
   :custom
   (eshell-atuin-search-fields '(command time))
   (eshell-atuin-history-format "%-80c %t")
   ;; Duration is misleading for async commands anyway.
-  (eshell-atuin-save-duration nil)
-  :commands eshell-atuin-mode)
+  (eshell-atuin-save-duration t)
+  :commands eshell-atuin-mode
+  :config
+  ;; Workaround for empty string handling.
+  ;; See: https://github.com/SqrtMinusOne/eshell-atuin/issues/13.
+  (advice-add #'eshell-atuin--pre-exec :around
+              (lambda (fn &rest args)
+                (when-let* ((input (eshell-atuin--get-input)))
+                  (unless (string-empty-p input)
+                    (apply fn args)))))
+  (advice-add #'eshell-atuin--post-exec :around
+              (lambda (fn &rest args)
+                (when (and eshell-atuin--history-id
+                           (not (string-empty-p eshell-atuin--history-id)))
+                  (apply fn args)))))
 
 (use-package eat
   :ensure
