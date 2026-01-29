@@ -53,22 +53,21 @@
   (defconst my/variable-family "Aporetic Sans")
   (defun my/fontaine-apply-preset ()
     "Apply the current (or default) Fontaine preset."
-    (fontaine-set-preset (or fontaine-current-preset 'laptop)))
+    (fontaine-set-preset (or fontaine-current-preset 'regular)))
   :bind
   ("C-c x f" . fontaine-set-preset)
   :hook
   (elpaca-after-init . my/fontaine-apply-preset)
   :custom
   (fontaine-presets
-   `((laptop)
-     (desktop
+   `((regular)
+     (heavy
       :default-height 150
       :default-weight semibold
       :fixed-pitch-weight semibold
       :variable-pitch-weight semibold
       :mode-line-active-height 150
-      :mode-line-inactive-height 150
-      :line-number-height 140)
+      :mode-line-inactive-height 150)
      (t
       :default-family ,my/fixed-family
       :default-height 150
@@ -83,11 +82,7 @@
       :mode-line-inactive-family ,my/fixed-family
       :mode-line-active-height 150
       :mode-line-inactive-height 150
-      :line-number-family ,my/fixed-family
-      :line-number-slant italic
-      :line-number-height 140
-      :bold-weight bold
-      :italic-slant italic))))
+      :line-number-family ,my/fixed-family))))
 
 (use-package font-lock
   :ensure nil
