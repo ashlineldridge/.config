@@ -20,6 +20,7 @@ emacs/eln-cache/
 *~
 .DS_Store
 .\#*
+.claude/
 .emacs.desktop
 .emacs.desktop.lock
 \#*\#
@@ -47,7 +48,8 @@ k9s/config.yml
 ldcli/
 ngrok/
 nvim/bundle/*/doc/tags
-raycast/extensions/
+# Ignore for now as contains tokens, etc
+raycast/
 target/
 tramp
 zed/conversations/
