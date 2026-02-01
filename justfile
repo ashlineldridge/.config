@@ -15,7 +15,7 @@ brew-dump:
 
 emacs-install: emacs-clean
     @echo ">>> Installing Emacs"
-    brew install emacs-plus@{{emacs-version}} --with-savchenkovaleriy-big-sur-icon
+    brew install emacs-plus@{{emacs-version}}
     # The entire application is copied rather than creating an alias as that
     # seems to screw with the icon that gets shown by Raycast/Spotlight.
     sudo rm -rf /Applications/Emacs.app
@@ -58,6 +58,9 @@ symlink-install:
     @echo ">>> Installing symlinks"
     ln -sf ~/.config/zsh/lib/env.zsh ~/.zshenv
     mkdir -p ~/.local/share/gnupg
+    mkdir -p ~/.claude
     ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
+    ln -sf ~/.config/claude/*.json ~/.claude/
+    ln -sf ~/.config/cursor/*.json ~/Library/Application\ Support/Cursor/User/
 
 install: symlink-install brew-install emacs-install
