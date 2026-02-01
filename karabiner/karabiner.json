@@ -28,9 +28,9 @@
           {
             "manipulators": [
               {
-                "description": "Left CONTROL to MEH",
+                "description": "Right CMD to MEH",
                 "from": {
-                  "key_code": "left_control",
+                  "key_code": "right_command",
                   "modifiers": {
                     "optional": [
                       "any"
@@ -59,7 +59,7 @@
           },
           "to": [
             {
-              "key_code": "right_control"
+              "key_code": "left_control"
             }
           ]
         }
