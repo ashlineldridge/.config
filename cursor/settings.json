@@ -1,0 +1,20 @@
+{
+    "window.commandCenter": true,
+    "editor.fontFamily": "Aporetic Sans Mono",
+    "window.zoomPerWindow": false,
+    "git.confirmSync": false,
+    "git.allowForcePush": true,
+    "editor.fontSize": 14,
+    "debug.console.fontSize": 14,
+    "scm.inputFontSize": 14,
+    "terminal.integrated.fontSize": 14,
+    "workbench.editor.enablePreview": false,
+    "claudeCode.preferredLocation": "panel",
+    "claudeCode.selectedModel": "claude-opus-4-5@20251101",
+    "editor.copyWithSyntaxHighlighting": false,
+    "files.associations": {
+        "*.star": "python"
+    },
+    "window.confirmSaveUntitledWorkspace": false,
+    "workbench.editor.showTabs": "single"
+}

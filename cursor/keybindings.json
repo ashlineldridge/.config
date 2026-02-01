@@ -1,0 +1,11 @@
+[
+    {
+        "key": "cmd+i",
+        "command": "composerMode.agent"
+    },
+    {
+      "key": "alt+space",
+      "command": "whichkey.show",
+      "when": "editorTextFocus"
+    }
+]
