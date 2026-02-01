@@ -1,5 +1,5 @@
 config-version = 2
-start-at-login = true
+start-at-login = false
 
 # Key prefixes:
 # - MEH key   = alt-ctrl-shift
@@ -115,10 +115,11 @@ persistent-workspaces = ["1", "2", "3", "4"]
 
 # Jump binding mode.
 [mode.jump.binding]
-    b = ['exec-and-forget open -a "Microsoft Edge"', 'mode main']
-    c = ['exec-and-forget open -a Cursor', 'mode main']
-    e = ['exec-and-forget open -a Emacs', 'mode main']
-    s = ['exec-and-forget open -a Slack', 'mode main']
+    b = ['exec-and-forget open -a "Microsoft Edge"', 'mode main'] # [B]rowser
+    c = ['exec-and-forget open -a Cursor', 'mode main']           # [C]ursor
+    e = ['exec-and-forget open -a Emacs', 'mode main']            # [E]macs
+    m = ['exec-and-forget open -a Spotify', 'mode main']          # [M]usic
+    s = ['exec-and-forget open -a Slack', 'mode main']            # [S]lack
     esc = 'mode main'
 
 # Extended binding mode.
