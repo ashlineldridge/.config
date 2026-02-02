@@ -2380,23 +2380,48 @@ With prefix ARG, the full 40 character commit hash will be copied."
     "Send a new line to the current `eat' terminal."
     (interactive)
     (eat-term-send-string eat-terminal "\C-j"))
+
+  (defun my/eat-send-ctrl-g ()
+    "Send C-g to the current `eat' terminal."
+    (interactive)
+    (eat-term-send-string eat-terminal "\C-g"))
+
+  (defun my/eat-emacs-mode-init (&optional _)
+    "Init function for `eat-emacs-mode'."
+    (eat--set-cursor nil :block)
+    (lin-mode 1)
+    (move-to-window-line-top-bottom 0)
+    (pulsar-pulse-line))
+
+  (defun my/eat-char-mode-init (&optional _)
+    "Init function for `eat-char-mode' and `eat-semi-char-mode'."
+    (eat--set-cursor nil :invisible)
+    (lin-mode -1))
+
   :bind
   (:map eat-mode-map
    ("C-M-a" . eat-previous-shell-prompt)
    ("C-M-e" . eat-next-shell-prompt)
-   ("S-<return>" . my/eat-new-line))
+   ("S-<return>" . my/eat-new-line)
+   :map eat-semi-char-mode-map
+   ("C-S-g" . my/eat-send-ctrl-g))
+
   :hook
   ;; I prefer the experience of opening terminal apps in a dedicated Eat buffer
   ;; rather than enabling `eat-eshell-mode' and running them directly within
   ;; Eshell. Terminal commands are registered in `eshell-visual-commands'.
   (eshell-load . eat-eshell-visual-command-mode)
   :custom
-  (eat-term-name "xterm-256color")
   (eat-term-scrollback-size 500000)
   :config
   (my/unbind-common-keys eat-char-mode-map)
   (my/unbind-common-keys eat-semi-char-mode-map)
-  (my/unbind-common-keys eat-eshell-char-mode-map))
+  (my/unbind-common-keys eat-eshell-char-mode-map)
+
+  ;; Init Eat internal modes using after advice as they don't have proper hooks.
+  (advice-add #'eat-emacs-mode :after #'my/eat-emacs-mode-init)
+  (advice-add #'eat-char-mode :after #'my/eat-char-mode-init)
+  (advice-add #'eat-semi-char-mode :after #'my/eat-char-mode-init))
 
 (use-package vterm
   :defines (vterm-mode-map vterm-eval-cmds)
