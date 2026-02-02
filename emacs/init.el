@@ -1242,11 +1242,13 @@ With prefix ARG, the working directory can be selected."
    ("M-m" . my/corfu-move-to-minibuffer))
   :hook
   (elpaca-after-init . global-corfu-mode)
+  ;; Enable auto-completion for programming modes.
+  (prog-mode . (lambda () (setq-local corfu-auto t) (corfu-mode)))
   :custom
-  ;; Serenity trial in progress...
   (corfu-auto nil)
   (corfu-auto-delay 0.3)
   (corfu-auto-prefix 5)
+  (corfu-auto-trigger ".")
   (corfu-preselect 'directory)
   (corfu-quit-at-boundary 'separator)
   (corfu-on-exact-match nil)
@@ -1323,6 +1325,7 @@ With prefix ARG, the working directory can be selected."
   :hook (elpaca-after-init . marginalia-mode))
 
 (use-package consult
+  :defines consult-imenu-config
   :preface
   (declare-function consult--buffer-query "consult")
   (declare-function consult--customize-put "consult")
