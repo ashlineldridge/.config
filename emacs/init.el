@@ -700,13 +700,15 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
 
 ;;;;; Undo/Redo
 
-(use-package vundo
-  :bind
-  ("C-x u" . vundo)
+(use-package undo-tree
   :custom
-  (vundo-glyph-alist vundo-unicode-symbols)
-  :config
-  (set-face-attribute 'vundo-default nil :family "Iosevka Comfy Fixed"))
+  (undo-tree-auto-save-history t)
+  (undo-tree-visualizer-timestamps t)
+  (undo-tree-visualizer-diff t)
+  :bind
+  (:map undo-tree-map
+   ("M-_" . nil))
+  :hook (elpaca-after-init . global-undo-tree-mode))
 
 ;;;;; Region Expansion
 
@@ -2197,7 +2199,6 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (:map diff-mode-map
    ("M-k" . nil)
    ("M-o" . nil)
-   ("u" . diff-undo)
    ("v" . vc-next-action)
    ("l" . vc-print-log)
    ("L" . vc-print-root-log))
