@@ -1733,6 +1733,110 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   :hook
   (elpaca-after-init . global-treesit-fold-mode))
 
+;;;;;; LSP
+
+(use-package lsp-mode
+  :preface
+  (declare-function lsp-register-custom-settings "lsp-mode")
+
+  ;; See: https://github.com/blahgeek/emacs-lsp-booster
+  (defun lsp-booster--advice-json-parse (old-fn &rest args)
+    (or
+     (when (equal (following-char) ?#)
+       (let ((bytecode (read (current-buffer))))
+         (when (byte-code-function-p bytecode)
+           (funcall bytecode))))
+     (apply old-fn args)))
+
+  (defun lsp-booster--advice-final-command (old-fn cmd &optional test?)
+    (let ((orig-result (funcall old-fn cmd test?)))
+      (if (and (not test?)
+               (not (file-remote-p default-directory))
+               lsp-use-plists
+               (not (functionp 'json-rpc-connection))
+               (executable-find "emacs-lsp-booster"))
+          (progn
+            (when-let* ((command-from-exec-path (executable-find (car orig-result))))
+              (setcar orig-result command-from-exec-path))
+            (message "Using emacs-lsp-booster for %s!" orig-result)
+            (cons "emacs-lsp-booster" orig-result))
+        orig-result)))
+
+  :commands lsp-deferred
+  :hook
+  ((go-mode go-ts-mode rust-mode rust-ts-mode) . lsp-deferred)
+  (lsp-mode . lsp-enable-which-key-integration)
+  :custom
+  (lsp-log-io nil)
+  (lsp-completion-provider :none) ;; Use Corfu.
+  (lsp-diagnostics-provider :flymake)
+  (lsp-inlay-hint-enable t)
+  (lsp-imenu-index-function #'lsp-imenu-create-categorized-index)
+  (lsp-keep-workspace-alive nil)
+  (lsp-eldoc-render-all t)
+  (lsp-eldoc-enable-hover t)
+  (lsp-signature-auto-activate t)
+  (lsp-signature-render-documentation t)
+  (lsp-modeline-diagnostics-enable nil)
+  (lsp-modeline-code-actions-enable nil)
+  (lsp-modeline-workspace-status-enable t)
+  ;; TODO: Testing...
+  (lsp-keymap-prefix "C-c l")
+  ;; TODO: Disable for now and figure out how/whether to integrate with tempel later.
+  (lsp-enable-snippet nil)
+  :init
+  ;; Reduce log clutter to improve performance.
+  ;; See: https://github.com/jamescherti/minimal-emacs.d
+  (setq-default jsonrpc-event-hook nil)
+  :config
+  ;; (setq lsp-go-analyses
+  ;;       '((nilness . t)
+  ;;         (shadow . t)
+  ;;         (unusedparams . t)
+  ;;         (unusedwrite . t)
+  ;;         (useany . t)
+  ;;         (fillreturns . t)))
+
+  ;; (setq lsp-go-hover-kind "FullDocumentation"
+  ;;       lsp-go-link-target "pkg.go.dev"
+  ;;       lsp-go-codelenses '((gc_details . t)
+  ;;                           (generate . t)
+  ;;                           (regenerate_cgo . t)
+  ;;                           (test . t)
+  ;;                           (tidy . t)
+  ;;                           (upgrade_dependency . t)
+  ;;                           (vendor . t))
+  ;;       )
+
+  (lsp-register-custom-settings
+   '(("gopls.completeUnimported" t t)
+     ("gopls.semanticTokens" t t)
+     ("gopls.staticcheck" t t)
+     ("gopls.usePlaceholders" t t)
+     ("gopls.hints.assignVariableTypes" t t)
+     ("gopls.hints.constantValues" t t)
+     ("gopls.hints.rangeVariableTypes" t t)))
+
+  (advice-add (if (progn (require 'json)
+                         (fboundp 'json-parse-buffer))
+                  'json-parse-buffer
+                'json-read)
+              :around
+              #'lsp-booster--advice-json-parse)
+  (advice-add 'lsp-resolve-final-command :around #'lsp-booster--advice-final-command))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-doc-enable t)
+  (lsp-ui-doc-show-with-cursor nil)
+  (lsp-ui-doc-show-with-mouse t)
+  (lsp-ui-doc-position 'top)
+  (lsp-ui-doc-delay 0.2)
+  (lsp-ui-sideline-enable nil))
+
+(use-package consult-lsp)
+
 ;;;;;; Flymake
 
 (use-package flymake
@@ -1795,111 +1899,25 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
 ;;;;;; Rust
 
-(use-package rust-ts-mode
-  :ensure nil
-  :defines consult-imenu-config
-  :preface
-  (declare-function treesit-node-text "treesit")
-  (declare-function rust-ts-mode--defun-name "rust-ts-mode")
-
-  (defun my/rust-ts-mode-init ()
-    "Init function for `rust-ts-mode'."
-    ;; Custom Rust node types. See possible node types here:
-    ;; https://github.com/tree-sitter/tree-sitter-rust/blob/0a70e15da977489d954c219af9b50b8a722630ee/src/node-types.json.
-    (setq-local treesit-simple-imenu-settings
-                '(("Associated Type" "\\`type_item\\'" nil nil)
-                  ("Constant" "\\`const_item\\'" nil nil)
-                  ("Enumeration" "\\`enum_item\\'" nil nil)
-                  ("Function" "\\`function_item\\'" nil nil)
-                  ("Implementation" "\\`impl_item\\'" nil nil)
-                  ("Macro" "\\`macro_definition\\'" nil nil)
-                  ("Module" "\\`mod_item\\'" nil nil)
-                  ("Static" "\\`static_item\\'" nil nil)
-                  ("Struct" "\\`struct_item\\'" nil nil)
-                  ("Trait" "\\`trait_item\\'" nil nil)))
-    ;; Install custom function for Rust node names.
-    (setq-local treesit-defun-name-function #'my/treesit-rust-defun-name))
-
-  (defun my/treesit-rust-defun-name (node)
-    "Return the defun name of NODE for Rust node types."
-    (pcase (treesit-node-type node)
-      ((or "const_item" "macro_definition" "trait_item")
-       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
-      (_ (rust-ts-mode--defun-name node))))
-
-  :hook (rust-ts-mode . my/rust-ts-mode-init)
-  :config
-  ;; Update `consult-imenu-config' with the symbol categories for Rust.
-  (with-eval-after-load 'consult-imenu
-    (add-to-list 'consult-imenu-config
-                 '(rust-ts-mode
-                   :types ((?a "Associated Type" my/imenu-type-face)
-                           (?c "Constant" my/imenu-constant-face)
-                           (?e "Enumeration" my/imenu-enum-face)
-                           (?f "Function" my/imenu-function-face)
-                           (?i "Implementation" my/imenu-impl-face)
-                           (?M "Macro" my/imenu-macro-face)
-                           (?m "Module" my/imenu-module-face)
-                           (?S "Static" my/imenu-static-face)
-                           (?s "Struct" my/imenu-struct-face)
-                           (?t "Trait" my/imenu-trait-face))))))
+(use-package rust-ts-mode :ensure nil)
 
 ;;;;;; Go
 
 (use-package go-ts-mode
   :ensure nil
   :preface
-  (declare-function treesit-node-text "treesit")
-  (declare-function go-ts-mode--defun-name "go-ts-mode")
-
   (defun my/go-ts-mode-init ()
     "Init function for `go-ts-mode'."
     (setq-local tab-width go-ts-mode-indent-offset)
     ;; Don't let tests use cached results (buffer local var used by `gotest').
-    (setq-local go-test-args "-count 1")
-    ;; Custom Go node types. See possible node types here:
-    ;; https://github.com/tree-sitter/tree-sitter-go/blob/bbaa67a180cfe0c943e50c55130918be8efb20bd/src/node-types.json.
-    (setq-local treesit-simple-imenu-settings
-                '(("Constant" "\\`const_spec\\'" nil nil)
-                  ("Function" "\\`function_declaration\\'" nil nil)
-                  ("Interface" "\\`type_declaration\\'" go-ts-mode--interface-node-p nil)
-                  ("Method" "\\`method_declaration\\'" nil nil)
-                  ("New Type" "\\`type_declaration\\'" go-ts-mode--other-type-node-p nil)
-                  ("Struct" "\\`type_declaration\\'" go-ts-mode--struct-node-p nil)
-                  ("Type Alias" "\\`type_declaration\\'" go-ts-mode--alias-node-p nil)
-                  ;; Unfortunately, this also includes local variables.
-                  ("Variable" "\\`var_spec\\'" nil nil)))
-    ;; Install custom function for Go node names.
-    (setq-local treesit-defun-name-function #'my/treesit-go-defun-name))
-
-  (defun my/treesit-go-defun-name (node)
-    "Return the defun name of NODE for Go node types."
-    (pcase (treesit-node-type node)
-      ((or "const_spec" "var_spec")
-       (treesit-node-text (treesit-node-child-by-field-name node "name") t))
-      (_ (go-ts-mode--defun-name node))))
-
+    (setq-local go-test-args "-count 1"))
   :hook (go-ts-mode . my/go-ts-mode-init)
-  :bind
-  (:map go-ts-mode-map
-   ("C-c C-d" . nil))
   :custom
-  (go-ts-mode-indent-offset 4)
-  :config
-  (with-eval-after-load 'consult-imenu
-    (add-to-list 'consult-imenu-config
-                 '(go-ts-mode
-                   :types ((?c "Constant" my/imenu-constant-face)
-                           (?f "Function" my/imenu-function-face)
-                           (?i "Interface" my/imenu-trait-face)
-                           (?m "Method" my/imenu-method-face)
-                           (?t "New Type" my/imenu-type-face)
-                           (?s "Struct" my/imenu-struct-face)
-                           (?a "Type Alias" my/imenu-type-face)
-                           (?v "Variable" my/imenu-variable-face))))))
+  (go-ts-mode-indent-offset 4))
 
 (use-package gotest
   :after go-ts-mode
+  :defines go-ts-mode-map
   :preface
   (defun my/go-test-verbose (fn)
     "Run the Go test function FN with the verbose flag enabled."

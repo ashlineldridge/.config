@@ -19,8 +19,12 @@
 ;; Increase GC threshold during init and then drop it after. See:
 ;; - https://github.com/jamescherti/minimal-emacs.d
 ;; - https://emacsconf.org/2023/talks/gc
-(defvar my/gc-cons-threshold (* 64 1024 1024))
+;; - https://emacs-lsp.github.io/lsp-mode/page/performance
+(defvar my/gc-cons-threshold (* 128 1024 1024))
 (setq gc-cons-threshold most-positive-fixnum)
+
+;; Increase read buffer for better LSP + terminal performance.
+(setq read-process-output-max (* 4 1024 1024))
 
 (defun my/emacs-init-gc ()
   "Init GC settings after startup."
@@ -97,6 +101,7 @@
 (setenv "KUBECTX_IGNORE_FZF" "true")
 (setenv "BUILDKIT_PROGRESS" "plain")
 (setenv "EDITOR" "emacsclient")
+(setenv "LSP_USE_PLISTS" "true")
 
 ;; Set `exec-path' and PATH explicitly so that they mirror each other.
 (setq exec-path
