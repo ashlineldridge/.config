@@ -787,12 +787,6 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   ("M-g ." . link-hint-open-link)
   ("M-g M-." . link-hint-copy-link))
 
-(use-package dumb-jump
-  :custom
-  (dumb-jump-force-searcher 'rg)
-  :init
-  (add-hook 'xref-backend-functions 'dumb-jump-xref-activate))
-
 ;;;;; Highlighting
 
 (use-package hl-line
