@@ -115,11 +115,12 @@ persistent-workspaces = ["1", "2", "3", "4"]
 
 # Jump binding mode.
 [mode.jump.binding]
-    b = ['exec-and-forget open -a "Microsoft Edge"', 'mode main'] # [B]rowser
-    c = ['exec-and-forget open -a Cursor', 'mode main']           # [C]ursor
-    e = ['exec-and-forget open -a Emacs', 'mode main']            # [E]macs
-    m = ['exec-and-forget open -a Spotify', 'mode main']          # [M]usic
-    s = ['exec-and-forget open -a Slack', 'mode main']            # [S]lack
+    1 = ['exec-and-forget open -a 1Password', 'mode main']               # [1]Password
+    b = ['exec-and-forget open -a "Prisma Access Browser"', 'mode main'] # [B]rowser
+    e = ['exec-and-forget open -a Emacs', 'mode main']                   # [E]macs
+    m = ['exec-and-forget open -a Spotify', 'mode main']                 # [M]usic
+    s = ['exec-and-forget open -a Slack', 'mode main']                   # [S]lack
+    z = ['exec-and-forget open -a zoom.us', 'mode main']                 # [Z]oom
     esc = 'mode main'
 
 # Extended binding mode.
