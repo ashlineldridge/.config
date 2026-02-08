@@ -38,19 +38,15 @@ emacs-clean:
     rm -rf emacs/var/treesit
 
 ai-upgrade:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    echo ">>> Upgrading AI agents"
-    # Upgrade agent binaries.
-    goose update
+    @echo ">>> Upgrading AI agents"
+    @echo "\n----- Upgrading Claude Code"
     claude update
+    @echo "\n----- Upgrading Cursor Agent CLI"
+    brew upgrade cursor-cli
+    @echo "\n----- Upgrading Gemini CLI"
     brew upgrade gemini-cli
+    @echo "\n---- Upgrading OpenCode"
     brew upgrade opencode
-    # Upgrade ACP adapters.
-    npm install -g @zed-industries/claude-code-acp
-    codex_acp_url="$(curl -s https://api.github.com/repos/zed-industries/codex-acp/releases/latest |
-        jq -r '.assets[] | select(.name | contains("aarch64-apple-darwin")) | .browser_download_url')"
-    curl -sL "${codex_acp_url}" | tar -xz -C ~/bin/
 
 symlink-install:
     # As not all programs respect XDG conventions, this recipe creates symlinks
