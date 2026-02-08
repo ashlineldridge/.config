@@ -1,6 +1,8 @@
-theme = GitHub Dark High Contrast
-font-family = "Aporetic Sans Mono"
-font-size = "14"
+# Run `ghostty +list-themes` to see them all.
+# Run CMD+SHIFT+, to reload config in ghostty.
+theme = Dark Pastel
+font-family = Aporetic Sans Mono
+font-size = 15
 window-padding-x = 12
 window-padding-y = 0,2
 window-padding-balance = true
