@@ -1299,9 +1299,6 @@ With prefix ARG, the working directory can be selected."
 (use-package cape
   :bind-keymap
   ("C-c c" . cape-prefix-map)
-  :bind
-  ("C-M-/" . cape-dabbrev)
-  ("C-M-?" . cape-line)
   :custom
   (cape-dabbrev-buffer-function #'buffer-list)
   (cape-line-buffer-function #'buffer-list)
@@ -1765,6 +1762,12 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   :hook
   ((go-mode go-ts-mode rust-mode rust-ts-mode) . lsp-deferred)
   (lsp-mode . lsp-enable-which-key-integration)
+  :bind
+  (:map lsp-mode-map
+   ("M-g ^" . lsp-goto-implementation)
+   ("C-c r a" . lsp-execute-code-action)
+   ("C-c r o" . lsp-organize-imports)
+   ("C-c r r" . lsp-rename))
   :custom
   (lsp-log-io nil)
   (lsp-completion-provider :none) ;; Use Corfu.
@@ -1779,34 +1782,13 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (lsp-modeline-diagnostics-enable nil)
   (lsp-modeline-code-actions-enable nil)
   (lsp-modeline-workspace-status-enable t)
-  ;; TODO: Testing...
-  (lsp-keymap-prefix "C-c l")
-  ;; TODO: Disable for now and figure out how/whether to integrate with tempel later.
-  (lsp-enable-snippet nil)
+  (lsp-keymap-prefix "C-c l") ;; TODO: Decide on better bindings.
+  (lsp-enable-snippet nil)    ;; TODO: Look into snippets.
   :init
   ;; Reduce log clutter to improve performance.
   ;; See: https://github.com/jamescherti/minimal-emacs.d
   (setq-default jsonrpc-event-hook nil)
   :config
-  ;; (setq lsp-go-analyses
-  ;;       '((nilness . t)
-  ;;         (shadow . t)
-  ;;         (unusedparams . t)
-  ;;         (unusedwrite . t)
-  ;;         (useany . t)
-  ;;         (fillreturns . t)))
-
-  ;; (setq lsp-go-hover-kind "FullDocumentation"
-  ;;       lsp-go-link-target "pkg.go.dev"
-  ;;       lsp-go-codelenses '((gc_details . t)
-  ;;                           (generate . t)
-  ;;                           (regenerate_cgo . t)
-  ;;                           (test . t)
-  ;;                           (tidy . t)
-  ;;                           (upgrade_dependency . t)
-  ;;                           (vendor . t))
-  ;;       )
-
   (lsp-register-custom-settings
    '(("gopls.completeUnimported" t t)
      ("gopls.semanticTokens" t t)
@@ -1826,15 +1808,27 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
 (use-package lsp-ui
   :hook (lsp-mode . lsp-ui-mode)
+  :bind
+  (:map lsp-ui-mode-map
+   ("M-p" . lsp-ui-doc-show)
+   ("C-M-?" . lsp-ui-peek-find-references)
+   ("C-M-." . lsp-ui-peek-find-definitions))
   :custom
   (lsp-ui-doc-enable t)
   (lsp-ui-doc-show-with-cursor nil)
   (lsp-ui-doc-show-with-mouse t)
   (lsp-ui-doc-position 'top)
   (lsp-ui-doc-delay 0.2)
-  (lsp-ui-sideline-enable nil))
+  (lsp-ui-sideline-enable nil)
+  (lsp-ui-peek-always-show t))
 
-(use-package consult-lsp)
+(use-package consult-lsp
+  :bind
+  (:map lsp-ui-mode-map
+   ("M-g o" . consult-lsp-symbols)
+   ("M-g O" . consult-lsp-file-symbols)
+   ("M-g d" . consult-lsp-diagnostics)
+   ("M-g D" . consult-lsp-file-diagnostics)))
 
 ;;;;;; Flymake
 
@@ -2337,7 +2331,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "")
   (eshell-visual-commands
-   '("claude" "goose" "opencode" "vi" "vim"))
+   '("agent" "claude" "gemini" "goose" "k9s" "opencode" "vi" "vim"))
   :config
   (require 'esh-mode)
   (require 'em-hist)
@@ -2376,16 +2370,6 @@ With prefix ARG, the full 40 character commit hash will be copied."
            ("integration" "integration/*")
            (:exclude ".dir-locals.el" "*-tests.el")))
   :preface
-  (defun my/eat-new-line ()
-    "Send a new line to the current `eat' terminal."
-    (interactive)
-    (eat-term-send-string eat-terminal "\C-j"))
-
-  (defun my/eat-send-ctrl-g ()
-    "Send C-g to the current `eat' terminal."
-    (interactive)
-    (eat-term-send-string eat-terminal "\C-g"))
-
   (defun my/eat-emacs-mode-init (&optional _)
     "Init function for `eat-emacs-mode'."
     (eat--set-cursor nil :block)
@@ -2398,12 +2382,33 @@ With prefix ARG, the full 40 character commit hash will be copied."
     (eat--set-cursor nil :invisible)
     (lin-mode -1))
 
+  (defun my/eat-new-line ()
+    "Send a new line to the current `eat' terminal."
+    (interactive)
+    (eat-term-send-string eat-terminal "\C-j"))
+
+  (defun my/eat-send-ctrl-g ()
+    "Send C-g to the current `eat' terminal."
+    (interactive)
+    (eat-term-send-string eat-terminal "\C-g"))
+
+  (defun my/eat-emacs-mode-toggle ()
+    "Toggle between `eat-emacs-mode' and `eat-semi-char-mode'."
+    (interactive)
+    (unless eat-terminal
+      (error "Eat terminal is not running"))
+    (if eat--semi-char-mode
+        (eat-emacs-mode)
+      (eat-semi-char-mode)))
+
   :bind
   (:map eat-mode-map
    ("C-M-a" . eat-previous-shell-prompt)
    ("C-M-e" . eat-next-shell-prompt)
    ("S-<return>" . my/eat-new-line)
+   ("C-z C-z" . my/eat-emacs-mode-toggle)
    :map eat-semi-char-mode-map
+   ("M-/" . nil)
    ("C-S-g" . my/eat-send-ctrl-g))
 
   :hook
