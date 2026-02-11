@@ -139,16 +139,6 @@ run = ['layout floating']
 if.app-id = 'com.apple.finder'
 run = ['layout floating']
 
-# Float Messages.
-[[on-window-detected]]
-if.app-id = 'com.apple.MobileSMS'
-run = ['layout floating']
-
-# Float WhatsAPp.
-[[on-window-detected]]
-if.app-id = 'net.whatsapp.WhatsApp'
-run = ['layout floating']
-
 # Float Reminders.
 [[on-window-detected]]
 if.app-id = 'com.apple.reminders'
