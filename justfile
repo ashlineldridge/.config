@@ -49,8 +49,9 @@ ai-upgrade:
     brew upgrade opencode
 
 symlink-install:
-    # As not all programs respect XDG conventions, this recipe creates symlinks
-    # back to files in this repo so that they get source controlled.
+    # Not all programs respect XDG conventions and this recipe creates symlinks
+    # back to files in this repo so that they get source controlled. It also
+    # symlinks source-controlled bin files into ~/bin.
     @echo ">>> Installing symlinks"
     ln -sf ~/.config/zsh/lib/env.zsh ~/.zshenv
     mkdir -p ~/.local/share/gnupg
@@ -58,5 +59,7 @@ symlink-install:
     ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
     ln -sf ~/.config/claude/*.json ~/.claude/
     ln -sf ~/.config/cursor/*.json ~/Library/Application\ Support/Cursor/User/
+    mkdir -p ~/bin
+    for f in ~/.config/bin/*; do ln -sf "$f" ~/bin/; done
 
 install: symlink-install brew-install emacs-install
