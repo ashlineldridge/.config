@@ -1086,7 +1086,7 @@ With prefix ARG, the working directory can be selected."
     (let ((default-directory (my/project-current-root)))
       (my/async-shell-command arg)))
 
-  (defun my/project-update-list ()
+  (defun my/project-refresh-all ()
     "Update list of known projects."
     (interactive)
     (project-forget-zombie-projects)
@@ -1096,7 +1096,7 @@ With prefix ARG, the working directory can be selected."
   :bind
   ("C-M-&" . my/project-async-shell-command)
   ("C-x p j" . project-dired)
-  ("C-x p u" . my/project-update-list)
+  ("C-x p R" . my/project-refresh-all)
   :custom
   (project-switch-commands
    '((magit-project-status "Magit" ?g)
@@ -1582,7 +1582,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
           my/consult-dir-source-local-subdir))
 
   ;; Refresh projects maintained by `consult-dir' when the main list is updated.
-  (advice-add #'my/project-update-list
+  (advice-add #'my/project-refresh-all
               :after (lambda () (consult-dir--project-list-make t))))
 
 (use-package embark
@@ -2294,7 +2294,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
                 (arg (nth (max 0 (- num-args n 1)) args)))
       (insert (substring-no-properties (format "%s" arg)))))
 
-  (defun my/eshell-update-aliases ()
+  (defun my/eshell-refresh-aliases ()
     "Update Eshell aliases from disk."
     (interactive)
     (eshell-read-aliases-list))
@@ -2330,8 +2330,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (eshell-hist-ignoredups t)
   (eshell-prompt-function #'my/eshell-prompt)
   (eshell-banner-message "")
-  (eshell-visual-commands
-   '("agent" "claude" "gemini" "goose" "k9s" "opencode" "vi" "vim"))
+  (eshell-visual-commands '("vi" "vim" "top" "htop" "k9s"))
   :config
   (require 'esh-mode)
   (require 'em-hist)
@@ -2412,9 +2411,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
    ("C-S-g" . my/eat-send-ctrl-g))
 
   :hook
-  ;; I prefer the experience of opening terminal apps in a dedicated Eat buffer
-  ;; rather than enabling `eat-eshell-mode' and running them directly within
-  ;; Eshell. Terminal commands are registered in `eshell-visual-commands'.
+  ;; Run terminal commands in Eat using `eshell/v' alias.
   (eshell-load . eat-eshell-visual-command-mode)
   :custom
   (eat-term-scrollback-size 500000)
