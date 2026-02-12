@@ -955,21 +955,23 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
 
   (defun my/abbreviate-file-name (path max-len)
     "Return an abbreviated version of PATH aiming for <= MAX-LEN characters."
-    (let* ((parts (split-string (abbreviate-file-name path) "/"))
-           (len (+ (1- (length parts)) (cl-reduce '+ parts :key 'length)))
-           (str ""))
+    (let* ((path (abbreviate-file-name path))
+           (parts (split-string path "/"))
+           (len (length path))
+           (i 0))
       (while (and (> len max-len)
-                  (cdr parts))
-        (setq len (- len (1- (length (car parts)))))
-        (setq parts (cdr parts))
-        (setq str (concat str (cond ((= 0 (length (car parts))) "/")
-                                    ((= 1 (length (car parts)))
-                                     (concat (car parts) "/"))
-                                    (t
-                                     (if (string= "." (string (elt (car parts) 0)))
-                                         (concat (substring (car parts) 0 2) "/")
-                                       (string (elt (car parts) 0) ?/)))))))
-      (concat str (cl-reduce (lambda (a b) (concat a "/" b)) parts))))
+                  (< i (1- (length parts))))
+        (let* ((part (nth i parts))
+               (abbrev (cond
+                        ((or (string-empty-p part) (<= (length part) 1)) part)
+                        ((string-prefix-p "." part) (substring part 0 2))
+                        (t (substring part 0 1))))
+               (saved (- (length part) (length abbrev))))
+          (when (> saved 0)
+            (setcar (nthcdr i parts) abbrev)
+            (setq len (- len saved))))
+        (setq i (1+ i)))
+      (string-join parts "/")))
 
   :bind
   ;; Shorter save/quit buffer bindings.
