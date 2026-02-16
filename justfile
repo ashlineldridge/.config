@@ -22,13 +22,14 @@ emacs-install: emacs-clean
     sudo cp -r /opt/homebrew/opt/emacs-plus@{{emacs-version}}/Emacs.app /Applications/
     sudo chown -R {{mac-user}}:{{mac-group}} /Applications/Emacs.app
     @echo "-----"
-    @echo "Emacs has been installed."
-    @echo "Remember to enable Emacs notifications and update Raycast hotkey."
+    @echo "Emacs has been successfully installed"
 
 emacs-uninstall:
     @echo ">>> Uninstalling Emacs"
     brew uninstall emacs-plus@{{emacs-version}}
     sudo rm -rf /Applications/Emacs.app
+    @echo "-----"
+    @echo "Emacs has been successfully uninstalled"
 
 emacs-clean:
     @echo ">>> Cleaning all Emacs packages"
@@ -36,8 +37,10 @@ emacs-clean:
     rm -rf emacs/var/eln-cache
     rm -rf emacs/eln-cache
     rm -rf emacs/var/treesit
+    @echo "-----"
+    @echo "Emacs packages have cleaned"
 
-ai-upgrade:
+agent-upgrade:
     @echo ">>> Upgrading AI agents"
     @echo "\n----- Upgrading Claude Code"
     claude update
@@ -47,6 +50,8 @@ ai-upgrade:
     brew upgrade gemini-cli
     @echo "\n---- Upgrading OpenCode"
     brew upgrade opencode
+    @echo "-----"
+    @echo "AI agents have been ugpraded"
 
 symlink-install:
     # Not all programs respect XDG conventions and this recipe creates symlinks
@@ -61,5 +66,7 @@ symlink-install:
     ln -sf ~/.config/cursor/*.json ~/Library/Application\ Support/Cursor/User/
     mkdir -p ~/bin
     for f in ~/.config/bin/*; do ln -sf "$f" ~/bin/; done
+    @echo "-----"
+    @echo "Symlinks have been installed"
 
 install: symlink-install brew-install emacs-install
