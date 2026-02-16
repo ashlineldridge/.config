@@ -2617,10 +2617,9 @@ With prefix ARG, the full 40 character commit hash will be copied."
     "Custom compares agenda items A and B based on their todo keywords."
     (when-let* ((state-a (get-text-property 14 'todo-state a))
                 (state-b (get-text-property 14 'todo-state b))
-                (cmp (--map (cl-position-if
-                             (lambda (x) (equal x it))
-                             my/org-agenda-todo-sort-order)
-                            (list state-a state-b))))
+                (cmp (mapcar (lambda (s)
+                               (cl-position s my/org-agenda-todo-sort-order :test #'equal))
+                             (list state-a state-b))))
       (cond ((apply '> cmp) 1)
             ((apply '< cmp) -1)
             (t nil))))
