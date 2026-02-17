@@ -292,8 +292,6 @@
    ("]" . enlarge-window)
    ("[" . shrink-window))
   :custom
-  ;; WORK-IN-PROGRESS: Experimenting with all window display settings.
-  ;; See: https://www.gnu.org/software/emacs/manual/html_node/elisp/The-Zen-of-Buffer-Display.html.
   (even-window-sizes 'height-only)
   (split-height-threshold 100)
   (split-width-threshold 120)
@@ -302,11 +300,14 @@
   (window-combination-resize t)
   ;; Display buffer configuration.
   (display-buffer-alist
-   `(;; Hide by default. The `allow-no-window' setting isn't always required
-     ;; and it the has side effect of breaking other-window style commands.
+   `(;; Hide window. Note: `allow-no-window' setting isn't always required
+     ;; and it can break other-window style commands.
      ("\\*Warnings\\*"
       (display-buffer-no-window)
       (allow-no-window . t))
+     ;; Display in same window.
+     ("\\(\\*Async Shell Command\\*\\|CAPTURE-prompts.*\\.org\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
+      (display-buffer-same-window))
      ;; Display below current window in a regular window.
      ("\\(CAPTURE-.*\\.org\\|\\*vc-log\\*\\)"
       (display-buffer-below-selected)
@@ -320,10 +321,7 @@
       (window-parameters . ((mode-line-format . none))))
      ;; Display in same mode window.
      ("\\(\\*eldoc\\|\\*helpful\\)"
-      (display-buffer-reuse-mode-window))
-     ;; Display in same window.
-     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
-      (display-buffer-same-window))))
+      (display-buffer-reuse-mode-window))))
 
   :config
   ;; The default value of 0 causes point to be recentered when it scrolls off
@@ -2371,47 +2369,56 @@ With prefix ARG, the full 40 character commit hash will be copied."
            ("integration" "integration/*")
            (:exclude ".dir-locals.el" "*-tests.el")))
   :preface
-  (defun my/eat-emacs-mode-init (&optional _)
-    "Init function for `eat-emacs-mode'."
-    (eat--set-cursor nil :block)
-    (lin-mode 1)
-    (move-to-window-line-top-bottom 0)
-    (pulsar-pulse-line))
-
-  (defun my/eat-char-mode-init (&optional _)
-    "Init function for `eat-char-mode' and `eat-semi-char-mode'."
-    (eat--set-cursor nil :invisible)
-    (lin-mode -1))
+  (defvar my/eat-prompt-use-text nil)
 
   (defun my/eat-new-line ()
     "Send a new line to the current `eat' terminal."
     (interactive)
     (eat-term-send-string eat-terminal "\C-j"))
 
-  (defun my/eat-send-ctrl-g ()
-    "Send C-g to the current `eat' terminal."
-    (interactive)
-    (eat-term-send-string eat-terminal "\C-g"))
-
-  (defun my/eat-emacs-mode-toggle ()
-    "Toggle between `eat-emacs-mode' and `eat-semi-char-mode'."
+  (defun my/eat-input-toggle ()
+    "Toggle between `eat-semi-char-mode' and `eat-emacs-mode'."
     (interactive)
     (unless eat-terminal
       (error "Eat terminal is not running"))
     (if eat--semi-char-mode
-        (eat-emacs-mode)
-      (eat-semi-char-mode)))
+        (progn
+          (eat-emacs-mode)
+          (eat--set-cursor nil :block)
+          (pulsar-pulse-line))
+      (eat-semi-char-mode)
+      (eat--set-cursor nil :underline)))
+
+  (defun my/eat-capture-prompt ()
+    "Compose a prompt via `org-capture' and send it to the Eat terminal."
+    (interactive)
+    (org-capture nil "z"))
+
+  (defun my/eat-capture-before-finalize ()
+    "Send the captured prompt body to the Eat terminal."
+    (when-let* ((buf (org-capture-get :original-buffer))
+                ((buffer-live-p buf))
+                (terminal (buffer-local-value 'eat-terminal buf)))
+      (let ((body (save-excursion
+                    (org-back-to-heading t)
+                    (org-end-of-meta-data t)
+                    (string-trim
+                     (buffer-substring-no-properties
+                      (point) (org-entry-end-position))))))
+        (when my/eat-prompt-use-text
+          (setq body (org-export-string-as body 'ascii t)))
+        (unless (string-empty-p body)
+          (with-current-buffer buf
+            (eat-term-send-string-as-yank terminal (list body)))))))
 
   :bind
   (:map eat-mode-map
    ("C-M-a" . eat-previous-shell-prompt)
    ("C-M-e" . eat-next-shell-prompt)
    ("S-<return>" . my/eat-new-line)
-   ("C-z C-z" . my/eat-emacs-mode-toggle)
+   ("C-z C-z" . my/eat-input-toggle)
    :map eat-semi-char-mode-map
-   ("M-/" . nil)
-   ("C-S-g" . my/eat-send-ctrl-g))
-
+   ("C-z p" . my/eat-capture-prompt))
   :hook
   ;; Run terminal commands in Eat using `eshell/v' alias.
   (eshell-load . eat-eshell-visual-command-mode)
@@ -2420,12 +2427,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   :config
   (my/unbind-common-keys eat-char-mode-map)
   (my/unbind-common-keys eat-semi-char-mode-map)
-  (my/unbind-common-keys eat-eshell-char-mode-map)
-
-  ;; Init Eat internal modes using after advice as they don't have proper hooks.
-  (advice-add #'eat-emacs-mode :after #'my/eat-emacs-mode-init)
-  (advice-add #'eat-char-mode :after #'my/eat-char-mode-init)
-  (advice-add #'eat-semi-char-mode :after #'my/eat-char-mode-init))
+  (my/unbind-common-keys eat-eshell-char-mode-map))
 
 (use-package vterm
   :defines (vterm-mode-map vterm-eval-cmds)
@@ -2492,6 +2494,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (defvar my/org-journal-file (expand-file-name "journal.org" my/org-other-dir))
   (defvar my/org-bookmarks-file (expand-file-name "bookmarks.org" my/org-other-dir))
   (defvar my/org-coffee-file (expand-file-name "coffee.org" my/org-other-dir))
+  (defvar my/org-prompts-file (expand-file-name "prompts.org" my/org-other-dir))
   ;; Extra electric pairs to use in Org mode.
   (defvar my/org-extra-electric-pairs '((?/ . ?/) (?= . ?=) (?~ . ?~)))
 
@@ -2775,7 +2778,16 @@ specified then a task category will be determined by the item's tags."
         "  - Next time: Grind a bit finer\n"
         "- Taste notes:\n"
         "  - Yum yum\n")
-      :jump-to-captured t))))
+      :jump-to-captured t)
+     ("z" "Agent Prompt" entry
+      (file+olp+datetree ,my/org-prompts-file "Prompts")
+      ,(concat
+        "* Prompt %<%I:%M%p>\n"
+        ":PROPERTIES:\n"
+        ":DIRECTORY: %(buffer-local-value 'default-directory (org-capture-get :original-buffer))\n"
+        ":END:\n"
+        "%?")
+      :before-finalize my/eat-capture-before-finalize))))
 
 (use-package org-clock
   :ensure nil
