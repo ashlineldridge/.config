@@ -306,12 +306,12 @@
       (display-buffer-no-window)
       (allow-no-window . t))
      ;; Display in same window.
-     ("\\(\\*Async Shell Command\\*\\|CAPTURE-prompts.*\\.org\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
+     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
       (display-buffer-same-window))
      ;; Display below current window in a regular window.
      ("\\(CAPTURE-.*\\.org\\|\\*vc-log\\*\\)"
       (display-buffer-below-selected)
-      (window-height . 16))
+      (window-height . 24))
      ;; Display below current window in a side window with no mode line.
      ("\\*\\(Org \\(Select\\|Note\\)\\|Agenda Commands\\)\\*"
       (display-buffer-in-side-window)
@@ -2369,65 +2369,99 @@ With prefix ARG, the full 40 character commit hash will be copied."
            ("integration" "integration/*")
            (:exclude ".dir-locals.el" "*-tests.el")))
   :preface
-  (defvar my/eat-prompt-use-text nil)
+  (defvar my/eat-agents
+    '(("Claude" . "claude --dangerously-skip-permissions")
+      ("Cursor" . "agent")))
+  (defvar my/eat-capture-export-text nil)
 
   (defun my/eat-new-line ()
     "Send a new line to the current `eat' terminal."
     (interactive)
-    (eat-term-send-string eat-terminal "\C-j"))
+    (eat-term-send-string eat-terminal "\n"))
 
-  (defun my/eat-input-toggle ()
-    "Toggle between `eat-semi-char-mode' and `eat-emacs-mode'."
+  (defun my/eat-agent ()
+    "Run an agent in an Eat terminal in Emacs mode."
     (interactive)
-    (unless eat-terminal
-      (error "Eat terminal is not running"))
-    (if eat--semi-char-mode
-        (progn
-          (eat-emacs-mode)
-          (eat--set-cursor nil :block)
-          (pulsar-pulse-line))
-      (eat-semi-char-mode)
-      (eat--set-cursor nil :underline)))
+    (let* ((agent (completing-read "Agent: " my/eat-agents nil t))
+           (command (alist-get agent my/eat-agents nil nil #'equal))
+           (slug (downcase (string-replace " " "-" agent)))
+           (default-directory (or (my/project-current-root) default-directory))
+           (dir-name (or (file-name-nondirectory (directory-file-name default-directory)) "unknown"))
+           (eat-buffer-name (format "*%s:%s*" slug dir-name))
+           (prompts-file
+            (expand-file-name
+             (format "%s-%s-%s.org"
+                     (string-remove-prefix "." dir-name) slug
+                     (format-time-string "%Y%m%d-%H%M%S")) my/org-prompts-dir)))
+      (unless (file-exists-p prompts-file)
+        (with-temp-file prompts-file
+          (insert
+           "#+title: Agent Prompts\n"
+           "#+created: " (format-time-string "%Y-%m-%d") "\n"
+           "#+directory: " default-directory "\n"
+           "#+agent: " command "\n\n"
+           "* Prompts\n")))
+      (let ((buf (eat command t)))
+        ;; TODO: Kludge for switching to `eat-emacs-mode' after a delay
+        ;; so that the cursor is set correctly. Revisit this!
+        (run-at-time 0.5 nil (lambda ()
+                               (with-current-buffer buf
+                                 (setq-local my/eat-prompts-file prompts-file)
+                                 (eat-emacs-mode)))))))
 
-  (defun my/eat-capture-prompt ()
-    "Compose a prompt via `org-capture' and send it to the Eat terminal."
-    (interactive)
-    (org-capture nil "z"))
+  (defun my/eat-prompts-file ()
+    "Return the prompts file for the current capture's originating eat buffer."
+    (buffer-local-value 'my/eat-prompts-file
+                        (org-capture-get :original-buffer)))
+
+  (defun my/eat-capture (arg)
+    "Compose a prompt via `org-capture' and send it to the Eat terminal.
+With prefix ARG, insert without submitting."
+    (interactive "P")
+    (org-capture nil "z")
+    (org-capture-put :no-submit arg))
 
   (defun my/eat-capture-before-finalize ()
     "Send the captured prompt body to the Eat terminal."
-    (when-let* ((buf (org-capture-get :original-buffer))
-                ((buffer-live-p buf))
-                (terminal (buffer-local-value 'eat-terminal buf)))
+    (when-let* ((eat-buf (org-capture-get :original-buffer))
+                (term (buffer-local-value 'eat-terminal eat-buf)))
       (let ((body (save-excursion
                     (org-back-to-heading t)
                     (org-end-of-meta-data t)
                     (string-trim
                      (buffer-substring-no-properties
                       (point) (org-entry-end-position))))))
-        (when my/eat-prompt-use-text
+        (when my/eat-capture-export-text
           (setq body (org-export-string-as body 'ascii t)))
         (unless (string-empty-p body)
-          (with-current-buffer buf
-            (eat-term-send-string-as-yank terminal (list body)))))))
+          (with-current-buffer eat-buf
+            (eat-term-send-string term body)
+            (unless (org-capture-get :no-submit)
+              (eat-term-input-event term 1 'return)))))))
 
   :bind
-  (:map eat-mode-map
+  (("C-z a" . my/eat-agent)
+   :map eat-mode-map
    ("C-M-a" . eat-previous-shell-prompt)
    ("C-M-e" . eat-next-shell-prompt)
    ("S-<return>" . my/eat-new-line)
-   ("C-z C-z" . my/eat-input-toggle)
-   :map eat-semi-char-mode-map
-   ("C-z p" . my/eat-capture-prompt))
+   ("C-z C-z" . my/eat-capture))
   :hook
-  ;; Run terminal commands in Eat using `eshell/v' alias.
   (eshell-load . eat-eshell-visual-command-mode)
   :custom
   (eat-term-scrollback-size 500000)
   :config
   (my/unbind-common-keys eat-char-mode-map)
   (my/unbind-common-keys eat-semi-char-mode-map)
-  (my/unbind-common-keys eat-eshell-char-mode-map))
+  (my/unbind-common-keys eat-eshell-char-mode-map)
+  (advice-add 'eat-emacs-mode :after
+              (lambda (&rest _)
+                (when (bound-and-true-p my/eat-prompts-file)
+                  (eat--set-cursor nil :block))))
+  (advice-add 'eat-semi-char-mode :after
+              (lambda (&rest _)
+                (when (bound-and-true-p my/eat-prompts-file)
+                  (eat--set-cursor nil :underline)))))
 
 (use-package vterm
   :defines (vterm-mode-map vterm-eval-cmds)
@@ -2485,6 +2519,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (defvar my/org-notes-dir (expand-file-name "~/dev/home/org/notes/"))
   (defvar my/org-agenda-dir (expand-file-name "~/dev/home/org/agenda/"))
   (defvar my/org-other-dir (expand-file-name "~/dev/home/org/other/"))
+  (defvar my/org-prompts-dir (expand-file-name "~/dev/home/org/prompts/"))
   (defvar my/org-inbox-file (expand-file-name "inbox.org" my/org-agenda-dir))
   (defvar my/org-personal-file (expand-file-name "personal.org" my/org-agenda-dir))
   (defvar my/org-work-file (expand-file-name "work.org" my/org-agenda-dir))
@@ -2494,7 +2529,6 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (defvar my/org-journal-file (expand-file-name "journal.org" my/org-other-dir))
   (defvar my/org-bookmarks-file (expand-file-name "bookmarks.org" my/org-other-dir))
   (defvar my/org-coffee-file (expand-file-name "coffee.org" my/org-other-dir))
-  (defvar my/org-prompts-file (expand-file-name "prompts.org" my/org-other-dir))
   ;; Extra electric pairs to use in Org mode.
   (defvar my/org-extra-electric-pairs '((?/ . ?/) (?= . ?=) (?~ . ?~)))
 
@@ -2780,13 +2814,8 @@ specified then a task category will be determined by the item's tags."
         "  - Yum yum\n")
       :jump-to-captured t)
      ("z" "Agent Prompt" entry
-      (file+olp+datetree ,my/org-prompts-file "Prompts")
-      ,(concat
-        "* Prompt %<%I:%M%p>\n"
-        ":PROPERTIES:\n"
-        ":DIRECTORY: %(buffer-local-value 'default-directory (org-capture-get :original-buffer))\n"
-        ":END:\n"
-        "%?")
+      (file+olp+datetree my/eat-prompts-file "Prompts")
+      "* Prompt %U\n%?"
       :before-finalize my/eat-capture-before-finalize))))
 
 (use-package org-clock
