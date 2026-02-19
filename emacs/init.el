@@ -1104,7 +1104,7 @@ With prefix ARG, the working directory can be selected."
      (project-find-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
      (my/project-async-shell-command "Command" ?&)
-     (project-query-replace-regexp "Replace" ?x))))
+     (my/eat-agent "Agent" ?z))))
 
 ;;;; Minibuffer
 
@@ -2372,7 +2372,12 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (defvar my/eat-agents
     '(("Claude" . "claude --dangerously-skip-permissions")
       ("Cursor" . "agent")))
-  (defvar my/eat-capture-export-text nil)
+  (defvar my/eat-insert-capture-text-output nil)
+
+  (defun my/eat-toggle-mode ()
+    "Toggle between `eat-emacs-mode' and `eat-semi-char-mode'."
+    (interactive)
+    (if eat--semi-char-mode (eat-emacs-mode) (eat-semi-char-mode)))
 
   (defun my/eat-new-line ()
     "Send a new line to the current `eat' terminal."
@@ -2380,7 +2385,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
     (eat-term-send-string eat-terminal "\n"))
 
   (defun my/eat-agent ()
-    "Run an agent in an Eat terminal in Emacs mode."
+    "Run an agent in an Eat terminal."
     (interactive)
     (let* ((agent (completing-read "Agent: " my/eat-agents nil t))
            (command (alist-get agent my/eat-agents nil nil #'equal))
@@ -2401,27 +2406,20 @@ With prefix ARG, the full 40 character commit hash will be copied."
            "#+directory: " default-directory "\n"
            "#+agent: " command "\n\n"
            "* Prompts\n")))
-      (let ((buf (eat command t)))
-        ;; TODO: Kludge for switching to `eat-emacs-mode' after a delay
-        ;; so that the cursor is set correctly. Revisit this!
-        (run-at-time 0.5 nil (lambda ()
-                               (with-current-buffer buf
-                                 (setq-local my/eat-prompts-file prompts-file)
-                                 (eat-emacs-mode)))))))
+      (with-current-buffer (eat command t)
+        (setq-local my/eat-prompts-file prompts-file))))
 
   (defun my/eat-prompts-file ()
     "Return the prompts file for the current capture's originating eat buffer."
     (buffer-local-value 'my/eat-prompts-file
                         (org-capture-get :original-buffer)))
 
-  (defun my/eat-capture (arg)
-    "Compose a prompt via `org-capture' and send it to the Eat terminal.
-With prefix ARG, insert without submitting."
-    (interactive "P")
-    (org-capture nil "z")
-    (org-capture-put :no-submit arg))
+  (defun my/eat-insert-capture ()
+    "Compose a prompt via `org-capture' and send it to the Eat terminal."
+    (interactive)
+    (org-capture nil "z"))
 
-  (defun my/eat-capture-before-finalize ()
+  (defun my/eat-insert-capture-before-finalize ()
     "Send the captured prompt body to the Eat terminal."
     (when-let* ((eat-buf (org-capture-get :original-buffer))
                 (term (buffer-local-value 'eat-terminal eat-buf)))
@@ -2431,13 +2429,11 @@ With prefix ARG, insert without submitting."
                     (string-trim
                      (buffer-substring-no-properties
                       (point) (org-entry-end-position))))))
-        (when my/eat-capture-export-text
+        (when my/eat-insert-capture-text-output
           (setq body (org-export-string-as body 'ascii t)))
         (unless (string-empty-p body)
           (with-current-buffer eat-buf
-            (eat-term-send-string term body)
-            (unless (org-capture-get :no-submit)
-              (eat-term-input-event term 1 'return)))))))
+            (eat-term-send-string term body))))))
 
   :bind
   (("C-z a" . my/eat-agent)
@@ -2445,7 +2441,8 @@ With prefix ARG, insert without submitting."
    ("C-M-a" . eat-previous-shell-prompt)
    ("C-M-e" . eat-next-shell-prompt)
    ("S-<return>" . my/eat-new-line)
-   ("C-z C-z" . my/eat-capture))
+   ("C-z i" . my/eat-insert-capture)
+   ("C-z C-z" . my/eat-toggle-mode))
   :hook
   (eshell-load . eat-eshell-visual-command-mode)
   :custom
@@ -2816,7 +2813,7 @@ specified then a task category will be determined by the item's tags."
      ("z" "Agent Prompt" entry
       (file+olp+datetree my/eat-prompts-file "Prompts")
       "* Prompt %U\n%?"
-      :before-finalize my/eat-capture-before-finalize))))
+      :before-finalize my/eat-insert-capture-before-finalize))))
 
 (use-package org-clock
   :ensure nil
