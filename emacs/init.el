@@ -2224,8 +2224,6 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (declare-function eshell-interrupt-process "esh-proc")
   (declare-function eshell-add-input-to-history "em-hist")
   (declare-function eshell--save-history "em-hist")
-  (declare-function eshell-atuin--pre-exec "eshell-atuin")
-  (declare-function eshell-atuin--post-exec "eshell-atuin")
 
   (defun my/eshell-init ()
     "Init function for `eshell-mode'."
@@ -2254,10 +2252,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
     "Run the current Eshell command line asynchronously."
     (interactive)
     (let ((cmd (string-trim (eshell-get-old-input))))
-      (eshell-atuin--pre-exec)
       (my/async-shell-command nil cmd)
-      (let ((eshell-last-command-status 0))
-        (eshell-atuin--post-exec))
       (eshell-add-input-to-history cmd)
       (eshell-interrupt-process)))
 
@@ -2311,7 +2306,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
    :map eshell-mode-map
    ("C-c C-o" . nil)
    ("C-c i" . my/eshell-insert-arg)
-   ("C-c h" . eshell-atuin-history)
+   ("C-c h" . consult-history)
    ("C-c RET" . my/eshell-async-send)
    ;; Defun-style prompt navigation.
    ("C-M-a" . eshell-previous-prompt)
@@ -2333,60 +2328,25 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (eshell-visual-commands '("vi" "vim" "top" "htop" "k9s"))
   :config
   (require 'esh-mode)
-  (require 'em-hist)
-  (eshell-atuin-mode))
-
-(use-package eshell-atuin
-  :preface
-  (declare-function eshell-atuin--get-input "eshell-atuin")
-  :custom
-  (eshell-atuin-search-fields '(command time))
-  (eshell-atuin-history-format "%-80c %t")
-  ;; Duration is misleading for async commands anyway.
-  (eshell-atuin-save-duration t)
-  :commands eshell-atuin-mode
-  :config
-  ;; Workaround for empty string handling.
-  ;; See: https://github.com/SqrtMinusOne/eshell-atuin/issues/13.
-  (advice-add #'eshell-atuin--pre-exec :around
-              (lambda (fn &rest args)
-                (when-let* ((input (eshell-atuin--get-input)))
-                  (unless (string-empty-p input)
-                    (apply fn args)))))
-  (advice-add #'eshell-atuin--post-exec :around
-              (lambda (fn &rest args)
-                (when (and eshell-atuin--history-id
-                           (not (string-empty-p eshell-atuin--history-id)))
-                  (apply fn args)))))
+  (require 'em-hist))
 
 (use-package eat
-  :ensure
-  ;; Include file list recommended in docs.
-  (:files ("*.el" "*.texi" "*.ti"
-           ("term" "term/*.el")
-           ("terminfo/e" "terminfo/e/*")
-           ("terminfo/65" "terminfo/65/*")
-           ("integration" "integration/*")
-           (:exclude ".dir-locals.el" "*-tests.el")))
+  :ensure (:files ("*.el" "*.texi" "*.ti"
+                   ("term" "term/*.el")
+                   ("terminfo/e" "terminfo/e/*")
+                   ("terminfo/65" "terminfo/65/*")
+                   ("integration" "integration/*")
+                   (:exclude ".dir-locals.el" "*-tests.el")))
   :preface
   (defvar my/eat-agents
     '(("Claude" . "claude --dangerously-skip-permissions")
       ("Cursor" . "agent")))
   (defvar my/eat-insert-capture-text-output nil)
 
-  (defun my/eat-toggle-mode ()
-    "Toggle between `eat-emacs-mode' and `eat-semi-char-mode'."
-    (interactive)
-    (if eat--semi-char-mode (eat-emacs-mode) (eat-semi-char-mode)))
-
-  (defun my/eat-new-line ()
-    "Send a new line to the current `eat' terminal."
-    (interactive)
-    (eat-term-send-string eat-terminal "\n"))
-
   (defun my/eat-agent ()
     "Run an agent in an Eat terminal."
     (interactive)
+    (require 'eat)
     (let* ((agent (completing-read "Agent: " my/eat-agents nil t))
            (command (alist-get agent my/eat-agents nil nil #'equal))
            (slug (downcase (string-replace " " "-" agent)))
