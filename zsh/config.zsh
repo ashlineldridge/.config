@@ -12,8 +12,6 @@ libs=(
   aliases.zsh
   functions.zsh
   completion.zsh
-  zinit.zsh
-  atuin.zsh
 )
 
 # Configure eat if we're running it.
@@ -42,3 +40,5 @@ done
 if [[ -f "${XDG_CONFIG_HOME}/zsh/lib/private.zsh" ]]; then
   source "${XDG_CONFIG_HOME}/zsh/lib/private.zsh"
 fi
+
+. "$HOME/.local/share/../bin/env"

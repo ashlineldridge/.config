@@ -2376,17 +2376,51 @@ With prefix ARG, the full 40 character commit hash will be copied."
            "#+agent: " command "\n\n"
            "* Prompts\n")))
       (with-current-buffer (eat command t)
-        (setq-local my/eat-prompts-file prompts-file))))
+        (setq-local my/eat-prompts-file prompts-file)
+        (setq-local outline-regexp "^❯ ")
+        ;; Suppress automatic resize/SIGWINCH to prevent constantly re-rendering the text.
+        (when-let* ((proc (get-buffer-process (current-buffer))))
+          (process-put proc 'adjust-window-size-function #'ignore)))))
 
-  (defun my/eat-prompts-file ()
-    "Return the prompts file for the current capture's originating eat buffer."
-    (buffer-local-value 'my/eat-prompts-file
-                        (org-capture-get :original-buffer)))
+  (defun my/eat-agent-buffer-p ()
+    "Return whether current buffer is an Eat agent buffer."
+    (bound-and-true-p my/eat-prompts-file))
+
+  (defun my/eat-agent-reflow ()
+    "Manually resize the Eat terminal to fit the current window."
+    (interactive)
+    (when-let* ((proc (get-buffer-process (current-buffer)))
+                (size (eat--adjust-process-window-size
+                       proc (get-buffer-window-list (current-buffer) nil t))))
+      (message "Reflowing eat terminal...")
+      (set-process-window-size proc (cdr size) (car size))
+      (accept-process-output proc 15)
+      (message "Reflow complete")))
+
+  (defun my/eat-toggle-mode ()
+    "Toggle between `eat-emacs-mode' and `eat-semi-char-mode'."
+    (interactive)
+    (if eat--semi-char-mode
+        (progn
+          (eat-emacs-mode)
+          (lin-mode 1))
+      (eat-semi-char-mode)
+      (lin-mode -1)))
+
+  (defun my/eat-new-line ()
+    "Send a new line to the current `eat' terminal."
+    (interactive)
+    (eat-term-send-string eat-terminal "\n"))
 
   (defun my/eat-insert-capture ()
     "Compose a prompt via `org-capture' and send it to the Eat terminal."
     (interactive)
     (org-capture nil "z"))
+
+  (defun my/eat-prompts-file ()
+    "Return the prompts file for the current capture's originating Eat buffer."
+    (buffer-local-value 'my/eat-prompts-file
+                        (org-capture-get :original-buffer)))
 
   (defun my/eat-insert-capture-before-finalize ()
     "Send the captured prompt body to the Eat terminal."
@@ -2404,29 +2438,44 @@ With prefix ARG, the full 40 character commit hash will be copied."
           (with-current-buffer eat-buf
             (eat-term-send-string term body))))))
 
+  (defun my/eat-previous-shell-prompt ()
+    "Go to the previous Eat prompt/heading."
+    (interactive)
+    (if (my/eat-agent-buffer-p)
+        (outline-previous-heading)
+      (eat-previous-shell-prompt)))
+
+  (defun my/eat-next-shell-prompt ()
+    "Go to the next Eat prompt/heading."
+    (interactive)
+    (if (my/eat-agent-buffer-p)
+        (outline-next-heading)
+      (eat-next-shell-prompt)))
+
   :bind
   (("C-z a" . my/eat-agent)
    :map eat-mode-map
-   ("C-M-a" . eat-previous-shell-prompt)
-   ("C-M-e" . eat-next-shell-prompt)
+   ("C-M-a" . my/eat-previous-shell-prompt)
+   ("C-M-e" . my/eat-next-shell-prompt)
    ("S-<return>" . my/eat-new-line)
-   ("C-z i" . my/eat-insert-capture)
-   ("C-z C-z" . my/eat-toggle-mode))
+   ("C-c C-i" . my/eat-insert-capture)
+   ("C-c C-m" . my/eat-toggle-mode)
+   ("C-c C-r" . my/eat-agent-reflow))
   :hook
   (eshell-load . eat-eshell-visual-command-mode)
   :custom
-  (eat-term-scrollback-size 500000)
+  (eat-term-scrollback-size 200000)
   :config
   (my/unbind-common-keys eat-char-mode-map)
   (my/unbind-common-keys eat-semi-char-mode-map)
   (my/unbind-common-keys eat-eshell-char-mode-map)
   (advice-add 'eat-emacs-mode :after
               (lambda (&rest _)
-                (when (bound-and-true-p my/eat-prompts-file)
+                (when (my/eat-agent-buffer-p)
                   (eat--set-cursor nil :block))))
   (advice-add 'eat-semi-char-mode :after
               (lambda (&rest _)
-                (when (bound-and-true-p my/eat-prompts-file)
+                (when (my/eat-agent-buffer-p)
                   (eat--set-cursor nil :underline)))))
 
 (use-package vterm
