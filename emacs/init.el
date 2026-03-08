@@ -125,6 +125,7 @@
 
 ;; Enable Corfu icons.
 (use-package nerd-icons-corfu
+  :disabled
   :after corfu
   :init
   (defvar corfu-margin-formatters)
@@ -1226,7 +1227,11 @@ With prefix ARG, the working directory can be selected."
   (dabbrev-check-all-buffers t)
   (dabbrev-abbrev-skip-leading-regexp "[$*/=~'&]"))
 
+;; TODO: I'm currently using Aerospace quite heavily and it interacts badly
+;; with Corfu windows and so Corfu is disabled for now.
+;; See: `global-corfu-mode', `corfu-mode' and `corfu-auto'.
 (use-package corfu
+  :disabled
   :ensure (:files (:defaults "extensions/*.el"))
   :preface
   ;; From: https://github.com/minad/corfu#transfer-completion-to-the-minibuffer.
@@ -1244,10 +1249,8 @@ With prefix ARG, the working directory can be selected."
    ("M-m" . my/corfu-move-to-minibuffer))
   :hook
   (elpaca-after-init . global-corfu-mode)
-  ;; Enable auto-completion for programming modes.
-  (prog-mode . (lambda () (setq-local corfu-auto t) (corfu-mode)))
   :custom
-  (corfu-auto nil)
+  (corfu-auto t)
   (corfu-auto-delay 0.3)
   (corfu-auto-prefix 5)
   (corfu-auto-trigger ".")
@@ -1260,10 +1263,12 @@ With prefix ARG, the working directory can be selected."
   (corfu-max-width 120)
   (corfu-scroll-margin 4)
   (global-corfu-minibuffer t)
+  (global-corfu-modes '(prog-mode))
   :config
   (add-to-list 'corfu-continue-commands #'my/corfu-move-to-minibuffer))
 
 (use-package corfu-popupinfo
+  :disabled
   :after corfu
   :ensure nil
   :bind
@@ -1278,6 +1283,7 @@ With prefix ARG, the working directory can be selected."
   (corfu-popupinfo-max-height 16))
 
 (use-package corfu-quick
+  :disabled
   :after corfu
   :ensure nil
   :bind
@@ -1288,6 +1294,7 @@ With prefix ARG, the working directory can be selected."
   (corfu-quick2 "asdfghjkl"))
 
 (use-package corfu-history
+  :disabled
   :after corfu
   :ensure nil
   :hook (global-corfu-mode . corfu-history-mode)
@@ -2236,7 +2243,9 @@ With prefix ARG, the full 40 character commit hash will be copied."
     ;; Make outline work with eshell prompts.
     (setq-local outline-regexp (concat eshell-prompt-regexp ".+"))
     ;; Quieten completion things.
-    (corfu-popupinfo-mode -1))
+    ;; TODO: Corfu is currently disabled anyway...
+    ;; (corfu-popupinfo-mode -1)
+    )
 
   (defun my/eshell-post-command ()
     "Eshell post-command hook function."
