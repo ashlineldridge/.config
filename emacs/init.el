@@ -1087,7 +1087,7 @@ With prefix ARG, the working directory can be selected."
     (let ((default-directory (my/project-current-root)))
       (my/async-shell-command arg)))
 
-  (defun my/project-refresh-all ()
+  (defun my/project-update-all ()
     "Update list of known projects."
     (interactive)
     (project-forget-zombie-projects)
@@ -1097,7 +1097,7 @@ With prefix ARG, the working directory can be selected."
   :bind
   ("C-M-&" . my/project-async-shell-command)
   ("C-x p j" . project-dired)
-  ("C-x p R" . my/project-refresh-all)
+  ("C-x p u" . my/project-update-all)
   :custom
   (project-switch-commands
    '((magit-project-status "Magit" ?g)
@@ -1589,7 +1589,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
           my/consult-dir-source-local-subdir))
 
   ;; Refresh projects maintained by `consult-dir' when the main list is updated.
-  (advice-add #'my/project-refresh-all
+  (advice-add #'my/project-update-all
               :after (lambda () (consult-dir--project-list-make t))))
 
 (use-package embark
@@ -1784,6 +1784,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (lsp-keep-workspace-alive nil)
   (lsp-eldoc-render-all t)
   (lsp-eldoc-enable-hover t)
+  (lsp-enable-file-watchers nil)
   (lsp-signature-auto-activate t)
   (lsp-signature-render-documentation t)
   (lsp-modeline-diagnostics-enable nil)
@@ -1908,7 +1909,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   :preface
   (defun my/go-ts-mode-init ()
     "Init function for `go-ts-mode'."
-    (setq-local tab-width go-ts-mode-indent-offset)
+    (setq-local tab-width go-ts-indent-offset)
     ;; Don't let tests use cached results (buffer local var used by `gotest').
     (setq-local go-test-args "-count 1"))
   :hook (go-ts-mode . my/go-ts-mode-init)
@@ -2029,7 +2030,6 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (defun my/elisp-init ()
     "Init function for `emacs-lisp-mode'."
     (setq-local outline-regexp ";;;+ [^\n]")
-    (outline-minor-mode 1)
     (setq-local eldoc-documentation-functions
                 ;; Put at the top so I can see values in single line echo area.
                 '(elisp-eldoc-var-docstring-with-value
