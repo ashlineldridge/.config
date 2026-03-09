@@ -1767,7 +1767,8 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
 
   :commands lsp-deferred
   :hook
-  ((go-mode go-ts-mode rust-mode rust-ts-mode) . lsp-deferred)
+  ;; Now that I do the majority of my development with agents, I enable
+  ;; `lsp-mode' on an as-needed basis which isn't that frequently.
   (lsp-mode . lsp-enable-which-key-integration)
   :bind
   (:map lsp-mode-map
