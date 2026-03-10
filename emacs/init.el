@@ -307,8 +307,13 @@
       (display-buffer-no-window)
       (allow-no-window . t))
      ;; Display in same window.
-     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\)"
+     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*agz:mgr\\*\\|\\*vc-dir\\*\\|magit:\\)"
       (display-buffer-same-window))
+     ;; Display in other frame if available otherwise other window.
+     ("\\*agz:agent:.*\\*"
+      (display-buffer-use-some-frame
+       display-buffer-use-some-window)
+      (inhibit-same-window . t))
      ;; Display below current window in a regular window.
      ("\\(CAPTURE-.*\\.org\\|\\*vc-log\\*\\)"
       (display-buffer-below-selected)
@@ -2454,7 +2459,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
       (eat-next-shell-prompt)))
 
   :bind
-  (("C-z a" . my/eat-agent)
+  (;; ("C-z a" . my/eat-agent) ; replaced by agz keybinds
    :map eat-mode-map
    ("C-M-a" . my/eat-previous-shell-prompt)
    ("C-M-e" . my/eat-next-shell-prompt)
@@ -2478,6 +2483,25 @@ With prefix ARG, the full 40 character commit hash will be copied."
               (lambda (&rest _)
                 (when (my/eat-agent-buffer-p)
                   (eat--set-cursor nil :underline)))))
+
+(use-package agz
+  :if (file-directory-p "~/dev/home/agz")
+  :load-path "~/dev/home/agz"
+  :bind
+  (("C-z c" . agz-create-session)
+   ("C-z r" . agz-resume-session)
+   ("C-z l" . agz-list-sessions)
+   ("C-z d" . agz-delete-session)
+   ("C-z m" . agz-mgr)
+   ("C-z o" . agz-org-session-dwim)
+   ("C-z n" . agz-org-create-session-child-node))
+  :custom
+  (agz-project-dir (expand-file-name "~/dev/home/agz/"))
+  (agz-default-agent 'claude-eat)
+  (agz-default-backend 'eat)
+  :config
+  (require 'agz-org)
+  (setq agz-org-session-files org-agenda-files))
 
 (use-package vterm
   :defines (vterm-mode-map vterm-eval-cmds)
