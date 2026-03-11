@@ -275,7 +275,6 @@
   (("M-[" . previous-buffer)
    ("M-]" . next-buffer)
    ("M-q" . bury-buffer)
-   ("M-o" . other-window)
    ("M-O =" . balance-windows)
    ("M-O }" . enlarge-window-horizontally)
    ("M-O {" . shrink-window-horizontally)
@@ -340,6 +339,25 @@
   (setq scroll-conservatively 1)
   (setq other-window-scroll-default #'my/other-window-for-scrolling))
 
+;;;;; Window Movement
+
+(use-package winum
+  :bind
+  ("M-0" . winum-select-window-0)
+  ("M-1" . winum-select-window-1)
+  ("M-2" . winum-select-window-2)
+  ("M-3" . winum-select-window-3)
+  ("M-4" . winum-select-window-4)
+  ("M-5" . winum-select-window-5)
+  ("M-6" . winum-select-window-6)
+  ("M-7" . winum-select-window-7)
+  ("M-8" . winum-select-window-8)
+  ("M-9" . winum-select-window-9)
+  :hook (elpaca-after-init . winum-mode)
+  :custom
+  (winum-scope 'global)
+  (winum-auto-setup-mode-line nil))
+
 ;;;;; Window History
 
 (use-package winner
@@ -359,6 +377,7 @@
   ;; Remove silly `suspend-frame' bindings.
   ("C-z" . nil)
   ("C-x C-z" . nil)
+  ("M-o" . next-window-any-frame)
   ("M-O M-O" . other-frame)
   ("M-O M-N" . make-frame-command)
   ("M-O M-K" . delete-frame)
@@ -840,8 +859,6 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
                   avy-isearch
                   beginning-of-buffer
                   beginning-of-defun
-                  ;; TODO: Reveals/centers but doesn't pulse?
-                  consult-preview-at-point
                   diff-hunk-next
                   diff-hunk-prev
                   end-of-buffer
@@ -873,7 +890,10 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   ;; Functions called by Embark need to be advised.
   (with-eval-after-load 'embark
     (advice-add 'embark-next-symbol :after 'my/pulsar-pulse-line)
-    (advice-add 'embark-previous-symbol :after 'my/pulsar-pulse-line)))
+    (advice-add 'embark-previous-symbol :after 'my/pulsar-pulse-line))
+  ;; Advise underlying winum function rather than every command.
+  (with-eval-after-load 'winum
+    (advice-add 'winum-select-window-by-number :after 'my/pulsar-pulse-line)))
 
 (use-package rainbow-mode)
 
