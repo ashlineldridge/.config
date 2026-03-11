@@ -306,13 +306,8 @@
       (display-buffer-no-window)
       (allow-no-window . t))
      ;; Display in same window.
-     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*agz:mgr\\*\\|\\*vc-dir\\*\\|magit:\\)"
+     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*agz:\\|\\*vc-dir\\*\\|magit:\\)"
       (display-buffer-same-window))
-     ;; Display in other frame if available otherwise other window.
-     ("\\*agz:agent:.*\\*"
-      (display-buffer-use-some-frame
-       display-buffer-use-some-window)
-      (inhibit-same-window . t))
      ;; Display below current window in a regular window.
      ("\\(CAPTURE-.*\\.org\\|\\*vc-log\\*\\)"
       (display-buffer-below-selected)
@@ -1130,7 +1125,7 @@ With prefix ARG, the working directory can be selected."
      (project-find-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
      (my/project-async-shell-command "Command" ?&)
-     (my/eat-agent "Agent" ?z))))
+     (agz-create-agent-project "Agent" ?z))))
 
 ;;;; Minibuffer
 
@@ -2372,121 +2367,6 @@ With prefix ARG, the full 40 character commit hash will be copied."
                    ("terminfo/65" "terminfo/65/*")
                    ("integration" "integration/*")
                    (:exclude ".dir-locals.el" "*-tests.el")))
-  :preface
-  (defvar my/eat-agents
-    '(("Claude" . "claude --dangerously-skip-permissions")
-      ("Cursor" . "agent")))
-  (defvar my/eat-insert-capture-text-output nil)
-
-  (defun my/eat-agent ()
-    "Run an agent in an Eat terminal."
-    (interactive)
-    (require 'eat)
-    (let* ((agent (completing-read "Agent: " my/eat-agents nil t))
-           (command (alist-get agent my/eat-agents nil nil #'equal))
-           (slug (downcase (string-replace " " "-" agent)))
-           (default-directory (or (my/project-current-root) default-directory))
-           (dir-name (or (file-name-nondirectory (directory-file-name default-directory)) "unknown"))
-           (eat-buffer-name (format "*%s:%s*" slug dir-name))
-           (prompts-file
-            (expand-file-name
-             (format "%s-%s-%s.org"
-                     (string-remove-prefix "." dir-name) slug
-                     (format-time-string "%Y%m%d-%H%M%S")) my/org-prompts-dir)))
-      (unless (file-exists-p prompts-file)
-        (with-temp-file prompts-file
-          (insert
-           "#+title: Agent Prompts\n"
-           "#+created: " (format-time-string "%Y-%m-%d") "\n"
-           "#+directory: " default-directory "\n"
-           "#+agent: " command "\n\n"
-           "* Prompts\n")))
-      (with-current-buffer (eat command t)
-        (setq-local my/eat-prompts-file prompts-file)
-        (setq-local outline-regexp "^❯ ")
-        ;; Suppress automatic resize/SIGWINCH to prevent constantly re-rendering the text.
-        (when-let* ((proc (get-buffer-process (current-buffer))))
-          (process-put proc 'adjust-window-size-function #'ignore)))))
-
-  (defun my/eat-agent-buffer-p ()
-    "Return whether current buffer is an Eat agent buffer."
-    (bound-and-true-p my/eat-prompts-file))
-
-  (defun my/eat-agent-reflow ()
-    "Manually resize the Eat terminal to fit the current window."
-    (interactive)
-    (when-let* ((proc (get-buffer-process (current-buffer)))
-                (size (eat--adjust-process-window-size
-                       proc (get-buffer-window-list (current-buffer) nil t))))
-      (message "Reflowing eat terminal...")
-      (set-process-window-size proc (cdr size) (car size))
-      (accept-process-output proc 15)
-      (message "Reflow complete")))
-
-  (defun my/eat-toggle-mode ()
-    "Toggle between `eat-emacs-mode' and `eat-semi-char-mode'."
-    (interactive)
-    (if eat--semi-char-mode
-        (progn
-          (eat-emacs-mode)
-          (lin-mode 1))
-      (eat-semi-char-mode)
-      (lin-mode -1)))
-
-  (defun my/eat-new-line ()
-    "Send a new line to the current `eat' terminal."
-    (interactive)
-    (eat-term-send-string eat-terminal "\n"))
-
-  (defun my/eat-insert-capture ()
-    "Compose a prompt via `org-capture' and send it to the Eat terminal."
-    (interactive)
-    (org-capture nil "z"))
-
-  (defun my/eat-prompts-file ()
-    "Return the prompts file for the current capture's originating Eat buffer."
-    (buffer-local-value 'my/eat-prompts-file
-                        (org-capture-get :original-buffer)))
-
-  (defun my/eat-insert-capture-before-finalize ()
-    "Send the captured prompt body to the Eat terminal."
-    (when-let* ((eat-buf (org-capture-get :original-buffer))
-                (term (buffer-local-value 'eat-terminal eat-buf)))
-      (let ((body (save-excursion
-                    (org-back-to-heading t)
-                    (org-end-of-meta-data t)
-                    (string-trim
-                     (buffer-substring-no-properties
-                      (point) (org-entry-end-position))))))
-        (when my/eat-insert-capture-text-output
-          (setq body (org-export-string-as body 'ascii t)))
-        (unless (string-empty-p body)
-          (with-current-buffer eat-buf
-            (eat-term-send-string term body))))))
-
-  (defun my/eat-previous-shell-prompt ()
-    "Go to the previous Eat prompt/heading."
-    (interactive)
-    (if (my/eat-agent-buffer-p)
-        (outline-previous-heading)
-      (eat-previous-shell-prompt)))
-
-  (defun my/eat-next-shell-prompt ()
-    "Go to the next Eat prompt/heading."
-    (interactive)
-    (if (my/eat-agent-buffer-p)
-        (outline-next-heading)
-      (eat-next-shell-prompt)))
-
-  :bind
-  (;; ("C-z a" . my/eat-agent) ; replaced by agz keybinds
-   :map eat-mode-map
-   ("C-M-a" . my/eat-previous-shell-prompt)
-   ("C-M-e" . my/eat-next-shell-prompt)
-   ("S-<return>" . my/eat-new-line)
-   ("C-c C-i" . my/eat-insert-capture)
-   ("C-c C-m" . my/eat-toggle-mode)
-   ("C-c C-r" . my/eat-agent-reflow))
   :hook
   (eshell-load . eat-eshell-visual-command-mode)
   :custom
@@ -2494,34 +2374,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   :config
   (my/unbind-common-keys eat-char-mode-map)
   (my/unbind-common-keys eat-semi-char-mode-map)
-  (my/unbind-common-keys eat-eshell-char-mode-map)
-  (advice-add 'eat-emacs-mode :after
-              (lambda (&rest _)
-                (when (my/eat-agent-buffer-p)
-                  (eat--set-cursor nil :block))))
-  (advice-add 'eat-semi-char-mode :after
-              (lambda (&rest _)
-                (when (my/eat-agent-buffer-p)
-                  (eat--set-cursor nil :underline)))))
-
-(use-package agz
-  :if (file-directory-p "~/dev/home/agz")
-  :load-path "~/dev/home/agz"
-  :bind
-  (("C-z c" . agz-create-session)
-   ("C-z r" . agz-resume-session)
-   ("C-z l" . agz-list-sessions)
-   ("C-z d" . agz-delete-session)
-   ("C-z m" . agz-mgr)
-   ("C-z o" . agz-org-session-dwim)
-   ("C-z n" . agz-org-create-session-child-node))
-  :custom
-  (agz-project-dir (expand-file-name "~/dev/home/agz/"))
-  (agz-default-agent 'claude-eat)
-  (agz-default-backend 'eat)
-  :config
-  (require 'agz-org)
-  (setq agz-org-session-files org-agenda-files))
+  (my/unbind-common-keys eat-eshell-char-mode-map))
 
 (use-package vterm
   :defines (vterm-mode-map vterm-eval-cmds)
@@ -2579,7 +2432,6 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (defvar my/org-notes-dir (expand-file-name "~/dev/home/org/notes/"))
   (defvar my/org-agenda-dir (expand-file-name "~/dev/home/org/agenda/"))
   (defvar my/org-other-dir (expand-file-name "~/dev/home/org/other/"))
-  (defvar my/org-prompts-dir (expand-file-name "~/dev/home/org/prompts/"))
   (defvar my/org-inbox-file (expand-file-name "inbox.org" my/org-agenda-dir))
   (defvar my/org-personal-file (expand-file-name "personal.org" my/org-agenda-dir))
   (defvar my/org-work-file (expand-file-name "work.org" my/org-agenda-dir))
@@ -2587,6 +2439,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (defvar my/org-someday-file (expand-file-name "someday.org" my/org-agenda-dir))
   (defvar my/org-archive-file (expand-file-name "archive.org" my/org-agenda-dir))
   (defvar my/org-journal-file (expand-file-name "journal.org" my/org-other-dir))
+  (defvar my/org-agents-file (expand-file-name "agents.org" my/org-other-dir))
   (defvar my/org-bookmarks-file (expand-file-name "bookmarks.org" my/org-other-dir))
   (defvar my/org-coffee-file (expand-file-name "coffee.org" my/org-other-dir))
   ;; Extra electric pairs to use in Org mode.
@@ -2872,11 +2725,7 @@ specified then a task category will be determined by the item's tags."
         "  - Next time: Grind a bit finer\n"
         "- Taste notes:\n"
         "  - Yum yum\n")
-      :jump-to-captured t)
-     ("z" "Agent Prompt" entry
-      (file+olp+datetree my/eat-prompts-file "Prompts")
-      "* Prompt %U\n%?"
-      :before-finalize my/eat-insert-capture-before-finalize))))
+      :jump-to-captured t))))
 
 (use-package org-clock
   :ensure nil
@@ -3046,6 +2895,44 @@ specified then a task category will be determined by the item's tags."
   ("C-x C-p" . proced)
   :custom
   (proced-enable-color-flag t))
+
+;;;; AI/Agents
+
+(use-package agz
+  :if (file-directory-p "~/dev/home/agz")
+  :load-path "~/dev/home/agz"
+  :commands (agz-create-agent agz-create-agent-project)
+  :bind
+  ("C-z c" . agz-create-agent)
+  ("C-z r" . agz-resume-agent)
+  ("C-z l" . agz-list-agents)
+  ("C-z d" . agz-delete-agent)
+  ("C-z m" . agz-mgr)
+  :custom
+  (agz-project-dir (expand-file-name "~/dev/home/agz/"))
+  (agz-default-agent 'claude-eat)
+  :config
+  (require 'agz-org))
+
+(use-package agz-org
+  :ensure nil
+  :after agz
+  :bind
+  (:map org-mode-map
+   ("C-z C-z" . agz-org-agent-dwim)
+   ("C-z n" . agz-org-create-agent-child-node)
+   :map org-agenda-mode-map
+   ("C-z C-z" . agz-org-agent-dwim))
+  :custom
+  (agz-org-agent-files
+   `(,my/org-inbox-file
+     ,my/org-work-file
+     ,my/org-personal-file
+     ,my/org-agents-file))
+  (agz-org-unowned-agents-target
+   `(file+olp ,my/org-agents-file "Agents"))
+  :config
+  (require 'org-agenda))
 
 ;;;; Work Configuration
 
