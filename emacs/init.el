@@ -306,7 +306,7 @@
       (display-buffer-no-window)
       (allow-no-window . t))
      ;; Display in same window.
-     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*agz:\\|\\*vc-dir\\*\\|magit:\\)"
+     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*agz\\|\\*vc-dir\\*\\|magit:\\)"
       (display-buffer-same-window))
      ;; Display below current window in a regular window.
      ("\\(CAPTURE-.*\\.org\\|\\*vc-log\\*\\)"
@@ -1126,7 +1126,7 @@ With prefix ARG, the working directory can be selected."
      (project-find-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
      (my/project-async-shell-command "Command" ?&)
-     (agz-create-agent-project "Agent" ?z))))
+     (my/agz-run-agent-claude-project "Agent" ?z))))
 
 ;;;; Minibuffer
 
@@ -2902,28 +2902,48 @@ specified then a task category will be determined by the item's tags."
 (use-package agz
   :if (file-directory-p "~/dev/home/agz")
   :load-path "~/dev/home/agz"
-  :commands (agz-create-agent agz-create-agent-project)
+  ;; TODO: Refactor for better autoloading.
+  :demand t
+  :preface
+  (defun my/agz-run-agent-claude-project ()
+    "Run `agz-run-agent-claude' in the root project directory."
+    (interactive)
+    (let ((default-directory (my/project-current-root)))
+      (agz-run-agent-claude)))
+
   :bind
-  ("C-z c" . agz-create-agent)
-  ("C-z r" . agz-resume-agent)
-  ("C-z l" . agz-list-agents)
-  ("C-z d" . agz-delete-agent)
-  ("C-z m" . agz-mgr)
-  :custom
-  (agz-project-dir (expand-file-name "~/dev/home/agz/"))
-  (agz-default-agent 'claude-eat)
+  ("C-z a" . agz-run-agent-claude)
+  ("C-z A" . agz-run-agent-claude-manager)
+  ("C-z x" . agz-run-agent-cursor)
   :config
+  (require 'agz-claude-eat)
+  (agz-define-agent claude
+    :constructor 'agz-claude-eat-make-agent)
+  (agz-define-agent cursor
+    :constructor 'agz-cursor-eat-make-agent)
+  (agz-define-agent claude-manager
+    :inherit claude
+    :override-name "manager"
+    :directory (expand-file-name "~/dev/home/agz/"))
   (require 'agz-org))
+
+(use-package agz-eat
+  :ensure nil
+  :after agz
+  :bind
+  (:map agz-eat-mode-map
+   ("C-z C-r" . agz-eat-reflow)
+   ("C-z C-m" . agz-eat-toggle-mode)
+   ("C-M-a" . outline-previous-heading)
+   ("C-M-e" . outline-next-heading)))
 
 (use-package agz-org
   :ensure nil
   :after agz
   :bind
   (:map org-mode-map
-   ("C-z C-z" . agz-org-agent-dwim)
-   ("C-z n" . agz-org-create-agent-child-node)
-   :map org-agenda-mode-map
-   ("C-z C-z" . agz-org-agent-dwim))
+   ("C-z c" . agz-org-create-agent)
+   ("C-z r" . agz-org-resume-agent))
   :custom
   (agz-org-agent-files
    `(,my/org-inbox-file
@@ -2931,9 +2951,7 @@ specified then a task category will be determined by the item's tags."
      ,my/org-personal-file
      ,my/org-agents-file))
   (agz-org-unowned-agents-target
-   `(file+olp ,my/org-agents-file "Agents"))
-  :config
-  (require 'org-agenda))
+   `(file+olp ,my/org-agents-file "Agents")))
 
 ;;;; Work Configuration
 
