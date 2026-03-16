@@ -31,7 +31,7 @@ auto-save-list
 claude/
 configstore/
 cagent/
-cursor/
+cursor
 dlv/.dbg_history
 droidcli/
 envconfig/
@@ -44,15 +44,17 @@ git/gpg.inc
 git/hooks/
 gnupg/*.kbx
 goose/history.txt
+gws/
 iterm2/AppSupport
 k9s/config.yml
 ldcli/
 ngrok/
 nvim/bundle/*/doc/tags
-# Ignore for now as contains tokens, etc
 raycast/
+skills-lock.json
 target/
 tramp
+uv/
 zed/conversations/
 zed/prompts/
 zsh/.zcompcache
