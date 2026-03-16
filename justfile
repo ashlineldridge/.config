@@ -60,10 +60,8 @@ symlink-install:
     @echo ">>> Installing symlinks"
     ln -sf ~/.config/zsh/lib/env.zsh ~/.zshenv
     mkdir -p ~/.local/share/gnupg
-    mkdir -p ~/.claude
     ln -sf ~/.config/gnupg/gpg-agent.conf ~/.local/share/gnupg/gpg-agent.conf
-    ln -sf ~/.config/claude/*.json ~/.claude/
-    ln -sf ~/.config/cursor/*.json ~/Library/Application\ Support/Cursor/User/
+    # Claude and Cursor config now managed via spacejunk/aeldridge
     mkdir -p ~/bin
     for f in ~/.config/bin/*; do ln -sf "$f" ~/bin/; done
     @echo "-----"

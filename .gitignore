@@ -30,8 +30,8 @@ argocd/
 auto-save-list
 claude/
 configstore/
-cursor/chats/
-cursor/cli-config.json
+cagent/
+cursor/
 dlv/.dbg_history
 droidcli/
 envconfig/
