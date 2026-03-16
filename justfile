@@ -46,10 +46,6 @@ agent-upgrade:
     claude update
     @echo "\n----- Upgrading Cursor Agent CLI"
     brew upgrade cursor-cli
-    @echo "\n----- Upgrading Gemini CLI"
-    brew upgrade gemini-cli
-    @echo "\n---- Upgrading OpenCode"
-    brew upgrade opencode
     @echo "-----"
     @echo "AI agents have been ugpraded"
 
