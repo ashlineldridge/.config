@@ -611,7 +611,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
 
   (defun my/unbind-common-keys (map)
     "Unbind (often stolen) common keybindings from MAP."
-    (dolist (key '("C-z" "C-SPC" "C-M-<left>" "C-M-<right>" "C-M-a" "C-M-e"
+    (dolist (key '("C-z" "C-r" "C-s" "C-SPC" "C-M-<left>" "C-M-<right>" "C-M-a" "C-M-e"
                    "M-g" "M-j" "M-J" "M-k" "M-o" "M-s" "M-q" "M-r" "M-R" "M-U"
                    "M-." "M-?" "M-:" "M-&" "M-'" "M-\"" "M-]" "M->" "M-<"
                    "M-0" "M-1" "M-2" "M-3" "M-4" "M-5" "M-6" "M-7" "M-8" "M-9"))
@@ -2208,7 +2208,9 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (magit-diff-paint-whitespace nil)
   (magit-diff-highlight-indentation nil)
   (magit-diff-highlight-trailing nil)
-  (magit-refresh-status-buffer nil))
+  (magit-refresh-status-buffer nil)
+  :config
+  (my/unbind-common-keys magit-section-mode-map))
 
 (use-package git-link
   :bind
@@ -2390,8 +2392,9 @@ With prefix ARG, the full 40 character commit hash will be copied."
    ;; These only work reliably when copy mode is disabled.
    ("C-M-a" . vterm-previous-prompt)
    ("C-M-e" . vterm-next-prompt)
-   ;; Because I always press C-g to cancel things.
+   ;; Use consistent bindings for cancellation and history.
    ("C-g" . (lambda () (interactive) (vterm-send-key (kbd "C-c"))))
+   ("C-c h" . (lambda () (interactive) (vterm-send-key (kbd "C-r"))))
    :repeat-map my/vterm-repeat-map
    ("C-n" . vterm-next-prompt)
    ("C-p" . vterm-previous-prompt))
