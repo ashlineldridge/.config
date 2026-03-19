@@ -26,7 +26,8 @@ alias kb=kubebuilder
 alias kctx=kubectx
 alias kns=kubens
 alias ku=kustomize
-alias tf=terraform
+alias tf=tofu
+alias terraform=tofu
 
 # Replace ls with eza.
 alias ls="eza --group-directories-first"

@@ -40,5 +40,3 @@ done
 if [[ -f "${XDG_CONFIG_HOME}/zsh/lib/private.zsh" ]]; then
   source "${XDG_CONFIG_HOME}/zsh/lib/private.zsh"
 fi
-
-. "$HOME/.local/share/../bin/env"
