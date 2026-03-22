@@ -2460,16 +2460,23 @@ With prefix ARG, the full 40 character commit hash will be copied."
     (setq-local electric-pair-text-pairs
                 (append electric-pair-text-pairs my/org-extra-electric-pairs)))
 
+  (defun my/org-bookmark-modified-time (name)
+    "Return last-modified time of bookmark NAME, or epoch."
+    (or (alist-get 'last-modified (bookmark-get-bookmark-record name))
+        '(0 0)))
+
   (defun my/org-goto-last-dwim ()
     "Navigate to the last org \"thing\"."
     (interactive)
-    (let* ((refile-bm (bookmark-get-bookmark-record "org-refile-last-stored"))
-           (capture-bm (bookmark-get-bookmark-record "org-capture-last-stored"))
-           (refile-time (alist-get 'last-modified refile-bm))
-           (capture-time (alist-get 'last-modified capture-bm)))
-      (if (time-less-p capture-time refile-time)
-          (org-refile-goto-last-stored)
-        (org-capture-goto-last-stored))))
+    (let ((r (my/org-bookmark-modified-time "org-refile-last-stored"))
+          (c (my/org-bookmark-modified-time "org-capture-last-stored"))
+          (a (my/org-bookmark-modified-time "agz-org-last-stored")))
+      (cond ((and (time-less-p c r) (time-less-p a r))
+             (org-refile-goto-last-stored))
+            ((time-less-p a c)
+             (org-capture-goto-last-stored))
+            (t
+             (bookmark-jump "agz-org-last-stored")))))
 
   :bind
   (("C-c C-o" . org-open-at-point-global)
@@ -2920,6 +2927,7 @@ specified then a task category will be determined by the item's tags."
   ("C-z x" . agz-run-agent-cursor)
   :config
   (require 'agz-claude-eat)
+  (require 'agz-cursor-eat)
   (agz-define-agent claude
     :constructor 'agz-claude-eat-make-agent)
   (agz-define-agent cursor
@@ -2958,10 +2966,10 @@ specified then a task category will be determined by the item's tags."
 
 ;;;; Work Configuration
 
-(use-package chronosphere
-  :if (file-directory-p "~/dev/home/chronosphere")
-  :load-path "~/dev/home/chronosphere"
-  :hook (elpaca-after-init . chronosphere-init))
+;; Load additional work config if present.
+(let ((init-work (expand-file-name "init-work.el" user-emacs-directory)))
+  (when (file-exists-p init-work)
+    (load init-work)))
 
 ;;; End:
 (provide 'init)

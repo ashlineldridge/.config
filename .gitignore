@@ -1,14 +1,3 @@
-# This file maintains work-specific config I don't want public.
-emacs/early-init-private.el
-
-# The no-littering Emacs package keeps data/temp files under emacs/var/.
-emacs/var/
-
-# Although I'm using the no-littering Emacs package, it doesn't yet
-# completely work for the eln-cache directory.
-# See: https://github.com/emacscollective/no-littering/discussions/206.
-emacs/eln-cache/
-
 **/*auth*
 **/*secret*
 **/*token*
@@ -24,6 +13,17 @@ emacs/eln-cache/
 .emacs.desktop
 .emacs.desktop.lock
 \#*\#
+
+# Work-specific Emacs config.
+emacs/init-work.el
+
+# The no-littering Emacs package keeps data/temp files under emacs/var/.
+emacs/var/
+
+# Although I'm using the no-littering Emacs package, it doesn't yet
+# completely work for the eln-cache directory.
+# See: https://github.com/emacscollective/no-littering/discussions/206.
+emacs/eln-cache/
 
 AWSVPNClient/
 argocd/
