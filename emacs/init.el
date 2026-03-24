@@ -2923,26 +2923,27 @@ specified then a task category will be determined by the item's tags."
 
   :bind
   ("C-z a" . agz-run-agent-claude)
-  ("C-z A" . agz-run-agent-claude-manager)
-  ("C-z x" . agz-run-agent-cursor)
+  ("C-z m" . agz-run-agent-claude-manager)
   :config
   (require 'agz-claude-eat)
   (require 'agz-cursor-eat)
   (agz-define-agent claude
     :constructor 'agz-claude-eat-make-agent)
-  (agz-define-agent cursor
-    :constructor 'agz-cursor-eat-make-agent)
   (agz-define-agent claude-manager
     :inherit claude
     :override-name "manager"
     :directory (expand-file-name "~/dev/home/agz/"))
+  ;; For testing: use M-x to run.
+  (agz-define-agent cursor
+    :constructor 'agz-cursor-eat-make-agent)
   (require 'agz-org))
 
 (use-package agz-eat
   :ensure nil
-  :after agz
+  :after eat
+  :defines eat-mode-map
   :bind
-  (:map agz-eat-mode-map
+  (:map eat-mode-map
    ("C-z C-r" . agz-eat-reflow)
    ("C-z C-m" . agz-eat-toggle-mode)
    ("C-M-a" . outline-previous-heading)
@@ -2950,19 +2951,14 @@ specified then a task category will be determined by the item's tags."
 
 (use-package agz-org
   :ensure nil
-  :after agz
   :bind
-  (:map org-mode-map
-   ("C-z c" . agz-org-create-agent)
-   ("C-z r" . agz-org-resume-agent))
+  ("C-z s" . agz-org-save-agent)
+  ("C-z r" . agz-org-resume-agent)
   :custom
   (agz-org-agent-files
    `(,my/org-inbox-file
      ,my/org-work-file
-     ,my/org-personal-file
-     ,my/org-agents-file))
-  (agz-org-unowned-agents-target
-   `(file+olp ,my/org-agents-file "Agents")))
+     ,my/org-personal-file)))
 
 ;;;; Work Configuration
 
