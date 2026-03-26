@@ -924,9 +924,10 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
            " " filename-and-process+)))
   (ibuffer-saved-filter-groups
    '(("default"
+      ("Agent" (predicate my/agz-buffer-p (current-buffer)))
+      ("Shell" (predicate my/shell-buffer-p (current-buffer)))
       ("Git" (or (name . "^magit") (name . "^*vc-")))
       ("Dired" (mode . dired-mode))
-      ("Shell" (predicate my/shell-buffer-p (current-buffer)))
       ("Command (running)" (predicate
                             (lambda (buf)
                               (eq (my/shell-command-buffer-state buf) 'running))
@@ -1392,6 +1393,8 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
     (my/consult-source-buffer "Dired Buffer" ?d :mode 'dired-mode))
   (defvar my/consult-source-agenda-buffer
     (my/consult-source-buffer "Agenda Buffer" ?a :mode 'org-agenda-mode))
+  (defvar my/consult-source-agz-buffer
+    (my/consult-source-buffer "Agent Buffer" ?z :predicate 'my/agz-buffer-p))
 
   (defun my/consult-read-file-name (prompt &optional dir _default mustmatch _initial pred)
     "Function to assign to `read-file-name-function' to enable previewing."
@@ -1512,7 +1515,8 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
           my/consult-source-dired-buffer       ;; Narrow: ?d (hidden)
           my/consult-source-shell-buffer       ;; Narrow: ?s (hidden)
           my/consult-source-command-buffer     ;; Narrow: ?& (hidden)
-          my/consult-source-magit-buffer))     ;; Narrow: ?g (hidden)
+          my/consult-source-magit-buffer       ;; Narrow: ?g (hidden)
+          my/consult-source-agz-buffer))       ;; Narrow: ?z (hidden)
 
   ;; Customize individual Consult sources.
   (consult-customize
@@ -2330,7 +2334,8 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (defun my/shell-buffer-p (buf)
     "Return whether BUF is considered a generalized shell buffer."
     (let ((mm (buffer-local-value 'major-mode buf)))
-      (provided-mode-derived-p mm '(eshell-mode eat-mode vterm-mode))))
+      (and (provided-mode-derived-p mm '(eshell-mode eat-mode vterm-mode))
+           (not (my/agz-buffer-p buf)))))
 
   :bind
   ;; For convenience, consolidate Eshell keybindings here rather than in
@@ -2912,9 +2917,13 @@ specified then a task category will be determined by the item's tags."
 (use-package agz
   :if (file-directory-p "~/dev/home/agz")
   :load-path "~/dev/home/agz"
-  ;; TODO: Refactor for better autoloading.
-  :demand t
+  :demand t ;; TODO: Refactor for better autoloading.
   :preface
+  (defun my/agz-buffer-p (buf)
+    "Return whether BUF is an `agz' agent buffer."
+    (with-current-buffer buf
+      (bound-and-true-p agz-agent-mode)))
+
   (defun my/agz-run-agent-claude-project ()
     "Run `agz-run-agent-claude' in the root project directory."
     (interactive)
