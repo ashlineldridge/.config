@@ -2917,7 +2917,8 @@ specified then a task category will be determined by the item's tags."
 (use-package agz
   :if (file-directory-p "~/dev/home/agz")
   :load-path "~/dev/home/agz"
-  :demand t ;; TODO: Refactor for better autoloading.
+  ;; TODO: Refactor for better autoloading.
+  :demand t
   :preface
   (defun my/agz-buffer-p (buf)
     "Return whether BUF is an `agz' agent buffer."
@@ -2961,8 +2962,9 @@ specified then a task category will be determined by the item's tags."
 (use-package agz-org
   :ensure nil
   :bind
-  ("C-z s" . agz-org-save-agent)
-  ("C-z r" . agz-org-resume-agent)
+  (("C-z r" . agz-org-resume-agent)
+   :map agz-mode-map
+   ("C-z s" . agz-org-save-agent))
   :custom
   (agz-org-agent-files
    `(,my/org-inbox-file
