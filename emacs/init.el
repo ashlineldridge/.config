@@ -2939,9 +2939,8 @@ specified then a task category will be determined by the item's tags."
     :constructor 'agz-claude-eat-make-agent)
   (agz-define-agent claude-manager
     :inherit claude
-    :singleton t
     :override-name "manager"
-    :directory (expand-file-name "~/dev/home/agz/"))
+    :override-directory (expand-file-name "~/dev/home/agz/"))
   ;; For testing: use M-x to run.
   (agz-define-agent cursor
     :constructor 'agz-cursor-eat-make-agent)
