@@ -719,15 +719,13 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
 
 ;;;;; Undo/Redo
 
-(use-package undo-tree
-  :custom
-  (undo-tree-auto-save-history t)
-  (undo-tree-visualizer-timestamps t)
-  (undo-tree-visualizer-diff t)
+(use-package vundo
   :bind
-  (:map undo-tree-map
-   ("M-_" . nil))
-  :hook (elpaca-after-init . global-undo-tree-mode))
+  ("C-x u" . vundo)
+  :custom
+  (vundo-glyph-alist vundo-unicode-symbols)
+  :config
+  (set-face-attribute 'vundo-default nil :family "Aporetic Sans Mono"))
 
 ;;;;; Region Expansion
 
@@ -2941,6 +2939,7 @@ specified then a task category will be determined by the item's tags."
     :constructor 'agz-claude-eat-make-agent)
   (agz-define-agent claude-manager
     :inherit claude
+    :singleton t
     :override-name "manager"
     :directory (expand-file-name "~/dev/home/agz/"))
   ;; For testing: use M-x to run.
@@ -2955,7 +2954,7 @@ specified then a task category will be determined by the item's tags."
   :bind
   (:map eat-mode-map
    ("C-z C-r" . agz-eat-reflow)
-   ("C-z C-m" . agz-eat-toggle-mode)
+   ("C-z C-z" . agz-eat-toggle-mode)
    ("C-M-a" . outline-previous-heading)
    ("C-M-e" . outline-next-heading)))
 
