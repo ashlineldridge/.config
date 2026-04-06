@@ -2376,7 +2376,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   :hook
   (eshell-load . eat-eshell-visual-command-mode)
   :custom
-  (eat-term-scrollback-size 200000)
+  (eat-term-scrollback-size 1000000)
   :config
   (my/unbind-common-keys eat-char-mode-map)
   (my/unbind-common-keys eat-semi-char-mode-map)
