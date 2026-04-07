@@ -85,7 +85,7 @@
 
 	# Use Emacs as the default editor
 	editor = emacsclient
-	hooksPath = /Users/ae/.config/git/hooks
+	hooksPath = /Users/aseldridge/.config/git/hooks
 
 [color]
 	# Use colors in Git commands that are capable of colored output when
@@ -151,3 +151,5 @@
 	process = git-lfs filter-process
 	required = true
 	clean = git-lfs clean -- %f
+[url "git@github.com:"]
+	insteadOf = https://github.com/

@@ -16,11 +16,9 @@ brew-dump:
 emacs-install: emacs-clean
     @echo ">>> Installing Emacs"
     brew install emacs-plus@{{emacs-version}}
-    # The entire application is copied rather than creating an alias as that
-    # seems to screw with the icon that gets shown by Raycast/Spotlight.
-    sudo rm -rf /Applications/Emacs.app
-    sudo cp -r /opt/homebrew/opt/emacs-plus@{{emacs-version}}/Emacs.app /Applications/
-    sudo chown -R {{mac-user}}:{{mac-group}} /Applications/Emacs.app
+    # Create aliases (see: https://github.com/d12frosted/homebrew-emacs-plus?tab=readme-ov-file#usage)
+    osascript -e 'tell application "Finder" to make alias file to posix file "/opt/homebrew/opt/emacs-plus@{{emacs-version}}/Emacs.app" at posix file "/Applications" with properties {name:"Emacs.app"}'
+    osascript -e 'tell application "Finder" to make alias file to posix file "/opt/homebrew/opt/emacs-plus@{{emacs-version}}/Emacs Client.app" at posix file "/Applications" with properties {name:"Emacs Client.app"}'
     @echo "-----"
     @echo "Emacs has been successfully installed"
 
