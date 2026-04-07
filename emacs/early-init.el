@@ -66,23 +66,25 @@
                set-goal-column))
   (put cmd 'disabled nil))
 
-;; Configure frame parameters.
-(setq default-frame-alist
-      (append '((undecorated-round . t)
-                (width . (text-pixels . 1000))
-                (height . (text-pixels . 900)))
-              default-frame-alist))
+;; Configure frame parameters (GUI only).
+(when (display-graphic-p)
+  (setq default-frame-alist
+        (append '((undecorated-round . t)
+                  (width . (text-pixels . 1000))
+                  (height . (text-pixels . 900)))
+                default-frame-alist))
 
-;; Blank out the screen to prevent the initial flash of white light.
-(fringe-mode 0)
-(setq mode-line-format nil)
-(set-face-attribute 'default nil :background my/init-color :foreground "#ffffff")
-(set-face-attribute 'mode-line nil :background my/init-color :foreground "#ffffff" :box 'unspecified)
-;; Without the following hook, new frames will retain the blanked out features set above.
-(add-hook 'after-make-frame-functions
-          (lambda (&rest _)
-            (when-let* ((theme (car custom-enabled-themes)))
-              (enable-theme theme))))
+  ;; Blank out the screen to prevent the initial flash of white light.
+  (fringe-mode 0)
+  (setq mode-line-format nil)
+  (set-face-attribute 'default nil :background my/init-color :foreground "#ffffff")
+  (set-face-attribute 'mode-line nil :background my/init-color :foreground "#ffffff" :box 'unspecified)
+
+  ;; Without the following hook, new frames will retain the blanked out features set above.
+  (add-hook 'after-make-frame-functions
+            (lambda (&rest _)
+              (when-let* ((theme (car custom-enabled-themes)))
+                (enable-theme theme)))))
 
 ;; Configure environment variables here.
 (setenv "XDG_CONFIG_HOME" (expand-file-name "~/.config"))

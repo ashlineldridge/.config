@@ -48,6 +48,7 @@
 ;;;;; Fonts
 
 (use-package fontaine
+  :if (display-graphic-p)
   :preface
   (defconst my/fixed-family "Aporetic Sans Mono")
   (defconst my/variable-family "Aporetic Sans")
@@ -148,6 +149,7 @@
 ;;;;; Margins/Padding
 
 (use-package spacious-padding
+  :if (display-graphic-p)
   :preface
   (defun my/spacious-padding-toggle-subtle ()
     "Toggle whether the mode and header line are displayed in the subtle style."
@@ -242,6 +244,7 @@
 ;;;; Windows and Frames
 
 (use-package ns-win
+  :if (display-graphic-p)
   :ensure nil
   :custom
   (mac-command-modifier 'meta)
@@ -1839,6 +1842,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (advice-add 'lsp-resolve-final-command :around #'lsp-booster--advice-final-command))
 
 (use-package lsp-ui
+  :if (display-graphic-p)
   :hook (lsp-mode . lsp-ui-mode)
   :bind
   (:map lsp-ui-mode-map
