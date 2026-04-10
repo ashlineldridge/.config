@@ -2964,14 +2964,16 @@ specified then a task category will be determined by the item's tags."
 (use-package agz-org
   :ensure nil
   :bind
-  (("C-z r" . agz-org-resume-agent)
+  (("C-z g"  agz-org-goto-agent)
+   ("C-z r" . agz-org-resume-agent)
    :map agz-mode-map
    ("C-z s" . agz-org-save-agent))
   :custom
   (agz-org-agent-files
    `(,my/org-inbox-file
      ,my/org-work-file
-     ,my/org-personal-file)))
+     ,my/org-personal-file))
+  (agz-org-agent-default-file my/org-inbox-file))
 
 ;;;; Work Configuration
 
