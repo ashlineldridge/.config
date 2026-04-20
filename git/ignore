@@ -2,3 +2,5 @@
 .ccls-cache/
 .worktrees/
 /launch.json
+
+**/.claude/settings.local.json
