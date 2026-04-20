@@ -2945,20 +2945,26 @@ specified then a task category will be determined by the item's tags."
 
   :bind
   ("C-z a" . agz-run-agent-claude)
+  ("C-z p" . agz-run-agent-pi)
   ("C-z m" . agz-run-agent-claude-manager)
+  :custom
+  (agz-pi-provider "vertex-anthropic")
+  (agz-pi-model "claude-opus-4-7[1m]:xhigh")
   :config
+  (require 'agz-org)
   (require 'agz-claude-eat)
   (require 'agz-cursor-eat)
+  (require 'agz-pi-eat)
   (agz-define-agent claude
     :constructor 'agz-claude-eat-make-agent)
   (agz-define-agent claude-manager
     :inherit claude
     :override-name "manager"
     :override-directory (expand-file-name "~/dev/home/agz/"))
-  ;; For testing: use M-x to run.
-  (agz-define-agent cursor
-    :constructor 'agz-cursor-eat-make-agent)
-  (require 'agz-org))
+
+  ;; Agents under test...
+  (agz-define-agent cursor :constructor 'agz-cursor-eat-make-agent)
+  (agz-define-agent pi :constructor 'agz-pi-eat-make-agent))
 
 (use-package agz-eat
   :ensure nil
