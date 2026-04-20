@@ -44,6 +44,8 @@ agent-upgrade:
     claude update
     @echo "\n----- Upgrading Cursor Agent CLI"
     brew upgrade cursor-cli
+    @echo "\n----- Upgrading Pi"
+    npm install -g @mariozechner/pi-coding-agent
     @echo "-----"
     @echo "AI agents have been ugpraded"
 
