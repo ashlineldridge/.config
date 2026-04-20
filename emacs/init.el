@@ -278,7 +278,6 @@
   (("M-[" . previous-buffer)
    ("M-]" . next-buffer)
    ("M-q" . bury-buffer)
-   ("M-`" . rename-buffer)
    ("M-O =" . balance-windows)
    ("M-O }" . enlarge-window-horizontally)
    ("M-O {" . shrink-window-horizontally)
@@ -584,6 +583,12 @@ the value of `my/help-buffer-kill-to-close'."
     "Show long lines as truncated in the current buffer."
     (setq-local truncate-lines t))
 
+  (defun my/rename-buffer ()
+    "Like `rename-buffer' but prefill the prompt with the current name."
+    (interactive)
+    (minibuffer-with-setup-hook (lambda () (goto-char (point-max)))
+      (rename-buffer (read-string "Buffer name: " (buffer-name)))))
+
   (defun my/async-shell-command (arg &optional cmd)
     "Version of `async-shell-command' that always creates new buffers.
 With prefix ARG, the working directory can be selected. An optional CMD
@@ -617,7 +622,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
     "Unbind (often stolen) common keybindings from MAP."
     (dolist (key '("C-z" "C-r" "C-s" "C-SPC" "C-M-<left>" "C-M-<right>" "C-M-a" "C-M-e"
                    "M-g" "M-j" "M-J" "M-k" "M-o" "M-s" "M-q" "M-r" "M-R" "M-U"
-                   "M-." "M-?" "M-:" "M-&" "M-'" "M-\"" "M-]" "M->" "M-<"
+                   "M-." "M-?" "M-:" "M-&" "M-`" "M-'" "M-\"" "M-]" "M->" "M-<"
                    "M-0" "M-1" "M-2" "M-3" "M-4" "M-5" "M-6" "M-7" "M-8" "M-9"))
       (define-key map (kbd key) nil t)))
 
@@ -642,6 +647,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   ("M-&" . my/async-shell-command)
   ("M-*" . my/expand-line)
   ("M-=" . count-words)
+  ("M-`" . my/rename-buffer)
   ("M-c" . capitalize-dwim)
   ("M-l" . downcase-dwim)
   ("M-u" . upcase-dwim)
