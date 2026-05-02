@@ -26,6 +26,7 @@ emacs/var/
 emacs/eln-cache/
 
 AWSVPNClient/
+agent-slack/
 argocd/
 auto-save-list
 claude/
