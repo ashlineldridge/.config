@@ -1413,11 +1413,12 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
     (require 'consult)
     (let ((default-directory (or dir default-directory))
           (minibuffer-completing-file-name t))
-      (consult--read #'read-file-name-internal :state (consult--file-preview)
-                     :prompt prompt
-                     :initial (abbreviate-file-name default-directory)
-                     :require-match mustmatch
-                     :predicate pred)))
+      (substitute-in-file-name
+       (consult--read #'read-file-name-internal :state (consult--file-preview)
+                      :prompt prompt
+                      :initial (abbreviate-file-name default-directory)
+                      :require-match mustmatch
+                      :predicate pred))))
 
   (defun my/consult-find-file ()
     "Version of `find-file' that supports preview."
