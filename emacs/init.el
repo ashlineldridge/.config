@@ -932,7 +932,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
            " " filename-and-process+)))
   (ibuffer-saved-filter-groups
    '(("default"
-      ("Agent" (predicate my/agz-buffer-p (current-buffer)))
+      ("Agent" (predicate agz-buffer-p (current-buffer)))
       ("Shell" (predicate my/shell-buffer-p (current-buffer)))
       ("Git" (or (name . "^magit") (name . "^*vc-")))
       ("Dired" (mode . dired-mode))
@@ -1138,7 +1138,7 @@ With prefix ARG, the working directory can be selected."
      (project-find-file "File" ?f)
      (consult-ripgrep "Ripgrep" ?s)
      (my/project-async-shell-command "Command" ?&)
-     (my/agz-run-agent-claude-project "Agent" ?z))))
+     (agz-run-agent-project "Agent" ?z))))
 
 ;;;; Minibuffer
 
@@ -1405,7 +1405,7 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
   (defvar my/consult-source-agenda-buffer
     (my/consult-source-buffer "Agenda Buffer" ?a :mode 'org-agenda-mode))
   (defvar my/consult-source-agz-buffer
-    (my/consult-source-buffer "Agent Buffer" ?z :predicate 'my/agz-buffer-p))
+    (my/consult-source-buffer "Agent Buffer" ?z :predicate 'agz-buffer-p))
 
   (defun my/consult-read-file-name (prompt &optional dir _default mustmatch _initial pred)
     "Function to assign to `read-file-name-function' to enable previewing."
@@ -2348,7 +2348,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
     "Return whether BUF is considered a generalized shell buffer."
     (let ((mm (buffer-local-value 'major-mode buf)))
       (and (provided-mode-derived-p mm '(eshell-mode eat-mode vterm-mode))
-           (not (my/agz-buffer-p buf)))))
+           (not (agz-buffer-p buf)))))
 
   :bind
   ;; For convenience, consolidate Eshell keybindings here rather than in
@@ -2940,40 +2940,21 @@ specified then a task category will be determined by the item's tags."
   :load-path "~/dev/home/agz"
   ;; TODO: Refactor for better autoloading.
   :demand t
-  :preface
-  (defun my/agz-buffer-p (buf)
-    "Return whether BUF is an `agz' agent buffer."
-    (with-current-buffer buf
-      (bound-and-true-p agz-agent-mode)))
-
-  (defun my/agz-run-agent-claude-project ()
-    "Run `agz-run-agent-claude' in the root project directory."
-    (interactive)
-    (let ((default-directory (my/project-current-root)))
-      (agz-run-agent-claude)))
-
   :bind
-  ("C-z a" . agz-run-agent-claude)
-  ("C-z p" . agz-run-agent-pi)
-  ("C-z m" . agz-run-agent-claude-manager)
+  ("C-z C-z" . agz-run-agent)
+  ("C-z RET" . agz-run-agent-select)
   :custom
   (agz-pi-provider "vertex-anthropic")
-  (agz-pi-model "claude-opus-4-7[1m]:xhigh")
+  (agz-pi-model "claude-opus-4-7:xhigh")
+  (agz-default-agent 'pi)
   :config
   (require 'agz-org)
+  (require 'agz-pi-eat)
   (require 'agz-claude-eat)
   (require 'agz-cursor-eat)
-  (require 'agz-pi-eat)
-  (agz-define-agent claude
-    :constructor 'agz-claude-eat-make-agent)
-  (agz-define-agent claude-manager
-    :inherit claude
-    :override-name "manager"
-    :override-directory (expand-file-name "~/dev/home/agz/"))
-
-  ;; Agents under test...
-  (agz-define-agent cursor :constructor 'agz-cursor-eat-make-agent)
-  (agz-define-agent pi :constructor 'agz-pi-eat-make-agent))
+  (agz-define-agent pi :constructor 'agz-pi-eat-make-agent)
+  (agz-define-agent claude :constructor 'agz-claude-eat-make-agent)
+  (agz-define-agent cursor :constructor 'agz-cursor-eat-make-agent))
 
 (use-package agz-eat
   :ensure nil
@@ -2981,10 +2962,7 @@ specified then a task category will be determined by the item's tags."
   :defines eat-mode-map
   :bind
   (:map eat-mode-map
-   ("C-z C-r" . agz-eat-reflow)
-   ("C-z C-z" . agz-eat-toggle-mode)
-   ("C-M-a" . outline-previous-heading)
-   ("C-M-e" . outline-next-heading)))
+   ("C-z C-r" . agz-eat-reflow)))
 
 (use-package agz-org
   :ensure nil
