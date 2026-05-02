@@ -643,7 +643,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   :bind
   ([remap kill-ring-save] . my/kill-ring-save)
   ([remap keyboard-quit] . my/keyboard-quit-dwim)
-  ("ESC ESC" . keyboard-escape-quit) ;; 3rd ESC is unnecessary.
+  ("<escape>" . keyboard-escape-quit)
   ("M-&" . my/async-shell-command)
   ("M-*" . my/expand-line)
   ("M-=" . count-words)
@@ -2388,12 +2388,20 @@ With prefix ARG, the full 40 character commit hash will be copied."
                    ("terminfo/65" "terminfo/65/*")
                    ("integration" "integration/*")
                    (:exclude ".dir-locals.el" "*-tests.el")))
+  :preface
+  (defun my/eat-send-escape ()
+    "Send escape key to eat terminal."
+    (interactive)
+    (eat-term-send-string eat-terminal "\e"))
+
+  :bind
+  (:map eat-mode-map
+   ("S-<escape>" . my/eat-send-escape))
   :hook
   (eshell-load . eat-eshell-visual-command-mode)
   :custom
   (eat-term-scrollback-size 1000000)
   :config
-  (my/unbind-common-keys eat-char-mode-map)
   (my/unbind-common-keys eat-semi-char-mode-map)
   (my/unbind-common-keys eat-eshell-char-mode-map))
 
