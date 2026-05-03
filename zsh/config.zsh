@@ -14,16 +14,6 @@ libs=(
   completion.zsh
 )
 
-# Configure eat if we're running it.
-if [[ "${INSIDE_EMACS:-}" =~ "eat$" ]]; then
-  libs+=(eat.zsh)
-fi
-
-# Configure vterm if we're running it.
-if [[ "${INSIDE_EMACS:-}" =~ "vterm$" ]]; then
-  libs+=(vterm.zsh)
-fi
-
 # Load zsh configuration files. Note: this intentionally sources lib/env.zsh
 # even though it will have already been sourced via the ~/.zshenv symlink as
 # some variables such as HISTFILE don't carry across (quite annoying).
@@ -36,7 +26,22 @@ for f in "${libs[@]}"; do
   source "${lib}"
 done
 
-# Load private.zsh if it exists. This is where I keep work-specific config.
+# See: https://elpa.nongnu.org/nongnu-devel/doc/eat.html#Shell-Integration
+if [[ "${INSIDE_EMACS:-}" == "eat" ]]; then
+  source "${EAT_SHELL_INTEGRATION_DIR}/zsh"
+fi
+
+# See: https://github.com/akermu/emacs-libvterm#shell-side-configuration-files
+if [[ "${INSIDE_EMACS:-}" == "vterm" ]]; then
+  source "${EMACS_VTERM_PATH}/etc/emacs-vterm-zsh.sh"
+fi
+
+# See: https://github.com/dakra/ghostel#shell-integration
+if [[ "${INSIDE_EMACS:-}" == "ghostel" ]]; then
+  source "${EMACS_GHOSTEL_PATH}/etc/shell/ghostel.zsh"
+fi
+
+# Load private.zsh if it exists.
 if [[ -f "${XDG_CONFIG_HOME}/zsh/lib/private.zsh" ]]; then
   source "${XDG_CONFIG_HOME}/zsh/lib/private.zsh"
 fi
