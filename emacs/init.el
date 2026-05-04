@@ -1044,10 +1044,8 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   (dired-recursive-deletes 'always)
   (dired-hide-details-hide-symlink-targets nil)
   (dired-kill-when-opening-new-dired-buffer t)
-  ;; Note: gls is used as specified by `insert-directory-program'. The `-a'
-  ;; flag is used rather than `-A' to work around an Emacs bug where empty
-  ;; directories with `--dired' leave a stray `//DIRED-OPTIONS//' line.
-  (dired-listing-switches "-aGhlF --group-directories-first --time-style=long-iso"))
+  ;; Flags passed to gls as specified by `insert-directory-program'.
+  (dired-listing-switches "-AFGhl --group-directories-first --time-style=long-iso"))
 
 (use-package dired-aux
   :ensure nil
