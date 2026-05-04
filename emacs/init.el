@@ -106,7 +106,7 @@
 (use-package face-remap
   :ensure nil
   :config
-  ;; Makes things like breadcrumb look better when scaling text.
+  ;; Makes things like header line look better when scaling text.
   (setq-default text-scale-remap-header-line t))
 
 ;;;;; Icons
@@ -375,7 +375,6 @@
   ;; Remove silly `suspend-frame' bindings.
   ("C-z" . nil)
   ("C-x C-z" . nil)
-  ("M-o" . next-window-any-frame)
   ("M-O M-O" . other-frame)
   ("M-O M-N" . make-frame-command)
   ("M-O M-K" . delete-frame)
@@ -397,39 +396,6 @@
   :ensure nil
   :custom
   (tab-bar-show nil))
-
-;;;;; Breadcrumb
-
-(use-package breadcrumb
-  :demand t
-  :preface
-  (declare-function breadcrumb-local-mode "breadcrumb")
-  (defun my/breadcrumb-show ()
-    "Show breadcrumb if not a minibuffer and there is no special header line."
-    (when (and
-           (not (minibufferp))
-           (not (derived-mode-p 'proced-mode))
-           (listp header-line-format))
-      (breadcrumb-local-mode 1)))
-
-  ;; Some package like `ibuffer' insist on modifying the header line.
-  ;; This function provides around advice for restoring it.
-  (defun my/breadcrumb-restore (fn &rest args)
-    "Around advice to restore the breadcrumb header line."
-    (let ((old header-line-format))
-      (apply fn args)
-      (setq header-line-format old)))
-  :custom
-  (breadcrumb-project-max-length 0.4)
-  (breadcrumb-imenu-max-length 0.4)
-  :defer 0.25
-  :config
-  ;; Add the breadcrumb to all existing buffers (e.g. *Messages*) and install
-  ;; a hook for new ones. This could be done as a global minor mode.
-  (dolist (buffer (buffer-list))
-    (with-current-buffer buffer
-      (my/breadcrumb-show)))
-  (add-hook 'after-change-major-mode-hook #'my/breadcrumb-show))
 
 ;;;; Help System
 
@@ -946,9 +912,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   (ibuffer-show-empty-filter-groups nil)
   (ibuffer-use-header-line nil)
   :config
-  (my/unbind-common-keys ibuffer-mode-map)
-  ;; Restore breadcrumb after ibuffer after messes with it.
-  (advice-add 'ibuffer-update :around #'my/breadcrumb-restore))
+  (my/unbind-common-keys ibuffer-mode-map))
 
 (use-package ibuffer-vc
   :after ibuffer
