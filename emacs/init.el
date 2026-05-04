@@ -309,7 +309,7 @@
       (display-buffer-no-window)
       (allow-no-window . t))
      ;; Display in same window.
-     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*agz\\|\\*vc-dir\\*\\|magit:\\)"
+     ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\|\\*\\(pi\\|claude\\|cursor\\)\\)"
       (display-buffer-same-window))
      ;; Display below current window in a regular window.
      ("\\(CAPTURE-.*\\.org\\|\\*vc-log\\*\\)"
@@ -2387,7 +2387,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
     (eat-term-send-string eat-terminal "\e"))
   :bind
   (:map eat-mode-map
-   ("S-<escape>" . my/eat-send-escape))
+   ("<escape>" . my/eat-send-escape))
   :hook
   (eshell-load . eat-eshell-visual-command-mode)
   :custom
@@ -2399,7 +2399,11 @@ With prefix ARG, the full 40 character commit hash will be copied."
 (use-package ghostel
   :bind
   (:map ghostel-mode-map
-   ("C-z" . nil))
+   ("C-z" . nil)
+   ("C-g" . nil)
+   ("C-G"  . ghostel-send-C-g)
+   :map ghostel-copy-mode-map
+   ("<escape>" . ghostel-copy-mode-exit))
   :custom
   (ghostel-shell-integration nil)
   (ghostel-max-scrollback (* 10 1024 1024)))
@@ -2913,20 +2917,14 @@ specified then a task category will be determined by the item's tags."
   :custom
   (agz-pi-provider "vertex-anthropic")
   (agz-pi-model "claude-opus-4-7:xhigh")
-  (agz-default-agent 'pi)
+  (agz-default-agent 'pi-ghostel)
   :config
-  (agz-define-agent pi         'agz-pi-ghostel-make-agent)
-  (agz-define-agent pi-eat     'agz-pi-eat-make-agent)
+  (agz-define-agent pi-ghostel 'agz-pi-ghostel-make-agent "pi")
+  (agz-define-agent pi-eat 'agz-pi-eat-make-agent)
+  (agz-define-agent claude-ghostel'agz-claude-ghostel-make-agent)
   (agz-define-agent claude-eat 'agz-claude-eat-make-agent)
+  (agz-define-agent cursor-ghostel 'agz-cursor-ghostel-make-agent)
   (agz-define-agent cursor-eat 'agz-cursor-eat-make-agent))
-
-(use-package agz-eat
-  :ensure nil
-  :after eat
-  :defines eat-mode-map
-  :bind
-  (:map eat-mode-map
-   ("C-z C-r" . agz-eat-reflow)))
 
 (use-package agz-org
   :ensure nil
