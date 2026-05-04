@@ -883,8 +883,6 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
                   split-window-right
                   treesit-beginning-of-defun
                   treesit-end-of-defun
-                  vterm-next-prompt
-                  vterm-previous-prompt
                   winner-redo
                   winner-undo
                   xref-find-definitions
@@ -2074,21 +2072,15 @@ FILTER-VALUE which should be a mode symbol or predicate function, respectively."
                 '(elisp-eldoc-var-docstring-with-value
                   elisp-eldoc-funcall
                   flymake-eldoc-function)))
-
-  (defun my/elisp-flymake-setup-load-path (fn &rest args)
-    "Advises `elisp-flymake-byte-compile' to setup the correct load path."
-    ;; Exclude Vterm from the load path as it causes Flymake to hang.
-    (let* ((load-path (seq-remove (lambda (d)
-                                    (string-match-p "elpaca/builds/vterm" d))
-                                  load-path))
-           (elisp-flymake-byte-compile-load-path
+  (defun my/elisp-flymake-load-path (fn &rest args)
+    "Advise for `elisp-flymake-byte-compile' so that Flymake uses `load-path'."
+    (let* ((elisp-flymake-byte-compile-load-path
             (append elisp-flymake-byte-compile-load-path load-path)))
       (apply fn args)))
-
   :hook
   (emacs-lisp-mode . my/elisp-init)
   :config
-  (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-setup-load-path)
+  (advice-add #'elisp-flymake-byte-compile :around #'my/elisp-flymake-load-path)
   ;; This configuration is from consult-imenu.el with the fonts changed.
   (with-eval-after-load 'consult-imenu
     (add-to-list 'consult-imenu-config
@@ -2347,7 +2339,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (defun my/shell-buffer-p (buf)
     "Return whether BUF is considered a generalized shell buffer."
     (let ((mm (buffer-local-value 'major-mode buf)))
-      (and (provided-mode-derived-p mm '(eshell-mode eat-mode vterm-mode))
+      (and (provided-mode-derived-p mm '(eshell-mode eat-mode ghostel-mode))
            (not (agz-buffer-p buf)))))
 
   :bind
@@ -2393,7 +2385,6 @@ With prefix ARG, the full 40 character commit hash will be copied."
     "Send escape key to eat terminal."
     (interactive)
     (eat-term-send-string eat-terminal "\e"))
-
   :bind
   (:map eat-mode-map
    ("S-<escape>" . my/eat-send-escape))
@@ -2405,36 +2396,13 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (my/unbind-common-keys eat-semi-char-mode-map)
   (my/unbind-common-keys eat-eshell-char-mode-map))
 
-(use-package vterm
-  :defines (vterm-mode-map vterm-eval-cmds)
-  :preface
-  (declare-function vterm-send-key "vterm")
-  (defun my/vterm-init ()
-    "Init function for `vterm-mode'."
-    ;; Make outline work with vterm prompts.
-    (setq-local outline-regexp "^[^#$\n]* ❯ "))
+(use-package ghostel
   :bind
-  (:map vterm-mode-map
-   ;; These only work reliably when copy mode is disabled.
-   ("C-M-a" . vterm-previous-prompt)
-   ("C-M-e" . vterm-next-prompt)
-   ;; Use consistent bindings for cancellation and history.
-   ("C-g" . (lambda () (interactive) (vterm-send-key (kbd "C-c"))))
-   ("C-c h" . (lambda () (interactive) (vterm-send-key (kbd "C-r"))))
-   :repeat-map my/vterm-repeat-map
-   ("C-n" . vterm-next-prompt)
-   ("C-p" . vterm-previous-prompt))
-  :hook (vterm-mode . my/vterm-init)
+  (:map ghostel-mode-map
+   ("C-z" . nil))
   :custom
-  (vterm-always-compile-module t)
-  ;; I'd much prefer to NOT clear scrollback but I can't rely on it due to
-  ;; https://github.com/akermu/emacs-libvterm/issues/546.
-  (vterm-clear-scrollback-when-clearing t)
-  (vterm-max-scrollback 10000)
-  :config
-  (my/unbind-common-keys vterm-mode-map)
-  (add-to-list 'vterm-eval-cmds
-               '("find-file-other-window" find-file-other-window)))
+  (ghostel-shell-integration nil)
+  (ghostel-max-scrollback (* 10 1024 1024)))
 
 (use-package sh-script
   :ensure nil
@@ -2938,8 +2906,7 @@ specified then a task category will be determined by the item's tags."
 (use-package agz
   :if (file-directory-p "~/dev/home/agz")
   :load-path "~/dev/home/agz"
-  ;; TODO: Refactor for better autoloading.
-  :demand t
+  :autoload (agz-buffer-p)
   :bind
   ("C-z C-z" . agz-run-agent)
   ("C-z RET" . agz-run-agent-select)
@@ -2948,13 +2915,10 @@ specified then a task category will be determined by the item's tags."
   (agz-pi-model "claude-opus-4-7:xhigh")
   (agz-default-agent 'pi)
   :config
-  (require 'agz-org)
-  (require 'agz-pi-eat)
-  (require 'agz-claude-eat)
-  (require 'agz-cursor-eat)
-  (agz-define-agent pi :constructor 'agz-pi-eat-make-agent)
-  (agz-define-agent claude :constructor 'agz-claude-eat-make-agent)
-  (agz-define-agent cursor :constructor 'agz-cursor-eat-make-agent))
+  (agz-define-agent pi         'agz-pi-ghostel-make-agent)
+  (agz-define-agent pi-eat     'agz-pi-eat-make-agent)
+  (agz-define-agent claude-eat 'agz-claude-eat-make-agent)
+  (agz-define-agent cursor-eat 'agz-cursor-eat-make-agent))
 
 (use-package agz-eat
   :ensure nil
