@@ -643,7 +643,7 @@ State can be one of: \='running, \='done, or nil (not a shell-command buffer)."
   :bind
   ([remap kill-ring-save] . my/kill-ring-save)
   ([remap keyboard-quit] . my/keyboard-quit-dwim)
-  ("<escape>" . keyboard-escape-quit)
+  ("<escape>" . my/keyboard-quit-dwim)
   ("M-&" . my/async-shell-command)
   ("M-*" . my/expand-line)
   ("M-=" . count-words)
