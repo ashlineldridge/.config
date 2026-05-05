@@ -5,9 +5,9 @@ start-at-login = true
 # - MEH key   = alt-ctrl-shift
 # - HYPER key = alt-ctrl-shift-cmd
 
-# Run JankyBorders after startup.
+# Run JankyBorders after startup. Colors: https://encycolorpedia.com/named.
 after-startup-command = [
-    'exec-and-forget borders active_color=0xffff76ff inactive_color=0xff414550 width=8.0'
+    'exec-and-forget borders active_color=0xff8c92ac inactive_color=0xff1b1b1b width=6.0'
 ]
 
 # Enable normalizations. See: https://nikitabobko.github.io/AeroSpace/guide#normalization
