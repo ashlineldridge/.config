@@ -2798,6 +2798,8 @@ specified then a task category will be determined by the item's tags."
   (declare-function server-running-p "server")
   :custom
   (server-client-instructions 1)
+  ;; Make emacs client file opens honor `display-buffer-alist'.
+  (server-window 'pop-to-buffer)
   :defer 1
   :config
   (unless (server-running-p)
