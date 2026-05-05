@@ -2363,7 +2363,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
 
   (defun my/ghostel-init ()
     "Init function for `ghostel-mode'."
-    (setq-local outline-regexp "^ *❯ "))
+    (setq-local outline-regexp "^[^#$\n]* ❯ "))
 
   (defun my/ghostel-previous-prompt ()
     "Navigate to the previous prompt (in copy mode)."
