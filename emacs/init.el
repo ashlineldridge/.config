@@ -312,7 +312,7 @@
      ("\\(\\*Async Shell Command\\*\\|\\*Proced\\*\\|\\*vc-dir\\*\\|magit:\\|\\*\\(pi\\|claude\\|cursor\\)\\)"
       (display-buffer-same-window))
      ;; Display below current window in a regular window.
-     ("\\(CAPTURE-.*\\.org\\|\\*vc-log\\*\\)"
+     ("\\(CAPTURE-.*\\.org\\|\\*vc-log\\*\\|pi-editor-\\)"
       (display-buffer-below-selected)
       (window-height . 24))
      ;; Display below current window in a side window with no mode line.
@@ -2236,11 +2236,7 @@ With prefix ARG, the full 40 character commit hash will be copied."
     (remove-hook 'eshell-output-filter-functions
                  'eshell-postoutput-scroll-to-bottom)
     ;; Make outline work with eshell prompts.
-    (setq-local outline-regexp (concat eshell-prompt-regexp ".+"))
-    ;; Quieten completion things.
-    ;; TODO: Corfu is currently disabled anyway...
-    ;; (corfu-popupinfo-mode -1)
-    )
+    (setq-local outline-regexp (concat eshell-prompt-regexp ".+")))
 
   (defun my/eshell-post-command ()
     "Eshell post-command hook function."
@@ -2359,13 +2355,40 @@ With prefix ARG, the full 40 character commit hash will be copied."
   (my/unbind-common-keys eat-eshell-char-mode-map))
 
 (use-package ghostel
+  :preface
+  (defvar ghostel--copy-mode-active)
+  (declare-function ghostel-copy-mode "ghostel")
+  (declare-function outline-previous-heading "outline")
+  (declare-function outline-next-heading "outline")
+
+  (defun my/ghostel-init ()
+    "Init function for `ghostel-mode'."
+    (setq-local outline-regexp "^ *❯ "))
+
+  (defun my/ghostel-previous-prompt ()
+    "Navigate to the previous prompt (in copy mode)."
+    (interactive)
+    (unless ghostel--copy-mode-active (ghostel-copy-mode))
+    (outline-previous-heading))
+
+  (defun my/ghostel-next-prompt ()
+    "Navigate to the next prompt (in copy mode)."
+    (interactive)
+    (unless ghostel--copy-mode-active (ghostel-copy-mode))
+    (outline-next-heading))
+  :hook
+  (ghostel-mode . my/ghostel-init)
   :bind
   (:map ghostel-mode-map
    ("C-z" . nil)
    ("C-g" . nil)
-   ("C-G"  . ghostel-send-C-g)
+   ("C-S-g" . ghostel-send-C-g)
+   ("C-M-a" . my/ghostel-previous-prompt)
+   ("C-M-e" . my/ghostel-next-prompt)
    :map ghostel-copy-mode-map
-   ("<escape>" . ghostel-copy-mode-exit))
+   ("<escape>" . ghostel-copy-mode-exit)
+   ("C-M-a" . my/ghostel-previous-prompt)
+   ("C-M-e" . my/ghostel-next-prompt))
   :custom
   (ghostel-shell-integration nil)
   (ghostel-max-scrollback (* 10 1024 1024)))
@@ -2873,6 +2896,10 @@ specified then a task category will be determined by the item's tags."
   :if (file-directory-p "~/dev/home/agz")
   :load-path "~/dev/home/agz"
   :autoload (agz-buffer-p)
+  :preface
+  (defun my/agz-pi-init (_agent _session)
+    "Init function for `agz' pi agents."
+    (setq-local outline-regexp "^ *❯ "))
   :bind
   ("C-z C-z" . agz-run-agent)
   ("C-z RET" . agz-run-agent-select)
@@ -2881,8 +2908,8 @@ specified then a task category will be determined by the item's tags."
   (agz-pi-model "claude-opus-4-7:xhigh")
   (agz-default-agent 'pi-ghostel)
   :config
-  (agz-define-agent pi-ghostel 'agz-pi-ghostel-make-agent "pi")
-  (agz-define-agent pi-eat 'agz-pi-eat-make-agent)
+  (agz-define-agent pi-ghostel 'agz-pi-ghostel-make-agent "pi" #'my/agz-pi-init)
+  (agz-define-agent pi-eat 'agz-pi-eat-make-agent nil #'my/agz-pi-init)
   (agz-define-agent claude-ghostel'agz-claude-ghostel-make-agent)
   (agz-define-agent claude-eat 'agz-claude-eat-make-agent)
   (agz-define-agent cursor-ghostel 'agz-cursor-ghostel-make-agent)
